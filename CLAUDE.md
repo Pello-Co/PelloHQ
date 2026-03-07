@@ -21,6 +21,15 @@ All Pello products live on separate domains but share a single auth system (one 
 - **PelloFlow** — Custom automation and agent builds
 - **PelloBuild** — Custom app development
 
+## GitHub
+
+- **Repo:** https://github.com/Pello-Co/PelloHQ
+- **Account:** Pello-Co
+- **SSH host alias:** `github-pelloco` (uses `~/.ssh/id_ed25519_pelloco`)
+- **Remote:** `git@github-pelloco:Pello-Co/PelloHQ.git`
+
+When pushing from this machine, always use the `github-pelloco` SSH host alias — the default `github.com` host is wired to a different key (GlobalPeptide).
+
 ## Status
 
 This repository is in initial setup — no framework or build tooling has been chosen yet. Update this file with build/dev/test commands once the stack is decided.
