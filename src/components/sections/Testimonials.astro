@@ -1,0 +1,70 @@
+---
+import { site } from '../../content/site';
+
+const avatarInitials = (name: string) => name.split(' ').map(n => n[0]).join('');
+const avatarColors = ['#6366f1', '#8b5cf6', '#a855f7'];
+---
+
+<section id="testimonials" class="section section-gradient" aria-labelledby="testimonials-headline">
+  <div class="container">
+
+    <div class="text-center max-w-xl mx-auto mb-16 testimonials-intro">
+      <p class="text-xs font-semibold text-indigo-400 uppercase tracking-widest mb-4">Social Proof</p>
+      <h2 id="testimonials-headline" class="text-headline text-white mb-5">
+        What growth teams are saying.
+      </h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+      {site.testimonials.map((t, i) => (
+        <div
+          class="card-premium p-7 flex flex-col testimonial-card"
+          style="position: relative; overflow: hidden;"
+        >
+          <!-- Quote mark -->
+          <div
+            class="absolute top-5 right-6 text-5xl font-serif leading-none pointer-events-none select-none"
+            style="color: rgba(99,102,241,0.12);"
+            aria-hidden="true"
+          >
+            &ldquo;
+          </div>
+
+          <!-- Stars -->
+          <div class="flex gap-1 mb-5" aria-label="5 out of 5 stars">
+            {Array.from({ length: 5 }).map(() => (
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="#facc15" aria-hidden="true">
+                <path d="M7 1l1.545 3.09L12 4.635l-2.5 2.437.59 3.428L7 8.77l-3.09 1.73.59-3.428L2 4.635l3.455-.545L7 1Z"/>
+              </svg>
+            ))}
+          </div>
+
+          <blockquote class="text-sm text-zinc-300 leading-relaxed flex-1 mb-6">
+            &ldquo;{t.quote}&rdquo;
+          </blockquote>
+
+          <div class="flex items-center gap-3">
+            <div
+              class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+              style={`background: ${avatarColors[i % avatarColors.length]};`}
+              aria-hidden="true"
+            >
+              {avatarInitials(t.author)}
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-white">{t.author}</p>
+              <p class="text-xs text-zinc-500">{t.role}, {t.company}</p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+  </div>
+</section>
+
+<script>
+  import { revealOnScroll, staggerCards } from '../../lib/motion/animations';
+  revealOnScroll('.testimonials-intro');
+  staggerCards('.testimonial-card', '.testimonial-card');
+</script>

@@ -1,0 +1,58 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+import Hero from '../components/sections/Hero.astro';
+import TrustStrip from '../components/sections/TrustStrip.astro';
+import Problem from '../components/sections/Problem.astro';
+import HowItWorks from '../components/sections/HowItWorks.astro';
+import Products from '../components/sections/Products.astro';
+import Showcase from '../components/sections/Showcase.astro';
+import Integrations from '../components/sections/Integrations.astro';
+import UseCases from '../components/sections/UseCases.astro';
+import Testimonials from '../components/sections/Testimonials.astro';
+import Stats from '../components/sections/Stats.astro';
+import FAQ from '../components/sections/FAQ.astro';
+import FinalCTA from '../components/sections/FinalCTA.astro';
+---
+
+<Layout>
+  <Header />
+  <main id="main-content">
+    <Hero />
+    <TrustStrip />
+    <Problem />
+    <HowItWorks />
+    <Products />
+    <Showcase />
+    <Integrations />
+    <UseCases />
+    <Testimonials />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<!-- Skip to main content link (accessibility) -->
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus {
+    top: 0;
+  }
+</style>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>

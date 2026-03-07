@@ -1,0 +1,30 @@
+---
+import { site } from '../../content/site';
+---
+
+<section
+  class="section-sm border-y"
+  style="border-color: rgba(255,255,255,0.06);"
+  aria-label="Trust metrics"
+>
+  <div class="container">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-0 md:divide-x md:divide-white/[0.06]">
+      {site.trustStrip.metrics.map((metric) => (
+        <div class="flex flex-col items-center text-center md:px-8 trust-metric">
+          <span
+            class="text-2xl sm:text-3xl font-bold mb-1"
+            style="background: linear-gradient(135deg, white 0%, rgba(255,255,255,0.75) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"
+          >
+            {metric.value}
+          </span>
+          <span class="text-xs sm:text-sm text-zinc-500 font-medium">{metric.label}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<script>
+  import { revealOnScroll } from '../../lib/motion/animations';
+  revealOnScroll('.trust-metric', { stagger: 0.1 });
+</script>

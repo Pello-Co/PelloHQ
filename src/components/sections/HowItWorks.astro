@@ -1,0 +1,127 @@
+---
+import { site } from '../../content/site';
+---
+
+<section id="how-it-works" class="section section-gradient" aria-labelledby="hiw-headline">
+  <div class="container">
+
+    <div class="text-center max-w-2xl mx-auto mb-16 hiw-intro">
+      <p class="text-xs font-semibold text-indigo-400 uppercase tracking-widest mb-4">How It Works</p>
+      <h2 id="hiw-headline" class="text-headline text-white mb-5">
+        {site.howItWorks.headline}
+      </h2>
+      <p class="text-body-lg text-zinc-400">
+        {site.howItWorks.subheadline}
+      </p>
+    </div>
+
+    <!-- Steps -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+
+      <!-- Connector line (desktop only) -->
+      <div
+        class="hidden md:block absolute top-16 left-1/4 right-1/4 h-px"
+        style="background: linear-gradient(90deg, transparent, rgba(99,102,241,0.3) 20%, rgba(99,102,241,0.3) 80%, transparent);"
+        aria-hidden="true"
+      ></div>
+
+      {site.howItWorks.steps.map((step) => (
+        <div class="flex flex-col items-center md:items-start text-center md:text-left hiw-step">
+
+          <!-- Step number with glow -->
+          <div class="relative mb-8">
+            <div
+              class="absolute inset-0 rounded-full blur-lg opacity-30"
+              style="background: #6366f1; transform: scale(1.4);"
+              aria-hidden="true"
+            ></div>
+            <div
+              class="relative w-14 h-14 rounded-full flex items-center justify-center font-mono text-sm font-bold text-white z-10"
+              style="background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); box-shadow: 0 0 20px rgba(99,102,241,0.4);"
+            >
+              {step.number}
+            </div>
+          </div>
+
+          <h3 class="text-lg font-semibold text-white mb-3">{step.title}</h3>
+          <p class="text-sm text-zinc-400 leading-relaxed max-w-xs">{step.description}</p>
+        </div>
+      ))}
+    </div>
+
+    <!-- Illustrative flow visual -->
+    <div class="mt-20 hiw-visual">
+      <div
+        class="relative rounded-2xl p-8 overflow-hidden"
+        style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);"
+      >
+        <!-- Glow backdrop -->
+        <div
+          class="absolute inset-0 opacity-20 pointer-events-none"
+          style="background: radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.3), transparent 70%);"
+          aria-hidden="true"
+        ></div>
+
+        <div class="relative grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-2 items-center">
+
+          <!-- Input -->
+          <div
+            class="flex flex-col items-center gap-3 p-5 rounded-xl text-center"
+            style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);"
+          >
+            <div
+              class="w-10 h-10 rounded-lg flex items-center justify-center"
+              style="background: rgba(99,102,241,0.15);"
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <path d="M3 9a6 6 0 1 1 12 0A6 6 0 0 1 3 9Z" stroke="#818cf8" stroke-width="1.25"/>
+                <path d="M9 9v-3M9 9l2 2" stroke="#818cf8" stroke-width="1.25" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div>
+              <p class="text-xs font-mono text-indigo-400 mb-0.5">yoursite.com</p>
+              <p class="text-xs text-zinc-500">Your website URL</p>
+            </div>
+          </div>
+
+          <!-- Arrow -->
+          <div class="flex items-center justify-center" aria-hidden="true">
+            <div class="flex items-center gap-1">
+              <div class="w-2 h-2 rounded-full bg-indigo-500 opacity-40"></div>
+              <div class="w-8 sm:w-full h-px" style="background: linear-gradient(90deg, rgba(99,102,241,0.4), rgba(168,85,247,0.4));"></div>
+              <div class="w-2 h-2 rounded-full bg-purple-500 opacity-40"></div>
+            </div>
+          </div>
+
+          <!-- Output -->
+          <div
+            class="flex flex-col items-center gap-3 p-5 rounded-xl text-center"
+            style="background: rgba(168,85,247,0.06); border: 1px solid rgba(168,85,247,0.15);"
+          >
+            <div
+              class="w-10 h-10 rounded-lg flex items-center justify-center"
+              style="background: rgba(168,85,247,0.12);"
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <path d="M2 4h14v2H2zM2 8h10v2H2zM2 12h12v2H2z" fill="#c084fc" opacity="0.8"/>
+              </svg>
+            </div>
+            <div>
+              <p class="text-xs font-semibold text-purple-300 mb-0.5">Personalised demos</p>
+              <p class="text-xs text-zinc-500">8 products, tailored to you</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<script>
+  import { revealOnScroll, staggerCards } from '../../lib/motion/animations';
+  revealOnScroll('.hiw-intro');
+  staggerCards('.hiw-step', '.hiw-step');
+  revealOnScroll('.hiw-visual', { delay: 0.2 });
+</script>

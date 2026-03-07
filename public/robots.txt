@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://pello.co/sitemap-index.xml
