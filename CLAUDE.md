@@ -30,6 +30,33 @@ All Pello products live on separate domains but share a single auth system (one 
 
 When pushing from this machine, always use the `github-pelloco` SSH host alias — the default `github.com` host is wired to a different key (GlobalPeptide).
 
+## Stack
+
+- **Framework:** Astro 5 (static output)
+- **Styles:** Tailwind CSS 4 (via `@tailwindcss/vite` Vite plugin)
+- **Animations:** GSAP 3 + ScrollTrigger
+- **Language:** TypeScript (strict)
+- **Testing:** Playwright + @axe-core/playwright
+- **CI:** GitHub Actions (`.github/workflows/ci.yml`)
+- **Performance:** Lighthouse CI (`lighthouserc.json`)
+
+## Commands
+
+```bash
+npm run dev       # Start dev server at http://localhost:4321
+npm run build     # Production build → dist/
+npm run check     # TypeScript type check
+npm run preview   # Preview production build
+npm run lint      # ESLint + Prettier check
+npm run format    # Auto-format with Prettier
+npm run test      # Run Playwright tests (requires: npm run build first)
+npm run lhci      # Run Lighthouse CI
+```
+
+## Content
+
+All marketing copy lives in `src/content/site.ts` — edit this file to update any text, links, or product information without touching components.
+
 ## Status
 
-This repository is in initial setup — no framework or build tooling has been chosen yet. Update this file with build/dev/test commands once the stack is decided.
+Website fully built and live on GitHub. All 14 sections implemented, 0 TypeScript errors, production build clean.
