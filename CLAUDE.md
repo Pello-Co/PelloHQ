@@ -8,6 +8,84 @@ This is the `pello.co` marketing website — the parent brand that unifies the f
 
 The site's core mechanic: users enter their website URL → AI scrapes and researches their business → Pello shows tailored, personalised demos of each product in the suite.
 
+## Documentation Invariance Rule
+
+`CLAUDE.md` is the authoritative documentation for this repository's architecture, product context, infrastructure, and development conventions.
+
+Any change that alters the structure, behaviour, or capabilities of the system MUST be reflected in this file in the same commit.
+
+This rule is mandatory.
+
+### Changes That REQUIRE Updating `CLAUDE.md`
+
+If any of the following are modified, added, or removed, the relevant section of this document must be updated.
+
+#### Product Layer
+- New Pello products
+- Renamed products
+- Removed products
+- Product capability changes
+- Product domain changes
+- Changes to cross-product architecture (auth, integrations, etc.)
+
+#### Architecture
+- Framework changes
+- Rendering model changes
+- Component architecture changes
+- Build pipeline changes
+- CI/CD changes
+- Major structural refactors
+
+#### Infrastructure
+- Hosting changes
+- CDN changes
+- environment changes
+- deployment pipeline changes
+- new infrastructure services
+
+#### Repository Structure
+- New major directories
+- Folder restructuring
+- Changes to project layout
+- New build tools or configuration files
+
+#### Development Tooling
+- Linting tools
+- testing frameworks
+- type systems
+- formatting rules
+- CI workflow changes
+
+#### Animation / UI Systems
+- Changes to the animation framework
+- New motion systems
+- Changes to the design system
+- New global UI architecture
+
+### Commit Policy
+
+Any commit that introduces one of the above changes MUST also update `CLAUDE.md` in the same commit.
+
+A change that modifies architecture, infrastructure, product structure, or repository layout without updating documentation is considered incomplete.
+
+### Documentation Principle
+
+`CLAUDE.md` must always accurately describe:
+- how the system works
+- how the repository is structured
+- how developers are expected to work within it
+
+If the repository and this document diverge, the document must be updated immediately.
+
+### Development Rule
+
+Do not:
+- introduce architectural or infrastructure changes without updating `CLAUDE.md`
+- leave this file outdated after structural changes
+
+Do:
+- update documentation in the same commit as the change
+
 ## Product Suite Context
 
 All Pello products live on separate domains but share a single auth system (one account across the whole suite):
