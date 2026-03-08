@@ -137,7 +137,7 @@ export const site = {
     },
     {
       name: 'PelloPitch',
-      url: 'https://pellopitch.co',
+      url: 'https://pellopitch.com',
       tagline: 'Landing pages that know your visitor',
       headline: 'Every visitor gets\ntheir own page.',
       description:
@@ -150,7 +150,7 @@ export const site = {
         'Real-time A/B testing',
         'Conversion optimisation engine',
       ],
-      cta: { label: 'Explore PelloPitch', href: 'https://pellopitch.co' },
+      cta: { label: 'Explore PelloPitch', href: 'https://pellopitch.com' },
     },
     {
       name: 'PelloAds',
@@ -361,7 +361,7 @@ export const site = {
       { label: 'PelloReach', href: 'https://pelloreach.com' },
       { label: 'PelloPublish', href: 'https://pellopublish.com' },
       { label: 'PelloSocial', href: '#products' },
-      { label: 'PelloPitch', href: 'https://pellopitch.co' },
+      { label: 'PelloPitch', href: 'https://pellopitch.com' },
       { label: 'PelloAds', href: '#products' },
       { label: 'PelloFlow', href: '#products' },
       { label: 'PelloBuild', href: '#products' },
