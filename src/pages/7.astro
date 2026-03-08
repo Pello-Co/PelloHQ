@@ -1,0 +1,816 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ConceptNav from '../components/hero-variants/ConceptNav.astro';
+---
+
+<Layout title="Pello — Concept 07: Product Constellation" noIndex={true}>
+  <main class="c7-hero" id="main-content">
+    <!-- Signal field background SVG -->
+    <div class="c7-field" aria-hidden="true">
+      <svg class="c7-field-svg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+        <!-- Radial arcs -->
+        <ellipse class="c7-arc" cx="600" cy="400" rx="140" ry="90" stroke="rgba(99,102,241,0.10)" stroke-width="1" fill="none"/>
+        <ellipse class="c7-arc" cx="600" cy="400" rx="240" ry="155" stroke="rgba(99,102,241,0.07)" stroke-width="1" fill="none"/>
+        <ellipse class="c7-arc" cx="600" cy="400" rx="360" ry="230" stroke="rgba(99,102,241,0.05)" stroke-width="1" fill="none"/>
+        <ellipse class="c7-arc" cx="600" cy="400" rx="500" ry="320" stroke="rgba(99,102,241,0.03)" stroke-width="1" fill="none"/>
+
+        <!-- Pulse rings from core -->
+        <circle class="c7-pulse-ring" cx="600" cy="400" r="50" stroke="#6366f1" stroke-width="1.2" fill="none" opacity="0.4"/>
+        <circle class="c7-pulse-ring c7-pr-2" cx="600" cy="400" r="50" stroke="#6366f1" stroke-width="1.2" fill="none" opacity="0.25"/>
+
+        <!-- Connector lines from core to product positions (animated) -->
+        <line class="c7-connector" x1="600" y1="400" x2="600" y2="80" stroke="url(#grad-seo)" stroke-width="1"/>
+        <line class="c7-connector" x1="600" y1="400" x2="920" y2="180" stroke="url(#grad-reach)" stroke-width="1"/>
+        <line class="c7-connector" x1="600" y1="400" x2="1020" y2="400" stroke="url(#grad-publish)" stroke-width="1"/>
+        <line class="c7-connector" x1="600" y1="400" x2="920" y2="620" stroke="url(#grad-social)" stroke-width="1"/>
+        <line class="c7-connector" x1="600" y1="400" x2="600" y2="720" stroke="url(#grad-pitch)" stroke-width="1"/>
+        <line class="c7-connector" x1="600" y1="400" x2="280" y2="620" stroke="url(#grad-ads)" stroke-width="1"/>
+        <line class="c7-connector" x1="600" y1="400" x2="180" y2="400" stroke="url(#grad-flow)" stroke-width="1"/>
+        <line class="c7-connector" x1="600" y1="400" x2="280" y2="180" stroke="url(#grad-build)" stroke-width="1"/>
+
+        <!-- Gradient defs for connectors -->
+        <defs>
+          <linearGradient id="grad-seo" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="rgba(99,102,241,0.3)"/><stop offset="100%" stop-color="rgba(99,102,241,0.02)"/></linearGradient>
+          <linearGradient id="grad-reach" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stop-color="rgba(139,92,246,0.3)"/><stop offset="100%" stop-color="rgba(139,92,246,0.02)"/></linearGradient>
+          <linearGradient id="grad-publish" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="rgba(168,85,247,0.3)"/><stop offset="100%" stop-color="rgba(168,85,247,0.02)"/></linearGradient>
+          <linearGradient id="grad-social" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="rgba(192,38,211,0.3)"/><stop offset="100%" stop-color="rgba(192,38,211,0.02)"/></linearGradient>
+          <linearGradient id="grad-pitch" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(217,70,239,0.3)"/><stop offset="100%" stop-color="rgba(217,70,239,0.02)"/></linearGradient>
+          <linearGradient id="grad-ads" x1="1" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(124,58,237,0.3)"/><stop offset="100%" stop-color="rgba(124,58,237,0.02)"/></linearGradient>
+          <linearGradient id="grad-flow" x1="1" y1="0" x2="0" y2="0"><stop offset="0%" stop-color="rgba(79,70,229,0.3)"/><stop offset="100%" stop-color="rgba(79,70,229,0.02)"/></linearGradient>
+          <linearGradient id="grad-build" x1="1" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="rgba(99,102,241,0.3)"/><stop offset="100%" stop-color="rgba(99,102,241,0.02)"/></linearGradient>
+        </defs>
+      </svg>
+    </div>
+
+    <!-- Core orb -->
+    <div class="c7-core" aria-hidden="true">
+      <div class="c7-core-outer"></div>
+      <div class="c7-core-mid"></div>
+      <div class="c7-core-inner"></div>
+    </div>
+
+    <!-- Product nodes ring -->
+    <div class="c7-products" aria-hidden="true">
+      <!-- PelloSEO — top -->
+      <div class="c7-node c7-n-0" data-color="#6366f1" style="--accent: #6366f1;">
+        <div class="c7-node-glow"></div>
+        <div class="c7-node-card">
+          <div class="c7-node-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/><path d="M11 8v6M8 11h6"/></svg>
+          </div>
+          <div class="c7-node-body">
+            <div class="c7-node-name">PelloSEO</div>
+            <div class="c7-node-stat">+340%</div>
+            <div class="c7-node-label">organic traffic</div>
+          </div>
+          <div class="c7-node-tagline">Programmatic SEO at scale</div>
+        </div>
+      </div>
+
+      <!-- PelloReach — top right -->
+      <div class="c7-node c7-n-1" data-color="#8b5cf6" style="--accent: #8b5cf6;">
+        <div class="c7-node-glow"></div>
+        <div class="c7-node-card">
+          <div class="c7-node-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 6l-10 7L2 6"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg>
+          </div>
+          <div class="c7-node-body">
+            <div class="c7-node-name">PelloReach</div>
+            <div class="c7-node-stat">4.2%</div>
+            <div class="c7-node-label">reply rate</div>
+          </div>
+          <div class="c7-node-tagline">Email outreach at massive scale</div>
+        </div>
+      </div>
+
+      <!-- PelloPublish — right -->
+      <div class="c7-node c7-n-2" data-color="#a855f7" style="--accent: #a855f7;">
+        <div class="c7-node-glow"></div>
+        <div class="c7-node-card">
+          <div class="c7-node-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </div>
+          <div class="c7-node-body">
+            <div class="c7-node-name">PelloPublish</div>
+            <div class="c7-node-stat">60/mo</div>
+            <div class="c7-node-label">content pieces</div>
+          </div>
+          <div class="c7-node-tagline">Content that creates itself</div>
+        </div>
+      </div>
+
+      <!-- PelloSocial — bottom right -->
+      <div class="c7-node c7-n-3" data-color="#c026d3" style="--accent: #c026d3;">
+        <div class="c7-node-glow"></div>
+        <div class="c7-node-card">
+          <div class="c7-node-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><path d="M12 8v4M7.5 17.2L10 14M16.5 17.2L14 14"/></svg>
+          </div>
+          <div class="c7-node-body">
+            <div class="c7-node-name">PelloSocial</div>
+            <div class="c7-node-stat">3.2k</div>
+            <div class="c7-node-label">accounts active</div>
+          </div>
+          <div class="c7-node-tagline">Social growth infrastructure</div>
+        </div>
+      </div>
+
+      <!-- PelloPitch — bottom -->
+      <div class="c7-node c7-n-4" data-color="#d946ef" style="--accent: #d946ef;">
+        <div class="c7-node-glow"></div>
+        <div class="c7-node-card">
+          <div class="c7-node-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+          </div>
+          <div class="c7-node-body">
+            <div class="c7-node-name">PelloPitch</div>
+            <div class="c7-node-stat">10.4%</div>
+            <div class="c7-node-label">conversion rate</div>
+          </div>
+          <div class="c7-node-tagline">Landing pages that know your visitor</div>
+        </div>
+      </div>
+
+      <!-- PelloAds — bottom left -->
+      <div class="c7-node c7-n-5" data-color="#7c3aed" style="--accent: #7c3aed;">
+        <div class="c7-node-glow"></div>
+        <div class="c7-node-card">
+          <div class="c7-node-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <div class="c7-node-body">
+            <div class="c7-node-name">PelloAds</div>
+            <div class="c7-node-stat">2.8x</div>
+            <div class="c7-node-label">avg ROAS</div>
+          </div>
+          <div class="c7-node-tagline">Test thousands. Scale the winners.</div>
+        </div>
+      </div>
+
+      <!-- PelloFlow — left -->
+      <div class="c7-node c7-n-6" data-color="#4f46e5" style="--accent: #4f46e5;">
+        <div class="c7-node-glow"></div>
+        <div class="c7-node-card">
+          <div class="c7-node-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+          </div>
+          <div class="c7-node-body">
+            <div class="c7-node-name">PelloFlow</div>
+            <div class="c7-node-stat">0</div>
+            <div class="c7-node-label">manual steps</div>
+          </div>
+          <div class="c7-node-tagline">Your business. Fully automated.</div>
+        </div>
+      </div>
+
+      <!-- PelloBuild — top left -->
+      <div class="c7-node c7-n-7" data-color="#6366f1" style="--accent: #6366f1;">
+        <div class="c7-node-glow"></div>
+        <div class="c7-node-card">
+          <div class="c7-node-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><line x1="14" y1="4" x2="10" y2="20"/></svg>
+          </div>
+          <div class="c7-node-body">
+            <div class="c7-node-name">PelloBuild</div>
+            <div class="c7-node-stat">&lt;2wk</div>
+            <div class="c7-node-label">first ship</div>
+          </div>
+          <div class="c7-node-tagline">Engineering for growth teams</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Central content -->
+    <div class="c7-content">
+      <div class="c7-eyebrow">
+        <span class="c7-eyebrow-pip"></span>
+        Now in Early Access
+      </div>
+
+      <h1 class="c7-headline">
+        Every growth channel.<br />
+        <span class="c7-gradient-text">One AI-powered platform.</span>
+      </h1>
+
+      <p class="c7-sub">
+        Pello unifies SEO, outreach, content, social, ads, and automation into a single growth engine.
+        Enter your website — our AI shows you exactly how each channel drives your growth.
+      </p>
+
+      <form class="c7-form" onsubmit="return false;" aria-label="Enter website URL for growth analysis">
+        <div class="c7-input-wrap">
+          <div class="c7-input-aura"></div>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="c7-input-icon" aria-hidden="true">
+            <circle cx="8" cy="8" r="6.5" stroke="#52525b" stroke-width="1.2"/>
+            <path d="M8 1.5C8 1.5 6 4 6 8s2 6.5 2 6.5M8 1.5C8 1.5 10 4 10 8s-2 6.5-2 6.5M1.5 8h13" stroke="#52525b" stroke-width="1.2"/>
+          </svg>
+          <input
+            type="url"
+            placeholder="https://yoursite.com"
+            class="c7-input"
+            aria-label="Your website URL"
+            id="c7-input"
+          />
+        </div>
+        <button type="submit" class="c7-cta">
+          See Your Growth Plan
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M2.5 7h9M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <p class="c7-micro">Free analysis — no signup required.</p>
+      </form>
+    </div>
+
+    <ConceptNav current={7} />
+  </main>
+</Layout>
+
+<style>
+  .c7-hero {
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: #080810;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+    padding: 2rem;
+  }
+
+  /* Signal field background */
+  .c7-field {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .c7-field-svg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .c7-pulse-ring {
+    transform-origin: 600px 400px;
+    animation: c7PulseRing 4s ease-out infinite;
+  }
+
+  .c7-pr-2 {
+    animation-delay: 2s;
+  }
+
+  @keyframes c7PulseRing {
+    0% { r: 50; opacity: 0.4; }
+    100% { r: 500; opacity: 0; }
+  }
+
+  /* Connectors — hidden initially, drawn by GSAP */
+  .c7-connector {
+    stroke-dasharray: 500;
+    stroke-dashoffset: 500;
+  }
+
+  /* Core orb */
+  .c7-core {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .c7-core-outer {
+    position: absolute;
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(99,102,241,0.07) 0%, transparent 70%);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: c7CoreBreath 5s ease-in-out infinite;
+  }
+
+  .c7-core-mid {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 70%);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: c7CoreBreath 5s ease-in-out infinite reverse;
+  }
+
+  .c7-core-inner {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(99,102,241,0.6) 0%, rgba(99,102,241,0.15) 100%);
+    border: 1.5px solid rgba(99,102,241,0.5);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: c7CorePulse 2.5s ease-in-out infinite;
+  }
+
+  @keyframes c7CoreBreath {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.12); }
+  }
+
+  @keyframes c7CorePulse {
+    0%, 100% { box-shadow: 0 0 16px rgba(99,102,241,0.5); }
+    50% { box-shadow: 0 0 32px rgba(99,102,241,0.9), 0 0 60px rgba(99,102,241,0.2); }
+  }
+
+  /* Product nodes container */
+  .c7-products {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  /* Individual product node */
+  .c7-node {
+    position: absolute;
+    pointer-events: auto;
+    opacity: 0;
+    transform: scale(0.6);
+    cursor: default;
+  }
+
+  .c7-node-glow {
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+    opacity: 0.08;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.4s, width 0.4s, height 0.4s;
+    pointer-events: none;
+  }
+
+  .c7-node:hover .c7-node-glow {
+    opacity: 0.18;
+    width: 160px;
+    height: 160px;
+  }
+
+  .c7-node-card {
+    position: relative;
+    background: rgba(255,255,255,0.025);
+    border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+    border-radius: 1rem;
+    padding: 1rem 1.125rem;
+    min-width: 155px;
+    backdrop-filter: blur(8px);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+                border-color 0.3s,
+                box-shadow 0.3s,
+                background 0.3s;
+  }
+
+  .c7-node:hover .c7-node-card {
+    transform: scale(1.06);
+    border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+    box-shadow: 0 0 30px color-mix(in srgb, var(--accent) 15%, transparent),
+                0 8px 32px rgba(0,0,0,0.4);
+    background: rgba(255,255,255,0.04);
+  }
+
+  .c7-node-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 0.5rem;
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    margin-bottom: 0.625rem;
+  }
+
+  .c7-node-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .c7-node-body {
+    margin-bottom: 0.375rem;
+  }
+
+  .c7-node-name {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.01em;
+    margin-bottom: 0.25rem;
+  }
+
+  .c7-node-stat {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #f4f4f8;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 0.125rem;
+  }
+
+  .c7-node-label {
+    font-size: 0.625rem;
+    color: rgba(255,255,255,0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 500;
+  }
+
+  .c7-node-tagline {
+    font-size: 0.625rem;
+    color: rgba(255,255,255,0.2);
+    line-height: 1.3;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.35s, opacity 0.3s, margin-top 0.3s;
+    margin-top: 0;
+  }
+
+  .c7-node:hover .c7-node-tagline {
+    max-height: 2rem;
+    opacity: 1;
+    margin-top: 0.375rem;
+  }
+
+  /* Node positions — elliptical layout */
+  .c7-n-0 { top: 4%;   left: 50%;  transform-origin: center; translate: -50% 0; }
+  .c7-n-1 { top: 14%;  right: 6%;  }
+  .c7-n-2 { top: 44%;  right: 2%;  }
+  .c7-n-3 { bottom: 10%; right: 8%; }
+  .c7-n-4 { bottom: 2%; left: 50%; translate: -50% 0; }
+  .c7-n-5 { bottom: 10%; left: 8%; }
+  .c7-n-6 { top: 44%;  left: 2%;   }
+  .c7-n-7 { top: 14%;  left: 6%;   }
+
+  /* Central content */
+  .c7-content {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    max-width: 560px;
+    padding: 1rem;
+  }
+
+  .c7-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    color: rgba(255,255,255,0.35);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  .c7-eyebrow-pip {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #6366f1;
+    box-shadow: 0 0 8px rgba(99,102,241,0.8);
+  }
+
+  .c7-headline {
+    font-size: clamp(2rem, 4.5vw, 3.25rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    color: #f4f4f8;
+    margin-bottom: 1.25rem;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  .c7-gradient-text {
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #d946ef 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .c7-sub {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: #52525b;
+    margin-bottom: 2rem;
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  /* Form */
+  .c7-form {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  .c7-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 0.875rem;
+    padding: 0.875rem 1.125rem;
+    margin-bottom: 0.75rem;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .c7-input-wrap:focus-within {
+    border-color: rgba(99,102,241,0.4);
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.1), 0 0 20px rgba(99,102,241,0.06);
+  }
+
+  .c7-input-aura {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(99,102,241,0.04), transparent);
+    transform: translateX(-100%);
+    pointer-events: none;
+  }
+
+  .c7-input-wrap:focus-within .c7-input-aura {
+    animation: c7InputSweep 2s ease-in-out infinite;
+  }
+
+  @keyframes c7InputSweep {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(200%); }
+  }
+
+  .c7-input-icon { flex-shrink: 0; }
+
+  .c7-input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: #f4f4f8;
+    font-size: 0.9375rem;
+    font-family: inherit;
+    text-align: center;
+  }
+
+  .c7-input::placeholder { color: #3f3f46; }
+
+  .c7-cta {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    padding: 0.875rem 1.5rem;
+    border-radius: 0.875rem;
+    border: none;
+    cursor: pointer;
+    margin-bottom: 0.75rem;
+    transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+    font-family: inherit;
+    letter-spacing: -0.01em;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .c7-cta::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%);
+    transform: translateX(-100%);
+    transition: transform 0.6s;
+  }
+
+  .c7-cta:hover::after { transform: translateX(100%); }
+  .c7-cta:hover { opacity: 0.92; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(99,102,241,0.3); }
+  .c7-cta:active { transform: translateY(0); }
+  .c7-cta:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
+
+  .c7-micro {
+    font-size: 0.78rem;
+    color: #3f3f46;
+  }
+
+  /* Responsive — tablet */
+  @media (max-width: 1024px) {
+    .c7-node-card {
+      min-width: 130px;
+      padding: 0.75rem 0.875rem;
+    }
+
+    .c7-node-stat {
+      font-size: 1.25rem;
+    }
+
+    .c7-n-0 { top: 2%;   }
+    .c7-n-1 { top: 12%;  right: 2%;  }
+    .c7-n-2 { top: 42%;  right: 0%;  }
+    .c7-n-3 { bottom: 8%; right: 2%; }
+    .c7-n-4 { bottom: 0%; }
+    .c7-n-5 { bottom: 8%; left: 2%; }
+    .c7-n-6 { top: 42%;  left: 0%;  }
+    .c7-n-7 { top: 12%;  left: 2%;  }
+  }
+
+  /* Responsive — mobile: stack products in scrollable rows */
+  @media (max-width: 768px) {
+    .c7-hero {
+      flex-direction: column;
+      padding: 6rem 1rem 2rem;
+      min-height: auto;
+    }
+
+    .c7-content {
+      order: 1;
+      padding: 0 0.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .c7-products {
+      position: relative;
+      inset: auto;
+      order: 2;
+      display: flex;
+      gap: 0.75rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 1rem 0.5rem;
+      pointer-events: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      width: 100%;
+    }
+
+    .c7-products::-webkit-scrollbar { display: none; }
+
+    .c7-node {
+      position: relative;
+      top: auto !important;
+      bottom: auto !important;
+      left: auto !important;
+      right: auto !important;
+      translate: none !important;
+      flex-shrink: 0;
+    }
+
+    .c7-node-card {
+      min-width: 140px;
+    }
+
+    .c7-node-glow {
+      display: none;
+    }
+
+    .c7-core {
+      display: none;
+    }
+
+    .c7-field {
+      opacity: 0.5;
+    }
+
+    .c7-node-tagline {
+      max-height: 2rem;
+      opacity: 0.7;
+      margin-top: 0.375rem;
+    }
+  }
+</style>
+
+<script>
+  import gsap from 'gsap';
+
+  gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
+    const tl = gsap.timeline({ delay: 0.3 });
+
+    // 1. Content reveal
+    tl.to('.c7-eyebrow', { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' })
+      .to('.c7-headline', { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }, '-=0.25')
+      .to('.c7-sub', { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, '-=0.25')
+      .to('.c7-form', { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, '-=0.15');
+
+    // 2. Connector lines draw from core outward
+    tl.to('.c7-connector', {
+      strokeDashoffset: 0,
+      duration: 1.2,
+      stagger: { amount: 0.6, from: 'start' },
+      ease: 'power2.inOut'
+    }, 0.8);
+
+    // 3. Product nodes scale + fade in with glow
+    tl.to('.c7-node', {
+      opacity: 1,
+      scale: 1,
+      duration: 0.7,
+      stagger: { amount: 0.8, from: 'center' },
+      ease: 'back.out(1.6)'
+    }, 1.2);
+
+    // Ambient: product nodes gentle float
+    gsap.to('.c7-node', {
+      y: (i: number) => [-5, 4, -6, 5, -4, 6, -5, 4][i] || 0,
+      duration: (i: number) => [3.8, 4.2, 3.5, 4.5, 3.6, 4.1, 3.9, 4.3][i] || 4,
+      repeat: -1,
+      yoyo: true,
+      ease: 'sine.inOut',
+      stagger: { amount: 1.5, from: 'random' },
+      delay: 3
+    });
+
+    // Mouse parallax on nodes
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    if (!isMobile) {
+      document.addEventListener('mousemove', (e: MouseEvent) => {
+        const cx = window.innerWidth / 2;
+        const cy = window.innerHeight / 2;
+        const dx = (e.clientX - cx) / cx;
+        const dy = (e.clientY - cy) / cy;
+
+        gsap.to('.c7-node', {
+          x: (i: number) => dx * [-10, 12, 14, -12, 10, -14, 12, -10][i],
+          y: (i: number) => dy * [-8, 10, -8, 11, -9, 8, -10, 9][i],
+          duration: 1.8,
+          ease: 'power1.out',
+          overwrite: 'auto'
+        });
+
+        // Subtle parallax on core
+        gsap.to('.c7-core', {
+          x: dx * -4,
+          y: dy * -4,
+          duration: 2,
+          ease: 'power1.out',
+          overwrite: 'auto'
+        });
+      });
+    }
+
+    // Input focus: energise core
+    const input = document.getElementById('c7-input');
+    if (input) {
+      input.addEventListener('focus', () => {
+        gsap.to('.c7-core-inner', {
+          boxShadow: '0 0 40px rgba(99,102,241,1), 0 0 80px rgba(99,102,241,0.4)',
+          scale: 1.2,
+          duration: 0.6,
+          ease: 'power2.out'
+        });
+        gsap.to('.c7-connector', {
+          opacity: 1,
+          strokeWidth: 1.5,
+          duration: 0.4,
+          ease: 'power2.out'
+        });
+      });
+
+      input.addEventListener('blur', () => {
+        gsap.to('.c7-core-inner', {
+          boxShadow: '0 0 16px rgba(99,102,241,0.5)',
+          scale: 1,
+          duration: 0.6,
+          ease: 'power2.out'
+        });
+        gsap.to('.c7-connector', {
+          strokeWidth: 1,
+          duration: 0.4,
+          ease: 'power2.out'
+        });
+      });
+    }
+  });
+
+  // Reduced motion: show everything immediately
+  gsap.matchMedia().add('(prefers-reduced-motion: reduce)', () => {
+    gsap.set(['.c7-eyebrow', '.c7-headline', '.c7-sub', '.c7-form'], { opacity: 1, y: 0 });
+    gsap.set('.c7-node', { opacity: 1, scale: 1 });
+    gsap.set('.c7-connector', { strokeDashoffset: 0 });
+  });
+</script>
