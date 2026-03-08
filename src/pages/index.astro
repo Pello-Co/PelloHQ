@@ -3,14 +3,9 @@ import Layout from '../layouts/Layout.astro';
 import Header from '../components/layout/Header.astro';
 import Footer from '../components/layout/Footer.astro';
 import Hero from '../components/sections/Hero.astro';
-import TrustStrip from '../components/sections/TrustStrip.astro';
-import Problem from '../components/sections/Problem.astro';
 import HowItWorks from '../components/sections/HowItWorks.astro';
-import Products from '../components/sections/Products.astro';
-import Showcase from '../components/sections/Showcase.astro';
-import Integrations from '../components/sections/Integrations.astro';
+import ProductSection from '../components/sections/ProductSection.astro';
 import UseCases from '../components/sections/UseCases.astro';
-import Testimonials from '../components/sections/Testimonials.astro';
 import Stats from '../components/sections/Stats.astro';
 import FAQ from '../components/sections/FAQ.astro';
 import FinalCTA from '../components/sections/FinalCTA.astro';
@@ -19,17 +14,34 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
 <Layout>
   <Header />
   <main id="main-content">
+    <!-- Section 1: Hero -->
     <Hero />
-    <TrustStrip />
-    <Problem />
+
+    <!-- Section 2: How It Works -->
     <HowItWorks />
-    <Products />
-    <Showcase />
-    <Integrations />
+
+    <!-- Sections 3–10: Individual product showcases (alternating layout) -->
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <!-- Section 11: Use Cases -->
     <UseCases />
-    <Testimonials />
+
+    <!-- Section 12: Stats -->
     <Stats />
+
+    <!-- Section 13: FAQ -->
     <FAQ />
+
+    <!-- Section 14: Final CTA -->
     <FinalCTA />
   </main>
   <Footer />

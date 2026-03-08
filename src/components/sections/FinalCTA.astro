@@ -13,11 +13,10 @@ import { site } from '../../content/site';
         class="absolute inset-0 pointer-events-none"
         style="background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(99,102,241,0.15), transparent 70%);"
         aria-hidden="true"
-      ></div>
-      <div
-        class="absolute inset-0 pointer-events-none grid-texture opacity-30"
-        aria-hidden="true"
-      ></div>
+      >
+      </div>
+      <div class="absolute inset-0 pointer-events-none grid-texture opacity-30" aria-hidden="true">
+      </div>
 
       <div class="relative">
         <!-- Badge -->
@@ -58,7 +57,12 @@ import { site } from '../../content/site';
           <button type="submit" class="btn-primary py-2.5 px-5 text-sm">
             {site.finalCta.cta}
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-              <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path
+                d="M2 7h10M8 3l4 4-4 4"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"></path>
             </svg>
           </button>
         </form>
@@ -68,18 +72,22 @@ import { site } from '../../content/site';
         <p class="text-xs text-zinc-600">{site.finalCta.note}</p>
 
         <!-- Trust signals row -->
-        <div class="flex flex-wrap items-center justify-center gap-6 mt-10 pt-10 border-t border-white/[0.08]">
-          {[
-            { icon: '🔒', label: 'Secure & private' },
-            { icon: '⚡', label: 'Analysis in 60 seconds' },
-            { icon: '🎯', label: 'Tailored to your business' },
-            { icon: '🚀', label: 'No sales call needed' },
-          ].map((item) => (
-            <div class="flex items-center gap-2 text-xs text-zinc-500">
-              <span aria-hidden="true">{item.icon}</span>
-              <span>{item.label}</span>
-            </div>
-          ))}
+        <div
+          class="flex flex-wrap items-center justify-center gap-6 mt-10 pt-10 border-t border-white/[0.08]"
+        >
+          {
+            [
+              { icon: '🔒', label: 'Secure & private' },
+              { icon: '⚡', label: 'Analysis in 60 seconds' },
+              { icon: '🎯', label: 'Tailored to your business' },
+              { icon: '🚀', label: 'No sales call needed' },
+            ].map((item) => (
+              <div class="flex items-center gap-2 text-xs text-zinc-500">
+                <span aria-hidden="true">{item.icon}</span>
+                <span>{item.label}</span>
+              </div>
+            ))
+          }
         </div>
       </div>
     </div>

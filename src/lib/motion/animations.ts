@@ -19,7 +19,8 @@ export function revealOnScroll(
 ) {
   const { stagger = 0.1, delay = 0, start = 'top 88%' } = opts;
 
-  const triggerTarget = typeof elements === 'string' ? elements : (elements instanceof Element ? elements : undefined);
+  const triggerTarget =
+    typeof elements === 'string' ? elements : elements instanceof Element ? elements : undefined;
 
   mm.add('(prefers-reduced-motion: no-preference)', () => {
     gsap.from(elements, {
@@ -74,7 +75,11 @@ export function heroEntrance(targets: {
       tl.from(targets.ctas, { opacity: 0, y: 20, duration: 0.55 }, '-=0.45');
     }
     if (targets.visual) {
-      tl.from(targets.visual, { opacity: 0, scale: 0.96, duration: 1.1, ease: 'power2.out' }, '-=0.6');
+      tl.from(
+        targets.visual,
+        { opacity: 0, scale: 0.96, duration: 1.1, ease: 'power2.out' },
+        '-=0.6'
+      );
     }
   });
 

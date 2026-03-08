@@ -1,83 +1,82 @@
 ---
 import { site } from '../../content/site';
 
-const icons = [
-  // Founders
+const personaIcons: string[] = [
   `<path d="M12 2a5 5 0 1 0 0 10A5 5 0 0 0 12 2ZM4 20a8 8 0 0 1 16 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
-  // Marketing teams
   `<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
-  // Agencies
   `<rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M16 7V5a2 2 0 0 0-4 0v2M12 12v4M10 14h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
 ];
+
+const personaAccents = ['#6366f1', '#8b5cf6', '#a855f7'];
 ---
 
-<section id="use-cases" class="section" aria-labelledby="use-cases-headline">
+<section id="use-cases" class="section" aria-labelledby="uc-headline">
   <div class="container">
-
-    <div class="text-center max-w-2xl mx-auto mb-16 use-cases-intro">
-      <p class="text-xs font-semibold text-indigo-400 uppercase tracking-widest mb-4">Who It's For</p>
-      <h2 id="use-cases-headline" class="text-headline text-white mb-5">
-        Built for the teams<br />
-        <span class="gradient-text">driving growth.</span>
+    <div class="text-center max-w-2xl mx-auto mb-16 uc-intro">
+      <p class="text-xs font-semibold text-indigo-400 uppercase tracking-widest mb-4">
+        Who It's For
+      </p>
+      <h2 id="uc-headline" class="text-headline text-white mb-5">
+        Built for teams that move fast.
       </h2>
+      <p class="text-body-lg text-zinc-400">
+        Whether you're a solo founder or a 50-person agency, Pello gives you the infrastructure to
+        grow at scale.
+      </p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-      {site.useCases.map((useCase, i) => (
-        <div
-          class="card-premium p-8 use-case-card"
-          style="position: relative; overflow: hidden;"
-        >
-          <!-- Top accent line -->
+      {
+        site.useCases.map((uc, i) => (
           <div
-            class="absolute top-0 left-0 right-0 h-px"
-            style="background: linear-gradient(90deg, transparent, rgba(99,102,241,0.5), transparent);"
-            aria-hidden="true"
-          ></div>
-
-          <!-- Icon -->
-          <div
-            class="w-11 h-11 rounded-xl flex items-center justify-center mb-6"
-            style="background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2); color: #818cf8;"
+            class="uc-card card-premium p-8 flex flex-col"
+            style={`position: relative; overflow: hidden;`}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" set:html={icons[i] ?? ''} />
+            <div
+              class="absolute top-0 left-0 right-0 h-px"
+              style={`background: linear-gradient(90deg, transparent, ${personaAccents[i]}60, transparent);`}
+              aria-hidden="true"
+            />
+            <div
+              class="w-12 h-12 rounded-xl flex items-center justify-center mb-6 flex-shrink-0"
+              style={`background: ${personaAccents[i]}18; border: 1px solid ${personaAccents[i]}28; color: ${personaAccents[i]};`}
+            >
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+                set:html={personaIcons[i] ?? ''}
+              />
+            </div>
+            <p
+              class="text-xs font-semibold uppercase tracking-widest mb-3"
+              style={`color: ${personaAccents[i]};`}
+            >
+              {uc.persona}
+            </p>
+            <h3 class="text-title text-white mb-4 leading-snug">{uc.headline}</h3>
+            <p class="text-sm text-zinc-400 leading-relaxed mb-7 flex-1">{uc.description}</p>
+            <ul class="flex flex-wrap gap-1.5 list-none m-0 p-0" role="list">
+              {uc.tags.map((tag) => (
+                <li
+                  class="text-xs px-2.5 py-1 rounded-full font-medium"
+                  style={`background: ${personaAccents[i]}0d; color: ${personaAccents[i]}; border: 1px solid ${personaAccents[i]}25;`}
+                >
+                  {tag}
+                </li>
+              ))}
+            </ul>
           </div>
-
-          <div
-            class="text-xs font-bold uppercase tracking-widest mb-3"
-            style="color: #818cf8;"
-          >
-            {useCase.persona}
-          </div>
-
-          <h3 class="text-base font-semibold text-white mb-4 leading-snug">
-            {useCase.headline}
-          </h3>
-
-          <p class="text-sm text-zinc-400 leading-relaxed mb-6">
-            {useCase.description}
-          </p>
-
-          <!-- Tags -->
-          <div class="flex flex-wrap gap-2">
-            {useCase.tags.map((tag) => (
-              <span
-                class="text-xs px-2.5 py-1 rounded-full font-medium"
-                style="background: rgba(99,102,241,0.08); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.2);"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        </div>
-      ))}
+        ))
+      }
     </div>
-
   </div>
 </section>
 
 <script>
   import { revealOnScroll, staggerCards } from '../../lib/motion/animations';
-  revealOnScroll('.use-cases-intro');
-  staggerCards('.use-case-card', '.use-case-card');
+  revealOnScroll('.uc-intro');
+  staggerCards('.uc-card', '.uc-card');
 </script>

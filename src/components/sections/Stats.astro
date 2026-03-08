@@ -4,41 +4,56 @@ import { site } from '../../content/site';
 
 <section id="stats" class="section" aria-labelledby="stats-headline">
   <div class="container">
-
     <div class="text-center max-w-xl mx-auto mb-14 stats-intro">
-      <p class="text-xs font-semibold text-indigo-400 uppercase tracking-widest mb-4">By The Numbers</p>
-      <h2 id="stats-headline" class="text-headline text-white mb-5">
-        Results that compound.
-      </h2>
+      <p class="text-xs font-semibold text-indigo-400 uppercase tracking-widest mb-4">
+        By The Numbers
+      </p>
+      <h2 id="stats-headline" class="text-headline text-white mb-5">Results that compound.</h2>
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {site.stats.map((stat) => (
-        <div
-          class="stat-card p-7 rounded-2xl text-center"
-          style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); position: relative; overflow: hidden;"
-        >
-          <!-- Background glow -->
+      {
+        site.stats.map((stat) => (
           <div
-            class="absolute inset-0 pointer-events-none"
-            style="background: radial-gradient(ellipse at 50% 100%, rgba(99,102,241,0.08), transparent 70%);"
-            aria-hidden="true"
-          ></div>
-
-          <div class="relative">
-            <div class="stat-number mb-2">{stat.value}</div>
-            <p class="text-sm font-semibold text-zinc-300 mb-1.5">{stat.label}</p>
-            <p class="text-xs text-zinc-600 leading-relaxed">{stat.description}</p>
+            class="stat-card p-7 rounded-2xl text-center"
+            style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); position: relative; overflow: hidden;"
+          >
+            <div
+              class="absolute inset-0 pointer-events-none"
+              style="background: radial-gradient(ellipse at 50% 100%, rgba(99,102,241,0.08), transparent 70%);"
+              aria-hidden="true"
+            />
+            <div class="relative">
+              <div
+                class="stat-number mb-2"
+                data-counter={stat.value.replace(/[^0-9.]/g, '')}
+                data-suffix={stat.suffix}
+              >
+                {stat.value}
+                {stat.suffix}
+              </div>
+              <p class="text-sm font-semibold text-zinc-300 mb-1.5">{stat.label}</p>
+              <p class="text-xs text-zinc-600 leading-relaxed">{stat.description}</p>
+            </div>
           </div>
-        </div>
-      ))}
+        ))
+      }
     </div>
-
   </div>
 </section>
 
 <script>
-  import { revealOnScroll, staggerCards } from '../../lib/motion/animations';
+  import { revealOnScroll, staggerCards, animateCounter } from '../../lib/motion/animations';
+
   revealOnScroll('.stats-intro');
   staggerCards('.stat-card', '.stat-card');
+
+  document.querySelectorAll<HTMLElement>('[data-counter]').forEach((el) => {
+    const raw = el.getAttribute('data-counter') ?? '0';
+    const suffix = el.getAttribute('data-suffix') ?? '';
+    const end = parseFloat(raw);
+    if (!isNaN(end)) {
+      animateCounter(el, end, suffix);
+    }
+  });
 </script>

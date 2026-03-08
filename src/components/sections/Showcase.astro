@@ -4,9 +4,10 @@
 
 <section id="showcase" class="section" aria-labelledby="showcase-headline">
   <div class="container">
-
     <div class="text-center max-w-2xl mx-auto mb-16 showcase-intro">
-      <p class="text-xs font-semibold text-indigo-400 uppercase tracking-widest mb-4">See It In Action</p>
+      <p class="text-xs font-semibold text-indigo-400 uppercase tracking-widest mb-4">
+        See It In Action
+      </p>
       <h2 id="showcase-headline" class="text-headline text-white mb-5">
         What Pello looks like<br />
         <span class="gradient-text">working for you.</span>
@@ -18,33 +19,62 @@
 
     <!-- Showcase panels -->
     <div class="flex flex-col gap-6" id="showcase-panels">
-
       <!-- Panel 1: PelloSEO -->
-      <div class="showcase-panel rounded-2xl overflow-hidden" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);">
+      <div
+        class="showcase-panel rounded-2xl overflow-hidden"
+        style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);"
+      >
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-0">
           <!-- Copy side -->
           <div class="p-8 lg:p-10 flex flex-col justify-center">
-            <div class="badge mb-5 self-start" style="background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.25); color: #a5b4fc;">
+            <div
+              class="badge mb-5 self-start"
+              style="background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.25); color: #a5b4fc;"
+            >
               PelloSEO
             </div>
-            <h3 class="text-title text-white mb-4">
-              From 200 pages to 10,000+ in weeks.
-            </h3>
+            <h3 class="text-title text-white mb-4">From 200 pages to 10,000+ in weeks.</h3>
             <p class="text-sm text-zinc-400 leading-relaxed mb-6">
-              PelloSEO learns your business, generates hundreds of intelligent page templates,
-              and publishes thousands of location, category, and use-case pages — automatically
-              and across every language your market speaks.
+              PelloSEO learns your business, generates hundreds of intelligent page templates, and
+              publishes thousands of location, category, and use-case pages — automatically and
+              across every language your market speaks.
             </p>
             <ul class="flex flex-col gap-2.5 list-none m-0 p-0">
-              {['10k+ pages generated automatically', 'Multi-language and multi-region', 'AI-optimised for ranking and conversion', 'Low client effort — approve, then done'].map((item) => (
-                <li class="flex items-center gap-2.5 text-sm text-zinc-300">
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" class="flex-shrink-0">
-                    <circle cx="7" cy="7" r="6.5" fill="rgba(99,102,241,0.15)" stroke="rgba(99,102,241,0.3)"/>
-                    <path d="M4.5 7l2 2 3-3" stroke="#818cf8" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  {item}
-                </li>
-              ))}
+              {
+                [
+                  '10k+ pages generated automatically',
+                  'Multi-language and multi-region',
+                  'AI-optimised for ranking and conversion',
+                  'Low client effort — approve, then done',
+                ].map((item) => (
+                  <li class="flex items-center gap-2.5 text-sm text-zinc-300">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 14 14"
+                      fill="none"
+                      aria-hidden="true"
+                      class="flex-shrink-0"
+                    >
+                      <circle
+                        cx="7"
+                        cy="7"
+                        r="6.5"
+                        fill="rgba(99,102,241,0.15)"
+                        stroke="rgba(99,102,241,0.3)"
+                      />
+                      <path
+                        d="M4.5 7l2 2 3-3"
+                        stroke="#818cf8"
+                        stroke-width="1.25"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                    {item}
+                  </li>
+                ))
+              }
             </ul>
           </div>
 
@@ -61,17 +91,23 @@
               >
                 <div class="flex items-center justify-between mb-4">
                   <p class="text-xs font-semibold text-indigo-300">Organic traffic growth</p>
-                  <span class="text-xs text-emerald-400 font-medium" style="background: rgba(52,211,153,0.1); padding: 2px 8px; border-radius: 4px;">+340%</span>
+                  <span
+                    class="text-xs text-emerald-400 font-medium"
+                    style="background: rgba(52,211,153,0.1); padding: 2px 8px; border-radius: 4px;"
+                    >+340%</span
+                  >
                 </div>
                 <!-- Mini chart bars -->
                 <div class="flex items-end gap-1.5 h-20">
-                  {[20, 28, 25, 35, 30, 45, 42, 58, 55, 72, 68, 88].map((h, i) => (
-                    <div
-                      class="flex-1 rounded-t"
-                      style={`height: ${h}%; background: ${i >= 6 ? 'linear-gradient(180deg, #6366f1, #a855f7)' : 'rgba(255,255,255,0.08)'};`}
-                      aria-hidden="true"
-                    ></div>
-                  ))}
+                  {
+                    [20, 28, 25, 35, 30, 45, 42, 58, 55, 72, 68, 88].map((h, i) => (
+                      <div
+                        class="flex-1 rounded-t"
+                        style={`height: ${h}%; background: ${i >= 6 ? 'linear-gradient(180deg, #6366f1, #a855f7)' : 'rgba(255,255,255,0.08)'};`}
+                        aria-hidden="true"
+                      />
+                    ))
+                  }
                 </div>
                 <div class="flex justify-between mt-2 text-xs text-zinc-600">
                   <span>Week 1</span>
@@ -81,20 +117,22 @@
 
               <!-- Page count -->
               <div class="grid grid-cols-2 gap-3 mt-3">
-                {[
-                  { label: 'Pages published', value: '10,847' },
-                  { label: 'Languages', value: '14' },
-                  { label: 'Keywords ranking', value: '3,290' },
-                  { label: 'Avg. position', value: '4.2' },
-                ].map((s) => (
-                  <div
-                    class="p-3 rounded-lg text-center"
-                    style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);"
-                  >
-                    <p class="text-base font-bold text-white">{s.value}</p>
-                    <p class="text-xs text-zinc-500 mt-0.5">{s.label}</p>
-                  </div>
-                ))}
+                {
+                  [
+                    { label: 'Pages published', value: '10,847' },
+                    { label: 'Languages', value: '14' },
+                    { label: 'Keywords ranking', value: '3,290' },
+                    { label: 'Avg. position', value: '4.2' },
+                  ].map((s) => (
+                    <div
+                      class="p-3 rounded-lg text-center"
+                      style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);"
+                    >
+                      <p class="text-base font-bold text-white">{s.value}</p>
+                      <p class="text-xs text-zinc-500 mt-0.5">{s.label}</p>
+                    </div>
+                  ))
+                }
               </div>
             </div>
           </div>
@@ -102,7 +140,10 @@
       </div>
 
       <!-- Panel 2: PelloReach -->
-      <div class="showcase-panel rounded-2xl overflow-hidden" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);">
+      <div
+        class="showcase-panel rounded-2xl overflow-hidden"
+        style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07);"
+      >
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-0">
           <!-- Visual side (left on this panel) -->
           <div
@@ -116,27 +157,29 @@
               >
                 <p class="text-xs font-semibold text-violet-300 mb-4">Active outreach campaigns</p>
                 <div class="flex flex-col gap-2">
-                  {[
-                    { domain: 'reach-01.io', status: 'Warmed', sent: '1,204', replies: '8.3%' },
-                    { domain: 'outpro-07.co', status: 'Warmed', sent: '987', replies: '9.1%' },
-                    { domain: 'pitchsend-03.com', status: 'Warming', sent: '231', replies: '—' },
-                  ].map((row) => (
-                    <div
-                      class="flex items-center justify-between p-2.5 rounded-lg text-xs"
-                      style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);"
-                    >
-                      <span class="font-mono text-zinc-400">{row.domain}</span>
-                      <div class="flex items-center gap-3 flex-shrink-0">
-                        <span
-                          class={`text-xs ${row.status === 'Warmed' ? 'text-emerald-400' : 'text-amber-400'}`}
-                        >
-                          {row.status}
-                        </span>
-                        <span class="text-zinc-600">{row.sent}</span>
-                        <span class="text-violet-400 font-medium">{row.replies}</span>
+                  {
+                    [
+                      { domain: 'reach-01.io', status: 'Warmed', sent: '1,204', replies: '8.3%' },
+                      { domain: 'outpro-07.co', status: 'Warmed', sent: '987', replies: '9.1%' },
+                      { domain: 'pitchsend-03.com', status: 'Warming', sent: '231', replies: '—' },
+                    ].map((row) => (
+                      <div
+                        class="flex items-center justify-between p-2.5 rounded-lg text-xs"
+                        style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);"
+                      >
+                        <span class="font-mono text-zinc-400">{row.domain}</span>
+                        <div class="flex items-center gap-3 flex-shrink-0">
+                          <span
+                            class={`text-xs ${row.status === 'Warmed' ? 'text-emerald-400' : 'text-amber-400'}`}
+                          >
+                            {row.status}
+                          </span>
+                          <span class="text-zinc-600">{row.sent}</span>
+                          <span class="text-violet-400 font-medium">{row.replies}</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  }
                 </div>
                 <div
                   class="mt-3 p-2.5 rounded-lg text-xs text-center"
@@ -150,32 +193,58 @@
 
           <!-- Copy side -->
           <div class="p-8 lg:p-10 flex flex-col justify-center order-1 lg:order-2">
-            <div class="badge mb-5 self-start" style="background: rgba(139,92,246,0.1); border-color: rgba(139,92,246,0.25); color: #c4b5fd;">
+            <div
+              class="badge mb-5 self-start"
+              style="background: rgba(139,92,246,0.1); border-color: rgba(139,92,246,0.25); color: #c4b5fd;"
+            >
               PelloReach
             </div>
-            <h3 class="text-title text-white mb-4">
-              Outreach at a scale agencies can't match.
-            </h3>
+            <h3 class="text-title text-white mb-4">Outreach at a scale agencies can't match.</h3>
             <p class="text-sm text-zinc-400 leading-relaxed mb-6">
-              Hundreds of warmed domains, AI-personalised sequences, and inbox placement
-              technology that ensures your message lands — not in spam.
-              PelloReach finds your leads and converts them at scale.
+              Hundreds of warmed domains, AI-personalised sequences, and inbox placement technology
+              that ensures your message lands — not in spam. PelloReach finds your leads and
+              converts them at scale.
             </p>
             <ul class="flex flex-col gap-2.5 list-none m-0 p-0">
-              {['500+ warmed domains', 'AI-personalised at scale', 'Industry-leading inbox placement', 'Lead finding and enrichment included'].map((item) => (
-                <li class="flex items-center gap-2.5 text-sm text-zinc-300">
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" class="flex-shrink-0">
-                    <circle cx="7" cy="7" r="6.5" fill="rgba(139,92,246,0.15)" stroke="rgba(139,92,246,0.3)"/>
-                    <path d="M4.5 7l2 2 3-3" stroke="#c4b5fd" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  {item}
-                </li>
-              ))}
+              {
+                [
+                  '500+ warmed domains',
+                  'AI-personalised at scale',
+                  'Industry-leading inbox placement',
+                  'Lead finding and enrichment included',
+                ].map((item) => (
+                  <li class="flex items-center gap-2.5 text-sm text-zinc-300">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 14 14"
+                      fill="none"
+                      aria-hidden="true"
+                      class="flex-shrink-0"
+                    >
+                      <circle
+                        cx="7"
+                        cy="7"
+                        r="6.5"
+                        fill="rgba(139,92,246,0.15)"
+                        stroke="rgba(139,92,246,0.3)"
+                      />
+                      <path
+                        d="M4.5 7l2 2 3-3"
+                        stroke="#c4b5fd"
+                        stroke-width="1.25"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                    {item}
+                  </li>
+                ))
+              }
             </ul>
           </div>
         </div>
       </div>
-
     </div>
   </div>
 </section>

@@ -1,264 +1,383 @@
 ---
 import { site } from '../../content/site';
+
+const floatClasses = [
+  'float-a',
+  'float-b',
+  'float-c',
+  'float-d',
+  'float-e',
+  'float-f',
+  'float-g',
+  'float-h',
+] as const;
+
+const icons: Record<string, string> = {
+  seo: `<path d="M3 5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1H3V5ZM3 8h14v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8Z" fill="currentColor" opacity="0.2"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`,
+  reach: `<path d="M2 6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1l-8 5.5L2 6Z" fill="currentColor" opacity="0.25"/><path d="M2 6.5V16a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V6.5L9 12 2 6.5Z" fill="currentColor" opacity="0.1"/>`,
+  publish: `<rect x="2" y="3" width="20" height="4" rx="1" fill="currentColor" opacity="0.25"/><rect x="2" y="9" width="14" height="2.5" rx="1" fill="currentColor" opacity="0.4"/><rect x="2" y="13.5" width="10" height="2.5" rx="1" fill="currentColor" opacity="0.3"/>`,
+  social: `<circle cx="9" cy="9" r="3" fill="currentColor" opacity="0.3"/><circle cx="16" cy="5" r="2" fill="currentColor" opacity="0.3"/><circle cx="16" cy="15" r="2" fill="currentColor" opacity="0.3"/><path d="M12 9.5l3-3M12 10l3 3" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>`,
+  pitch: `<rect x="3" y="3" width="18" height="13" rx="2" fill="currentColor" opacity="0.15"/><rect x="3" y="3" width="18" height="4" rx="1" fill="currentColor" opacity="0.25"/><path d="M7 13h6M7 10h10" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>`,
+  ads: `<path d="M3 18V6l9-3 9 3v12" fill="currentColor" opacity="0.1"/><rect x="9" y="12" width="6" height="6" fill="currentColor" opacity="0.25"/><path d="M3 6l9-3 9 3" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>`,
+  flow: `<circle cx="5" cy="5" r="2" fill="currentColor" opacity="0.3"/><circle cx="19" cy="5" r="2" fill="currentColor" opacity="0.3"/><circle cx="12" cy="19" r="2" fill="currentColor" opacity="0.3"/><path d="M7 5h10M5 7v10a2 2 0 0 0 2 2h3M19 7v3" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>`,
+  build: `<rect x="3" y="3" width="8" height="8" rx="1" fill="currentColor" opacity="0.2"/><rect x="13" y="3" width="8" height="8" rx="1" fill="currentColor" opacity="0.2"/><rect x="3" y="13" width="8" height="8" rx="1" fill="currentColor" opacity="0.2"/><path d="M16 13v8M13 16.5h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
+};
+
+const leftProducts = site.products.slice(0, 4);
+const rightProducts = site.products.slice(4, 8);
 ---
 
 <section
   id="hero"
-  class="relative min-h-screen flex flex-col items-center justify-center overflow-hidden pt-24 pb-20"
+  class="relative min-h-screen flex flex-col items-center justify-center overflow-hidden pt-24 pb-16"
   aria-labelledby="hero-headline"
 >
-  <!-- Background: grid + glow -->
-  <div class="absolute inset-0 grid-texture opacity-100" aria-hidden="true"></div>
+  <!-- Background layers -->
+  <div class="absolute inset-0 grid-texture" aria-hidden="true"></div>
   <div class="absolute inset-0 hero-glow" aria-hidden="true"></div>
 
-  <!-- Decorative orbs -->
+  <!-- Deep glow orbs -->
   <div
-    class="absolute top-1/4 -left-32 w-96 h-96 rounded-full opacity-10 blur-3xl pointer-events-none"
+    class="absolute top-1/4 -left-48 w-[500px] h-[500px] rounded-full opacity-[0.07] blur-3xl pointer-events-none"
     style="background: radial-gradient(circle, #6366f1, transparent);"
     aria-hidden="true"
-  ></div>
+  >
+  </div>
   <div
-    class="absolute top-1/3 -right-32 w-80 h-80 rounded-full opacity-8 blur-3xl pointer-events-none"
+    class="absolute top-1/3 -right-48 w-[440px] h-[440px] rounded-full opacity-[0.06] blur-3xl pointer-events-none"
     style="background: radial-gradient(circle, #a855f7, transparent);"
     aria-hidden="true"
-  ></div>
+  >
+  </div>
+  <div
+    class="absolute bottom-1/4 left-1/3 w-[360px] h-[360px] rounded-full opacity-[0.05] blur-3xl pointer-events-none"
+    style="background: radial-gradient(circle, #c026d3, transparent);"
+    aria-hidden="true"
+  >
+  </div>
 
-  <div class="container relative z-10 flex flex-col items-center text-center">
-
-    <!-- Badge -->
-    <div id="hero-badge" class="mb-8">
-      <span class="badge">
-        <span class="badge-dot" aria-hidden="true"></span>
-        {site.hero.badge}
-      </span>
-    </div>
-
-    <!-- Headline -->
-    <h1
-      id="hero-headline"
-      class="text-display mb-6 max-w-3xl"
-      style="white-space: pre-line;"
-    >
-      {site.hero.headline.split('\n').map((line, i) => (
-        i === 0
-          ? <span class="text-white">{line}</span>
-          : <><br /><span class="gradient-text">{line}</span></>
-      ))}
-    </h1>
-
-    <!-- Sub-headline -->
-    <p
-      id="hero-sub"
-      class="text-body-lg text-zinc-400 max-w-xl mb-10"
-    >
-      {site.hero.subheadline}
-    </p>
-
-    <!-- URL Input + CTA -->
-    <div id="hero-ctas" class="w-full max-w-lg mb-6">
-      <form
-        id="hero-form"
-        class="url-input-wrap mb-4"
-        aria-label="Analyse your website"
-        novalidate
-      >
-        <label for="hero-url-input" class="sr-only">Your website URL</label>
-        <input
-          id="hero-url-input"
-          type="url"
-          name="url"
-          class="url-input py-2"
-          placeholder={site.hero.inputPlaceholder}
-          autocomplete="url"
-          spellcheck="false"
-        />
-        <button type="submit" class="btn-primary text-sm py-2.5 px-5">
-          {site.hero.inputCta}
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-            <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-      </form>
-
-      <div class="flex items-center gap-4 justify-center">
-        <a href={site.cta.secondaryHref} class="btn-secondary text-sm">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.25"/>
-            <path d="M6.5 5.5l4 2.5-4 2.5V5.5Z" fill="currentColor"/>
-          </svg>
-          {site.cta.secondary}
-        </a>
-      </div>
-
-      <!-- Form feedback (hidden by default) -->
-      <div id="hero-form-msg" class="hidden mt-3 text-sm text-center" role="alert" aria-live="polite"></div>
-    </div>
-
-    <!-- Trust snippet -->
-    <p class="text-xs text-zinc-600 mb-14">
-      Free analysis — no signup required. Built for founders, marketing teams, and agencies.
-    </p>
-
-    <!-- Hero visual: mock product frame -->
-    <div id="hero-visual" class="w-full max-w-5xl">
-      <div
-        class="relative rounded-2xl overflow-hidden"
-        style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(99,102,241,0.1);"
-      >
-        <!-- Window chrome -->
-        <div
-          class="flex items-center gap-2 px-5 py-3.5 border-b"
-          style="border-color: rgba(255,255,255,0.06); background: rgba(255,255,255,0.02);"
-        >
-          <span class="w-3 h-3 rounded-full" style="background: #ff5f57;" aria-hidden="true"></span>
-          <span class="w-3 h-3 rounded-full" style="background: #febb2c;" aria-hidden="true"></span>
-          <span class="w-3 h-3 rounded-full" style="background: #28c840;" aria-hidden="true"></span>
-          <div
-            class="flex-1 mx-4 rounded-md text-xs text-zinc-600 font-mono px-3 py-1.5 text-center"
-            style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06);"
-          >
-            pello.co — Analysing yourbusiness.com
-          </div>
-        </div>
-
-        <!-- Dashboard content -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-0">
-
-          <!-- Sidebar -->
-          <div
-            class="hidden md:flex flex-col gap-1 p-4 border-r"
-            style="border-color: rgba(255,255,255,0.06); background: rgba(0,0,0,0.2);"
-          >
-            {['PelloSEO', 'PelloReach', 'PelloPublish', 'PelloSocial', 'PelloPitch', 'PelloAds', 'PelloFlow', 'PelloBuild'].map((name, i) => (
+  <div class="container relative z-10">
+    <!-- Desktop: 3-col constellation layout -->
+    <div class="hidden lg:grid lg:grid-cols-[260px_1fr_260px] gap-8 items-center">
+      <!-- Left product column -->
+      <div id="hero-left-cards" class="flex flex-col gap-3">
+        {
+          leftProducts.map((product, i) => (
+            <div class={`hero-product-card ${floatClasses[i]}`} aria-label={product.name}>
               <div
-                class={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all cursor-default ${i === 0 ? 'text-white' : 'text-zinc-500'}`}
-                style={i === 0 ? 'background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.2);' : ''}
+                class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={`background: ${product.color}1a; border: 1px solid ${product.color}28; color: ${product.color};`}
+                aria-hidden="true"
               >
-                <span
-                  class="w-2 h-2 rounded-full flex-shrink-0"
-                  style={`background: ${['#6366f1','#8b5cf6','#a855f7','#c026d3','#d946ef','#7c3aed','#4f46e5','#818cf8'][i]};`}
-                  aria-hidden="true"
-                ></span>
-                {name}
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  set:html={icons[product.icon] ?? ''}
+                />
               </div>
-            ))}
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-white leading-none mb-0.5">{product.name}</p>
+                <p class="text-xs text-zinc-500 leading-none truncate">{product.tagline}</p>
+              </div>
+              <div
+                class="ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0"
+                style={`background: ${product.color};`}
+                aria-hidden="true"
+              />
+            </div>
+          ))
+        }
+      </div>
+
+      <!-- Center: headline + input -->
+      <div class="flex flex-col items-center text-center">
+        <div id="hero-badge" class="mb-7">
+          <span class="badge">
+            <span class="badge-dot" aria-hidden="true"></span>
+            {site.hero.badge}
+          </span>
+        </div>
+
+        <h1 id="hero-headline" class="text-display mb-6">
+          {
+            site.hero.headline.split('\n').map((line, i) =>
+              i === 0 ? (
+                <span class="text-white">{line}</span>
+              ) : (
+                <>
+                  <>
+                    <br />
+                    <span class="gradient-text">{line}</span>
+                  </>
+                </>
+              )
+            )
+          }
+        </h1>
+
+        <p id="hero-sub" class="text-body-lg text-zinc-400 max-w-lg mb-9">
+          {site.hero.subheadline}
+        </p>
+
+        <div id="hero-ctas" class="w-full max-w-md">
+          <form
+            id="hero-form"
+            class="url-input-wrap mb-4"
+            aria-label="Analyse your website"
+            novalidate
+          >
+            <label for="hero-url-input" class="sr-only">Your website URL</label>
+            <input
+              id="hero-url-input"
+              type="url"
+              name="url"
+              class="url-input py-2"
+              placeholder={site.hero.inputPlaceholder}
+              autocomplete="url"
+              spellcheck="false"
+            />
+            <button type="submit" class="btn-primary text-sm py-2.5 px-5">
+              {site.hero.inputCta}
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path
+                  d="M2 7h10M8 3l4 4-4 4"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"></path>
+              </svg>
+            </button>
+          </form>
+
+          <div
+            id="hero-form-msg"
+            class="hidden text-sm text-center mt-3"
+            role="alert"
+            aria-live="polite"
+          >
           </div>
 
-          <!-- Main panel -->
-          <div class="md:col-span-2 p-6">
-            <div class="flex items-center justify-between mb-5">
-              <div>
-                <p class="text-xs text-zinc-500 mb-1">Analysing</p>
-                <p class="text-sm font-mono text-indigo-400">yourbusiness.com</p>
-              </div>
-              <span class="badge text-xs">PelloSEO Demo</span>
-            </div>
-
-            <!-- Mock SEO preview rows -->
-            <p class="text-xs text-zinc-500 mb-3 uppercase tracking-wider font-medium">Generated page templates</p>
-            <div class="flex flex-col gap-2">
-              {[
-                { template: 'Best {Service} in {City}', pages: '2,847 pages', status: 'Ready' },
-                { template: '{Product} for {Industry} businesses', pages: '1,203 pages', status: 'Ready' },
-                { template: 'How to {Action} with {Tool}', pages: '892 pages', status: 'Generating' },
-                { template: '{Competitor} alternative for {UseCase}', pages: '445 pages', status: 'Queued' },
-              ].map((row) => (
-                <div
-                  class="flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs"
-                  style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);"
-                >
-                  <span class="font-mono text-zinc-300">{row.template}</span>
-                  <div class="flex items-center gap-3 flex-shrink-0 ml-3">
-                    <span class="text-zinc-500 hidden sm:block">{row.pages}</span>
-                    <span
-                      class={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                        row.status === 'Ready' ? 'text-emerald-400' :
-                        row.status === 'Generating' ? 'text-amber-400' : 'text-zinc-500'
-                      }`}
-                      style={`background: ${
-                        row.status === 'Ready' ? 'rgba(52,211,153,0.1)' :
-                        row.status === 'Generating' ? 'rgba(251,191,36,0.1)' : 'rgba(255,255,255,0.05)'
-                      };`}
-                    >
-                      {row.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <!-- Bottom stats bar -->
-            <div
-              class="flex items-center gap-6 mt-5 pt-4 border-t"
-              style="border-color: rgba(255,255,255,0.06);"
-            >
-              {[
-                { label: 'Total pages', value: '5,387' },
-                { label: 'Languages', value: '12' },
-                { label: 'Est. traffic', value: '+340%' },
-              ].map((stat) => (
-                <div>
-                  <p class="text-lg font-bold text-white">{stat.value}</p>
-                  <p class="text-xs text-zinc-500">{stat.label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+          <p class="text-xs text-zinc-600 mt-4">Free analysis — no signup required.</p>
         </div>
       </div>
 
-      <!-- Reflection / ground shadow -->
-      <div
-        class="w-3/4 h-8 mx-auto rounded-full blur-2xl opacity-20 mt-0"
-        style="background: linear-gradient(90deg, #6366f1, #a855f7);"
-        aria-hidden="true"
-      ></div>
+      <!-- Right product column -->
+      <div id="hero-right-cards" class="flex flex-col gap-3">
+        {
+          rightProducts.map((product, i) => (
+            <div class={`hero-product-card ${floatClasses[i + 4]}`} aria-label={product.name}>
+              <div
+                class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={`background: ${product.color}1a; border: 1px solid ${product.color}28; color: ${product.color};`}
+                aria-hidden="true"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  set:html={icons[product.icon] ?? ''}
+                />
+              </div>
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-white leading-none mb-0.5">{product.name}</p>
+                <p class="text-xs text-zinc-500 leading-none truncate">{product.tagline}</p>
+              </div>
+              <div
+                class="ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0"
+                style={`background: ${product.color};`}
+                aria-hidden="true"
+              />
+            </div>
+          ))
+        }
+      </div>
+    </div>
+
+    <!-- Mobile: stacked layout -->
+    <div class="lg:hidden flex flex-col items-center text-center">
+      <div id="hero-badge-mobile" class="mb-7">
+        <span class="badge">
+          <span class="badge-dot" aria-hidden="true"></span>
+          {site.hero.badge}
+        </span>
+      </div>
+
+      <h1
+        id="hero-headline-mobile"
+        class="text-display mb-6 max-w-2xl"
+        style="white-space: pre-line;"
+      >
+        {
+          site.hero.headline.split('\n').map((line, i) =>
+            i === 0 ? (
+              <span class="text-white">{line}</span>
+            ) : (
+              <>
+                <>
+                  <br />
+                  <span class="gradient-text">{line}</span>
+                </>
+              </>
+            )
+          )
+        }
+      </h1>
+
+      <p id="hero-sub-mobile" class="text-body-lg text-zinc-400 max-w-lg mb-9">
+        {site.hero.subheadline}
+      </p>
+
+      <div id="hero-ctas-mobile" class="w-full max-w-md mb-10">
+        <form
+          id="hero-form-mobile"
+          class="url-input-wrap mb-4"
+          aria-label="Analyse your website"
+          novalidate
+        >
+          <label for="hero-url-input-mobile" class="sr-only">Your website URL</label>
+          <input
+            id="hero-url-input-mobile"
+            type="url"
+            name="url"
+            class="url-input py-2"
+            placeholder={site.hero.inputPlaceholder}
+            autocomplete="url"
+            spellcheck="false"
+          />
+          <button type="submit" class="btn-primary text-sm py-2.5 px-4">
+            {site.hero.inputCta}
+          </button>
+        </form>
+        <div
+          id="hero-form-msg-mobile"
+          class="hidden text-sm text-center mt-3"
+          role="alert"
+          aria-live="polite"
+        >
+        </div>
+        <p class="text-xs text-zinc-600 mt-4">Free analysis — no signup required.</p>
+      </div>
+
+      <!-- Mobile product grid -->
+      <div id="hero-mobile-cards" class="grid grid-cols-2 gap-2.5 w-full max-w-md">
+        {
+          site.products.map((product) => (
+            <div class="hero-product-card" aria-label={product.name}>
+              <div
+                class="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0"
+                style={`background: ${product.color}1a; color: ${product.color};`}
+                aria-hidden="true"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  set:html={icons[product.icon] ?? ''}
+                />
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs font-semibold text-white leading-none">{product.name}</p>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Scroll indicator -->
+  <div
+    class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-40"
+    aria-hidden="true"
+  >
+    <div
+      class="w-px h-8"
+      style="background: linear-gradient(180deg, rgba(255,255,255,0.4), transparent);"
+    >
     </div>
   </div>
 </section>
 
 <script>
   import { heroEntrance } from '../../lib/motion/animations';
+  import { gsap } from 'gsap';
 
+  // Desktop hero entrance
   heroEntrance({
     badge: '#hero-badge',
     headline: '#hero-headline',
     sub: '#hero-sub',
     ctas: '#hero-ctas',
-    visual: '#hero-visual',
   });
 
-  // Form handling (placeholder — connect to backend when ready)
-  const form = document.getElementById('hero-form') as HTMLFormElement | null;
-  const msgEl = document.getElementById('hero-form-msg');
-  const input = document.getElementById('hero-url-input') as HTMLInputElement | null;
-
-  form?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const url = input?.value.trim() ?? '';
-
-    if (!url) {
-      showMsg('Please enter your website URL.', 'error');
-      return;
-    }
-
-    // Basic URL validation
-    try {
-      const parsed = new URL(url.startsWith('http') ? url : `https://${url}`);
-      if (!parsed.hostname.includes('.')) throw new Error('invalid');
-    } catch {
-      showMsg('Please enter a valid URL (e.g. https://yoursite.com).', 'error');
-      return;
-    }
-
-    // TODO: Connect to Pello analysis API
-    showMsg('Analysis starting — early access sign-up coming soon.', 'info');
+  // Stagger-in the product cards
+  const mm = gsap.matchMedia();
+  mm.add('(prefers-reduced-motion: no-preference)', () => {
+    gsap.from('#hero-left-cards .hero-product-card', {
+      opacity: 0,
+      x: -24,
+      duration: 0.6,
+      stagger: 0.1,
+      ease: 'power2.out',
+      delay: 0.8,
+    });
+    gsap.from('#hero-right-cards .hero-product-card', {
+      opacity: 0,
+      x: 24,
+      duration: 0.6,
+      stagger: 0.1,
+      ease: 'power2.out',
+      delay: 0.8,
+    });
   });
 
-  function showMsg(text: string, type: 'error' | 'info') {
-    if (!msgEl) return;
-    msgEl.textContent = text;
-    msgEl.className = `mt-3 text-sm text-center ${type === 'error' ? 'text-red-400' : 'text-indigo-400'}`;
-    msgEl.classList.remove('hidden');
+  // Mobile entrance
+  heroEntrance({
+    badge: '#hero-badge-mobile',
+    headline: '#hero-headline-mobile',
+    sub: '#hero-sub-mobile',
+    ctas: '#hero-ctas-mobile',
+    visual: '#hero-mobile-cards',
+  });
+
+  // Form handling (desktop)
+  function handleForm(formId: string, inputId: string, msgId: string) {
+    const form = document.getElementById(formId) as HTMLFormElement | null;
+    const input = document.getElementById(inputId) as HTMLInputElement | null;
+    const msgEl = document.getElementById(msgId);
+
+    form?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const url = input?.value.trim() ?? '';
+
+      if (!url) {
+        showMsg(msgEl, 'Please enter your website URL.', 'error');
+        return;
+      }
+
+      try {
+        const parsed = new URL(url.startsWith('http') ? url : `https://${url}`);
+        if (!parsed.hostname.includes('.')) throw new Error('invalid');
+      } catch {
+        showMsg(msgEl, 'Please enter a valid URL (e.g. https://yoursite.com).', 'error');
+        return;
+      }
+
+      showMsg(msgEl, 'Analysis starting — early access sign-up coming soon.', 'info');
+    });
   }
+
+  function showMsg(el: HTMLElement | null, text: string, type: 'error' | 'info') {
+    if (!el) return;
+    el.textContent = text;
+    el.className = `text-sm text-center mt-3 ${type === 'error' ? 'text-red-400' : 'text-indigo-400'}`;
+    el.classList.remove('hidden');
+  }
+
+  handleForm('hero-form', 'hero-url-input', 'hero-form-msg');
+  handleForm('hero-form-mobile', 'hero-url-input-mobile', 'hero-form-msg-mobile');
 </script>

@@ -5,7 +5,9 @@ import { site } from '../../content/site';
 <section id="problem" class="section" aria-labelledby="problem-headline">
   <div class="container">
     <div class="max-w-2xl mb-16 problem-intro">
-      <p class="text-xs font-semibold text-indigo-400 uppercase tracking-widest mb-4">The Problem</p>
+      <p class="text-xs font-semibold text-indigo-400 uppercase tracking-widest mb-4">
+        The Problem
+      </p>
       <h2 id="problem-headline" class="text-headline text-white mb-5">
         {site.problem.headline}
       </h2>
@@ -15,34 +17,40 @@ import { site } from '../../content/site';
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-      {site.problem.pains.map((pain, i) => (
-        <div class="card p-7 problem-card" style={`--card-glow: rgba(99,102,241,0.06);`}>
-          <!-- Number -->
-          <div
-            class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold mb-5"
-            style="background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2); color: #818cf8;"
-          >
-            {String(i + 1).padStart(2, '0')}
+      {
+        site.problem.pains.map((pain, i) => (
+          <div class="card p-7 problem-card" style={`--card-glow: rgba(99,102,241,0.06);`}>
+            <div
+              class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold mb-5"
+              style="background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2); color: #818cf8;"
+            >
+              {String(i + 1).padStart(2, '0')}
+            </div>
+            <h3 class="text-base font-semibold text-white mb-3">{pain.title}</h3>
+            <p class="text-sm text-zinc-400 leading-relaxed">{pain.description}</p>
           </div>
-          <h3 class="text-base font-semibold text-white mb-3">{pain.title}</h3>
-          <p class="text-sm text-zinc-400 leading-relaxed">{pain.description}</p>
-        </div>
-      ))}
+        ))
+      }
     </div>
 
     <!-- Divider element -->
-    <div
-      class="mt-20 flex items-center gap-5"
-      aria-hidden="true"
-    >
-      <div class="flex-1 h-px" style="background: linear-gradient(90deg, transparent, rgba(99,102,241,0.3), transparent);"></div>
+    <div class="mt-20 flex items-center gap-5" aria-hidden="true">
+      <div
+        class="flex-1 h-px"
+        style="background: linear-gradient(90deg, transparent, rgba(99,102,241,0.3), transparent);"
+      >
+      </div>
       <div
         class="px-4 py-2 rounded-full text-sm text-indigo-400 font-medium"
         style="background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2);"
       >
         There is a better way.
       </div>
-      <div class="flex-1 h-px" style="background: linear-gradient(90deg, transparent, rgba(99,102,241,0.3), transparent);"></div>
+      <div
+        class="flex-1 h-px"
+        style="background: linear-gradient(90deg, transparent, rgba(99,102,241,0.3), transparent);"
+      >
+      </div>
     </div>
   </div>
 </section>
