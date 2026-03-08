@@ -1,0 +1,105 @@
+---
+interface Props {
+  current: number;
+}
+const { current } = Astro.props;
+
+const concepts = [
+  { num: 1, label: 'Command Centre' },
+  { num: 2, label: 'Editorial Luxury' },
+  { num: 3, label: 'Live Scan' },
+  { num: 4, label: 'Cinematic' },
+  { num: 5, label: 'Signal Field' },
+  { num: 6, label: 'Growth Machine' },
+];
+---
+
+<nav class="concept-nav" aria-label="Hero concept switcher">
+  <span class="concept-label">Concept {String(current).padStart(2, '0')} — {concepts[current - 1].label}</span>
+  <div class="concept-dots">
+    {concepts.map((c) => (
+      <a
+        href={`/${c.num}`}
+        class={`concept-dot ${c.num === current ? 'active' : ''}`}
+        aria-label={`Concept ${c.num}: ${c.label}`}
+        title={`${c.num} — ${c.label}`}
+      >
+        <span class="dot-inner"></span>
+      </a>
+    ))}
+  </div>
+</nav>
+
+<style>
+  .concept-nav {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: rgba(10, 10, 15, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 100px;
+    padding: 0.5rem 1rem 0.5rem 0.75rem;
+  }
+
+  .concept-label {
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.4);
+    white-space: nowrap;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .concept-dots {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+  }
+
+  .concept-dot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+
+  .concept-dot:hover {
+    opacity: 0.8;
+  }
+
+  .dot-inner {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.25);
+    transition: all 0.2s;
+  }
+
+  .concept-dot.active .dot-inner {
+    background: #6366f1;
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.6);
+    width: 8px;
+    height: 8px;
+  }
+
+  @media (max-width: 640px) {
+    .concept-nav {
+      bottom: 1rem;
+      right: 1rem;
+      padding: 0.4rem 0.75rem 0.4rem 0.6rem;
+      gap: 0.6rem;
+    }
+    .concept-label {
+      font-size: 0.6rem;
+    }
+  }
+</style>
