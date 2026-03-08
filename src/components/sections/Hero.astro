@@ -470,7 +470,7 @@ const rightCardData = [
     });
 
     heroEl?.addEventListener('mouseleave', () => {
-      allCards.forEach((card, i) => {
+      allCards.forEach((_card, i) => {
         xQs[i]?.(0);
         yQs[i]?.(0);
         ryQs[i]?.(restRY[i] ?? 0);

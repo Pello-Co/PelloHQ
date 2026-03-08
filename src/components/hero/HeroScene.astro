@@ -1,0 +1,155 @@
+---
+/**
+ * HeroScene.astro
+ * The "Growth Engine" intelligence panel — right column of the hero.
+ * Contains: source row, AI analysis core, channel nodes, SVG connectors.
+ * All animation is handled externally by heroMotion.ts.
+ */
+
+const nodes = [
+  { id: 'seo',     name: 'PelloSEO',     color: '#6366f1', stat: '+340% traffic' },
+  { id: 'reach',   name: 'PelloReach',   color: '#8b5cf6', stat: '500+ domains' },
+  { id: 'publish', name: 'PelloPublish', color: '#a855f7', stat: '60 pieces/mo' },
+  { id: 'social',  name: 'PelloSocial',  color: '#c026d3', stat: '3.2k accounts' },
+  { id: 'pitch',   name: 'PelloPitch',   color: '#7c3aed', stat: '8–12% CVR' },
+  { id: 'ads',     name: 'PelloAds',     color: '#4f46e5', stat: '2.8x ROAS' },
+  { id: 'flow',    name: 'PelloFlow',    color: '#9333ea', stat: '0 manual steps' },
+  { id: 'build',   name: 'PelloBuild',   color: '#6d28d9', stat: '<2wk ship' },
+] as const;
+
+const coreMetrics = [
+  { label: 'SEO opportunity',  pct: 87, val: 'High' },
+  { label: 'Outreach surface', pct: 94, val: 'Max' },
+  { label: 'Content leverage', pct: 72, val: 'Strong' },
+] as const;
+---
+
+<div class="hero-panel" id="hero-panel" aria-label="Pello growth engine analysis panel">
+  <!-- Ambient glow ring (CSS only) -->
+  <div class="panel-ambient-glow" aria-hidden="true"></div>
+
+  <!-- SVG connector overlay — populated dynamically by heroMotion.ts -->
+  <svg
+    id="connector-svg"
+    class="connector-svg-layer"
+    aria-hidden="true"
+  ></svg>
+
+  <!-- ── Header bar ──────────────────────────────────────── -->
+  <div class="panel-header-bar">
+    <span class="panel-engine-label" aria-hidden="true">Growth Engine</span>
+    <div class="panel-status-chip" role="status" aria-label="System status">
+      <span class="status-indicator" id="status-indicator" aria-hidden="true"></span>
+      <span class="panel-status-text" id="panel-status-text">Standby</span>
+    </div>
+  </div>
+
+  <!-- ── Source node ─────────────────────────────────────── -->
+  <div class="panel-source-row" id="panel-source-row">
+    <div class="source-glow-layer" id="source-glow-layer" aria-hidden="true"></div>
+
+    <div class="source-icon-wrap" aria-hidden="true">
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <circle cx="12" cy="12" r="10"></circle>
+        <path
+          d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+        ></path>
+      </svg>
+    </div>
+
+    <div>
+      <span class="source-label">Source</span>
+      <span class="source-url-text" id="source-url-display">yoursite.com</span>
+    </div>
+
+    <div class="source-live-badge" aria-hidden="true">
+      <span class="source-live-dot"></span>
+      <span class="source-live-text">Active</span>
+    </div>
+  </div>
+
+  <!-- ── Analysis core ───────────────────────────────────── -->
+  <div class="panel-core-section">
+    <div class="core-inner" id="panel-core-inner">
+      <div class="core-top-row">
+        <span class="core-title" aria-hidden="true">Pello AI Core</span>
+        <span class="core-pct-label" id="scan-pct-label" aria-label="Scan progress">0%</span>
+      </div>
+
+      <!-- Scan progress bar -->
+      <div class="scan-bar-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={0} aria-label="Scanning progress">
+        <div class="scan-bar-fill" id="core-scan-fill"></div>
+      </div>
+
+      <!-- Growth profile metrics -->
+      <div id="panel-core-body" class="panel-core-body" aria-label="Growth profile metrics">
+        {
+          coreMetrics.map((m) => (
+            <div class="core-metric-row">
+              <span class="metric-key">{m.label}</span>
+              <div class="metric-bar-track" aria-hidden="true">
+                <div
+                  class="metric-bar-fill"
+                  style={`--target-w: ${m.pct}%;`}
+                ></div>
+              </div>
+              <span class="metric-val">{m.val}</span>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Channel nodes grid ──────────────────────────────── -->
+  <div class="channel-nodes-grid" id="channel-nodes-grid" aria-label="Active growth channels">
+    {
+      nodes.map((node) => (
+        <div
+          class="channel-node"
+          id={`node-${node.id}`}
+          data-color={node.color}
+          style={`--node-glow: ${node.color}14;`}
+          aria-label={`${node.name}: ${node.stat}`}
+        >
+          <span
+            class="node-dot"
+            style={`background: ${node.color};`}
+            aria-hidden="true"
+          />
+          <div class="node-body">
+            <span class="node-name-text">{node.name}</span>
+            <span class="node-stat-text">{node.stat}</span>
+          </div>
+        </div>
+      ))
+    }
+  </div>
+
+  <!-- ── Ready bar ────────────────────────────────────────── -->
+  <div class="panel-ready-bar" id="panel-ready-bar" aria-live="polite">
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#10b981"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    <span class="ready-label-text">Growth Plan Ready</span>
+  </div>
+</div>

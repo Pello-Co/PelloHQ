@@ -1,0 +1,477 @@
+/* ============================================================
+   HERO PELLO — Intelligence Panel System
+   All hero-panel styles isolated here.
+   ============================================================ */
+
+/* ── Panel shell ────────────────────────────────────────────── */
+
+.hero-panel {
+  background: rgba(6, 7, 18, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 1.25rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 0 1px rgba(99, 102, 241, 0.06),
+    0 40px 100px rgba(0, 0, 0, 0.6),
+    0 0 80px rgba(99, 102, 241, 0.04);
+}
+
+/* Edge highlight across the top */
+.hero-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 15%;
+  right: 15%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.5), transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Panel header bar ─────────────────────────────────────── */
+
+.panel-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.panel-engine-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: rgba(99, 102, 241, 0.65);
+  text-transform: uppercase;
+}
+
+.panel-status-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.status-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(99, 102, 241, 0.7);
+  flex-shrink: 0;
+  transition: background 0.4s ease;
+}
+
+.status-indicator.is-scanning {
+  background: #f59e0b;
+  animation: status-blink 0.9s ease-in-out infinite;
+}
+
+.status-indicator.is-ready {
+  background: #10b981;
+  animation: none;
+}
+
+@keyframes status-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.panel-status-text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 0.04em;
+}
+
+/* ── Source row ──────────────────────────────────────────────── */
+
+.panel-source-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  position: relative;
+}
+
+.source-glow-layer {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 70% 100% at 15% 50%,
+    rgba(99, 102, 241, 0.1),
+    transparent
+  );
+  pointer-events: none;
+}
+
+.source-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #6366f1;
+}
+
+.source-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.28);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.source-url-text {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.82);
+  display: block;
+}
+
+.source-live-badge {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  flex-shrink: 0;
+}
+
+.source-live-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #6366f1;
+  animation: source-ping 2.2s ease-in-out infinite;
+}
+
+@keyframes source-ping {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0);
+  }
+}
+
+.source-live-text {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: rgba(99, 102, 241, 0.75);
+  text-transform: uppercase;
+}
+
+/* ── Core analysis section ──────────────────────────────────── */
+
+.panel-core-section {
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.core-inner {
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.core-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.core-title {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+}
+
+.core-pct-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(99, 102, 241, 0.85);
+}
+
+/* Scan progress bar */
+.scan-bar-track {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-bottom: 14px;
+  position: relative;
+}
+
+.scan-bar-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #4f46e5, #7c3aed, #a855f7);
+  border-radius: 9999px;
+  transform-origin: left center;
+  transform: scaleX(1); /* default: full (no-JS state) */
+  position: relative;
+}
+
+.scan-bar-fill::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #a855f7;
+  box-shadow: 0 0 6px 2px rgba(168, 85, 247, 0.7);
+}
+
+/* Core body (metric rows) */
+.panel-core-body {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.core-metric-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.metric-key {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.38);
+  width: 112px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.metric-bar-track {
+  flex: 1;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.metric-bar-fill {
+  height: 100%;
+  width: var(--target-w, 80%);
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.75), rgba(168, 85, 247, 0.75));
+  border-radius: 9999px;
+  transform-origin: left center;
+  transform: scaleX(1); /* default: full (no-JS state) */
+}
+
+.metric-val {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(99, 102, 241, 0.7);
+  width: 44px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ── Channel nodes grid ─────────────────────────────────────── */
+
+.channel-nodes-grid {
+  padding: 14px 20px 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px 12px;
+  position: relative;
+}
+
+.channel-node {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: default;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.channel-node::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  background: radial-gradient(ellipse at 0% 50%, var(--node-glow, transparent), transparent 70%);
+}
+
+.channel-node:hover::before {
+  opacity: 1;
+}
+
+.node-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.node-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.node-name-text {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.node-stat-text {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.38);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+/* ── SVG connector layer ────────────────────────────────────── */
+
+.connector-svg-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 0;
+}
+
+/* ── Ready bar ──────────────────────────────────────────────── */
+
+.panel-ready-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(16, 185, 129, 0.05);
+  border-top: 1px solid rgba(16, 185, 129, 0.14);
+}
+
+.ready-label-text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: rgba(16, 185, 129, 0.8);
+  text-transform: uppercase;
+}
+
+/* ── Ambient glow on panel ──────────────────────────────────── */
+
+.panel-ambient-glow {
+  position: absolute;
+  inset: -1px;
+  border-radius: 1.25rem;
+  pointer-events: none;
+  box-shadow: 0 0 60px rgba(99, 102, 241, 0.08);
+  z-index: -1;
+  animation: ambient-breathe 8s ease-in-out infinite;
+}
+
+@keyframes ambient-breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 60px rgba(99, 102, 241, 0.08);
+  }
+  50% {
+    box-shadow: 0 0 100px rgba(99, 102, 241, 0.14);
+  }
+}
+
+/* ── Mobile panel variant ─────────────────────────────────────
+   Compact version shown on mobile — inherits panel-* classes
+   but sized for the mobile column.
+   ─────────────────────────────────────────────────────────── */
+
+.hero-panel-mobile {
+  background: rgba(6, 7, 18, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.hero-panel-mobile::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20%;
+  right: 20%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.4), transparent);
+  pointer-events: none;
+}
+
+/* ── No-JS / reduced-motion safe states ─────────────────────
+   The global reduced-motion rule already kills keyframe
+   animations. These rules ensure the panel reads well
+   without JS (scan-bar-fill and metric-bar-fill start at 1
+   in CSS, so no-JS shows a fully "completed" state).
+   ─────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .source-live-dot,
+  .status-indicator,
+  .panel-ambient-glow {
+    animation: none !important;
+  }
+}

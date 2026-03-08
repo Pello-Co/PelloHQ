@@ -1,0 +1,306 @@
+---
+import { site } from '../../content/site';
+import HeroScene from '../hero/HeroScene.astro';
+
+const headlineLines = site.hero.headline.split('\n');
+const line1 = headlineLines[0] ?? '';
+const line2 = headlineLines[1] ?? '';
+---
+
+<section
+  id="hero"
+  class="relative min-h-screen flex flex-col justify-center overflow-hidden pt-20 pb-16"
+  aria-labelledby="hero-headline"
+>
+  <!-- Background field -->
+  <div class="absolute inset-0 grid-texture" aria-hidden="true"></div>
+
+  <!-- Volumetric glow anchors -->
+  <div
+    class="absolute top-[30%] left-[20%] w-[520px] h-[380px] rounded-full opacity-[0.055] blur-[90px] pointer-events-none"
+    style="background: radial-gradient(ellipse, #6366f1, transparent);"
+    aria-hidden="true"
+  >
+  </div>
+  <div
+    class="absolute top-[20%] right-[15%] w-[440px] h-[320px] rounded-full opacity-[0.045] blur-[90px] pointer-events-none"
+    style="background: radial-gradient(ellipse, #a855f7, transparent);"
+    aria-hidden="true"
+  >
+  </div>
+
+  <div class="container relative z-10">
+    <!-- ── Desktop: editorial 2-column composition ──────────────
+         Left 42%: text hierarchy + CTA entry point
+         Right 58%: intelligence panel visual
+    ──────────────────────────────────────────────────────── -->
+    <div class="hidden lg:grid lg:grid-cols-[1fr_1.35fr] gap-16 xl:gap-24 items-center">
+      <!-- LEFT column -->
+      <div class="flex flex-col">
+        <!-- Eyebrow -->
+        <div id="hero-eyebrow" class="mb-7">
+          <span class="badge">
+            <span class="badge-dot" aria-hidden="true"></span>
+            {site.hero.badge}
+          </span>
+        </div>
+
+        <!-- Headline — two lines with clip-path reveal per line -->
+        <h1 id="hero-headline" class="text-display mb-6 leading-tight">
+          <span
+            id="hero-line-1"
+            class="text-white"
+            style="display: block; overflow: hidden; padding-bottom: 0.06em;"
+            >{line1}</span
+          >
+          <span
+            id="hero-line-2"
+            class="gradient-text"
+            style="display: block; overflow: hidden; padding-bottom: 0.14em;"
+            >{line2}</span
+          >
+        </h1>
+
+        <!-- Supporting copy -->
+        <p id="hero-sub" class="text-body-lg text-zinc-400 max-w-md mb-10 leading-relaxed">
+          {site.hero.subheadline}
+        </p>
+
+        <!-- CTA — styled as the entry point into the system -->
+        <div id="hero-cta-row">
+          <form
+            id="hero-form"
+            class="url-input-wrap mb-3"
+            aria-label="Analyse your website"
+            novalidate
+          >
+            <label for="hero-url-input" class="sr-only">Your website URL</label>
+            <input
+              id="hero-url-input"
+              type="url"
+              name="url"
+              class="url-input py-2.5"
+              placeholder={site.hero.inputPlaceholder}
+              autocomplete="url"
+              spellcheck="false"
+            />
+            <button type="submit" class="btn-primary text-sm py-2.5 px-5 shrink-0">
+              {site.hero.inputCta}
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 14 14"
+                fill="none"
+                aria-hidden="true"
+                class="ml-1.5"
+              >
+                <path
+                  d="M2 7h10M8 3l4 4-4 4"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"></path>
+              </svg>
+            </button>
+          </form>
+
+          <div
+            id="hero-form-msg"
+            class="hidden text-sm mt-2"
+            role="alert"
+            aria-live="polite"
+          >
+          </div>
+
+          <p class="text-xs text-zinc-600 mt-3">Free analysis — no signup required.</p>
+        </div>
+      </div>
+
+      <!-- RIGHT column: intelligence panel -->
+      <div class="relative">
+        <HeroScene />
+      </div>
+    </div>
+
+    <!-- ── Mobile: stacked layout ─────────────────────────────── -->
+    <div class="lg:hidden flex flex-col items-center text-center">
+      <!-- Badge -->
+      <div id="hero-eyebrow-m" class="mb-6">
+        <span class="badge">
+          <span class="badge-dot" aria-hidden="true"></span>
+          {site.hero.badge}
+        </span>
+      </div>
+
+      <!-- Headline -->
+      <h1 id="hero-headline-m" class="text-display mb-6 max-w-2xl">
+        {
+          site.hero.headline.split('\n').map((line, i) =>
+            i === 0 ? (
+              <span class="text-white">{line}</span>
+            ) : (
+              <>
+                <br />
+                <span class="gradient-text">{line}</span>
+              </>
+            )
+          )
+        }
+      </h1>
+
+      <!-- Sub -->
+      <p id="hero-sub-m" class="text-body-lg text-zinc-400 max-w-lg mb-8">
+        {site.hero.subheadline}
+      </p>
+
+      <!-- CTA -->
+      <div id="hero-cta-m" class="w-full max-w-md mb-10">
+        <form id="hero-form-m" class="url-input-wrap mb-3" novalidate aria-label="Analyse your website">
+          <label for="hero-url-input-m" class="sr-only">Your website URL</label>
+          <input
+            id="hero-url-input-m"
+            type="url"
+            name="url"
+            class="url-input py-2.5"
+            placeholder={site.hero.inputPlaceholder}
+            autocomplete="url"
+            spellcheck="false"
+          />
+          <button type="submit" class="btn-primary text-sm py-2.5 px-4"
+            >{site.hero.inputCta}</button
+          >
+        </form>
+        <div id="hero-form-msg-m" class="hidden text-sm mt-2" role="alert" aria-live="polite">
+        </div>
+        <p class="text-xs text-zinc-600 mt-3">Free analysis — no signup required.</p>
+      </div>
+
+      <!-- Mobile compact panel -->
+      <div class="w-full max-w-sm hero-panel-mobile relative" aria-label="Pello growth channels">
+        <div class="panel-header-bar">
+          <span class="panel-engine-label">Growth Engine</span>
+          <div class="panel-status-chip">
+            <span class="status-indicator is-ready" aria-hidden="true"></span>
+            <span class="panel-status-text">Ready</span>
+          </div>
+        </div>
+        <div class="channel-nodes-grid">
+          {
+            [
+              { name: 'PelloSEO',     color: '#6366f1', stat: '+340% traffic' },
+              { name: 'PelloReach',   color: '#8b5cf6', stat: '500+ domains' },
+              { name: 'PelloPublish', color: '#a855f7', stat: '60 pieces/mo' },
+              { name: 'PelloSocial',  color: '#c026d3', stat: '3.2k accounts' },
+              { name: 'PelloPitch',   color: '#7c3aed', stat: '8–12% CVR' },
+              { name: 'PelloAds',     color: '#4f46e5', stat: '2.8x ROAS' },
+              { name: 'PelloFlow',    color: '#9333ea', stat: '0 manual steps' },
+              { name: 'PelloBuild',   color: '#6d28d9', stat: '<2wk ship' },
+            ].map((n) => (
+              <div
+                class="channel-node"
+                data-color={n.color}
+                style={`--node-glow: ${n.color}14;`}
+                aria-label={`${n.name}: ${n.stat}`}
+              >
+                <span
+                  class="node-dot"
+                  style={`background: ${n.color};`}
+                  aria-hidden="true"
+                />
+                <div class="node-body">
+                  <span class="node-name-text">{n.name}</span>
+                  <span class="node-stat-text">{n.stat}</span>
+                </div>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scroll indicator -->
+  <div
+    class="absolute bottom-8 left-1/2 -translate-x-1/2 opacity-20"
+    aria-hidden="true"
+  >
+    <div
+      class="w-px h-8"
+      style="background: linear-gradient(180deg, rgba(255,255,255,0.6), transparent);"
+    >
+    </div>
+  </div>
+</section>
+
+<script>
+  import { gsap } from 'gsap';
+  import { initHeroMotion, initHeroInteractions, triggerActivation } from '../../lib/motion/heroMotion';
+
+  // Desktop: full cinematic sequence
+  if (window.matchMedia('(min-width: 1024px)').matches) {
+    initHeroMotion();
+    initHeroInteractions();
+  }
+
+  // Mobile: simple fade entrance
+  const mmMobile = gsap.matchMedia();
+  mmMobile.add('(max-width: 1023px) and (prefers-reduced-motion: no-preference)', () => {
+    gsap.from(
+      ['#hero-eyebrow-m', '#hero-headline-m', '#hero-sub-m', '#hero-cta-m'],
+      { opacity: 0, y: 20, duration: 0.65, stagger: 0.12, ease: 'power2.out', delay: 0.25 }
+    );
+    gsap.from('.hero-panel-mobile .channel-node', {
+      opacity: 0,
+      y: 10,
+      duration: 0.5,
+      stagger: 0.07,
+      ease: 'power2.out',
+      delay: 0.85,
+    });
+  });
+
+  // ── Form handling ──────────────────────────────────────────
+  function handleForm(
+    formId: string,
+    inputId: string,
+    msgId: string,
+    activatePanel: boolean
+  ) {
+    const form = document.getElementById(formId) as HTMLFormElement | null;
+    const input = document.getElementById(inputId) as HTMLInputElement | null;
+    const msgEl = document.getElementById(msgId);
+
+    form?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const url = input?.value.trim() ?? '';
+
+      if (!url) {
+        showMsg(msgEl, 'Please enter your website URL.', 'error');
+        return;
+      }
+
+      try {
+        const parsed = new URL(url.startsWith('http') ? url : `https://${url}`);
+        if (!parsed.hostname.includes('.')) throw new Error('invalid');
+      } catch {
+        showMsg(msgEl, 'Please enter a valid URL (e.g. https://yoursite.com).', 'error');
+        return;
+      }
+
+      if (activatePanel && window.matchMedia('(min-width: 1024px)').matches) {
+        triggerActivation();
+      }
+      showMsg(msgEl, 'Analysis starting — early access sign-up coming soon.', 'info');
+    });
+  }
+
+  function showMsg(el: HTMLElement | null, text: string, type: 'error' | 'info') {
+    if (!el) return;
+    el.textContent = text;
+    el.className = `text-sm mt-2 ${type === 'error' ? 'text-red-400' : 'text-indigo-400'}`;
+    el.classList.remove('hidden');
+  }
+
+  handleForm('hero-form', 'hero-url-input', 'hero-form-msg', true);
+  handleForm('hero-form-m', 'hero-url-input-m', 'hero-form-msg-m', false);
+</script>

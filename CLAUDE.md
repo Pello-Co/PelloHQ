@@ -201,16 +201,14 @@ This project uses **Tailwind CSS 4**, which differs significantly from Tailwind 
       layout/
         Header.astro        # Sticky nav, mobile menu, scroll backdrop
         Footer.astro        # 4-column footer, social links, legal
+      hero/                 # Hero-specific sub-components
+        HeroScene.astro     # "Growth Engine" intelligence panel (right column)
       sections/             # One file per page section (in page order)
-        Hero.astro
-        TrustStrip.astro
-        Problem.astro
+        HeroPello.astro     # ACTIVE hero — editorial 2-col layout + intelligence panel
+        Hero.astro          # Previous hero (not used in index.astro; kept for reference)
         HowItWorks.astro
-        Products.astro
-        Showcase.astro
-        Integrations.astro
+        ProductSection.astro
         UseCases.astro
-        Testimonials.astro
         Stats.astro
         FAQ.astro
         FinalCTA.astro
@@ -225,10 +223,12 @@ This project uses **Tailwind CSS 4**, which differs significantly from Tailwind 
     pages/
       index.astro           # Homepage — imports and composes all sections
     styles/
-      global.css            # Global CSS, Tailwind @theme, design system
+      global.css            # Global CSS, Tailwind @theme, design system (@imports hero-pello.css)
+      hero-pello.css        # Hero intelligence panel CSS — panel, nodes, connectors, ambience
     lib/
       motion/
         animations.ts       # GSAP animation utilities (server-importable)
+        heroMotion.ts       # Hero-specific GSAP master timeline + interactions
       seo/
         meta.ts             # buildMeta() helper for page metadata
       utils/
@@ -279,7 +279,12 @@ To update any text on the site, edit `src/content/site.ts` only.
 
 ### Animation System
 
-All animations use **GSAP 3 + ScrollTrigger**. The animation logic is centralised in `src/lib/motion/animations.ts`.
+All animations use **GSAP 3 + ScrollTrigger**. Shared scroll-triggered utilities live in `src/lib/motion/animations.ts`. Hero-specific cinematic timeline lives in `src/lib/motion/heroMotion.ts`.
+
+**`heroMotion.ts`** exports:
+- `initHeroMotion()` — master 0–7s timeline: panel entrance → left-col reveal → source activation → scan → analysis core → connector draw → channel nodes → ready state → ambient loop. Wrapped in `gsap.matchMedia()`.
+- `initHeroInteractions()` — node hover accent, input focus → energise source node, mouse parallax (max ±8px, desktop only).
+- `triggerActivation()` — condensed replay fired on form submit.
 
 **Key principle:** Every animation is wrapped in `gsap.matchMedia()` with separate handlers for `(prefers-reduced-motion: no-preference)` and `(prefers-reduced-motion: reduce)`. This means animations are fully accessible by default — reduced-motion users get either a minimal fade or no animation at all.
 
