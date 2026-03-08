@@ -60,3 +60,264 @@ All marketing copy lives in `src/content/site.ts` — edit this file to update a
 ## Status
 
 Website fully built and live on GitHub. All 14 sections implemented, 0 TypeScript errors, production build clean.
+
+---
+
+## Framework Deep Dive
+
+### How Astro Works Here
+
+Astro 5 runs in **static output mode** — every page is pre-rendered to HTML at build time. There is no server runtime.
+
+- Pages live in `src/pages/`. `index.astro` is the homepage.
+- Each page imports a `Layout` component that wraps content with the full HTML shell, `<head>`, fonts, meta tags, and the noise overlay.
+- Astro components (`.astro` files) have a **frontmatter fence** (`---`/`---`) at the top for TypeScript imports and logic, followed by the HTML template below. This code runs only at build time.
+- **`<script>` tags** inside `.astro` files run in the browser. Astro bundles and deduplicates them automatically via Vite. These are ES modules — you can import npm packages directly inside them.
+- There are **no React islands** in this project. All interactivity (mobile menu, FAQ accordion, form handling) is implemented in typed `<script>` blocks within Astro components.
+- Astro uses **`set:html`** to inject raw SVG/HTML strings (used for product icons in `Products.astro`).
+
+### Tailwind CSS 4
+
+This project uses **Tailwind CSS 4**, which differs significantly from Tailwind 3:
+
+- **No `tailwind.config.js`** — configuration lives entirely in CSS via the `@theme {}` block.
+- The entry point is `src/styles/global.css`, which starts with `@import "tailwindcss";`.
+- Custom design tokens (brand colours, fonts, radius, shadows) are defined in the `@theme {}` block and automatically become Tailwind utility classes.
+- The Vite plugin (`@tailwindcss/vite`) is registered in `astro.config.mjs` — no PostCSS config needed.
+- Standard Tailwind utilities (`flex`, `grid`, `p-4`, `text-sm`, etc.) work exactly as in v3.
+
+**Pattern:** For one-off values, use arbitrary values (`bg-[#0a0a0f]`, `text-[14px]`). For repeated brand values, define them in `@theme` and use the generated class (e.g. `text-brand-primary`).
+
+### How Styling is Organised
+
+`src/styles/global.css` contains everything in clearly labelled sections:
+
+| Section | Purpose |
+|---|---|
+| `@theme` | Design tokens → Tailwind utility classes |
+| Base reset | `box-sizing`, `font-smoothing`, `body` defaults |
+| Typography scale | `.text-display`, `.text-headline`, `.text-title`, `.text-body-lg` — responsive with `clamp()` |
+| Texture utilities | `.noise-overlay`, `.grid-texture` |
+| Gradient backgrounds | `.hero-glow`, `.section-gradient` |
+| Card surfaces | `.card`, `.card-premium` — reusable surface styles with hover states |
+| Buttons | `.btn-primary`, `.btn-secondary` — full interactive states including focus-visible |
+| Badge | `.badge`, `.badge-dot` with pulse animation |
+| Focus states | Global `:focus-visible` rule |
+| Section spacing | `.section`, `.section-sm`, `.container` |
+| Product icon colours | `.icon-seo`, `.icon-reach`, etc. |
+| Animation utilities | `.reveal`, `.is-visible` (CSS fallback without JS) |
+| Gradient text | `.gradient-text` — indigo → purple → fuchsia |
+| FAQ accordion | `.faq-item`, `.faq-trigger`, `.faq-icon`, `.faq-body` |
+| Marquee | `.marquee-track` with reduced-motion override |
+| Stat numbers | `.stat-number` — large gradient numerals |
+| URL input | `.url-input-wrap`, `.url-input` — glassy form styling |
+
+**Convention:** Use Tailwind utility classes for layout and spacing. Use CSS classes from `global.css` for design-system components (cards, buttons, badges) that appear across many sections.
+
+### Project Structure
+
+```
+/
+  src/
+    components/
+      layout/
+        Header.astro        # Sticky nav, mobile menu, scroll backdrop
+        Footer.astro        # 4-column footer, social links, legal
+      sections/             # One file per page section (in page order)
+        Hero.astro
+        TrustStrip.astro
+        Problem.astro
+        HowItWorks.astro
+        Products.astro
+        Showcase.astro
+        Integrations.astro
+        UseCases.astro
+        Testimonials.astro
+        Stats.astro
+        FAQ.astro
+        FinalCTA.astro
+      ui/                   # (reserved for shared UI primitives if needed)
+      icons/                # (reserved for SVG icon components if needed)
+      motion/               # (reserved for motion component wrappers if needed)
+      islands/              # (reserved for React islands if ever needed)
+    content/
+      site.ts               # ALL marketing copy and configuration
+    layouts/
+      Layout.astro          # HTML shell, head, fonts, meta, structured data
+    pages/
+      index.astro           # Homepage — imports and composes all sections
+    styles/
+      global.css            # Global CSS, Tailwind @theme, design system
+    lib/
+      motion/
+        animations.ts       # GSAP animation utilities (server-importable)
+      seo/
+        meta.ts             # buildMeta() helper for page metadata
+      utils/
+        cn.ts               # Class name utility
+  public/
+    favicon.svg             # SVG favicon (inline, no raster dependency)
+    robots.txt              # Allows all, points to sitemap
+    og/                     # (placeholder) Add og-default.png here
+    images/                 # (placeholder) Static images if needed
+  tests/
+    homepage.spec.ts        # Functional + visual Playwright tests
+    accessibility.spec.ts   # axe-core accessibility checks
+  .github/
+    workflows/
+      ci.yml                # GitHub Actions: install → check → lint → build → test
+  astro.config.mjs          # Astro config (Tailwind Vite plugin, sitemap, site URL)
+  tsconfig.json             # Extends astro/tsconfigs/strictest, path alias @/*
+  playwright.config.ts      # Playwright: Chromium + Mobile Safari, preview server
+  lighthouserc.json         # Lighthouse CI thresholds
+  eslint.config.js          # ESLint 9 flat config with eslint-plugin-astro
+  .prettierrc               # Prettier with prettier-plugin-astro
+```
+
+### Content Management
+
+**Single source of truth:** `src/content/site.ts`
+
+This is a plain TypeScript object (`export const site = { ... } as const`) with no CMS dependency. It is imported directly into Astro components at build time.
+
+Structure of `site.ts`:
+- `site.name`, `site.domain`, `site.url`, `site.tagline`, `site.description`, `site.email`
+- `site.social` — Twitter/X and LinkedIn URLs
+- `site.nav` — navigation links array
+- `site.cta` — primary and secondary CTA labels + hrefs
+- `site.hero` — headline, subheadline, input placeholder, badge text
+- `site.trustStrip.metrics` — 4 key metrics shown below the hero
+- `site.problem` — headline, subheadline, 3 pain point objects
+- `site.howItWorks` — headline, subheadline, 3 step objects
+- `site.products` — array of 8 product objects (name, url, tagline, description, icon key, color, features[])
+- `site.useCases` — 3 persona objects (persona, headline, description, tags[])
+- `site.testimonials` — 3 testimonial objects (quote, author, role, company)
+- `site.stats` — 4 stat objects (value, label, description)
+- `site.faq` — 6 FAQ objects (question, answer)
+- `site.finalCta` — final CTA section copy
+- `site.footer` — products, company, legal link arrays
+
+To update any text on the site, edit `src/content/site.ts` only.
+
+### Animation System
+
+All animations use **GSAP 3 + ScrollTrigger**. The animation logic is centralised in `src/lib/motion/animations.ts`.
+
+**Key principle:** Every animation is wrapped in `gsap.matchMedia()` with separate handlers for `(prefers-reduced-motion: no-preference)` and `(prefers-reduced-motion: reduce)`. This means animations are fully accessible by default — reduced-motion users get either a minimal fade or no animation at all.
+
+**Exported utilities in `animations.ts`:**
+
+| Function | Purpose |
+|---|---|
+| `revealOnScroll(elements, opts)` | Fade + slide-up triggered by ScrollTrigger. Accepts a CSS selector, Element, or NodeList. Options: `stagger`, `delay`, `start`. |
+| `heroEntrance(targets)` | One-shot entrance timeline for the hero. Pass an object with selector strings for `badge`, `headline`, `sub`, `ctas`, `visual`. |
+| `staggerCards(selector, triggerEl?)` | Grid card stagger — fade + scale-up with 80ms stagger per card. |
+| `parallaxX(selector, amount)` | Scrub-based horizontal parallax for decorative elements. |
+| `animateCounter(el, endValue, suffix, prefix)` | Counts from 0 to a number on scroll. Used for stat sections. |
+
+**Usage pattern in components:**
+```astro
+<script>
+  import { staggerCards } from '../../lib/motion/animations';
+  staggerCards('.product-card', '.product-card');
+</script>
+```
+
+GSAP and ScrollTrigger are imported once per script block. Astro/Vite deduplicates the GSAP bundle across all script blocks automatically — it is not loaded multiple times.
+
+**No scroll hijacking.** All animations use `scrub` or `once: true` on ScrollTrigger. The user retains full control of scroll.
+
+### Component Conventions
+
+Each section component follows this structure:
+
+1. **Frontmatter** — imports from `../../content/site` (relative path, not alias)
+2. **Section element** — always has an `id` matching the nav anchor (e.g. `id="products"`) and `aria-labelledby` pointing to the section's `<h2>`
+3. **`.container` div** — constrains content to max-width with responsive padding
+4. **Intro block** — `<p>` label (uppercase, indigo, small) + `<h2>` + optional subheadline. This block gets a class like `.products-intro` for the animation hook.
+5. **Content grid** — cards/panels with animation hook classes (e.g. `.product-card`)
+6. **`<script>` block** — imports animation utilities and calls them
+
+**Section heading structure:** Every section has exactly one `<h2>` with an `id`. The hero has the only `<h1>`. This maintains correct heading hierarchy throughout the page.
+
+**SVG icons:** Product icons are defined as inline SVG path strings in a `Record<string, string>` at the top of `Products.astro`, injected via `set:html`. This keeps icons co-located with usage and avoids a separate icon component tree.
+
+### SEO and Metadata
+
+**`src/lib/seo/meta.ts`** exports `buildMeta(options)` which merges page-specific overrides with site defaults. Returns `{ title, description, image, noIndex }`.
+
+**`src/layouts/Layout.astro`** uses `buildMeta` to populate:
+- `<title>`, `<meta name="description">`, `<link rel="canonical">`
+- Full Open Graph tags (`og:type`, `og:url`, `og:title`, `og:description`, `og:image`, `og:site_name`)
+- Twitter Card tags
+- `robots` meta if `noIndex: true`
+
+**Structured data** (JSON-LD) is embedded as `<script type="application/ld+json" is:inline>` in `Layout.astro`:
+- `Organization` schema
+- `SoftwareApplication` schema
+
+**FAQ structured data** (`FAQPage` schema) is in `FAQ.astro` as an inline script. Note: the `mainEntity` array is currently empty — populate it if the FAQ answers need to appear in Google rich results.
+
+**Sitemap** is auto-generated by `@astrojs/sitemap` at build time → `dist/sitemap-index.xml`. The `robots.txt` references it.
+
+### CI Pipeline
+
+**`.github/workflows/ci.yml`** runs on push to `main`/`dev` and on PRs to `main`:
+
+1. Checkout + Node 20 setup with npm cache
+2. `npm ci` — clean install from lockfile
+3. `npm run check` — TypeScript check via `astro check`
+4. `npm run lint` — ESLint + Prettier check
+5. `npm run build` — production build
+6. Install Playwright browsers (Chromium only in CI)
+7. `npm test` — full Playwright suite
+8. Upload Playwright HTML report as artifact (30-day retention)
+
+### Testing Setup
+
+**`tests/homepage.spec.ts`** — functional tests:
+- Page title includes "Pello"
+- Hero section and headline visible
+- All 8 product names visible
+- URL input functional
+- Navigation visible
+- FAQ accordion toggle (aria-expanded state)
+- Footer and legal links present
+- Skip link present
+- Mobile menu open/close/Escape
+- Visual snapshot of hero section
+
+**`tests/accessibility.spec.ts`** — accessibility tests:
+- Full axe WCAG 2.0/2.1 AA scan via `@axe-core/playwright`
+- All images have alt text
+- All buttons have accessible names
+- Exactly one `<h1>` on the page
+- Tab order starts with skip link (`#skip-link`)
+- Colour contrast: no critical violations (warnings are logged but don't fail)
+
+**Animation suppression in tests:** Every test that does visual inspection or needs stable DOM state injects a `<style>` that zeroes all `animation-duration` and `transition-duration` values via `page.addInitScript()`.
+
+**Playwright config:**
+- Base URL: `http://localhost:4321`
+- Uses `npm run preview` as the web server (runs against the built `dist/`)
+- Two projects: Desktop Chromium + Mobile Safari (iPhone 13)
+- Snapshots use `maxDiffPixelRatio: 0.05`
+
+### Patterns and Conventions Established
+
+**Do not:**
+- Add React components unless Astro genuinely cannot handle the interactivity
+- Import from `node_modules` directly in `.astro` frontmatter for runtime values (it runs at build time only)
+- Use animation libraries other than GSAP
+- Add backend, auth, CMS, or database dependencies
+- Create new design tokens outside `@theme {}` in `global.css`
+- Hardcode copy in components — always update `src/content/site.ts`
+
+**Do:**
+- Keep every section independently movable/removable
+- Add animation hook classes (e.g. `.my-section-card`) to elements and call animation utilities in the component's `<script>` block
+- Use `aria-labelledby` on every `<section>` pointing to its `<h2>`
+- Use `role="list"` + `list-none` on styled `<ul>` elements (Tailwind removes list semantics, this restores them)
+- Use `is:inline` on `<script type="application/ld+json">` tags
+- Use `.container` for all content width constraints
+- Keep `src/content/site.ts` as the only place copy is edited
