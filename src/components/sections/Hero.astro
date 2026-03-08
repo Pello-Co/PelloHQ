@@ -1,17 +1,6 @@
 ---
 import { site } from '../../content/site';
 
-const floatClasses = [
-  'float-a',
-  'float-b',
-  'float-c',
-  'float-d',
-  'float-e',
-  'float-f',
-  'float-g',
-  'float-h',
-] as const;
-
 const icons: Record<string, string> = {
   seo: `<path d="M3 5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1H3V5ZM3 8h14v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8Z" fill="currentColor" opacity="0.2"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`,
   reach: `<path d="M2 6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1l-8 5.5L2 6Z" fill="currentColor" opacity="0.25"/><path d="M2 6.5V16a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V6.5L9 12 2 6.5Z" fill="currentColor" opacity="0.1"/>`,
@@ -23,8 +12,27 @@ const icons: Record<string, string> = {
   build: `<rect x="3" y="3" width="8" height="8" rx="1" fill="currentColor" opacity="0.2"/><rect x="13" y="3" width="8" height="8" rx="1" fill="currentColor" opacity="0.2"/><rect x="3" y="13" width="8" height="8" rx="1" fill="currentColor" opacity="0.2"/><path d="M16 13v8M13 16.5h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>`,
 };
 
+const headlineLines = site.hero.headline.split('\n');
+const line1 = headlineLines[0] ?? '';
+const line2 = headlineLines[1] ?? '';
+
 const leftProducts = site.products.slice(0, 4);
 const rightProducts = site.products.slice(4, 8);
+
+// Per-card 3D depth data: depth (parallax strength), ry (rest rotateY°), rz (rest translateZ px)
+const leftCardData = [
+  { depth: 1.0, ry: -13, rz: 44 },
+  { depth: 0.72, ry: -8, rz: 28 },
+  { depth: 0.48, ry: -5, rz: 16 },
+  { depth: 0.28, ry: -2, rz: 7 },
+] as const;
+
+const rightCardData = [
+  { depth: 0.28, ry: 2, rz: 7 },
+  { depth: 0.48, ry: 5, rz: 16 },
+  { depth: 0.72, ry: 8, rz: 28 },
+  { depth: 1.0, ry: 13, rz: 44 },
+] as const;
 ---
 
 <section
@@ -32,68 +40,96 @@ const rightProducts = site.products.slice(4, 8);
   class="relative min-h-screen flex flex-col items-center justify-center overflow-hidden pt-24 pb-16"
   aria-labelledby="hero-headline"
 >
-  <!-- Background layers -->
+  <!-- Grid texture base -->
   <div class="absolute inset-0 grid-texture" aria-hidden="true"></div>
-  <div class="absolute inset-0 hero-glow" aria-hidden="true"></div>
 
-  <!-- Deep glow orbs -->
+  <!-- Aurora atmosphere blobs -->
   <div
-    class="absolute top-1/4 -left-48 w-[500px] h-[500px] rounded-full opacity-[0.07] blur-3xl pointer-events-none"
-    style="background: radial-gradient(circle, #6366f1, transparent);"
+    class="aurora-blob aurora-blob-1"
+    style="top: 15%; left: calc(50% - 320px);"
     aria-hidden="true"
   >
   </div>
   <div
-    class="absolute top-1/3 -right-48 w-[440px] h-[440px] rounded-full opacity-[0.06] blur-3xl pointer-events-none"
-    style="background: radial-gradient(circle, #a855f7, transparent);"
+    class="aurora-blob aurora-blob-2"
+    style="top: 25%; left: calc(50% - 60px);"
     aria-hidden="true"
   >
   </div>
   <div
-    class="absolute bottom-1/4 left-1/3 w-[360px] h-[360px] rounded-full opacity-[0.05] blur-3xl pointer-events-none"
-    style="background: radial-gradient(circle, #c026d3, transparent);"
+    class="aurora-blob aurora-blob-3"
+    style="top: 35%; left: calc(50% + 120px);"
     aria-hidden="true"
   >
+  </div>
+
+  <!-- Pulse rings centered on headline -->
+  <div
+    id="hero-pulse-origin"
+    class="absolute pointer-events-none"
+    style="top: 42%; left: 50%;"
+    aria-hidden="true"
+  >
+    <div class="pulse-ring"></div>
+    <div class="pulse-ring"></div>
+    <div class="pulse-ring"></div>
   </div>
 
   <div class="container relative z-10">
-    <!-- Desktop: 3-col constellation layout -->
-    <div class="hidden lg:grid lg:grid-cols-[260px_1fr_260px] gap-8 items-center">
-      <!-- Left product column -->
-      <div id="hero-left-cards" class="flex flex-col gap-3">
+    <!-- ── Desktop: 3-column constellation ── -->
+    <div class="hidden lg:grid lg:grid-cols-[280px_1fr_280px] gap-10 items-center">
+      <!-- Left product cards (3D perspective column) -->
+      <div
+        id="hero-left-cards"
+        class="flex flex-col gap-3"
+        style="perspective: 1400px; transform-style: preserve-3d;"
+      >
         {
-          leftProducts.map((product, i) => (
-            <div class={`hero-product-card ${floatClasses[i]}`} aria-label={product.name}>
+          leftProducts.map((product, i) => {
+            const d = leftCardData[i] ?? { depth: 0.5, ry: 0, rz: 0 };
+            return (
               <div
-                class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                style={`background: ${product.color}1a; border: 1px solid ${product.color}28; color: ${product.color};`}
-                aria-hidden="true"
+                class="hero-product-card hero-3d-card"
+                aria-label={product.name}
+                data-depth={d.depth}
+                data-ry={d.ry}
+                data-rz={d.rz}
+                data-color={product.color}
+                style="will-change: transform;"
               >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  set:html={icons[product.icon] ?? ''}
+                <div
+                  class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={`background: ${product.color}1a; border: 1px solid ${product.color}28; color: ${product.color};`}
+                  aria-hidden="true"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    set:html={icons[product.icon] ?? ''}
+                  />
+                </div>
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold text-white leading-none mb-0.5">
+                    {product.name}
+                  </p>
+                  <p class="text-xs text-zinc-500 leading-none truncate">{product.tagline}</p>
+                </div>
+                <div
+                  class="ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0"
+                  style={`background: ${product.color};`}
+                  aria-hidden="true"
                 />
               </div>
-              <div class="min-w-0">
-                <p class="text-sm font-semibold text-white leading-none mb-0.5">{product.name}</p>
-                <p class="text-xs text-zinc-500 leading-none truncate">{product.tagline}</p>
-              </div>
-              <div
-                class="ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0"
-                style={`background: ${product.color};`}
-                aria-hidden="true"
-              />
-            </div>
-          ))
+            );
+          })
         }
       </div>
 
-      <!-- Center: headline + input -->
+      <!-- Center: headline + form -->
       <div class="flex flex-col items-center text-center">
-        <div id="hero-badge" class="mb-7">
+        <div id="hero-badge" class="mb-7" style="opacity: 0;">
           <span class="badge">
             <span class="badge-dot" aria-hidden="true"></span>
             {site.hero.badge}
@@ -101,27 +137,27 @@ const rightProducts = site.products.slice(4, 8);
         </div>
 
         <h1 id="hero-headline" class="text-display mb-6">
-          {
-            site.hero.headline.split('\n').map((line, i) =>
-              i === 0 ? (
-                <span class="text-white">{line}</span>
-              ) : (
-                <>
-                  <>
-                    <br />
-                    <span class="gradient-text">{line}</span>
-                  </>
-                </>
-              )
-            )
-          }
+          <span
+            id="hero-line-1"
+            class="text-white"
+            style="display: block; overflow: hidden; padding-bottom: 0.08em; opacity: 0;"
+          >
+            {line1}
+          </span>
+          <span
+            id="hero-line-2"
+            class="gradient-text"
+            style="display: block; overflow: hidden; padding-bottom: 0.12em; opacity: 0;"
+          >
+            {line2}
+          </span>
         </h1>
 
-        <p id="hero-sub" class="text-body-lg text-zinc-400 max-w-lg mb-9">
+        <p id="hero-sub" class="text-body-lg text-zinc-400 max-w-lg mb-9" style="opacity: 0;">
           {site.hero.subheadline}
         </p>
 
-        <div id="hero-ctas" class="w-full max-w-md">
+        <div id="hero-ctas" class="w-full max-w-md" style="opacity: 0;">
           <form
             id="hero-form"
             class="url-input-wrap mb-4"
@@ -163,40 +199,57 @@ const rightProducts = site.products.slice(4, 8);
         </div>
       </div>
 
-      <!-- Right product column -->
-      <div id="hero-right-cards" class="flex flex-col gap-3">
+      <!-- Right product cards (3D perspective column) -->
+      <div
+        id="hero-right-cards"
+        class="flex flex-col gap-3"
+        style="perspective: 1400px; transform-style: preserve-3d;"
+      >
         {
-          rightProducts.map((product, i) => (
-            <div class={`hero-product-card ${floatClasses[i + 4]}`} aria-label={product.name}>
+          rightProducts.map((product, i) => {
+            const d = rightCardData[i] ?? { depth: 0.5, ry: 0, rz: 0 };
+            return (
               <div
-                class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                style={`background: ${product.color}1a; border: 1px solid ${product.color}28; color: ${product.color};`}
-                aria-hidden="true"
+                class="hero-product-card hero-3d-card"
+                aria-label={product.name}
+                data-depth={d.depth}
+                data-ry={d.ry}
+                data-rz={d.rz}
+                data-color={product.color}
+                style="will-change: transform;"
               >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  set:html={icons[product.icon] ?? ''}
+                <div
+                  class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={`background: ${product.color}1a; border: 1px solid ${product.color}28; color: ${product.color};`}
+                  aria-hidden="true"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    set:html={icons[product.icon] ?? ''}
+                  />
+                </div>
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold text-white leading-none mb-0.5">
+                    {product.name}
+                  </p>
+                  <p class="text-xs text-zinc-500 leading-none truncate">{product.tagline}</p>
+                </div>
+                <div
+                  class="ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0"
+                  style={`background: ${product.color};`}
+                  aria-hidden="true"
                 />
               </div>
-              <div class="min-w-0">
-                <p class="text-sm font-semibold text-white leading-none mb-0.5">{product.name}</p>
-                <p class="text-xs text-zinc-500 leading-none truncate">{product.tagline}</p>
-              </div>
-              <div
-                class="ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0"
-                style={`background: ${product.color};`}
-                aria-hidden="true"
-              />
-            </div>
-          ))
+            );
+          })
         }
       </div>
     </div>
 
-    <!-- Mobile: stacked layout -->
+    <!-- ── Mobile: stacked layout ── -->
     <div class="lg:hidden flex flex-col items-center text-center">
       <div id="hero-badge-mobile" class="mb-7">
         <span class="badge">
@@ -205,21 +258,15 @@ const rightProducts = site.products.slice(4, 8);
         </span>
       </div>
 
-      <h1
-        id="hero-headline-mobile"
-        class="text-display mb-6 max-w-2xl"
-        style="white-space: pre-line;"
-      >
+      <h1 id="hero-headline-mobile" class="text-display mb-6 max-w-2xl">
         {
           site.hero.headline.split('\n').map((line, i) =>
             i === 0 ? (
               <span class="text-white">{line}</span>
             ) : (
               <>
-                <>
-                  <br />
-                  <span class="gradient-text">{line}</span>
-                </>
+                <br />
+                <span class="gradient-text">{line}</span>
               </>
             )
           )
@@ -291,60 +338,202 @@ const rightProducts = site.products.slice(4, 8);
 
   <!-- Scroll indicator -->
   <div
-    class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-40"
+    class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-30"
     aria-hidden="true"
   >
     <div
       class="w-px h-8"
-      style="background: linear-gradient(180deg, rgba(255,255,255,0.4), transparent);"
+      style="background: linear-gradient(180deg, rgba(255,255,255,0.5), transparent);"
     >
     </div>
   </div>
 </section>
 
 <script>
-  import { heroEntrance } from '../../lib/motion/animations';
   import { gsap } from 'gsap';
 
-  // Desktop hero entrance
-  heroEntrance({
-    badge: '#hero-badge',
-    headline: '#hero-headline',
-    sub: '#hero-sub',
-    ctas: '#hero-ctas',
-  });
-
-  // Stagger-in the product cards
   const mm = gsap.matchMedia();
+
+  // ── FULL 3D EXPERIENCE (no reduced-motion) ──────────────────
   mm.add('(prefers-reduced-motion: no-preference)', () => {
-    gsap.from('#hero-left-cards .hero-product-card', {
-      opacity: 0,
-      x: -24,
-      duration: 0.6,
-      stagger: 0.1,
-      ease: 'power2.out',
-      delay: 0.8,
+    const leftCards = gsap.utils.toArray<HTMLElement>('#hero-left-cards .hero-3d-card');
+    const rightCards = gsap.utils.toArray<HTMLElement>('#hero-right-cards .hero-3d-card');
+    const allCards = [...leftCards, ...rightCards];
+
+    // Build rest-state arrays from data attributes
+    const restRY = allCards.map((c) => parseFloat(c.dataset['ry'] ?? '0'));
+    const restRZ = allCards.map((c) => parseFloat(c.dataset['rz'] ?? '0'));
+
+    // ── Entrance timeline ─────────────────────────────────────
+    const tl = gsap.timeline({ delay: 0.2 });
+
+    // Cards fly in from left/right with 3D arc
+    tl.from(
+      leftCards,
+      {
+        x: -180,
+        z: -320,
+        rotateY: 75,
+        opacity: 0,
+        stagger: 0.1,
+        duration: 1.15,
+        ease: 'power3.out',
+      },
+      0
+    );
+
+    tl.from(
+      rightCards,
+      {
+        x: 180,
+        z: -320,
+        rotateY: -75,
+        opacity: 0,
+        stagger: 0.1,
+        duration: 1.15,
+        ease: 'power3.out',
+      },
+      0
+    );
+
+    // Settle into 3D rest positions
+    tl.to(
+      allCards,
+      {
+        rotateY: (i: number) => restRY[i] ?? 0,
+        z: (i: number) => restRZ[i] ?? 0,
+        duration: 0.85,
+        ease: 'power2.inOut',
+        stagger: 0.04,
+      },
+      1.0
+    );
+
+    // Badge fade-up
+    tl.to('#hero-badge', { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, 0.6);
+    gsap.set('#hero-badge', { y: 14 });
+
+    // Headline line 1 — clip-path reveal
+    tl.to(
+      '#hero-line-1',
+      {
+        opacity: 1,
+        clipPath: 'inset(0 0 0% 0)',
+        y: 0,
+        duration: 0.7,
+        ease: 'power2.out',
+      },
+      0.72
+    );
+    gsap.set('#hero-line-1', { clipPath: 'inset(0 0 100% 0)', y: 14 });
+
+    // Headline line 2 — clip-path reveal
+    tl.to(
+      '#hero-line-2',
+      {
+        opacity: 1,
+        clipPath: 'inset(0 0 0% 0)',
+        y: 0,
+        duration: 0.7,
+        ease: 'power2.out',
+      },
+      0.88
+    );
+    gsap.set('#hero-line-2', { clipPath: 'inset(0 0 100% 0)', y: 14 });
+
+    // Sub + CTA fade-up
+    tl.to('#hero-sub', { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out' }, 1.1);
+    gsap.set('#hero-sub', { y: 12 });
+
+    tl.to('#hero-ctas', { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out' }, 1.26);
+    gsap.set('#hero-ctas', { y: 12 });
+
+    // ── Mouse parallax with quickTo ───────────────────────────
+    const xQs = allCards.map((c) => gsap.quickTo(c, 'x', { duration: 1.6, ease: 'power2.out' }));
+    const yQs = allCards.map((c) => gsap.quickTo(c, 'y', { duration: 1.8, ease: 'power2.out' }));
+    const ryQs = allCards.map((c) =>
+      gsap.quickTo(c, 'rotateY', { duration: 2.0, ease: 'power2.out' })
+    );
+
+    const heroEl = document.getElementById('hero');
+
+    heroEl?.addEventListener('mousemove', (e: MouseEvent) => {
+      const mx = (e.clientX / window.innerWidth - 0.5) * 2; // -1 to +1
+      const my = (e.clientY / window.innerHeight - 0.5) * 2;
+
+      allCards.forEach((card, i) => {
+        const depth = parseFloat(card.dataset['depth'] ?? '0.5');
+        xQs[i]?.(mx * 32 * depth);
+        yQs[i]?.(my * 14 * depth);
+        ryQs[i]?.((restRY[i] ?? 0) + mx * 9 * depth);
+      });
     });
-    gsap.from('#hero-right-cards .hero-product-card', {
-      opacity: 0,
-      x: 24,
-      duration: 0.6,
-      stagger: 0.1,
-      ease: 'power2.out',
-      delay: 0.8,
+
+    heroEl?.addEventListener('mouseleave', () => {
+      allCards.forEach((card, i) => {
+        xQs[i]?.(0);
+        yQs[i]?.(0);
+        ryQs[i]?.(restRY[i] ?? 0);
+      });
+    });
+
+    // ── Card hover: 3D lift + colour glow ────────────────────
+    allCards.forEach((card) => {
+      const color = card.dataset['color'] ?? '#6366f1';
+
+      card.addEventListener('mouseenter', () => {
+        gsap.to(card, {
+          scale: 1.05,
+          z: (parseFloat(card.dataset['rz'] ?? '0') + 20).toString(),
+          boxShadow: `0 12px 48px ${color}50, 0 0 0 1px ${color}35`,
+          duration: 0.28,
+          ease: 'power2.out',
+        });
+      });
+
+      card.addEventListener('mouseleave', () => {
+        gsap.to(card, {
+          scale: 1,
+          z: card.dataset['rz'] ?? '0',
+          boxShadow: 'none',
+          duration: 0.4,
+          ease: 'power2.inOut',
+        });
+      });
     });
   });
 
-  // Mobile entrance
-  heroEntrance({
-    badge: '#hero-badge-mobile',
-    headline: '#hero-headline-mobile',
-    sub: '#hero-sub-mobile',
-    ctas: '#hero-ctas-mobile',
-    visual: '#hero-mobile-cards',
+  // ── REDUCED MOTION: simple fade only ────────────────────────
+  mm.add('(prefers-reduced-motion: reduce)', () => {
+    const elements = [
+      '#hero-badge',
+      '#hero-line-1',
+      '#hero-line-2',
+      '#hero-sub',
+      '#hero-ctas',
+      '#hero-left-cards .hero-3d-card',
+      '#hero-right-cards .hero-3d-card',
+    ];
+    gsap.to(elements, { opacity: 1, duration: 0.4, stagger: 0.05, ease: 'none' });
   });
 
-  // Form handling (desktop)
+  // ── Mobile entrance ──────────────────────────────────────────
+  mm.add('(max-width: 1023px)', () => {
+    gsap.from(
+      ['#hero-badge-mobile', '#hero-headline-mobile', '#hero-sub-mobile', '#hero-ctas-mobile'],
+      { opacity: 0, y: 20, duration: 0.6, stagger: 0.12, ease: 'power2.out', delay: 0.3 }
+    );
+    gsap.from('#hero-mobile-cards .hero-product-card', {
+      opacity: 0,
+      y: 16,
+      duration: 0.5,
+      stagger: 0.06,
+      ease: 'power2.out',
+      delay: 0.9,
+    });
+  });
+
+  // ── Form handling ────────────────────────────────────────────
   function handleForm(formId: string, inputId: string, msgId: string) {
     const form = document.getElementById(formId) as HTMLFormElement | null;
     const input = document.getElementById(inputId) as HTMLInputElement | null;

@@ -739,3 +739,142 @@ body {
     transparent
   );
 }
+
+/* ============================================================
+   AURORA BLOBS (Hero background atmosphere)
+   ============================================================ */
+
+@keyframes aurora-drift-1 {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.55;
+  }
+  30% {
+    transform: translate(40px, -30px) scale(1.08);
+    opacity: 0.7;
+  }
+  65% {
+    transform: translate(-20px, 20px) scale(0.94);
+    opacity: 0.45;
+  }
+}
+
+@keyframes aurora-drift-2 {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.45;
+  }
+  35% {
+    transform: translate(-50px, 25px) scale(1.06);
+    opacity: 0.6;
+  }
+  70% {
+    transform: translate(30px, -15px) scale(0.96);
+    opacity: 0.35;
+  }
+}
+
+@keyframes aurora-drift-3 {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.35;
+  }
+  40% {
+    transform: translate(25px, 35px) scale(1.04);
+    opacity: 0.5;
+  }
+  75% {
+    transform: translate(-35px, -20px) scale(0.97);
+    opacity: 0.3;
+  }
+}
+
+.aurora-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.aurora-blob-1 {
+  width: 640px;
+  height: 400px;
+  background: radial-gradient(ellipse, rgba(99, 102, 241, 0.45) 0%, transparent 70%);
+  animation: aurora-drift-1 12s ease-in-out infinite;
+}
+
+.aurora-blob-2 {
+  width: 520px;
+  height: 480px;
+  background: radial-gradient(ellipse, rgba(168, 85, 247, 0.38) 0%, transparent 70%);
+  animation: aurora-drift-2 15s ease-in-out infinite;
+  animation-delay: -5s;
+}
+
+.aurora-blob-3 {
+  width: 440px;
+  height: 360px;
+  background: radial-gradient(ellipse, rgba(192, 38, 211, 0.3) 0%, transparent 70%);
+  animation: aurora-drift-3 10s ease-in-out infinite;
+  animation-delay: -3s;
+}
+
+/* ============================================================
+   PULSE RINGS (Hero headline center)
+   ============================================================ */
+
+@keyframes ring-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.2);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(5);
+    opacity: 0;
+  }
+}
+
+.pulse-ring {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  left: 50%;
+  top: 50%;
+  animation: ring-pulse 5s ease-out infinite;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.pulse-ring:nth-child(2) {
+  animation-delay: -1.67s;
+  border-color: rgba(139, 92, 246, 0.25);
+}
+
+.pulse-ring:nth-child(3) {
+  animation-delay: -3.33s;
+  border-color: rgba(168, 85, 247, 0.18);
+}
+
+/* ============================================================
+   REDUCED MOTION — aurora & pulse off
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora-blob-1,
+  .aurora-blob-2,
+  .aurora-blob-3 {
+    animation: none;
+    opacity: 0.3;
+  }
+
+  .pulse-ring {
+    animation: none;
+    opacity: 0;
+  }
+}
