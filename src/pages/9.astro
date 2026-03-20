@@ -81,11 +81,11 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     const actx = auroraCanvas.getContext('2d')!;
 
     const blobs = [
-      { cx: 0.2, cy: 0.5, rx: 0.45, ry: 0.35, color: [96, 86, 240], alpha: 0.18, speedX: 0.15, speedY: 0.1, phaseX: 0, phaseY: 0.5 },
-      { cx: 0.8, cy: 0.4, rx: 0.4, ry: 0.3, color: [145, 84, 231], alpha: 0.14, speedX: 0.12, speedY: 0.18, phaseX: 1.5, phaseY: 0 },
-      { cx: 0.5, cy: 0.7, rx: 0.5, ry: 0.25, color: [66, 133, 244], alpha: 0.1, speedX: 0.08, speedY: 0.14, phaseX: 3, phaseY: 2 },
-      { cx: 0.3, cy: 0.3, rx: 0.35, ry: 0.4, color: [200, 0, 200], alpha: 0.06, speedX: 0.2, speedY: 0.08, phaseX: 2, phaseY: 4 },
-      { cx: 0.7, cy: 0.6, rx: 0.3, ry: 0.35, color: [85, 200, 255], alpha: 0.07, speedX: 0.1, speedY: 0.22, phaseX: 4, phaseY: 1 },
+      { cx: 0.2, cy: 0.5, rx: 0.45, ry: 0.35, color: [96, 86, 240], alpha: 0.18, speedX: 0.4, speedY: 0.3, phaseX: 0, phaseY: 0.5, driftX: 0.25, driftY: 0.2 },
+      { cx: 0.8, cy: 0.4, rx: 0.4, ry: 0.3, color: [145, 84, 231], alpha: 0.14, speedX: 0.35, speedY: 0.45, phaseX: 1.5, phaseY: 0, driftX: 0.2, driftY: 0.25 },
+      { cx: 0.5, cy: 0.7, rx: 0.5, ry: 0.25, color: [66, 133, 244], alpha: 0.1, speedX: 0.25, speedY: 0.35, phaseX: 3, phaseY: 2, driftX: 0.3, driftY: 0.15 },
+      { cx: 0.3, cy: 0.3, rx: 0.35, ry: 0.4, color: [200, 0, 200], alpha: 0.06, speedX: 0.5, speedY: 0.25, phaseX: 2, phaseY: 4, driftX: 0.2, driftY: 0.3 },
+      { cx: 0.7, cy: 0.6, rx: 0.3, ry: 0.35, color: [85, 200, 255], alpha: 0.07, speedX: 0.3, speedY: 0.55, phaseX: 4, phaseY: 1, driftX: 0.25, driftY: 0.2 },
     ];
 
     let aW = 0, aH = 0, aDpr = 1;
@@ -108,10 +108,11 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
       const t = performance.now() * 0.001; // seconds
 
       for (const b of blobs) {
-        const cx = (b.cx + Math.sin(t * b.speedX + b.phaseX) * 0.15) * aW;
-        const cy = (b.cy + Math.sin(t * b.speedY + b.phaseY) * 0.12) * aH;
-        const rx = b.rx * aW;
-        const ry = b.ry * aH;
+        const cx = (b.cx + Math.sin(t * b.speedX + b.phaseX) * b.driftX) * aW;
+        const cy = (b.cy + Math.sin(t * b.speedY + b.phaseY) * b.driftY) * aH;
+        const pulse = 1 + Math.sin(t * 0.3 + b.phaseX * 2) * 0.15;
+        const rx = b.rx * aW * pulse;
+        const ry = b.ry * aH * pulse;
 
         const grad = actx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(rx, ry));
         const [r, g, bl] = b.color;
