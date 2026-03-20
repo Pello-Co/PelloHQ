@@ -308,7 +308,7 @@ import ConceptNav from '../components/hero-variants/ConceptNav.astro';
   // ─── Dot Grid ────────────────────────────────────────────────────────────────
 
   const GRID = 16;
-  const INFLUENCE_RADIUS = 725;
+  const INFLUENCE_RADIUS = 575;
   const PUSH_STRENGTH = 28;
   const LERP_SPEED = 0.035;
   const NOISE_SCALE = 0.04;
@@ -317,7 +317,7 @@ import ConceptNav from '../components/hero-variants/ConceptNav.astro';
 
   const ACCENT1: [number, number, number] = [99, 102, 241];   // indigo
   const ACCENT2: [number, number, number] = [139, 92, 246];   // violet
-  const BASE_COLOR = 'rgb(55, 55, 70)';
+  const BASE_RGB: [number, number, number] = [55, 55, 70];
 
   interface Dot {
     gx: number; // home grid x
@@ -361,15 +361,20 @@ import ConceptNav from '../components/hero-variants/ConceptNav.astro';
     buildGrid();
   }
 
-  function lerpColor(
+  function lerpRGB(
     a: [number, number, number],
     b: [number, number, number],
     t: number
-  ): string {
-    const r = Math.round(a[0] + (b[0] - a[0]) * t);
-    const g = Math.round(a[1] + (b[1] - a[1]) * t);
-    const bl = Math.round(a[2] + (b[2] - a[2]) * t);
-    return `rgb(${r},${g},${bl})`;
+  ): [number, number, number] {
+    return [
+      Math.round(a[0] + (b[0] - a[0]) * t),
+      Math.round(a[1] + (b[1] - a[1]) * t),
+      Math.round(a[2] + (b[2] - a[2]) * t),
+    ];
+  }
+
+  function rgbStr(c: [number, number, number]): string {
+    return `rgb(${c[0]},${c[1]},${c[2]})`;
   }
 
   function frame() {
@@ -395,8 +400,10 @@ import ConceptNav from '../components/hero-variants/ConceptNav.astro';
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist < INFLUENCE_RADIUS) {
-          influence = 1 - dist / INFLUENCE_RADIUS;
-          influence = Math.max(0, Math.min(1, influence));
+          // Double smoothstep for ultra-soft falloff — no visible boundary
+          const raw = 1 - dist / INFLUENCE_RADIUS;
+          const s = raw * raw * (3 - 2 * raw);
+          influence = s * s * (3 - 2 * s);
 
           const pushMag = Math.pow(influence, 3) * PUSH_STRENGTH;
           const len = dist || 1;
@@ -427,13 +434,14 @@ import ConceptNav from '../components/hero-variants/ConceptNav.astro';
 
       if (opacity < 0.01) continue;
 
-      // Near-mouse colour + dim
-      let color = BASE_COLOR;
+      // Near-mouse colour + dim — use inf³ for colour so only strong near center, invisible at edges
+      let color = rgbStr(BASE_RGB);
       if (influence > 0) {
-        const inf2 = influence * influence;
+        const inf3 = influence * influence * influence;
         const blendFactor = (Math.sin(angleToMouse * 2 + t * 3) + 1) * 0.5;
-        color = lerpColor(ACCENT1, ACCENT2, blendFactor);
-        opacity *= 1 - inf2 * 0.85;
+        const accent = lerpRGB(ACCENT1, ACCENT2, blendFactor);
+        color = rgbStr(lerpRGB(BASE_RGB, accent, inf3));
+        opacity *= 1 - inf3 * 0.5;
       }
 
       ctx.globalAlpha = opacity;
