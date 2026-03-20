@@ -198,7 +198,8 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
       ctx.globalAlpha = opacity;
       ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.arc(dot.x, dot.y, 1, 0, Math.PI * 2);
+      const dotRadius = 1 + influence * 2; // 1px base → 3px max near cursor
+      ctx.arc(dot.x, dot.y, dotRadius, 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.globalAlpha = 1;
@@ -293,7 +294,8 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
       ctxCta.globalAlpha = opacity;
       ctxCta.fillStyle = color;
       ctxCta.beginPath();
-      ctxCta.arc(dot.x, dot.y, 1, 0, Math.PI * 2);
+      const dotRadiusCta = 1 + influence * 2;
+      ctxCta.arc(dot.x, dot.y, dotRadiusCta, 0, Math.PI * 2);
       ctxCta.fill();
     }
     ctxCta.globalAlpha = 1;
