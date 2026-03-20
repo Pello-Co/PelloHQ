@@ -1,0 +1,219 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+import HeroPello from '../components/sections/HeroPello.astro';
+import HowItWorks from '../components/sections/HowItWorks.astro';
+import ProductSection from '../components/sections/ProductSection.astro';
+import UseCases from '../components/sections/UseCases.astro';
+import Stats from '../components/sections/Stats.astro';
+import FAQ from '../components/sections/FAQ.astro';
+import FinalCTA from '../components/sections/FinalCTA.astro';
+---
+
+<Layout title="Pello — Dot Grid Preview" noIndex={true}>
+  <Header />
+  <main id="main-content">
+    <!-- Section 1: Hero with Dot Grid Background -->
+    <div id="dot-grid-wrap" class="relative">
+      <canvas class="dot-grid-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;"></canvas>
+      <HeroPello />
+    </div>
+
+    <!-- Section 2: How It Works -->
+    <HowItWorks />
+
+    <!-- Sections 3–10: Individual product showcases (alternating layout) -->
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <!-- Section 11: Use Cases -->
+    <UseCases />
+
+    <!-- Section 12: Stats -->
+    <Stats />
+
+    <!-- Section 13: FAQ -->
+    <FAQ />
+
+    <!-- Section 14: Final CTA -->
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<!-- Skip to main content link (accessibility) -->
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus {
+    top: 0;
+  }
+</style>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<script>
+  // ─── Dot Grid Background (behind hero) ────────────────────────────────────
+  // Perlin noise permutation table
+  const PERM = new Uint8Array(512);
+  {
+    const p = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) p[i] = i;
+    for (let i = 255; i > 0; i--) {
+      const j = ((i * 2654435761) >>> 0) % (i + 1);
+      const tmp = p[i]; p[i] = p[j]; p[j] = tmp;
+    }
+    for (let i = 0; i < 512; i++) PERM[i] = p[i & 255];
+  }
+  const GRADS: [number, number][] = [[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+  function fade(t: number) { return t * t * t * (t * (t * 6 - 15) + 10); }
+  function nlerp(a: number, b: number, t: number) { return a + t * (b - a); }
+  function grad(h: number, x: number, y: number) { const [gx, gy] = GRADS[h & 7]; return gx * x + gy * y; }
+  function noise2(x: number, y: number): number {
+    const X = Math.floor(x) & 255, Y = Math.floor(y) & 255;
+    const xf = x - Math.floor(x), yf = y - Math.floor(y);
+    const u = fade(xf), v = fade(yf);
+    const aa = PERM[PERM[X]+Y], ab = PERM[PERM[X]+Y+1], ba = PERM[PERM[X+1]+Y], bb = PERM[PERM[X+1]+Y+1];
+    return nlerp(nlerp(grad(aa,xf,yf), grad(ba,xf-1,yf), u), nlerp(grad(ab,xf,yf-1), grad(bb,xf-1,yf-1), u), v);
+  }
+
+  const GRID = 16;
+  const INFLUENCE_RADIUS = 575;
+  const PUSH_STRENGTH = 28;
+  const LERP_SPEED = 0.035;
+  const NOISE_SCALE = 0.04;
+  const NOISE_SPEED = 0.0008;
+  const NOISE_STRENGTH = 6;
+
+  const ACCENT1: [number, number, number] = [99, 102, 241];
+  const ACCENT2: [number, number, number] = [139, 92, 246];
+  const BASE_RGB: [number, number, number] = [55, 55, 70];
+
+  interface Dot { gx: number; gy: number; x: number; y: number; }
+
+  const canvas = document.querySelector<HTMLCanvasElement>('.dot-grid-canvas')!;
+  const wrap = document.getElementById('dot-grid-wrap')!;
+  const ctx = canvas.getContext('2d')!;
+  let dots: Dot[] = [];
+  let mouse: { x: number; y: number } | null = null;
+  let dpr = 1;
+  let rafId = 0;
+
+  function buildGrid() {
+    dots = [];
+    const W = canvas.width / dpr;
+    const H = canvas.height / dpr;
+    const cols = Math.ceil(W / GRID) + 2;
+    const rows = Math.ceil(H / GRID) + 2;
+    for (let r = 0; r < rows; r++)
+      for (let c = 0; c < cols; c++) {
+        const gx = c * GRID, gy = r * GRID;
+        dots.push({ gx, gy, x: gx, y: gy });
+      }
+  }
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    const w = Math.round(rect.width), h = Math.round(rect.height);
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    canvas.style.width = `${w}px`; canvas.style.height = `${h}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildGrid();
+  }
+
+  function lerpRGB(a: [number,number,number], b: [number,number,number], t: number): [number,number,number] {
+    return [Math.round(a[0]+(b[0]-a[0])*t), Math.round(a[1]+(b[1]-a[1])*t), Math.round(a[2]+(b[2]-a[2])*t)];
+  }
+  function rgbStr(c: [number,number,number]) { return `rgb(${c[0]},${c[1]},${c[2]})`; }
+
+  function frame() {
+    rafId = requestAnimationFrame(frame);
+    const W = canvas.width / dpr, H = canvas.height / dpr;
+    const t = performance.now() * NOISE_SPEED;
+    ctx.clearRect(0, 0, W, H);
+    const fadeZone = H * 0.75;
+
+    for (const dot of dots) {
+      let targetX = dot.gx, targetY = dot.gy, influence = 0, angleToMouse = 0;
+      if (mouse) {
+        const dx = dot.gx - mouse.x, dy = dot.gy - mouse.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < INFLUENCE_RADIUS) {
+          const raw = 1 - dist / INFLUENCE_RADIUS;
+          const s = raw * raw * (3 - 2 * raw);
+          influence = s * s * (3 - 2 * s);
+          const pushMag = Math.pow(influence, 3) * PUSH_STRENGTH;
+          const len = dist || 1;
+          targetX += (dx / len) * pushMag;
+          targetY += (dy / len) * pushMag;
+          const noiseX = noise2(dot.gx * NOISE_SCALE, dot.gy * NOISE_SCALE + t);
+          const noiseY = noise2(dot.gx * NOISE_SCALE + 100, dot.gy * NOISE_SCALE + t);
+          const noiseMag = influence * influence * NOISE_STRENGTH;
+          targetX += noiseX * noiseMag;
+          targetY += noiseY * noiseMag;
+          angleToMouse = Math.atan2(dy, dx);
+        }
+      }
+      dot.x += (targetX - dot.x) * LERP_SPEED;
+      dot.y += (targetY - dot.y) * LERP_SPEED;
+
+      let opacity = 1;
+      if (dot.gy > fadeZone) {
+        opacity *= 1 - Math.min(1, (dot.gy - fadeZone) / (H - fadeZone));
+      }
+      if (opacity < 0.01) continue;
+
+      let color = rgbStr(BASE_RGB);
+      if (influence > 0) {
+        const inf3 = influence * influence * influence;
+        const blendFactor = (Math.sin(angleToMouse * 2 + t * 3) + 1) * 0.5;
+        const accent = lerpRGB(ACCENT1, ACCENT2, blendFactor);
+        color = rgbStr(lerpRGB(BASE_RGB, accent, inf3));
+        opacity *= 1 - inf3 * 0.5;
+      }
+      ctx.globalAlpha = opacity;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(dot.x, dot.y, 1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  window.addEventListener('mousemove', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  });
+  window.addEventListener('mouseleave', () => { mouse = null; });
+  window.addEventListener('touchstart', () => { mouse = null; }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  rafId = requestAnimationFrame(frame);
+
+  // Hide the default grid-texture so dot grid canvas replaces it
+  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+</script>
