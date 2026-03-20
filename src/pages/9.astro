@@ -79,15 +79,6 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     const auroraCanvas = document.querySelector<HTMLCanvasElement>('.aurora-canvas')!;
     const auroraWrap = document.getElementById('dot-grid-wrap')!;
     const actx = auroraCanvas.getContext('2d')!;
-
-    const blobs = [
-      { cx: 0.2, cy: 0.5, rx: 0.45, ry: 0.35, color: [96, 86, 240], alpha: 0.18, speedX: 0.4, speedY: 0.3, phaseX: 0, phaseY: 0.5, driftX: 0.25, driftY: 0.2 },
-      { cx: 0.8, cy: 0.4, rx: 0.4, ry: 0.3, color: [145, 84, 231], alpha: 0.14, speedX: 0.35, speedY: 0.45, phaseX: 1.5, phaseY: 0, driftX: 0.2, driftY: 0.25 },
-      { cx: 0.5, cy: 0.7, rx: 0.5, ry: 0.25, color: [66, 133, 244], alpha: 0.1, speedX: 0.25, speedY: 0.35, phaseX: 3, phaseY: 2, driftX: 0.3, driftY: 0.15 },
-      { cx: 0.3, cy: 0.3, rx: 0.35, ry: 0.4, color: [200, 0, 200], alpha: 0.06, speedX: 0.5, speedY: 0.25, phaseX: 2, phaseY: 4, driftX: 0.2, driftY: 0.3 },
-      { cx: 0.7, cy: 0.6, rx: 0.3, ry: 0.35, color: [85, 200, 255], alpha: 0.07, speedX: 0.3, speedY: 0.55, phaseX: 4, phaseY: 1, driftX: 0.25, driftY: 0.2 },
-    ];
-
     let aW = 0, aH = 0, aDpr = 1;
 
     function resizeAurora() {
@@ -102,34 +93,58 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
       actx.setTransform(aDpr, 0, 0, aDpr, 0, 0);
     }
 
+    // Aurora bands — elongated, bright, flowing wave shapes
+    const bands = [
+      // Main purple sweep (large, dominant, left-to-right)
+      { color: [96, 60, 240], alpha: 0.45, yBase: 0.55, yAmp: 0.12, xSpeed: 0.3, ySpeed: 0.2, width: 1.4, height: 0.18, rot: -0.15, rotSpeed: 0.08, phase: 0 },
+      // Violet sweep (overlapping, slightly offset)
+      { color: [140, 60, 235], alpha: 0.35, yBase: 0.5, yAmp: 0.1, xSpeed: 0.25, ySpeed: 0.15, width: 1.2, height: 0.22, rot: 0.1, rotSpeed: 0.1, phase: 1.2 },
+      // Deep blue undercurrent
+      { color: [50, 80, 220], alpha: 0.3, yBase: 0.6, yAmp: 0.15, xSpeed: 0.2, ySpeed: 0.25, width: 1.6, height: 0.15, rot: -0.08, rotSpeed: 0.06, phase: 2.5 },
+      // Bright magenta accent streak
+      { color: [180, 30, 200], alpha: 0.25, yBase: 0.48, yAmp: 0.08, xSpeed: 0.4, ySpeed: 0.18, width: 0.9, height: 0.1, rot: 0.2, rotSpeed: 0.12, phase: 3.8 },
+      // Cyan/teal edge glow (bottom-left)
+      { color: [40, 180, 220], alpha: 0.2, yBase: 0.65, yAmp: 0.1, xSpeed: 0.15, ySpeed: 0.3, width: 0.8, height: 0.12, rot: -0.25, rotSpeed: 0.07, phase: 5 },
+      // Secondary purple (top area, softer)
+      { color: [110, 50, 200], alpha: 0.2, yBase: 0.4, yAmp: 0.12, xSpeed: 0.35, ySpeed: 0.12, width: 1.0, height: 0.2, rot: 0.05, rotSpeed: 0.09, phase: 1.8 },
+    ];
+
     function frameAurora() {
       requestAnimationFrame(frameAurora);
       actx.clearRect(0, 0, aW, aH);
-      const t = performance.now() * 0.001; // seconds
+      const t = performance.now() * 0.001;
 
-      for (const b of blobs) {
-        const cx = (b.cx + Math.sin(t * b.speedX + b.phaseX) * b.driftX) * aW;
-        const cy = (b.cy + Math.sin(t * b.speedY + b.phaseY) * b.driftY) * aH;
-        const pulse = 1 + Math.sin(t * 0.3 + b.phaseX * 2) * 0.15;
-        const rx = b.rx * aW * pulse;
-        const ry = b.ry * aH * pulse;
+      // Use 'lighter' blend for additive glow where bands overlap
+      actx.globalCompositeOperation = 'lighter';
 
-        const grad = actx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(rx, ry));
-        const [r, g, bl] = b.color;
-        grad.addColorStop(0, `rgba(${r},${g},${bl},${b.alpha})`);
-        grad.addColorStop(0.4, `rgba(${r},${g},${bl},${b.alpha * 0.6})`);
-        grad.addColorStop(1, `rgba(${r},${g},${bl},0)`);
+      for (const b of bands) {
+        const cx = aW * 0.5 + Math.sin(t * b.xSpeed + b.phase) * aW * 0.2;
+        const cy = aH * (b.yBase + Math.sin(t * b.ySpeed + b.phase) * b.yAmp);
+        const w = aW * b.width;
+        const h = aH * b.height * (1 + Math.sin(t * 0.4 + b.phase) * 0.2);
+        const angle = b.rot + Math.sin(t * b.rotSpeed + b.phase * 0.7) * 0.12;
 
         actx.save();
         actx.translate(cx, cy);
-        actx.scale(1, ry / rx);
-        actx.translate(-cx, -cy);
+        actx.rotate(angle);
+
+        // Create elongated gradient — wide and flat like a wave band
+        const grad = actx.createRadialGradient(0, 0, 0, 0, 0, w * 0.5);
+        const [r, g, bl] = b.color;
+        grad.addColorStop(0, `rgba(${r},${g},${bl},${b.alpha})`);
+        grad.addColorStop(0.3, `rgba(${r},${g},${bl},${b.alpha * 0.7})`);
+        grad.addColorStop(0.6, `rgba(${r},${g},${bl},${b.alpha * 0.3})`);
+        grad.addColorStop(1, `rgba(${r},${g},${bl},0)`);
+
         actx.fillStyle = grad;
+        actx.scale(1, h / w); // squash into a wide band
         actx.beginPath();
-        actx.arc(cx, cy, rx, 0, Math.PI * 2);
+        actx.arc(0, 0, w * 0.5, 0, Math.PI * 2);
         actx.fill();
         actx.restore();
       }
+
+      actx.globalCompositeOperation = 'source-over';
     }
 
     const roAurora = new ResizeObserver(() => resizeAurora());
