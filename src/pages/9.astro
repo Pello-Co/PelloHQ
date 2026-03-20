@@ -44,11 +44,8 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     <!-- Section 13: FAQ -->
     <FAQ />
 
-    <!-- Section 14: Final CTA with Dot Grid -->
-    <div id="dot-grid-wrap-cta" class="relative">
-      <canvas class="dot-grid-canvas-cta" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;"></canvas>
-      <FinalCTA />
-    </div>
+    <!-- Section 14: Final CTA with Dot Grid (canvas injected into the inner card) -->
+    <FinalCTA />
   </main>
   <Footer />
 </Layout>
@@ -198,7 +195,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
       ctx.globalAlpha = opacity;
       ctx.fillStyle = color;
       ctx.beginPath();
-      const dotRadius = 1 + influence * 2; // 1px base → 3px max near cursor
+      const dotRadius = 1 + influence; // 1px base → 2px max near cursor
       ctx.arc(dot.x, dot.y, dotRadius, 0, Math.PI * 2);
       ctx.fill();
     }
@@ -222,8 +219,15 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
   if (gridTex) gridTex.style.display = 'none';
 
   // ─── Second Dot Grid instance for CTA section ─────────────────────────────
-  const canvasCta = document.querySelector<HTMLCanvasElement>('.dot-grid-canvas-cta')!;
-  const wrapCta = document.getElementById('dot-grid-wrap-cta')!;
+  // Inject canvas inside the .final-cta rounded card so it's clipped to the card bounds
+  const ctaCard = document.querySelector('.final-cta') as HTMLElement;
+  const canvasCta = document.createElement('canvas');
+  canvasCta.className = 'dot-grid-canvas-cta';
+  canvasCta.setAttribute('aria-hidden', 'true');
+  canvasCta.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;';
+  ctaCard.style.position = 'relative';
+  ctaCard.insertBefore(canvasCta, ctaCard.firstChild);
+  const wrapCta = ctaCard;
   const ctxCta = canvasCta.getContext('2d')!;
   let dotsCta: Dot[] = [];
   let mouseCta: { x: number; y: number } | null = null;
@@ -294,7 +298,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
       ctxCta.globalAlpha = opacity;
       ctxCta.fillStyle = color;
       ctxCta.beginPath();
-      const dotRadiusCta = 1 + influence * 2;
+      const dotRadiusCta = 1 + influence;
       ctxCta.arc(dot.x, dot.y, dotRadiusCta, 0, Math.PI * 2);
       ctxCta.fill();
     }
@@ -316,7 +320,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
   resizeCta();
   requestAnimationFrame(frameCta);
 
-  // Hide the CTA grid-texture too
-  const gridTexCta = wrapCta.querySelector('.grid-texture') as HTMLElement | null;
+  // Hide the CTA grid-texture so dot grid replaces it
+  const gridTexCta = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
   if (gridTexCta) gridTexCta.style.display = 'none';
 </script>

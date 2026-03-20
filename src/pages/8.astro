@@ -447,7 +447,7 @@ import ConceptNav from '../components/hero-variants/ConceptNav.astro';
       ctx.globalAlpha = opacity;
       ctx.fillStyle = color;
       ctx.beginPath();
-      const dotRadius = 1 + influence * 2; // 1px base → 3px max near cursor
+      const dotRadius = 1 + influence; // 1px base → 2px max near cursor
       ctx.arc(dot.x, dot.y, dotRadius, 0, Math.PI * 2);
       ctx.fill();
     }
