@@ -14,9 +14,10 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
 <Layout title="Pello — Dot Grid Preview" noIndex={true}>
   <Header />
   <main id="main-content">
-    <!-- Section 1: Hero with Dot Grid Background -->
+    <!-- Section 1: Hero with Aurora + Dot Grid Background -->
     <div id="dot-grid-wrap" class="relative">
-      <canvas class="dot-grid-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;"></canvas>
+      <canvas class="aurora-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;"></canvas>
+      <canvas class="dot-grid-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;"></canvas>
       <HeroPello />
     </div>
 
@@ -73,6 +74,69 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
 <a id="skip-link" href="#main-content">Skip to main content</a>
 
 <script>
+  // ─── Aurora Waves (behind dot grid) ─────────────────────────────────────────
+  {
+    const auroraCanvas = document.querySelector<HTMLCanvasElement>('.aurora-canvas')!;
+    const auroraWrap = document.getElementById('dot-grid-wrap')!;
+    const actx = auroraCanvas.getContext('2d')!;
+
+    const blobs = [
+      { cx: 0.2, cy: 0.5, rx: 0.45, ry: 0.35, color: [96, 86, 240], alpha: 0.18, speedX: 0.15, speedY: 0.1, phaseX: 0, phaseY: 0.5 },
+      { cx: 0.8, cy: 0.4, rx: 0.4, ry: 0.3, color: [145, 84, 231], alpha: 0.14, speedX: 0.12, speedY: 0.18, phaseX: 1.5, phaseY: 0 },
+      { cx: 0.5, cy: 0.7, rx: 0.5, ry: 0.25, color: [66, 133, 244], alpha: 0.1, speedX: 0.08, speedY: 0.14, phaseX: 3, phaseY: 2 },
+      { cx: 0.3, cy: 0.3, rx: 0.35, ry: 0.4, color: [200, 0, 200], alpha: 0.06, speedX: 0.2, speedY: 0.08, phaseX: 2, phaseY: 4 },
+      { cx: 0.7, cy: 0.6, rx: 0.3, ry: 0.35, color: [85, 200, 255], alpha: 0.07, speedX: 0.1, speedY: 0.22, phaseX: 4, phaseY: 1 },
+    ];
+
+    let aW = 0, aH = 0, aDpr = 1;
+
+    function resizeAurora() {
+      aDpr = window.devicePixelRatio || 1;
+      const rect = auroraWrap.getBoundingClientRect();
+      aW = Math.round(rect.width);
+      aH = Math.round(rect.height);
+      auroraCanvas.width = aW * aDpr;
+      auroraCanvas.height = aH * aDpr;
+      auroraCanvas.style.width = `${aW}px`;
+      auroraCanvas.style.height = `${aH}px`;
+      actx.setTransform(aDpr, 0, 0, aDpr, 0, 0);
+    }
+
+    function frameAurora() {
+      requestAnimationFrame(frameAurora);
+      actx.clearRect(0, 0, aW, aH);
+      const t = performance.now() * 0.001; // seconds
+
+      for (const b of blobs) {
+        const cx = (b.cx + Math.sin(t * b.speedX + b.phaseX) * 0.15) * aW;
+        const cy = (b.cy + Math.sin(t * b.speedY + b.phaseY) * 0.12) * aH;
+        const rx = b.rx * aW;
+        const ry = b.ry * aH;
+
+        const grad = actx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(rx, ry));
+        const [r, g, bl] = b.color;
+        grad.addColorStop(0, `rgba(${r},${g},${bl},${b.alpha})`);
+        grad.addColorStop(0.4, `rgba(${r},${g},${bl},${b.alpha * 0.6})`);
+        grad.addColorStop(1, `rgba(${r},${g},${bl},0)`);
+
+        actx.save();
+        actx.translate(cx, cy);
+        actx.scale(1, ry / rx);
+        actx.translate(-cx, -cy);
+        actx.fillStyle = grad;
+        actx.beginPath();
+        actx.arc(cx, cy, rx, 0, Math.PI * 2);
+        actx.fill();
+        actx.restore();
+      }
+    }
+
+    const roAurora = new ResizeObserver(() => resizeAurora());
+    roAurora.observe(auroraWrap);
+    resizeAurora();
+    requestAnimationFrame(frameAurora);
+  }
+
   // ─── Dot Grid Background (behind hero) ────────────────────────────────────
   // Perlin noise permutation table
   const PERM = new Uint8Array(512);
