@@ -44,8 +44,11 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     <!-- Section 13: FAQ -->
     <FAQ />
 
-    <!-- Section 14: Final CTA -->
-    <FinalCTA />
+    <!-- Section 14: Final CTA with Dot Grid -->
+    <div id="dot-grid-wrap-cta" class="relative">
+      <canvas class="dot-grid-canvas-cta" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;"></canvas>
+      <FinalCTA />
+    </div>
   </main>
   <Footer />
 </Layout>
@@ -216,4 +219,102 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
   // Hide the default grid-texture so dot grid canvas replaces it
   const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
   if (gridTex) gridTex.style.display = 'none';
+
+  // ─── Second Dot Grid instance for CTA section ─────────────────────────────
+  const canvasCta = document.querySelector<HTMLCanvasElement>('.dot-grid-canvas-cta')!;
+  const wrapCta = document.getElementById('dot-grid-wrap-cta')!;
+  const ctxCta = canvasCta.getContext('2d')!;
+  let dotsCta: Dot[] = [];
+  let mouseCta: { x: number; y: number } | null = null;
+  let dprCta = 1;
+
+  function buildGridCta() {
+    dotsCta = [];
+    const W = canvasCta.width / dprCta, H = canvasCta.height / dprCta;
+    const cols = Math.ceil(W / GRID) + 2, rows = Math.ceil(H / GRID) + 2;
+    for (let r = 0; r < rows; r++)
+      for (let c = 0; c < cols; c++) {
+        const gx = c * GRID, gy = r * GRID;
+        dotsCta.push({ gx, gy, x: gx, y: gy });
+      }
+  }
+
+  function resizeCta() {
+    dprCta = window.devicePixelRatio || 1;
+    const rect = wrapCta.getBoundingClientRect();
+    const w = Math.round(rect.width), h = Math.round(rect.height);
+    canvasCta.width = w * dprCta; canvasCta.height = h * dprCta;
+    canvasCta.style.width = `${w}px`; canvasCta.style.height = `${h}px`;
+    ctxCta.setTransform(dprCta, 0, 0, dprCta, 0, 0);
+    buildGridCta();
+  }
+
+  function frameCta() {
+    requestAnimationFrame(frameCta);
+    const W = canvasCta.width / dprCta, H = canvasCta.height / dprCta;
+    const t = performance.now() * NOISE_SPEED;
+    ctxCta.clearRect(0, 0, W, H);
+
+    for (const dot of dotsCta) {
+      let targetX = dot.gx, targetY = dot.gy, influence = 0, angleToMouse = 0;
+      if (mouseCta) {
+        const dx = dot.gx - mouseCta.x, dy = dot.gy - mouseCta.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < INFLUENCE_RADIUS) {
+          const raw = 1 - dist / INFLUENCE_RADIUS;
+          const s = raw * raw * (3 - 2 * raw);
+          influence = s * s * (3 - 2 * s);
+          const pushMag = Math.pow(influence, 3) * PUSH_STRENGTH;
+          const len = dist || 1;
+          targetX += (dx / len) * pushMag;
+          targetY += (dy / len) * pushMag;
+          const noiseX = noise2(dot.gx * NOISE_SCALE, dot.gy * NOISE_SCALE + t);
+          const noiseY = noise2(dot.gx * NOISE_SCALE + 100, dot.gy * NOISE_SCALE + t);
+          const noiseMag = influence * influence * NOISE_STRENGTH;
+          targetX += noiseX * noiseMag;
+          targetY += noiseY * noiseMag;
+          angleToMouse = Math.atan2(dy, dx);
+        }
+      }
+      dot.x += (targetX - dot.x) * LERP_SPEED;
+      dot.y += (targetY - dot.y) * LERP_SPEED;
+
+      let opacity = 1;
+      if (opacity < 0.01) continue;
+
+      let color = rgbStr(BASE_RGB);
+      if (influence > 0) {
+        const inf3 = influence * influence * influence;
+        const blendFactor = (Math.sin(angleToMouse * 2 + t * 3) + 1) * 0.5;
+        const accent = lerpRGB(ACCENT1, ACCENT2, blendFactor);
+        color = rgbStr(lerpRGB(BASE_RGB, accent, inf3));
+        opacity *= 1 - inf3 * 0.5;
+      }
+      ctxCta.globalAlpha = opacity;
+      ctxCta.fillStyle = color;
+      ctxCta.beginPath();
+      ctxCta.arc(dot.x, dot.y, 1, 0, Math.PI * 2);
+      ctxCta.fill();
+    }
+    ctxCta.globalAlpha = 1;
+  }
+
+  window.addEventListener('mousemove', (e) => {
+    const rect = wrapCta.getBoundingClientRect();
+    const x = e.clientX - rect.left, y = e.clientY - rect.top;
+    if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
+      mouseCta = { x, y };
+    } else {
+      mouseCta = null;
+    }
+  });
+
+  const roCta = new ResizeObserver(() => resizeCta());
+  roCta.observe(wrapCta);
+  resizeCta();
+  requestAnimationFrame(frameCta);
+
+  // Hide the CTA grid-texture too
+  const gridTexCta = wrapCta.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTexCta) gridTexCta.style.display = 'none';
 </script>
