@@ -441,7 +441,8 @@ import ConceptNav from '../components/hero-variants/ConceptNav.astro';
         const blendFactor = (Math.sin(angleToMouse * 2 + t * 3) + 1) * 0.5;
         const accent = lerpRGB(ACCENT1, ACCENT2, blendFactor);
         color = rgbStr(lerpRGB(BASE_RGB, accent, inf3));
-        opacity *= 1 - inf3 * 0.5;
+        // Fade to black near cursor centre
+        opacity *= 1 - influence * influence * 0.85;
       }
 
       ctx.globalAlpha = opacity;
