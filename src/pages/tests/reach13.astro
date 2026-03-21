@@ -1,0 +1,548 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloReach — Pulse Network | Email Sequences at Scale" description="PelloReach pulse network: watch email sequences flow between cells, connecting your outreach into living chains of engagement.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="reach-grid13-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+    <HowItWorks />
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute; top: -100%; left: 1rem; z-index: 9999;
+    padding: 0.75rem 1.25rem; background: var(--color-brand-primary); color: white;
+    font-weight: 600; border-radius: 0 0 0.5rem 0.5rem; text-decoration: none; transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+  #hero-wrap .url-input-wrap, .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important; backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3); border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important; border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important; border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3); backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem; padding: 1rem; box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important; backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99,102,241,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden; position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+  ric(() => {
+
+  // ─── Email data ───────────────────────────────────────────────────────────
+  const FIRST_NAMES = ["Sarah","James","Emma","Michael","Sophie","Daniel","Rachel","Tom","Jessica","Alex","Chris","Lauren","David","Hannah","Ben","Kate","Ryan","Olivia","Mark","Lucy"];
+  const LAST_NAMES  = ["Chen","Williams","Patel","Thompson","Garcia","Anderson","Martinez","Johnson","Lee","Taylor","Brown","Wilson","Moore","Clark","Hall","Young","King","Wright","Scott","Green"];
+  const COMPANIES   = ["Acme Corp","TechFlow","DataSync","CloudNine","Nexus Labs","Horizon AI","Vertex Systems","PulseMedia","Zenith Group","Atlas Digital","BrightPath","CoreStack","DeepBlue","EdgePoint","FrontLine","GrowthLab","HyperScale","InnoVate","JetStream","KineticIO"];
+  const ROLES       = ["Head of Marketing","VP Growth","CMO","Marketing Director","Digital Lead","Growth Manager","Head of Demand Gen","Performance Lead","Brand Director","Acquisition Manager"];
+  const SEND_DOMAINS= ["outreach-hub.io","connect-reach.co","mailflow-pro.com","sendgrid-alt.io","inbox-direct.co","pulse-mail.com","rapid-reach.io","smart-send.co","flow-mail.io","direct-reach.com"];
+  const SUBJECTS_T  = [
+    "Quick question about {company}'s growth strategy",
+    "{firstName}, saw your recent {company} launch",
+    "Idea for {company}'s outreach — 3 min read",
+    "{firstName} — {company} + Pello could be interesting",
+    "Re: scaling {company}'s pipeline",
+    "{firstName}, one thing about {company}'s email strategy",
+    "Congrats on {company}'s Series B, {firstName}",
+    "Quick win for {company}'s demand gen",
+  ];
+  const OPENERS_T   = [
+    "I noticed {company} just expanded into new markets — impressive growth.",
+    "Saw your LinkedIn post about {company}'s Q3 results, {firstName}.",
+    "A mutual connection mentioned {company} is scaling outreach.",
+    "Your talk at SaaStr about {company}'s growth was spot on.",
+    "{firstName}, I came across {company}'s case study on demand gen.",
+    "Noticed {company} is hiring 3 new SDRs — sounds like you're scaling.",
+  ];
+
+  function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+  function fill(t: string, fn: string, co: string): string {
+    return t.replace(/{firstName}/g, fn).replace(/{company}/g, co);
+  }
+
+  interface EmailCell {
+    firstName: string; lastName: string; company: string; role: string;
+    domain: string; subject: string; opener: string; stage: string;
+    isReply: boolean; replyPulse: number; replyPulseStart: number;
+  }
+
+  function genCell(): EmailCell {
+    const fn = pick(FIRST_NAMES), co = pick(COMPANIES);
+    const isReply = Math.random() < 0.12;
+    return {
+      firstName: fn, lastName: pick(LAST_NAMES), company: co, role: pick(ROLES),
+      domain: pick(SEND_DOMAINS),
+      subject: fill(pick(SUBJECTS_T), fn, co),
+      opener:  fill(pick(OPENERS_T),  fn, co),
+      stage:   pick(['1st touch','follow-up','reply']),
+      isReply,
+      replyPulse: isReply ? Math.random() : 0,
+      replyPulseStart: isReply ? performance.now() * 0.001 - Math.random() * 4 : 0,
+    };
+  }
+
+  // Sequence: ordered list of cell indices (as {c,r})
+  interface SeqCell { c: number; r: number; step: number; }
+  interface Sequence {
+    cells: SeqCell[];
+    pulseT: number;     // 0..cells.length-1 continuous
+    pulseSpeed: number;
+    email: EmailCell;
+  }
+
+  // ─── Canvas + state ───────────────────────────────────────────────────────
+  const canvas = document.querySelector<HTMLCanvasElement>('.reach-grid13-canvas')!;
+  const wrap   = document.getElementById('hero-wrap')!;
+  const ctx    = canvas.getContext('2d')!;
+  let dpr = 1, W = 0, H = 0, NC = 25, NR = 25;
+  let VP_Y = 0, BOT_Y = 0, HALF_W = 0;
+  let cells: EmailCell[] = [];
+  let sequences: Sequence[] = [];
+  let activeSet = new Set<number>();  // cell indices that belong to a sequence
+  let seqMap = new Map<number, number>(); // cellIdx → seqIdx
+  let hovCellC = -1, hovCellR = -1;
+  let hovSeqIdx = -1;
+  let emailCount = 18283, lastTick = 0;
+
+  function cellIdx(c: number, r: number): number { return r * (NC - 1) + c; }
+
+  function project(c: number, r: number): { sx: number; sy: number } {
+    const tFrac = Math.max(0.001, r / Math.max(1, NR - 1));
+    const frac  = (c - (NC - 1) / 2) / Math.max(1, (NC - 1) / 2);
+    return { sx: W / 2 + frac * HALF_W * tFrac, sy: VP_Y + (BOT_Y - VP_Y) * tFrac };
+  }
+
+  function cellCenter(c: number, r: number): { sx: number; sy: number } {
+    const tl = project(c, r), br = project(c+1, r+1);
+    return { sx: (tl.sx + br.sx) / 2, sy: (tl.sy + br.sy) / 2 };
+  }
+
+  function screenToGrid(sx: number, sy: number): [number, number] {
+    const t    = Math.max(0.01, (sy - VP_Y) / Math.max(1, BOT_Y - VP_Y));
+    const frac = (sx - W / 2) / Math.max(0.01, HALF_W * t);
+    return [
+      Math.max(0, Math.min(NC - 2, (frac + 1) * (NC - 1) / 2)),
+      Math.max(0, Math.min(NR - 2, t * (NR - 1))),
+    ];
+  }
+
+  function rrect(x: number, y: number, w: number, h: number, r: number) {
+    ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+  }
+
+  function buildSequences() {
+    sequences = []; activeSet.clear(); seqMap.clear();
+    const numSeqs = NC < 20 ? 24 : 42;
+    const maxC = NC - 2, maxR = NR - 2;
+
+    for (let s = 0; s < numSeqs; s++) {
+      const len  = 3 + Math.floor(Math.random() * 2); // 3 or 4 steps
+      const fn   = pick(FIRST_NAMES), co = pick(COMPANIES);
+      const email = genCell();
+      const seqCells: SeqCell[] = [];
+      // Start from a random cell, walk along rows/cols
+      let c = 1 + Math.floor(Math.random() * (maxC - 1));
+      let r = 1 + Math.floor(Math.random() * (maxR - 1));
+      let ok = true;
+      for (let step = 0; step < len; step++) {
+        const idx = cellIdx(c, r);
+        if (activeSet.has(idx)) { ok = false; break; }
+        seqCells.push({ c, r, step });
+        activeSet.add(idx);
+        seqMap.set(idx, s);
+        // Move to next cell: prefer going down/diagonally
+        const dr = step < 2 ? 1 : 0;
+        const dc = Math.random() < 0.5 ? 1 : (Math.random() < 0.5 ? -1 : 0);
+        c = Math.max(0, Math.min(maxC, c + dc));
+        r = Math.max(0, Math.min(maxR, r + dr));
+      }
+      if (!ok || seqCells.length < 2) { s--; continue; }
+      sequences.push({
+        cells: seqCells,
+        pulseT: Math.random() * (seqCells.length - 1),
+        pulseSpeed: 0.015 + Math.random() * 0.015,
+        email,
+      });
+    }
+  }
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    W = Math.round(rect.width); H = Math.round(rect.height);
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = `${W}px`; canvas.style.height = `${H}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    NC = W < 768 ? 15 : 25; NR = W < 768 ? 15 : 25;
+    VP_Y = H * 0.15; BOT_Y = H * 0.97; HALF_W = W * 0.50;
+    const total = (NC - 1) * (NR - 1);
+    if (cells.length !== total) {
+      cells = Array.from({ length: total }, genCell);
+      buildSequences();
+    }
+  }
+
+  function getCell(c: number, r: number): EmailCell { return cells[r * (NC - 1) + c]; }
+
+  function drawTooltip(cell: EmailCell, seqIdx: number, step: number, totalSteps: number, sx: number, sy: number) {
+    const TW = 310, TH = 118;
+    let tx = sx - TW / 2;
+    let ty = sy - TH - 14;
+    tx = Math.max(8, Math.min(W - TW - 8, tx));
+    if (ty < 8) ty = sy + 14;
+    const pad = 14;
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(139,92,246,0.3)'; ctx.shadowBlur = 24;
+    rrect(tx, ty, TW, TH, 10); ctx.fillStyle = 'rgba(6,7,18,0.88)'; ctx.fill();
+    ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+    rrect(tx, ty, TW, TH, 10); ctx.fillStyle = 'rgba(139,92,246,0.09)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(139,92,246,0.35)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.globalAlpha = 0.65; rrect(tx, ty, TW, 3, 3); ctx.fillStyle = '#8b5cf6'; ctx.fill(); ctx.globalAlpha = 1;
+
+    ctx.textAlign = 'left';
+    ctx.font = 'bold 9px "SF Mono","Fira Code",monospace';
+    ctx.fillStyle = 'rgba(139,92,246,0.8)';
+    ctx.fillText(`SEQUENCE #${seqIdx + 1}  ·  STEP ${step + 1} OF ${totalSteps}`, tx + pad, ty + 17);
+
+    ctx.font = '500 12px -apple-system,system-ui,sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(`To: ${cell.firstName} ${cell.lastName} — ${cell.role}`, tx + pad, ty + 34);
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '11px -apple-system,system-ui,sans-serif';
+    ctx.fillText(`${cell.company}  ·  via ${cell.domain}`, tx + pad, ty + 50);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.save(); ctx.beginPath(); ctx.rect(tx + pad, ty + 57, TW - pad * 2, 16); ctx.clip();
+    ctx.fillText(`Subj: ${cell.subject}`, tx + pad, ty + 69); ctx.restore();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '10px -apple-system,system-ui,sans-serif';
+    ctx.save(); ctx.beginPath(); ctx.rect(tx + pad, ty + 76, TW - pad * 2, 13); ctx.clip();
+    ctx.fillText(cell.opener, tx + pad, ty + 87); ctx.restore();
+
+    // Sequence step dots
+    const dotSpacing = 18, dotY = ty + TH - 14, startX = tx + pad;
+    for (let i = 0; i < totalSteps; i++) {
+      ctx.beginPath(); ctx.arc(startX + i * dotSpacing + 6, dotY, 4, 0, Math.PI * 2);
+      ctx.fillStyle = i === step ? '#a78bfa' : i < step ? 'rgba(139,92,246,0.45)' : 'rgba(255,255,255,0.15)';
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawBox() {
+    const BOX_W = 204, BOX_H = 56;
+    const bx = W / 2 - BOX_W / 2, by = Math.max(6, VP_Y - BOX_H - 8);
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(W / 2, by + BOX_H); ctx.lineTo(W / 2, VP_Y);
+    ctx.strokeStyle = 'rgba(139,92,246,0.22)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.shadowColor = 'rgba(139,92,246,0.35)'; ctx.shadowBlur = 20;
+    rrect(bx, by, BOX_W, BOX_H, 10); ctx.fillStyle = 'rgba(6,7,18,0.65)'; ctx.fill();
+    ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+    rrect(bx, by, BOX_W, BOX_H, 10); ctx.fillStyle = 'rgba(139,92,246,0.09)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(139,92,246,0.3)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.globalAlpha = 0.6; rrect(bx, by, BOX_W, 2, 2); ctx.fillStyle = '#8b5cf6'; ctx.fill(); ctx.globalAlpha = 1;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(139,92,246,0.75)'; ctx.font = '10px "SF Mono","Fira Code",monospace';
+    ctx.fillText('YOUR WEBSITE', W / 2, by + 19);
+    ctx.fillStyle = '#ffffff'; ctx.font = '500 13px -apple-system,system-ui,sans-serif';
+    ctx.fillText(`${emailCount.toLocaleString()} emails sent today`, W / 2, by + 39);
+    ctx.restore();
+  }
+
+  function frame() {
+    requestAnimationFrame(frame);
+    const now = performance.now() * 0.001;
+    if (now - lastTick > 0.3) { emailCount++; lastTick = now; }
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Determine hovered sequence
+    hovSeqIdx = -1;
+    if (hovCellC >= 0 && hovCellR >= 0) {
+      const idx = cellIdx(hovCellC, hovCellR);
+      if (seqMap.has(idx)) hovSeqIdx = seqMap.get(idx)!;
+    }
+
+    // 1. Grid lines (faint)
+    ctx.lineWidth = 0.4;
+    for (let r = 0; r < NR; r++) {
+      ctx.beginPath();
+      for (let c = 0; c < NC; c++) { const pt = project(c,r); c===0 ? ctx.moveTo(pt.sx,pt.sy) : ctx.lineTo(pt.sx,pt.sy); }
+      ctx.strokeStyle = 'rgba(139,92,246,0.06)'; ctx.stroke();
+    }
+    for (let c = 0; c < NC; c++) {
+      ctx.beginPath();
+      for (let r = 0; r < NR; r++) { const pt = project(c,r); r===0 ? ctx.moveTo(pt.sx,pt.sy) : ctx.lineTo(pt.sx,pt.sy); }
+      ctx.strokeStyle = 'rgba(139,92,246,0.06)'; ctx.stroke();
+    }
+
+    // 2. Reply cell radial pulses
+    for (let ci = 0; ci < cells.length; ci++) {
+      const cell = cells[ci];
+      if (!cell.isReply) continue;
+      const c = ci % (NC - 1), r = Math.floor(ci / (NC - 1));
+      const pt = cellCenter(c, r);
+      const age = (now - cell.replyPulseStart) % 3.0;
+      const rad = age * 18;
+      const alpha = Math.max(0, (1 - age / 3.0) * 0.2);
+      if (alpha > 0.005) {
+        const grd = ctx.createRadialGradient(pt.sx, pt.sy, 0, pt.sx, pt.sy, rad);
+        grd.addColorStop(0, `rgba(74,222,128,0)`);
+        grd.addColorStop(0.6, `rgba(74,222,128,${alpha})`);
+        grd.addColorStop(1, `rgba(74,222,128,0)`);
+        ctx.beginPath(); ctx.arc(pt.sx, pt.sy, rad, 0, Math.PI * 2);
+        ctx.fillStyle = grd; ctx.fill();
+      }
+      cell.replyPulseStart = cell.replyPulseStart; // keep same start
+    }
+
+    // 3. Sequence connections + pulse dots + highlight
+    for (let si = 0; si < sequences.length; si++) {
+      const seq   = sequences[si];
+      const isHov = si === hovSeqIdx;
+      const alpha = isHov ? 0.55 : 0.18;
+
+      // Advance pulse
+      seq.pulseT = (seq.pulseT + seq.pulseSpeed) % seq.cells.length;
+
+      // Draw connection lines between consecutive cells
+      for (let i = 0; i < seq.cells.length - 1; i++) {
+        const a  = seq.cells[i],   b  = seq.cells[i + 1];
+        const pa = cellCenter(a.c, a.r), pb = cellCenter(b.c, b.r);
+        ctx.beginPath(); ctx.moveTo(pa.sx, pa.sy); ctx.lineTo(pb.sx, pb.sy);
+        ctx.strokeStyle = isHov ? 'rgba(167,139,250,0.65)' : 'rgba(139,92,246,0.22)';
+        ctx.lineWidth   = isHov ? 1.5 : 0.8; ctx.stroke();
+      }
+
+      // Pulse dot traveling along the chain
+      const segIdx = Math.floor(seq.pulseT) % (seq.cells.length - 1);
+      const segFrac = seq.pulseT - Math.floor(seq.pulseT);
+      const a = seq.cells[segIdx], b = seq.cells[(segIdx + 1) % seq.cells.length];
+      if (b) {
+        const pa = cellCenter(a.c, a.r), pb = cellCenter(b.c, b.r);
+        const px = pa.sx + (pb.sx - pa.sx) * segFrac;
+        const py = pa.sy + (pb.sy - pa.sy) * segFrac;
+        ctx.globalAlpha = isHov ? 0.9 : 0.55;
+        ctx.fillStyle   = isHov ? '#c4b5fd' : '#8b5cf6';
+        ctx.beginPath(); ctx.arc(px, py, isHov ? 2.5 : 1.8, 0, Math.PI * 2); ctx.fill();
+        // trail
+        const px2 = pa.sx + (pb.sx - pa.sx) * Math.max(0, segFrac - 0.15);
+        const py2 = pa.sy + (pb.sy - pa.sy) * Math.max(0, segFrac - 0.15);
+        ctx.globalAlpha = isHov ? 0.3 : 0.15;
+        ctx.beginPath(); ctx.arc(px2, py2, 1.2, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
+      // Active cell dots + highlight
+      for (const sc of seq.cells) {
+        const pt = cellCenter(sc.c, sc.r);
+        if (isHov) {
+          // Fill highlight
+          const tl = project(sc.c, sc.r), br = project(sc.c+1, sc.r+1), tr = project(sc.c+1, sc.r), bl = project(sc.c, sc.r+1);
+          ctx.beginPath(); ctx.moveTo(tl.sx,tl.sy); ctx.lineTo(tr.sx,tr.sy); ctx.lineTo(br.sx,br.sy); ctx.lineTo(bl.sx,bl.sy); ctx.closePath();
+          ctx.fillStyle = 'rgba(139,92,246,0.18)'; ctx.fill();
+          ctx.strokeStyle = 'rgba(167,139,250,0.55)'; ctx.lineWidth = 1; ctx.stroke();
+        }
+        // Center dot
+        ctx.globalAlpha = isHov ? 0.9 : 0.5;
+        ctx.fillStyle   = isHov ? '#c4b5fd' : '#8b5cf6';
+        ctx.beginPath(); ctx.arc(pt.sx, pt.sy, isHov ? 3.5 : 2.5, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // 4. "Your Website" box
+    drawBox();
+
+    // 5. Tooltip for hovered sequence/cell
+    if (hovSeqIdx >= 0 && hovCellC >= 0 && hovCellR >= 0) {
+      const seq  = sequences[hovSeqIdx];
+      const idx  = cellIdx(hovCellC, hovCellR);
+      const sc   = seq.cells.find(sc2 => cellIdx(sc2.c, sc2.r) === idx);
+      const tl   = project(hovCellC, hovCellR), br = project(hovCellC+1, hovCellR+1);
+      const sx   = (tl.sx + br.sx) / 2, sy = (tl.sy + br.sy) / 2;
+      drawTooltip(seq.email, hovSeqIdx, sc ? sc.step : 0, seq.cells.length, sx, sy - 8);
+    }
+
+    // Counter
+    ctx.save(); ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(139,92,246,0.6)'; ctx.font = '11px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${emailCount.toLocaleString()} sent · ${sequences.length} sequences active`, W - 16, 24);
+    ctx.restore();
+  }
+
+  // ─── Events ───────────────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', e => {
+    const rect = wrap.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    if (my < VP_Y) { hovCellC = -1; hovCellR = -1; return; }
+    const [gc, gr] = screenToGrid(mx, my);
+    hovCellC = Math.floor(gc); hovCellR = Math.floor(gr);
+  });
+  wrap.addEventListener('mouseleave', () => { hovCellC = -1; hovCellR = -1; hovSeqIdx = -1; });
+  wrap.addEventListener('touchstart', () => { hovCellC = -1; hovCellR = -1; hovSeqIdx = -1; }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+  const gt = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gt) gt.style.display = 'none';
+
+  // ─── FinalCTA: flowing pulse lines ────────────────────────────────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const cc2 = document.createElement('canvas');
+      cc2.setAttribute('aria-hidden', 'true');
+      cc2.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.style.position = 'relative';
+      ctaCard.insertBefore(cc2, ctaCard.firstChild);
+      const cc = cc2.getContext('2d')!;
+      let ctaDpr = 1, cW = 0, cH = 0, cNC = 0, cNR = 0;
+      interface CtaSeq { cells: Array<{c:number;r:number}>; pt: number; spd: number; }
+      let ctaSeqs: CtaSeq[] = [];
+
+      function resizeCta() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        cW = Math.round(rect.width); cH = Math.round(rect.height);
+        cc2.width = cW * ctaDpr; cc2.height = cH * ctaDpr;
+        cc2.style.width = `${cW}px`; cc2.style.height = `${cH}px`;
+        cc.setTransform(ctaDpr, 0, 0, ctaDpr, 0, 0);
+        cNC = Math.ceil(cW / 40) + 1; cNR = Math.ceil(cH / 30) + 1;
+        ctaSeqs = [];
+        for (let i = 0; i < 18; i++) {
+          const len = 3, cells2 = [];
+          let c = 1 + Math.floor(Math.random() * (cNC - 3));
+          let r = 1 + Math.floor(Math.random() * (cNR - 3));
+          for (let j = 0; j < len; j++) {
+            cells2.push({c, r});
+            c = Math.max(0, Math.min(cNC-2, c + (Math.random()<0.5?1:-1)));
+            r = Math.min(cNR-2, r + 1);
+          }
+          ctaSeqs.push({ cells: cells2, pt: Math.random() * (len-1), spd: 0.012 + Math.random()*0.01 });
+        }
+      }
+
+      function projCta(c: number, r: number) {
+        const t  = Math.max(0.001, r / Math.max(1, cNR - 1));
+        const fx = (c - (cNC-1)/2) / Math.max(1, (cNC-1)/2);
+        return { sx: cW/2 + fx * cW*0.50 * t, sy: cH*0.12 + cH*0.86 * t };
+      }
+      function cellCtr(c: number, r: number) {
+        const tl=projCta(c,r), br=projCta(c+1,r+1);
+        return { sx:(tl.sx+br.sx)/2, sy:(tl.sy+br.sy)/2 };
+      }
+
+      function frameCta() {
+        requestAnimationFrame(frameCta);
+        cc.clearRect(0, 0, cW, cH);
+        cc.lineWidth = 0.4;
+        for (let r = 0; r < cNR; r++) {
+          cc.beginPath();
+          for (let c = 0; c < cNC; c++) { const p=projCta(c,r); c===0?cc.moveTo(p.sx,p.sy):cc.lineTo(p.sx,p.sy); }
+          cc.strokeStyle = 'rgba(139,92,246,0.055)'; cc.stroke();
+        }
+        for (let c = 0; c < cNC; c++) {
+          cc.beginPath();
+          for (let r = 0; r < cNR; r++) { const p=projCta(c,r); r===0?cc.moveTo(p.sx,p.sy):cc.lineTo(p.sx,p.sy); }
+          cc.strokeStyle = 'rgba(139,92,246,0.055)'; cc.stroke();
+        }
+        for (const seq of ctaSeqs) {
+          for (let i = 0; i < seq.cells.length - 1; i++) {
+            const pa=cellCtr(seq.cells[i].c,seq.cells[i].r), pb=cellCtr(seq.cells[i+1].c,seq.cells[i+1].r);
+            cc.beginPath(); cc.moveTo(pa.sx,pa.sy); cc.lineTo(pb.sx,pb.sy);
+            cc.strokeStyle='rgba(139,92,246,0.20)'; cc.lineWidth=0.8; cc.stroke();
+          }
+          const si = Math.floor(seq.pt) % (seq.cells.length - 1);
+          const sf = seq.pt - Math.floor(seq.pt);
+          const pa = cellCtr(seq.cells[si].c,seq.cells[si].r);
+          const pb = cellCtr(seq.cells[Math.min(si+1,seq.cells.length-1)].c, seq.cells[Math.min(si+1,seq.cells.length-1)].r);
+          const px = pa.sx+(pb.sx-pa.sx)*sf, py = pa.sy+(pb.sy-pa.sy)*sf;
+          cc.globalAlpha=0.55; cc.fillStyle='#a78bfa';
+          cc.beginPath(); cc.arc(px,py,2,0,Math.PI*2); cc.fill();
+          cc.globalAlpha=1;
+          seq.pt = (seq.pt + seq.spd) % seq.cells.length;
+        }
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaCard);
+      resizeCta(); requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { cc2.style.opacity = '1'; });
+      const ctaGt = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGt) ctaGt.style.display = 'none';
+    }
+  }
+
+  }); // end ric
+</script>

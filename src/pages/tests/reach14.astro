@@ -1,0 +1,514 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloReach — Email Stream | Outreach Waterfall" description="PelloReach stream: watch thousands of emails flow outward from your website like a waterfall — violet outbound, green replies flowing back.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="reach-grid14-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+    <HowItWorks />
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute; top: -100%; left: 1rem; z-index: 9999;
+    padding: 0.75rem 1.25rem; background: var(--color-brand-primary); color: white;
+    font-weight: 600; border-radius: 0 0 0.5rem 0.5rem; text-decoration: none; transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+  #hero-wrap .url-input-wrap, .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important; backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3); border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important; border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important; border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3); backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem; padding: 1rem; box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important; backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99,102,241,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden; position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+  ric(() => {
+
+  // ─── Email data ───────────────────────────────────────────────────────────
+  const FIRST_NAMES = ["Sarah","James","Emma","Michael","Sophie","Daniel","Rachel","Tom","Jessica","Alex","Chris","Lauren","David","Hannah","Ben","Kate","Ryan","Olivia","Mark","Lucy"];
+  const LAST_NAMES  = ["Chen","Williams","Patel","Thompson","Garcia","Anderson","Martinez","Johnson","Lee","Taylor","Brown","Wilson","Moore","Clark","Hall","Young","King","Wright","Scott","Green"];
+  const COMPANIES   = ["Acme Corp","TechFlow","DataSync","CloudNine","Nexus Labs","Horizon AI","Vertex Systems","PulseMedia","Zenith Group","Atlas Digital","BrightPath","CoreStack","DeepBlue","EdgePoint","FrontLine","GrowthLab","HyperScale","InnoVate","JetStream","KineticIO"];
+  const ROLES       = ["Head of Marketing","VP Growth","CMO","Marketing Director","Digital Lead","Growth Manager","Head of Demand Gen","Performance Lead","Brand Director","Acquisition Manager"];
+  const SEND_DOMAINS= ["outreach-hub.io","connect-reach.co","mailflow-pro.com","sendgrid-alt.io","inbox-direct.co","pulse-mail.com","rapid-reach.io","smart-send.co","flow-mail.io","direct-reach.com"];
+  const SUBJECTS_T  = [
+    "Quick question about {company}'s growth strategy",
+    "{firstName}, saw your recent {company} launch",
+    "Idea for {company}'s outreach — 3 min read",
+    "{firstName} — {company} + Pello could be interesting",
+    "Re: scaling {company}'s pipeline",
+    "{firstName}, one thing about {company}'s email strategy",
+    "Congrats on {company}'s Series B, {firstName}",
+    "Quick win for {company}'s demand gen",
+  ];
+  const OPENERS_T   = [
+    "I noticed {company} just expanded into new markets — impressive growth.",
+    "Saw your LinkedIn post about {company}'s Q3 results, {firstName}.",
+    "A mutual connection mentioned {company} is scaling outreach.",
+    "Your talk at SaaStr about {company}'s growth was spot on.",
+    "{firstName}, I came across {company}'s case study on demand gen.",
+    "Noticed {company} is hiring 3 new SDRs — sounds like you're scaling.",
+  ];
+
+  function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+  function fill(t: string, fn: string, co: string): string {
+    return t.replace(/{firstName}/g, fn).replace(/{company}/g, co);
+  }
+
+  // Particle types: 0=outbound(violet), 1=reply(green, goes UP), 2=followup(amber)
+  const PARTICLE_COLORS = [
+    [167, 139, 250],  // 0 violet — outbound
+    [74,  222, 128],  // 1 green  — reply (upward)
+    [251, 191, 36],   // 2 amber  — follow-up
+  ] as const;
+
+  interface StreamParticle {
+    col: number;      // which grid column (integer 0..NC-1)
+    r: number;        // row position (float)
+    speed: number;    // rows per frame
+    dir: 1 | -1;      // 1=down, -1=up
+    type: 0 | 1 | 2;
+    branchTimer: number; // frames until next branch attempt
+  }
+
+  interface EmailCell {
+    firstName: string; lastName: string; company: string; role: string;
+    domain: string; subject: string; opener: string; stage: string;
+    type: 0 | 1 | 2;
+  }
+
+  function genCell(type: 0|1|2): EmailCell {
+    const fn = pick(FIRST_NAMES), co = pick(COMPANIES);
+    return {
+      firstName: fn, lastName: pick(LAST_NAMES), company: co, role: pick(ROLES),
+      domain: pick(SEND_DOMAINS),
+      subject: fill(pick(SUBJECTS_T), fn, co),
+      opener:  fill(pick(OPENERS_T),  fn, co),
+      stage:   type === 1 ? 'reply' : type === 2 ? 'follow-up' : '1st touch',
+      type,
+    };
+  }
+
+  // ─── Canvas + state ───────────────────────────────────────────────────────
+  const canvas = document.querySelector<HTMLCanvasElement>('.reach-grid14-canvas')!;
+  const wrap   = document.getElementById('hero-wrap')!;
+  const ctx    = canvas.getContext('2d')!;
+  let dpr = 1, W = 0, H = 0, NC = 25, NR = 25;
+  let VP_Y = 0, BOT_Y = 0, HALF_W = 0;
+  let cells: EmailCell[] = [];
+  let particles: StreamParticle[] = [];
+  let hovCellC = -1, hovCellR = -1;
+  let emailCount = 18283, lastTick = 0;
+
+  function project(c: number, r: number): { sx: number; sy: number } {
+    const tFrac = Math.max(0.001, r / Math.max(1, NR - 1));
+    const frac  = (c - (NC - 1) / 2) / Math.max(1, (NC - 1) / 2);
+    return { sx: W / 2 + frac * HALF_W * tFrac, sy: VP_Y + (BOT_Y - VP_Y) * tFrac };
+  }
+
+  function screenToGrid(sx: number, sy: number): [number, number] {
+    const t    = Math.max(0.01, (sy - VP_Y) / Math.max(1, BOT_Y - VP_Y));
+    const frac = (sx - W / 2) / Math.max(0.01, HALF_W * t);
+    return [
+      Math.max(0, Math.min(NC - 2, (frac + 1) * (NC - 1) / 2)),
+      Math.max(0, Math.min(NR - 2, t * (NR - 1))),
+    ];
+  }
+
+  function rrect(x: number, y: number, w: number, h: number, r: number) {
+    ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+  }
+
+  function makeParticle(): StreamParticle {
+    const type = (Math.random() < 0.70 ? 0 : Math.random() < 0.60 ? 2 : 1) as 0|1|2;
+    const dir: 1 | -1 = type === 1 ? -1 : 1; // replies go up
+    return {
+      col:   Math.floor(Math.random() * NC),
+      r:     dir === 1 ? Math.random() * 2 : NR - 1 - Math.random() * 2,  // start near source
+      speed: (0.04 + Math.random() * 0.06) * (1 + (type === 1 ? 0.2 : 0)),
+      dir,
+      type,
+      branchTimer: Math.floor(Math.random() * 8),
+    };
+  }
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    W = Math.round(rect.width); H = Math.round(rect.height);
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = `${W}px`; canvas.style.height = `${H}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    NC = W < 768 ? 15 : 25; NR = W < 768 ? 15 : 25;
+    VP_Y = H * 0.15; BOT_Y = H * 0.97; HALF_W = W * 0.50;
+    const total = (NC - 1) * (NR - 1);
+    if (cells.length !== total) {
+      cells = Array.from({ length: total }, (_, i) => {
+        const t = (Math.random() < 0.7 ? 0 : Math.random() < 0.6 ? 2 : 1) as 0|1|2;
+        return genCell(t);
+      });
+    }
+    const np = W < 768 ? 35 : 65;
+    particles = Array.from({ length: np }, makeParticle);
+  }
+
+  function getCell(c: number, r: number): EmailCell { return cells[r * (NC - 1) + c]; }
+
+  function drawTooltip(cell: EmailCell, sx: number, sy: number) {
+    const [cr, cg, cb] = PARTICLE_COLORS[cell.type];
+    const TW = 310, TH = 120;
+    let tx = sx - TW / 2;
+    let ty = sy - TH - 14;
+    tx = Math.max(8, Math.min(W - TW - 8, tx));
+    if (ty < 8) ty = sy + 14;
+    const pad = 14;
+    const typeLabel = cell.type === 1 ? 'REPLY ↑' : cell.type === 2 ? 'FOLLOW-UP' : 'OUTBOUND ↓';
+
+    ctx.save();
+    ctx.shadowColor = `rgba(${cr},${cg},${cb},0.3)`; ctx.shadowBlur = 24;
+    rrect(tx, ty, TW, TH, 10); ctx.fillStyle = 'rgba(6,7,18,0.88)'; ctx.fill();
+    ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+    rrect(tx, ty, TW, TH, 10); ctx.fillStyle = `rgba(${cr},${cg},${cb},0.09)`; ctx.fill();
+    ctx.strokeStyle = `rgba(${cr},${cg},${cb},0.35)`; ctx.lineWidth = 1; ctx.stroke();
+    ctx.globalAlpha = 0.65; rrect(tx, ty, TW, 3, 3); ctx.fillStyle = `rgb(${cr},${cg},${cb})`; ctx.fill(); ctx.globalAlpha = 1;
+
+    ctx.textAlign = 'left';
+    ctx.font = 'bold 9px "SF Mono","Fira Code",monospace';
+    ctx.fillStyle = `rgb(${cr},${cg},${cb})`;
+    ctx.fillText(`${typeLabel}  ·  ${cell.stage.toUpperCase()}  ·  ${cell.domain}`, tx + pad, ty + 17);
+
+    ctx.font = '500 12px -apple-system,system-ui,sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(`${cell.type === 1 ? 'From' : 'To'}: ${cell.firstName} ${cell.lastName} — ${cell.role}`, tx + pad, ty + 34);
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '11px -apple-system,system-ui,sans-serif';
+    ctx.fillText(cell.company, tx + pad, ty + 50);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.save(); ctx.beginPath(); ctx.rect(tx + pad, ty + 57, TW - pad * 2, 16); ctx.clip();
+    ctx.fillText(`Subj: ${cell.subject}`, tx + pad, ty + 69); ctx.restore();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '10px -apple-system,system-ui,sans-serif';
+    ctx.save(); ctx.beginPath(); ctx.rect(tx + pad, ty + 76, TW - pad * 2, 13); ctx.clip();
+    ctx.fillText(cell.opener, tx + pad, ty + 87); ctx.restore();
+
+    // Direction indicator
+    ctx.fillStyle = `rgba(${cr},${cg},${cb},0.7)`;
+    ctx.font = 'bold 11px "SF Mono","Fira Code",monospace';
+    ctx.fillText(cell.type === 1 ? '← flowing toward source' : '→ flowing outward', tx + pad, ty + TH - 10);
+    ctx.restore();
+  }
+
+  function drawBox() {
+    const BOX_W = 204, BOX_H = 56;
+    const bx = W / 2 - BOX_W / 2, by = Math.max(6, VP_Y - BOX_H - 8);
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(W / 2, by + BOX_H); ctx.lineTo(W / 2, VP_Y);
+    ctx.strokeStyle = 'rgba(139,92,246,0.22)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.shadowColor = 'rgba(139,92,246,0.35)'; ctx.shadowBlur = 20;
+    rrect(bx, by, BOX_W, BOX_H, 10); ctx.fillStyle = 'rgba(6,7,18,0.65)'; ctx.fill();
+    ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+    rrect(bx, by, BOX_W, BOX_H, 10); ctx.fillStyle = 'rgba(139,92,246,0.09)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(139,92,246,0.3)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.globalAlpha = 0.6; rrect(bx, by, BOX_W, 2, 2); ctx.fillStyle = '#8b5cf6'; ctx.fill(); ctx.globalAlpha = 1;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(139,92,246,0.75)'; ctx.font = '10px "SF Mono","Fira Code",monospace';
+    ctx.fillText('YOUR WEBSITE', W / 2, by + 19);
+    ctx.fillStyle = '#ffffff'; ctx.font = '500 13px -apple-system,system-ui,sans-serif';
+    ctx.fillText(`${emailCount.toLocaleString()} emails sent today`, W / 2, by + 39);
+    ctx.restore();
+  }
+
+  function frame() {
+    requestAnimationFrame(frame);
+    const now = performance.now() * 0.001;
+    if (now - lastTick > 0.3) { emailCount++; lastTick = now; }
+
+    ctx.clearRect(0, 0, W, H);
+
+    // 1. Grid lines
+    ctx.lineWidth = 0.4;
+    for (let r = 0; r < NR; r++) {
+      ctx.beginPath();
+      for (let c = 0; c < NC; c++) { const pt = project(c,r); c===0 ? ctx.moveTo(pt.sx,pt.sy) : ctx.lineTo(pt.sx,pt.sy); }
+      ctx.strokeStyle = 'rgba(139,92,246,0.06)'; ctx.stroke();
+    }
+    for (let c = 0; c < NC; c++) {
+      ctx.beginPath();
+      for (let r = 0; r < NR; r++) { const pt = project(c,r); r===0 ? ctx.moveTo(pt.sx,pt.sy) : ctx.lineTo(pt.sx,pt.sy); }
+      ctx.strokeStyle = 'rgba(139,92,246,0.06)'; ctx.stroke();
+    }
+
+    // 2. Hovered cell highlight
+    if (hovCellC >= 0 && hovCellR >= 0) {
+      const tl = project(hovCellC, hovCellR), tr = project(hovCellC+1, hovCellR);
+      const br = project(hovCellC+1, hovCellR+1), bl = project(hovCellC, hovCellR+1);
+      ctx.beginPath(); ctx.moveTo(tl.sx, tl.sy); ctx.lineTo(tr.sx, tr.sy);
+      ctx.lineTo(br.sx, br.sy); ctx.lineTo(bl.sx, bl.sy); ctx.closePath();
+      ctx.fillStyle = 'rgba(139,92,246,0.12)'; ctx.fill();
+      ctx.strokeStyle = 'rgba(139,92,246,0.4)'; ctx.lineWidth = 1.2; ctx.stroke();
+    }
+
+    // 3. Stream particles
+    const BRANCH_CHANCE = 0.18;
+    const HOVER_SLOW = 0.15; // how much to slow particles near hovered cell
+
+    for (let pi = 0; pi < particles.length; pi++) {
+      const p = particles[pi];
+      const [pr, pg, pb] = PARTICLE_COLORS[p.type];
+
+      // Check proximity to hovered cell (slow down nearby particles)
+      const hoverDist = hovCellC >= 0
+        ? Math.hypot(p.col - hovCellC - 0.5, p.r - hovCellR - 0.5)
+        : 99;
+      const slowFactor = hoverDist < 2.5 ? HOVER_SLOW : 1.0;
+
+      // Move particle
+      p.r += p.dir * p.speed * slowFactor;
+
+      // Branching at integer row crossings
+      p.branchTimer--;
+      if (p.branchTimer <= 0 && Math.random() < BRANCH_CHANCE) {
+        const dc = Math.random() < 0.5 ? 1 : -1;
+        p.col = Math.max(0, Math.min(NC - 1, p.col + dc));
+        p.branchTimer = 4 + Math.floor(Math.random() * 8);
+      }
+      if (p.branchTimer <= 0) p.branchTimer = 3 + Math.floor(Math.random() * 6);
+
+      // Respawn when reaching edge
+      if (p.dir === 1 && p.r >= NR - 1) {
+        // Reached bottom → respawn at top with chance to become reply
+        if (Math.random() < 0.15) {
+          // Spawn a reply particle going up
+          particles.push(makeParticle());
+          particles[particles.length - 1].type = 1;
+          particles[particles.length - 1].dir  = -1;
+          particles[particles.length - 1].r    = NR - 1;
+          particles[particles.length - 1].col  = p.col;
+          if (particles.length > 80) particles.splice(0, 5);
+        }
+        Object.assign(p, makeParticle());
+        p.dir = 1; p.type = Math.random() < 0.7 ? 0 : 2; p.r = 0;
+        continue;
+      }
+      if (p.dir === -1 && p.r <= 0) {
+        // Reply reached top (source) → respawn as outbound
+        Object.assign(p, makeParticle());
+        p.dir = 1; p.type = 0; p.r = 0;
+        continue;
+      }
+
+      // Project to screen using the column as fractional grid coord
+      const pt = project(p.col, p.r);
+
+      // Alpha: replies are brighter; outbound dimmer at top (near source = more dense)
+      const depthFrac = p.r / Math.max(1, NR - 1);
+      const alpha = p.type === 1
+        ? 0.35 + (1 - depthFrac) * 0.25  // replies brightest near top
+        : 0.15 + depthFrac * 0.30;        // outbound brightens downward
+
+      ctx.globalAlpha = alpha * slowFactor < 0.3 ? alpha * 0.5 : alpha;
+      ctx.fillStyle = `rgb(${pr},${pg},${pb})`;
+      const rad = p.type === 1 ? 1.8 : 1.4;
+      ctx.beginPath(); ctx.arc(pt.sx, pt.sy, rad, 0, Math.PI * 2); ctx.fill();
+
+      // Trail (2 points behind)
+      const trailR = p.r - p.dir * p.speed * 3;
+      if (trailR >= 0 && trailR < NR) {
+        const pt2 = project(p.col, trailR);
+        ctx.globalAlpha = alpha * 0.28;
+        ctx.beginPath(); ctx.arc(pt2.sx, pt2.sy, rad * 0.65, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    // 4. "Your Website" box
+    drawBox();
+
+    // 5. Tooltip for hovered cell
+    if (hovCellC >= 0 && hovCellR >= 0) {
+      const cell = getCell(hovCellC, hovCellR);
+      const tl = project(hovCellC, hovCellR), br = project(hovCellC+1, hovCellR+1);
+      drawTooltip(cell, (tl.sx + br.sx) / 2, (tl.sy + br.sy) / 2 - 8);
+    }
+
+    // Counter + legend
+    ctx.save(); ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(139,92,246,0.6)'; ctx.font = '11px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${emailCount.toLocaleString()} sent · ${particles.filter(p=>p.dir===1).length} outbound · ${particles.filter(p=>p.dir===-1).length} replies`, W - 16, 24);
+    // Legend
+    const legend: Array<[number,number,number,string]> = [
+      [167,139,250,'outbound ↓'], [251,191,36,'follow-up ↓'], [74,222,128,'reply ↑'],
+    ];
+    for (let i = 0; i < legend.length; i++) {
+      const [lr, lg, lb, lbl] = legend[i];
+      ctx.globalAlpha = 0.7; ctx.fillStyle = `rgb(${lr},${lg},${lb})`;
+      ctx.beginPath(); ctx.arc(W - 16 - (legend.length-1-i)*80 - 6, 38, 3, 0, Math.PI*2); ctx.fill();
+      ctx.globalAlpha = 0.5; ctx.fillStyle = '#ffffff'; ctx.font = '9px "SF Mono",monospace';
+      ctx.fillText(lbl, W - 16 - (legend.length-1-i)*80, 42);
+    }
+    ctx.restore();
+  }
+
+  // ─── Events ───────────────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', e => {
+    const rect = wrap.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    if (my < VP_Y) { hovCellC = -1; hovCellR = -1; return; }
+    const [gc, gr] = screenToGrid(mx, my);
+    hovCellC = Math.floor(gc); hovCellR = Math.floor(gr);
+  });
+  wrap.addEventListener('mouseleave', () => { hovCellC = -1; hovCellR = -1; });
+  wrap.addEventListener('touchstart', () => { hovCellC = -1; hovCellR = -1; }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+  const gt = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gt) gt.style.display = 'none';
+
+  // ─── FinalCTA: streaming particles ────────────────────────────────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const cc2 = document.createElement('canvas');
+      cc2.setAttribute('aria-hidden', 'true');
+      cc2.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.style.position = 'relative';
+      ctaCard.insertBefore(cc2, ctaCard.firstChild);
+      const cc = cc2.getContext('2d')!;
+      let ctaDpr = 1, cW = 0, cH = 0, cNC = 0, cNR = 0;
+      interface CtaPart { col: number; r: number; spd: number; dir: 1|-1; type: 0|1|2; }
+      let ctaParts: CtaPart[] = [];
+
+      function resizeCta() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        cW = Math.round(rect.width); cH = Math.round(rect.height);
+        cc2.width = cW * ctaDpr; cc2.height = cH * ctaDpr;
+        cc2.style.width = `${cW}px`; cc2.style.height = `${cH}px`;
+        cc.setTransform(ctaDpr, 0, 0, ctaDpr, 0, 0);
+        cNC = Math.ceil(cW / 40) + 1; cNR = Math.ceil(cH / 30) + 1;
+        ctaParts = Array.from({ length: 30 }, () => {
+          const type = (Math.random()<0.7?0:Math.random()<0.6?2:1) as 0|1|2;
+          const dir: 1|-1 = type===1 ? -1 : 1;
+          return { col: Math.floor(Math.random()*cNC), r: Math.random()*(cNR-1), spd: 0.04+Math.random()*0.05, dir, type };
+        });
+      }
+
+      function projCta(c: number, r: number) {
+        const t  = Math.max(0.001, r / Math.max(1, cNR - 1));
+        const fx = (c - (cNC-1)/2) / Math.max(1, (cNC-1)/2);
+        return { sx: cW/2 + fx * cW*0.50 * t, sy: cH*0.12 + cH*0.86 * t };
+      }
+
+      function frameCta() {
+        requestAnimationFrame(frameCta);
+        cc.clearRect(0, 0, cW, cH);
+        cc.lineWidth = 0.4;
+        for (let r = 0; r < cNR; r++) {
+          cc.beginPath();
+          for (let c = 0; c < cNC; c++) { const p=projCta(c,r); c===0?cc.moveTo(p.sx,p.sy):cc.lineTo(p.sx,p.sy); }
+          cc.strokeStyle = 'rgba(139,92,246,0.055)'; cc.stroke();
+        }
+        for (let c = 0; c < cNC; c++) {
+          cc.beginPath();
+          for (let r = 0; r < cNR; r++) { const p=projCta(c,r); r===0?cc.moveTo(p.sx,p.sy):cc.lineTo(p.sx,p.sy); }
+          cc.strokeStyle = 'rgba(139,92,246,0.055)'; cc.stroke();
+        }
+        for (const p of ctaParts) {
+          p.r += p.dir * p.spd;
+          if (p.dir===1 && p.r>=cNR-1) { p.r=0; p.col=Math.floor(Math.random()*cNC); }
+          if (p.dir===-1 && p.r<=0) { p.r=cNR-1; p.col=Math.floor(Math.random()*cNC); }
+          const pt = projCta(p.col, p.r);
+          const [pr,pg,pb] = PARTICLE_COLORS[p.type];
+          cc.globalAlpha = 0.25; cc.fillStyle = `rgb(${pr},${pg},${pb})`;
+          cc.beginPath(); cc.arc(pt.sx, pt.sy, 1.5, 0, Math.PI*2); cc.fill();
+        }
+        cc.globalAlpha = 1;
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaCard);
+      resizeCta(); requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { cc2.style.opacity = '1'; });
+      const ctaGt = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGt) ctaGt.style.display = 'none';
+    }
+  }
+
+  }); // end ric
+</script>
