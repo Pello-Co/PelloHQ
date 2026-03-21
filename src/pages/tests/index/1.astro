@@ -46,6 +46,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       </div>
       <div class="product-card" data-product="3">
         <canvas class="product-bg" aria-hidden="true"></canvas>
+        <div id="soc-hud-glass" aria-hidden="true"></div>
         <div class="product-card-content">
           <ProductSection productIndex={3} flip={true} />
         </div>
@@ -300,6 +301,19 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
   .product-card[data-product="3"] .badge .badge-dot { background: #00f2ea !important; }
   .product-card[data-product="3"] .ps-info h2 span { color: #00f2ea !important; -webkit-text-fill-color: #00f2ea !important; }
   .product-card[data-product="3"] .feature-pill .text-current { color: #00f2ea !important; }
+  #soc-hud-glass {
+    position: absolute;
+    z-index: 2;
+    pointer-events: none;
+    border-radius: 12px;
+    background: rgba(0, 12, 14, 0.35);
+    backdrop-filter: blur(16px) saturate(1.3);
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
+    border: 1px solid rgba(0, 242, 234, 0.12);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(0, 242, 234, 0.06);
+    opacity: 1 !important;
+    display: none; /* shown by JS */
+  }
   .product-card[data-product="4"] .ps-info .text-body-lg { background: rgba(217, 70, 239, 0.06) !important; border: 1px solid rgba(217, 70, 239, 0.15) !important; }
   .product-card[data-product="5"] .ps-info .text-body-lg { background: rgba(124, 58, 237, 0.06) !important; border: 1px solid rgba(124, 58, 237, 0.15) !important; }
   .product-card[data-product="6"] .ps-info .text-body-lg { background: rgba(79, 70, 229, 0.06) !important; border: 1px solid rgba(79, 70, 229, 0.15) !important; }
@@ -1783,18 +1797,27 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     const BOX_W=180, BOX_H=boxH;
     const bx=GLOBE_CX-BOX_W/2, by=GLOBE_CY-BOX_H/2;
 
-    // Glass background
-    ctx.globalAlpha=0.55;
-    ctx.fillStyle='rgba(0,12,14,0.50)';
-    rrect(ctx,bx,by,BOX_W,BOX_H,10); ctx.fill();
-    // Cyan tint
-    ctx.globalAlpha=0.06;
-    ctx.fillStyle='#00f2ea';
-    rrect(ctx,bx,by,BOX_W,BOX_H,10); ctx.fill();
-    // Border
+    // Position the real glass overlay div
+    const glassEl = document.getElementById('soc-hud-glass');
+    if (glassEl) {
+      const card = glassEl.parentElement!;
+      const cardRect = card.getBoundingClientRect();
+      const canvasRect = (card.querySelector('.product-bg') as HTMLElement)?.getBoundingClientRect();
+      if (canvasRect) {
+        const offX = canvasRect.left - cardRect.left;
+        const offY = canvasRect.top - cardRect.top;
+        glassEl.style.display = 'block';
+        glassEl.style.left = `${offX + bx - 4}px`;
+        glassEl.style.top = `${offY + by - 4}px`;
+        glassEl.style.width = `${BOX_W + 8}px`;
+        glassEl.style.height = `${BOX_H + 8}px`;
+      }
+    }
+
+    // Subtle dark fill behind text (glass div handles the blur)
     ctx.globalAlpha=0.15;
-    ctx.strokeStyle='#00f2ea'; ctx.lineWidth=1;
-    rrect(ctx,bx,by,BOX_W,BOX_H,10); ctx.stroke();
+    ctx.fillStyle='rgba(0,12,14,0.25)';
+    rrect(ctx,bx,by,BOX_W,BOX_H,10); ctx.fill();
 
     // Draw rows
     let cy=by+PAD;
