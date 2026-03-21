@@ -1,0 +1,343 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="bg-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99,102,241,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  // ── requestIdleCallback polyfill ──────────────────────────────────────────────
+  const ric = (window as any).requestIdleCallback
+    ? (window as any).requestIdleCallback
+    : (cb: () => void) => setTimeout(cb, 1);
+
+  ric(() => {
+
+  // ── Spectral Waterfall (SDR / radio display) ──────────────────────────────────
+
+  interface WFPeak {
+    name: string;
+    color: string;
+    rgb: [number, number, number];
+    freqFrac: number; // 0–1 horizontal position
+    width: number;    // Gaussian sigma as fraction of canvas width
+    modFreq: number;  // amplitude oscillation speed
+    style: string;    // modulation pattern
+    seed: number;
+  }
+
+  const PEAKS: WFPeak[] = [
+    { name: 'PelloSEO',     color: '#6366f1', rgb: [99,102,241],  freqFrac: 0.06, width: 0.070, modFreq: 0.80, style: 'broad-strong',  seed: 0.0 },
+    { name: 'PelloReach',   color: '#8b5cf6', rgb: [139,92,246],  freqFrac: 0.20, width: 0.035, modFreq: 1.50, style: 'narrow-burst',  seed: 1.1 },
+    { name: 'PelloPublish', color: '#a855f7', rgb: [168,85,247],  freqFrac: 0.34, width: 0.048, modFreq: 1.20, style: 'regular-pulse', seed: 2.2 },
+    { name: 'PelloSocial',  color: '#c026d3', rgb: [192,38,211],  freqFrac: 0.48, width: 0.085, modFreq: 2.00, style: 'noisy-band',    seed: 3.3 },
+    { name: 'PelloPitch',   color: '#7c3aed', rgb: [124,58,237],  freqFrac: 0.62, width: 0.028, modFreq: 1.80, style: 'sharp-spike',   seed: 4.4 },
+    { name: 'PelloAds',     color: '#4f46e5', rgb: [79,70,229],   freqFrac: 0.72, width: 0.050, modFreq: 2.50, style: 'rapid-vary',    seed: 5.5 },
+    { name: 'PelloFlow',    color: '#9333ea', rgb: [147,51,234],  freqFrac: 0.83, width: 0.038, modFreq: 0.30, style: 'constant-tone', seed: 6.6 },
+    { name: 'PelloBuild',   color: '#6d28d9', rgb: [109,40,217],  freqFrac: 0.93, width: 0.058, modFreq: 0.40, style: 'slow-drift',    seed: 7.7 },
+  ];
+
+  // ── Peak amplitude at time t ──────────────────────────────────────────────────
+  function peakAmp(t: number, p: WFPeak): number {
+    const f = p.modFreq, s = p.seed;
+    switch (p.style) {
+      case 'broad-strong':
+        return 0.28 + 0.72 * Math.abs(Math.sin(t * f + s));
+      case 'narrow-burst':
+        return Math.pow(Math.max(0, Math.sin(t * f + s)), 10) * 1.05;
+      case 'regular-pulse': {
+        const env = Math.pow(Math.max(0, Math.sin(t * f * 0.5 + s)), 2);
+        return 0.12 + env * Math.pow(Math.max(0, Math.sin(t * f * 2 + s)), 2) * 0.88;
+      }
+      case 'noisy-band':
+        return 0.18 + 0.55 * (0.5 + 0.5 * Math.sin(t * f + s))
+             + Math.abs(Math.sin(t * f * 3.7 + s)) * 0.12;
+      case 'sharp-spike':
+        return Math.pow(Math.max(0, Math.sin(t * f + s)), 22) * 1.20;
+      case 'rapid-vary':
+        return 0.08 + 0.92 * Math.abs(Math.sin(t * f + s) * Math.sin(t * f * 0.31 + s));
+      case 'constant-tone':
+        return 0.48 + 0.12 * Math.sin(t * f * 0.1 + s);
+      case 'slow-drift':
+        return 0.28 + 0.52 * Math.abs(Math.sin(t * f * 0.08 + s));
+      default:
+        return 0.5;
+    }
+  }
+
+  // ── Waterfall renderer ────────────────────────────────────────────────────────
+  interface WFState { mouse: { x: number; y: number } | null; }
+
+  function setupWaterfall(
+    canvas: HTMLCanvasElement,
+    wrap: HTMLElement,
+    peaks: WFPeak[],
+    simple: boolean,
+    state: WFState
+  ): () => void {
+    const ctx = canvas.getContext('2d')!;
+    let W = 0, H = 0, dpr = 1;
+
+    // Off-screen waterfall accumulation buffer (1× logical pixels)
+    const wfCanvas  = document.createElement('canvas');
+    const wfCtx     = wfCanvas.getContext('2d')!;
+
+    const ROW_H = 2; // pixels scrolled per frame
+    const BIN_W = 3; // pixels per frequency bin
+
+    function resize() {
+      dpr = window.devicePixelRatio || 1;
+      const r = wrap.getBoundingClientRect();
+      W = Math.round(r.width);
+      H = Math.round(r.height);
+      canvas.width  = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width  = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // Reset waterfall buffer
+      wfCanvas.width  = W;
+      wfCanvas.height = H;
+      wfCtx.fillStyle = 'rgb(5,0,15)';
+      wfCtx.fillRect(0, 0, W, H);
+    }
+
+    const ro = new ResizeObserver(resize);
+    ro.observe(wrap);
+    resize();
+
+    let raf = 0;
+
+    function drawSpectrumRow(t: number, rowH: number, mouseX: number | null) {
+      for (let bx = 0; bx < W; bx += BIN_W) {
+        const freqFrac = (bx + BIN_W * 0.5) / W;
+
+        let totalAmp = 0.025; // noise floor
+        let weightR  = 5, weightG = 0, weightB = 15;
+
+        for (const p of peaks) {
+          const dx = freqFrac - p.freqFrac;
+          const g  = Math.exp(-(dx * dx) / (2 * p.width * p.width));
+          let   a  = peakAmp(t, p) * g;
+
+          // Mouse X boost — bright streak at cursor frequency
+          if (mouseX !== null) {
+            const mdx = Math.abs(bx - mouseX) / W;
+            if (mdx < 0.03) a *= (1 + (1 - mdx / 0.03) * 2.5);
+          }
+
+          totalAmp += a;
+          weightR  += p.rgb[0] * a;
+          weightG  += p.rgb[1] * a;
+          weightB  += p.rgb[2] * a;
+        }
+
+        // Map totalAmp to brightness
+        const brightness = Math.min(1.4, totalAmp);
+        const invA = Math.max(totalAmp, 0.025);
+        const cr = Math.min(255, Math.round(weightR / invA * brightness * 1.1));
+        const cg = Math.min(255, Math.round(weightG / invA * brightness * 1.1));
+        const cb = Math.min(255, Math.round(weightB / invA * brightness * 1.1));
+
+        wfCtx.fillStyle = `rgb(${cr},${cg},${cb})`;
+        wfCtx.fillRect(bx, 0, BIN_W, rowH);
+      }
+    }
+
+    function frame() {
+      raf = requestAnimationFrame(frame);
+      if (!W || !H) return;
+
+      const tNow   = performance.now() * 0.001;
+      const mouseX = state.mouse ? state.mouse.x : null;
+
+      // Shift waterfall buffer down by ROW_H (copy-with-offset trick)
+      wfCtx.globalCompositeOperation = 'copy';
+      wfCtx.drawImage(wfCanvas, 0, ROW_H);
+      wfCtx.globalCompositeOperation = 'source-over';
+
+      // Draw new spectrum row at top
+      drawSpectrumRow(tNow, ROW_H, mouseX);
+
+      // Composite to main canvas
+      ctx.clearRect(0, 0, W, H);
+      ctx.drawImage(wfCanvas, 0, 0, W, H);
+
+      // Frequency labels at top (product names at their positions) — hero only
+      if (!simple) {
+        ctx.globalAlpha = 0.08;
+        ctx.fillStyle   = 'rgba(200,180,255,1)';
+        ctx.font        = '8px "Courier New", monospace';
+        ctx.textAlign   = 'center';
+        for (const p of peaks) {
+          const lx = p.freqFrac * W;
+          ctx.fillText(p.name, lx, 14);
+        }
+        ctx.textAlign   = 'left';
+        ctx.globalAlpha = 1;
+
+        // Mouse Y-axis modulation hint: soft horizontal line at mouse Y
+        if (state.mouse) {
+          const grad = ctx.createLinearGradient(0, state.mouse.y, W, state.mouse.y);
+          grad.addColorStop(0,   'rgba(160,100,255,0)');
+          grad.addColorStop(0.1, 'rgba(160,100,255,0.04)');
+          grad.addColorStop(0.9, 'rgba(160,100,255,0.04)');
+          grad.addColorStop(1,   'rgba(160,100,255,0)');
+          ctx.fillStyle   = grad;
+          ctx.fillRect(0, state.mouse.y - 1, W, 2);
+        }
+      }
+    }
+
+    frame();
+    requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+    return () => { cancelAnimationFrame(raf); ro.disconnect(); };
+  }
+
+  // ── Hero canvas ───────────────────────────────────────────────────────────────
+  const heroWrap   = document.getElementById('hero-wrap')!;
+  const heroCanvas = heroWrap.querySelector<HTMLCanvasElement>('.bg-canvas')!;
+  const heroState: WFState = { mouse: null };
+
+  setupWaterfall(heroCanvas, heroWrap, PEAKS, false, heroState);
+
+  heroWrap.addEventListener('mousemove', (e: MouseEvent) => {
+    const rect      = heroWrap.getBoundingClientRect();
+    heroState.mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  });
+  heroWrap.addEventListener('mouseleave', () => { heroState.mouse = null; });
+
+  const gridTex = heroWrap.querySelector<HTMLElement>('.grid-texture');
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ── Final CTA canvas ──────────────────────────────────────────────────────────
+  const ctaCard = document.querySelector<HTMLElement>('.final-cta');
+  if (ctaCard) {
+    const ctaCanvas = document.createElement('canvas');
+    ctaCanvas.setAttribute('aria-hidden', 'true');
+    ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+    ctaCard.style.position = 'relative';
+    ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+
+    const ctaPeaks: WFPeak[] = [
+      { name: '', color: '#6366f1', rgb: [99,102,241],  freqFrac: 0.22, width: 0.07, modFreq: 0.8, style: 'broad-strong',  seed: 0.0 },
+      { name: '', color: '#a855f7', rgb: [168,85,247],  freqFrac: 0.50, width: 0.05, modFreq: 1.5, style: 'regular-pulse', seed: 2.2 },
+      { name: '', color: '#4f46e5', rgb: [79,70,229],   freqFrac: 0.78, width: 0.04, modFreq: 0.4, style: 'constant-tone', seed: 5.5 },
+    ];
+    const ctaState: WFState = { mouse: null };
+    setupWaterfall(ctaCanvas, ctaCard, ctaPeaks, true, ctaState);
+
+    const gridTexCta = ctaCard.querySelector<HTMLElement>('.grid-texture');
+    if (gridTexCta) gridTexCta.style.display = 'none';
+  }
+
+  }); // end ric
+</script>

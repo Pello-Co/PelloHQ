@@ -1,0 +1,380 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="bg-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99,102,241,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  // ── requestIdleCallback polyfill ──────────────────────────────────────────────
+  const ric = (window as any).requestIdleCallback
+    ? (window as any).requestIdleCallback
+    : (cb: () => void) => setTimeout(cb, 1);
+
+  ric(() => {
+
+  // ── Seismograph / chart-recorder aesthetic ────────────────────────────────────
+
+  interface STrace {
+    name: string;
+    stat: string;
+    color: string;
+    rgb: [number, number, number];
+    yFrac: number;
+    style: string;
+    baseAmp: number;
+    seed: number;
+  }
+
+  const TRACES: STrace[] = [
+    { name: 'PelloSEO',     stat: '+340% traffic',  color: '#6366f1', rgb: [99,102,241],  yFrac: 0.07,  style: 'steady',     baseAmp: 20, seed: 0.0 },
+    { name: 'PelloReach',   stat: '500+ domains',   color: '#8b5cf6', rgb: [139,92,246],  yFrac: 0.193, style: 'spiky',      baseAmp: 24, seed: 1.1 },
+    { name: 'PelloPublish', stat: '60 pieces/mo',   color: '#a855f7', rgb: [168,85,247],  yFrac: 0.316, style: 'burst',      baseAmp: 21, seed: 2.2 },
+    { name: 'PelloSocial',  stat: '3.2k accounts',  color: '#c026d3', rgb: [192,38,211],  yFrac: 0.439, style: 'chaotic',    baseAmp: 17, seed: 3.3 },
+    { name: 'PelloPitch',   stat: '8–12% CVR',      color: '#7c3aed', rgb: [124,58,237],  yFrac: 0.561, style: 'sharp',      baseAmp: 25, seed: 4.4 },
+    { name: 'PelloAds',     stat: '2.8x ROAS',      color: '#4f46e5', rgb: [79,70,229],   yFrac: 0.684, style: 'varying',    baseAmp: 21, seed: 5.5 },
+    { name: 'PelloFlow',    stat: '0 manual steps', color: '#9333ea', rgb: [147,51,234],  yFrac: 0.807, style: 'metronomic', baseAmp: 20, seed: 6.6 },
+    { name: 'PelloBuild',   stat: '<2wk ship',      color: '#6d28d9', rgb: [109,40,217],  yFrac: 0.93,  style: 'wide',       baseAmp: 27, seed: 7.7 },
+  ];
+
+  // ── Signal generator — deterministic, no Math.random in render loop ──────────
+  function seismAmp(t: number, style: string, seed: number, rate: number): number {
+    const s = seed;
+    switch (style) {
+      case 'steady':
+        return Math.sin(t * 2.4 * rate + s) * 0.65
+             + Math.sin(t * 5.1 * rate + s * 1.3) * 0.18;
+
+      case 'spiky': {
+        const period = 3.0 / rate;
+        const ph = ((t % period) + period) % period;
+        return Math.exp(-Math.pow((ph - 0.5) / 0.06, 2)) * 0.90
+             - Math.exp(-Math.pow((ph - 0.41) / 0.03, 2)) * 0.14;
+      }
+
+      case 'burst': {
+        const bPeriod = 2.2 / rate;
+        const env = Math.pow(Math.max(0, Math.sin(t * Math.PI / bPeriod + s)), 2);
+        return Math.sin(t * 12.0 * rate + s) * env * 0.78;
+      }
+
+      case 'chaotic':
+        return (Math.sin(t * 18.3 * rate + s)
+              + Math.sin(t * 23.7 * rate + s * 1.5) * 0.70
+              + Math.sin(t * 31.1 * rate + s * 0.7) * 0.40
+              + Math.sin(t * 41.9 * rate + s * 2.1) * 0.25) / 2.35;
+
+      case 'sharp': {
+        const period = 1.2 / rate;
+        const ph = ((t % period) + period) % period;
+        return Math.exp(-Math.pow((ph - 0.20) / 0.04, 2)) * 0.92
+             - Math.exp(-Math.pow((ph - 0.13) / 0.02, 2)) * 0.18;
+      }
+
+      case 'varying':
+        return Math.sin(t * 3.8 + s) * (0.25 + 0.75 * Math.abs(Math.sin(t * 0.47 + s)));
+
+      case 'metronomic': {
+        const period = 0.85 / rate;
+        const ph = ((t % period) + period) % period;
+        return Math.exp(-Math.pow((ph - 0.1) / 0.025, 2)) * 0.88;
+      }
+
+      case 'wide':
+        return Math.sin(t * 0.9 + s) * 0.80 + Math.sin(t * 0.45 + s * 0.8) * 0.22;
+
+      default:
+        return 0;
+    }
+  }
+
+  // ── Canvas setup ──────────────────────────────────────────────────────────────
+  interface SeisState { mouse: { x: number; y: number } | null; }
+
+  function setupSeismograph(
+    canvas: HTMLCanvasElement,
+    wrap: HTMLElement,
+    traces: STrace[],
+    simple: boolean,
+    state: SeisState
+  ): () => void {
+    const ctx = canvas.getContext('2d')!;
+    let W = 0, H = 0, dpr = 1;
+
+    function resize() {
+      dpr = window.devicePixelRatio || 1;
+      const r = wrap.getBoundingClientRect();
+      W = Math.round(r.width);
+      H = Math.round(r.height);
+      canvas.width  = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width  = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    const ro = new ResizeObserver(resize);
+    ro.observe(wrap);
+    resize();
+
+    const HISTORY_SEC = 6.0;
+    const SEG = 4; // px per alpha-segment
+    let raf = 0;
+
+    function frame() {
+      raf = requestAnimationFrame(frame);
+      if (!W || !H) return;
+      ctx.clearRect(0, 0, W, H);
+
+      const tNow  = performance.now() * 0.001;
+      const headX = W * 0.75;
+
+      // ── Paper grid ───────────────────────────────────────────────────────────
+      if (!simple) {
+        ctx.lineWidth = 0.5;
+        // Vertical time markers every 100px
+        ctx.strokeStyle = 'rgba(255,255,255,0.025)';
+        for (let x = 0; x < headX; x += 100) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+        }
+        // Horizontal baselines at each trace centre
+        ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+        for (const tr of traces) {
+          const by = tr.yFrac * H;
+          ctx.beginPath(); ctx.moveTo(0, by); ctx.lineTo(headX, by); ctx.stroke();
+        }
+      }
+
+      // ── Per-trace rendering ───────────────────────────────────────────────────
+      for (const tr of traces) {
+        const baseY = tr.yFrac * H;
+        const [r, g, b] = tr.rgb;
+
+        // Mouse proximity
+        let prox = 0;
+        if (!simple && state.mouse) {
+          const dy = Math.abs(state.mouse.y - baseY);
+          prox = Math.pow(Math.max(0, 1 - dy / (H * 0.09)), 2);
+        }
+        const rate  = 1 + prox * 0.8;
+        const ampPx = tr.baseAmp * (1 + prox * 1.0) * (simple ? 0.6 : 1.0);
+
+        // Segment-based rendering with age-based alpha fading
+        for (let x0 = 0; x0 < headX - SEG; x0 += SEG) {
+          const midX     = x0 + SEG * 0.5;
+          const ageRatio = 1 - midX / headX; // 1=oldest (left), 0=newest (head)
+          const baseAlpha = 0.04 + (1 - ageRatio) * (simple ? 0.18 : 0.21);
+          const alpha = Math.min(1, baseAlpha * (1 + prox * 0.4));
+
+          ctx.beginPath();
+          let moved = false;
+          for (let dx = 0; dx <= SEG; dx++) {
+            const x = x0 + dx;
+            if (x > headX) break;
+            const ageR = 1 - x / headX;
+            const t    = tNow - ageR * HISTORY_SEC;
+            const v    = seismAmp(t, tr.style, tr.seed, rate);
+            const y    = baseY - v * ampPx;
+            if (!moved) { ctx.moveTo(x, y); moved = true; }
+            else ctx.lineTo(x, y);
+          }
+
+          ctx.strokeStyle = `rgb(${r},${g},${b})`;
+          ctx.globalAlpha = alpha;
+          ctx.lineWidth   = 0.75;
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+
+        // ── Drawing head ─────────────────────────────────────────────────────
+        const vHead = seismAmp(tNow, tr.style, tr.seed, rate);
+        const headY = baseY - vHead * ampPx;
+
+        // Glow halo
+        const grd = ctx.createRadialGradient(headX, headY, 0, headX, headY, 8);
+        grd.addColorStop(0, `rgba(${r},${g},${b},0.15)`);
+        grd.addColorStop(1, `rgba(${r},${g},${b},0)`);
+        ctx.fillStyle   = grd;
+        ctx.globalAlpha = 1;
+        ctx.beginPath();
+        ctx.arc(headX, headY, 8, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Solid dot — brighter when hovered
+        const dotAlpha = simple ? 0.5 : (prox > 0.4 ? 1.0 : 0.8);
+        ctx.fillStyle   = `rgb(${r},${g},${b})`;
+        ctx.globalAlpha = dotAlpha;
+        ctx.beginPath();
+        ctx.arc(headX, headY, 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+
+        // ── Product label when hovered ────────────────────────────────────────
+        if (!simple && prox > 0.3) {
+          ctx.globalAlpha = 0.6 + prox * 0.35;
+          ctx.fillStyle   = `rgb(${r},${g},${b})`;
+          ctx.font        = '9px "Courier New", monospace';
+          ctx.textAlign   = 'left';
+          ctx.fillText(tr.name, headX + 7, headY - 2);
+          ctx.globalAlpha = (0.4 + prox * 0.3);
+          ctx.font        = '8px "Courier New", monospace';
+          ctx.fillText(tr.stat, headX + 7, headY + 10);
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      ctx.textAlign = 'left';
+    }
+
+    frame();
+    requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+    return () => { cancelAnimationFrame(raf); ro.disconnect(); };
+  }
+
+  // ── Hero canvas ───────────────────────────────────────────────────────────────
+  const heroWrap   = document.getElementById('hero-wrap')!;
+  const heroCanvas = heroWrap.querySelector<HTMLCanvasElement>('.bg-canvas')!;
+  const heroState: SeisState = { mouse: null };
+
+  setupSeismograph(heroCanvas, heroWrap, TRACES, false, heroState);
+
+  heroWrap.addEventListener('mousemove', (e: MouseEvent) => {
+    const rect      = heroWrap.getBoundingClientRect();
+    heroState.mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  });
+  heroWrap.addEventListener('mouseleave', () => { heroState.mouse = null; });
+
+  const gridTex = heroWrap.querySelector<HTMLElement>('.grid-texture');
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ── Final CTA canvas ──────────────────────────────────────────────────────────
+  const ctaCard = document.querySelector<HTMLElement>('.final-cta');
+  if (ctaCard) {
+    const ctaCanvas = document.createElement('canvas');
+    ctaCanvas.setAttribute('aria-hidden', 'true');
+    ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+    ctaCard.style.position = 'relative';
+    ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+
+    const ctaTraces: STrace[] = [
+      { name: '', stat: '', color: '#6366f1', rgb: [99,102,241],  yFrac: 0.28, style: 'steady',     baseAmp: 14, seed: 10.0 },
+      { name: '', stat: '', color: '#a855f7', rgb: [168,85,247],  yFrac: 0.50, style: 'spiky',      baseAmp: 16, seed: 12.2 },
+      { name: '', stat: '', color: '#4f46e5', rgb: [79,70,229],   yFrac: 0.72, style: 'wide',       baseAmp: 12, seed: 15.5 },
+    ];
+    const ctaState: SeisState = { mouse: null };
+    setupSeismograph(ctaCanvas, ctaCard, ctaTraces, true, ctaState);
+
+    const gridTexCta = ctaCard.querySelector<HTMLElement>('.grid-texture');
+    if (gridTexCta) gridTexCta.style.display = 'none';
+  }
+
+  }); // end ric
+</script>
