@@ -289,6 +289,29 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     //   ryF     : minor radius as fraction of offscreen height  (ryF << rxF = flat band)
     //   n       : satellite blob count (0 = simple wash, no satellites)
     //   waF     : domain-warp amplitude as fraction of offscreen width
+    const AL = [
+      // ── Atmospheric washes — vast slow indigo base, set the deep-space mood ──
+      [0.50, 0.54, 0.62, 0.26, -0.06,  52, 14, 185, 0.16, 0.055, 0.0,  0, 0.14],
+      [0.50, 0.50, 0.72, 0.22,  0.04,  38, 10, 165, 0.12, 0.045, 2.6,  0, 0.12],
+      [0.50, 0.59, 0.78, 0.24, -0.03,  28,  7, 148, 0.10, 0.038, 5.1,  0, 0.13],
+      // ── Mid nebula bands — the dominant flowing structure ─────────────────
+      [0.50, 0.52, 0.44, 0.12, -0.13, 100, 35, 230, 0.32, 0.140, 0.4,  7, 0.09],
+      [0.50, 0.49, 0.50, 0.10,  0.09, 125, 45, 235, 0.28, 0.170, 1.9,  6, 0.08],
+      [0.50, 0.55, 0.40, 0.13, -0.07,  75, 28, 215, 0.26, 0.110, 3.4,  6, 0.10],
+      [0.50, 0.50, 0.48, 0.09,  0.16, 145, 40, 240, 0.24, 0.190, 5.2,  5, 0.07],
+      [0.50, 0.57, 0.38, 0.12, -0.19,  55, 45, 205, 0.22, 0.130, 2.7,  5, 0.09],
+      [0.50, 0.47, 0.43, 0.11,  0.11, 108, 28, 220, 0.24, 0.150, 4.2,  6, 0.08],
+      // ── Bright accent tendrils — vivid narrow streaks, faster movement ────
+      [0.50, 0.51, 0.33, 0.07, -0.11, 162, 52, 250, 0.38, 0.250, 1.3,  5, 0.06],
+      [0.50, 0.50, 0.35, 0.06,  0.13, 188, 56, 235, 0.32, 0.280, 3.9,  4, 0.05],
+      [0.50, 0.53, 0.30, 0.08, -0.08, 138, 44, 245, 0.30, 0.220, 6.4,  5, 0.07],
+      [0.50, 0.49, 0.27, 0.07,  0.09, 172, 60, 240, 0.28, 0.300, 0.8,  4, 0.05],
+      // ── Hot bright core — concentrated centre glow like a nebula nucleus ──
+      [0.50, 0.51, 0.18, 0.11,  0.00, 178, 88, 255, 0.44, 0.100, 0.0,  3, 0.04],
+      [0.50, 0.50, 0.14, 0.09, -0.04, 198, 98, 255, 0.40, 0.120, 1.6,  0, 0.03],
+      [0.50, 0.52, 0.21, 0.10,  0.05, 158, 70, 250, 0.38, 0.090, 3.1,  3, 0.04],
+    ];
+
     function frameAurora() {
       requestAnimationFrame(frameAurora);
       const ow = offscreen.width, oh = offscreen.height;
@@ -297,53 +320,32 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
       octx.clearRect(0, 0, ow, oh);
       octx.globalCompositeOperation = 'lighter';
 
-      // One main flowing wave — a single large band that sweeps fluidly
-      // Built from 5 tightly coupled sub-blobs that move together as one body
-      const waveT = t * 0.25; // main wave time
-      
-      // The wave's overall position — sweeps diagonally across the viewport
-      const waveCx = ow * (0.5 + Math.sin(waveT * 0.7) * 0.3 + Math.sin(waveT * 0.43 + 1.2) * 0.15);
-      const waveCy = oh * (0.5 + Math.sin(waveT * 0.5 + 0.8) * 0.2 + Math.cos(waveT * 0.33) * 0.1);
-      const waveAngle = Math.sin(waveT * 0.3) * 0.4 + Math.cos(waveT * 0.19 + 1.5) * 0.2;
+      for (const row of AL) {
+        const [cxF, cyF, rxF, ryF, ang, r, g, b, alpha, spd, ph, n, waF] = row;
+        // Lissajous drift — x and y on slightly different frequencies avoids back-and-forth
+        const cx    = ow * (cxF + Math.sin(t * spd * 3        + ph      ) * 0.15);
+        const cy    = oh * (cyF + Math.sin(t * spd * 2.1  + ph + 1.1) * 0.12);
+        // Radii breathe out of phase
+        const rx    = ow * rxF * (1 + Math.sin(t * spd * 4 + ph * 1.8) * 0.15);
+        const ry    = oh * ryF * (1 + Math.sin(t * spd * 2.5 + ph * 1.3) * 0.18);
+        // Angle wobble
+        const angle = ang + Math.sin(t * spd * 2.5 + ph) * 0.2;
+        // Warp amplitude in offscreen pixels
+        const wa    = ow * waF;
 
-      // 5 sub-blobs form the wave body — they stay close together but each
-      // has slight noise-driven offset for organic internal flow
-      const subBlobs = [
-        { offX: 0, offY: 0, rx: 0.55, ry: 0.18, r: 88, g: 40, b: 220, a: 0.40, sp: 0 },
-        { offX: -0.12, offY: 0.03, rx: 0.45, ry: 0.22, r: 120, g: 50, b: 240, a: 0.35, sp: 1.3 },
-        { offX: 0.14, offY: -0.02, rx: 0.50, ry: 0.15, r: 65, g: 25, b: 200, a: 0.30, sp: 2.7 },
-        { offX: -0.05, offY: -0.04, rx: 0.35, ry: 0.12, r: 160, g: 60, b: 250, a: 0.45, sp: 4.1 },
-        { offX: 0.08, offY: 0.05, rx: 0.40, ry: 0.20, r: 140, g: 45, b: 235, a: 0.32, sp: 5.5 },
-      ];
-
-      for (const sb of subBlobs) {
-        // Each sub-blob drifts slightly relative to the main wave via noise
-        const noiseOx = an(sb.sp + waveT * 0.6, 10) * ow * 0.08;
-        const noiseOy = an(sb.sp + 50, waveT * 0.5) * oh * 0.06;
-        const cx = waveCx + sb.offX * ow + noiseOx;
-        const cy = waveCy + sb.offY * oh + noiseOy;
-        
-        // Size breathes
-        const breathe = 1 + Math.sin(waveT * 0.8 + sb.sp) * 0.2;
-        const rx = ow * sb.rx * breathe;
-        const ry = oh * sb.ry * breathe;
-        
-        // Angle follows the main wave with slight individual wobble
-        const angle = waveAngle + Math.sin(waveT * 0.4 + sb.sp) * 0.15;
-        
-        // Alpha pulses gently
-        const alpha = sb.a * (0.8 + Math.sin(waveT * 0.6 + sb.sp * 1.3) * 0.2);
-        
-        blob(cx, cy, rx, ry, angle, sb.r, sb.g, sb.b, alpha);
+        if (n === 0) {
+          // Wash: single domain-warped gradient blob, no internal structure
+          const wx = fbm(cx * 0.010 + t * 0.036, cy * 0.010,         2) * wa;
+          const wy = fbm(cx * 0.010 + 63,         cy * 0.010 + t * 0.030, 2) * wa;
+          blob(cx + wx, cy + wy, rx, ry, angle, r, g, b, alpha);
+        } else {
+          strand(t, cx, cy, rx, ry, angle, r, g, b, alpha, n, wa);
+        }
       }
-
-      // Subtle secondary glow that trails behind — gives depth
-      const trailCx = waveCx - Math.cos(waveAngle) * ow * 0.15;
-      const trailCy = waveCy - Math.sin(waveAngle) * oh * 0.1;
-      blob(trailCx, trailCy, ow * 0.6, oh * 0.25, waveAngle + 0.1, 45, 15, 170, 0.12);
 
       octx.globalCompositeOperation = 'source-over';
 
+      // Upscale offscreen to full canvas — bilinear smoothing acts as a free soft blur
       actx.setTransform(1, 0, 0, 1, 0, 0);
       actx.clearRect(0, 0, auroraCanvas.width, auroraCanvas.height);
       actx.drawImage(offscreen, 0, 0, auroraCanvas.width, auroraCanvas.height);
