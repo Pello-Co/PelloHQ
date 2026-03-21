@@ -277,11 +277,11 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
 
     function frame() {
       rafId = requestAnimationFrame(frame);
-      t += 0.0003;
+      t += 0.003;
       mouseStrength += (mouseTarget - mouseStrength) * 0.05;
 
-      // Lissajous time (multiplier controls drift speed — one slow cycle ≈ 12–30s)
-      const tl = t * 22;
+      // Lissajous time — peaks complete a traverse in ~15-25 seconds
+      const tl = t * 8;
 
       // Compute product peak positions and strengths
       interface PeakState { x: number; y: number; strength: number; idx: number; }
@@ -293,7 +293,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
           prod.cy * H + prod.ay * H * Math.cos(prod.fb * tl)
         ));
         // Base strength oscillates so labels pulse gently even without mouse
-        const base = 0.45 + 0.15 * Math.sin(t * 7 + prod.ph);
+        const base = 0.55 + 0.20 * Math.sin(t * 5 + prod.ph);
         return { x, y, strength: base, idx: i };
       });
 
