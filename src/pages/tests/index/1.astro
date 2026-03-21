@@ -1469,7 +1469,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
 
   function initSocial(w: number, h: number): Record<string,unknown> {
     const GLOBE_R=Math.min(w,h)*0.38;
-    const GLOBE_CX=w*0.68, GLOBE_CY=h*0.48;
+    const GLOBE_CX=w*0.32, GLOBE_CY=h*0.50;
     // Fibonacci sphere 800 dots
     const globeDots: SocGlobeDot[]=[];
     { const gr2=(1+Math.sqrt(5))/2;
@@ -1773,9 +1773,9 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     ctx.restore();
 
     // Counter (top-right)
-    ctx.save(); ctx.textAlign='right'; ctx.font='10px "SF Mono","Fira Code",monospace';
-    ctx.globalAlpha=0.55; ctx.fillStyle='rgba(0,242,234,0.55)';
-    ctx.fillText(`${st.totalPhones} phones  ·  ${st.totalAccounts} accounts  ·  12 cities`,w-10,16);
+    ctx.save(); ctx.textAlign='center'; ctx.font='9px "SF Mono","Fira Code",monospace';
+    ctx.globalAlpha=0.45; ctx.fillStyle='rgba(0,242,234,0.55)';
+    ctx.fillText(`${st.totalPhones} phones  ·  ${st.totalAccounts} accounts  ·  12 cities`,GLOBE_CX,GLOBE_CY-GLOBE_R-14);
     ctx.restore();
   }
 
