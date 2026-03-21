@@ -290,6 +290,16 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
   .product-card[data-product="3"] .btn-primary,
   .product-card[data-product="3"] .btn-secondary { border-color: rgba(0,242,234,0.15) !important; }
   .product-card[data-product="3"] .feature-pill { border-color: rgba(0,242,234,0.08) !important; }
+  /* Override all magenta/pink text to cyan */
+  .product-card[data-product="3"] .ps-section { --product-color: #00f2ea !important; }
+  .product-card[data-product="3"] [style*="color: #c026d3"],
+  .product-card[data-product="3"] [style*="color:#c026d3"] { color: #00f2ea !important; }
+  .product-card[data-product="3"] .gradient-text { background-image: linear-gradient(135deg, #00f2ea, #80fff8) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; }
+  .product-card[data-product="3"] .feature-pill svg { color: #00f2ea !important; }
+  .product-card[data-product="3"] .badge { background: rgba(0,242,234,0.08) !important; color: #00f2ea !important; border-color: rgba(0,242,234,0.15) !important; }
+  .product-card[data-product="3"] .badge .badge-dot { background: #00f2ea !important; }
+  .product-card[data-product="3"] .ps-info h2 span { color: #00f2ea !important; -webkit-text-fill-color: #00f2ea !important; }
+  .product-card[data-product="3"] .feature-pill .text-current { color: #00f2ea !important; }
   .product-card[data-product="4"] .ps-info .text-body-lg { background: rgba(217, 70, 239, 0.06) !important; border: 1px solid rgba(217, 70, 239, 0.15) !important; }
   .product-card[data-product="5"] .ps-info .text-body-lg { background: rgba(124, 58, 237, 0.06) !important; border: 1px solid rgba(124, 58, 237, 0.15) !important; }
   .product-card[data-product="6"] .ps-info .text-body-lg { background: rgba(79, 70, 229, 0.06) !important; border: 1px solid rgba(79, 70, 229, 0.15) !important; }
