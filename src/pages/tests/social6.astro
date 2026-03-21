@@ -1,0 +1,799 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloSocial — Engagement Web | Coordinated Account Network" description="PelloSocial coordinates hundreds of AI accounts to flood your brand with real engagement across every major platform. See the web in action.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="social-web-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: #c026d3;
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #e879f9 !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(30,10,35,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(192,38,211,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Data ────────────────────────────────────────────────────────────────────
+  const PLATFORMS_SOCIAL = [
+    { name: "Instagram", color: [225, 48, 108]  as [number,number,number], weight: 0.30 },
+    { name: "TikTok",    color: [0, 242, 234]   as [number,number,number], weight: 0.25 },
+    { name: "Twitter/X", color: [139, 92, 246]  as [number,number,number], weight: 0.20 },
+    { name: "YouTube",   color: [255, 0, 0]     as [number,number,number], weight: 0.10 },
+    { name: "Facebook",  color: [24, 119, 242]  as [number,number,number], weight: 0.10 },
+    { name: "Reddit",    color: [255, 69, 0]    as [number,number,number], weight: 0.05 },
+  ];
+  const PLAT_CUM: number[] = [];
+  { let s = 0; for (const p of PLATFORMS_SOCIAL) { s += p.weight; PLAT_CUM.push(s); } }
+
+  const PERSONA_FIRST = ["Alex","Jordan","Casey","Riley","Morgan","Taylor","Jamie","Quinn","Sage","Blake","Drew","Avery","Dakota","Skyler","Reese","Kai","Nova","Zara","Luna","Phoenix"];
+  const PERSONA_LAST  = ["Rivera","Kim","Santos","Nakamura","Ahmed","Berg","Costa","Johal","Novak","Park","Silva","Tanaka","Volkov","Wu","Zhang"];
+  const CITIES        = ["London","New York","LA","Tokyo","Berlin","Sydney","Toronto","Dubai","Singapore","São Paulo","Mumbai","Paris","Seoul","Amsterdam","Miami"];
+  const NICHES        = ["Fitness","Tech Reviews","Food","Travel","Fashion","Gaming","Finance","Wellness","Photography","Music"];
+  const FOLLOWER_COUNTS = ["2.3k","4.7k","8.1k","12.4k","18.9k","24.2k","31.5k","47.8k"];
+
+  function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+  function pickPlatform(): number {
+    const r = Math.random();
+    for (let i = 0; i < PLAT_CUM.length; i++) if (r < PLAT_CUM[i]) return i;
+    return PLATFORMS_SOCIAL.length - 1;
+  }
+
+  // ─── Engagement types ────────────────────────────────────────────────────────
+  type EngageType = "like" | "comment" | "share" | "follow";
+  const ENGAGE_TYPES: EngageType[] = ["like","comment","share","follow"];
+  function engageColor(t: EngageType): [number,number,number] {
+    switch (t) {
+      case "like":    return [255, 99, 160];
+      case "comment": return [139, 92, 246];
+      case "share":   return [0, 242, 234];
+      case "follow":  return [74, 222, 128];
+    }
+  }
+
+  // ─── Node interface ───────────────────────────────────────────────────────────
+  interface ANode {
+    ax: number; ay: number; // actual position (with ring offset + random jitter)
+    ring: number;           // 0=inner, 1=mid, 2=outer
+    angle: number;
+    platformIdx: number;
+    name: string;
+    city: string;
+    niche: string;
+    followers: string;
+    likesToday: number;
+    commentsTd: number;
+    sharesToday: number;
+  }
+
+  // ─── Travel particle ──────────────────────────────────────────────────────────
+  interface TravelDot {
+    sx: number; sy: number;   // start (node)
+    ex: number; ey: number;   // end (center)
+    cpx: number; cpy: number; // control point for comment curve
+    progress: number;
+    speed: number;
+    type: EngageType;
+    platIdx: number;
+    done: boolean;
+  }
+
+  // ─── Canvas setup ─────────────────────────────────────────────────────────────
+  const canvas = document.querySelector<HTMLCanvasElement>('.social-web-canvas')!;
+  const wrap   = document.getElementById('hero-wrap')!;
+  const ctx    = canvas.getContext('2d')!;
+
+  let nodes: ANode[] = [];
+  let travelDots: TravelDot[] = [];
+  let dpr = 1;
+  let mouse: { x: number; y: number } | null = null;
+  let hoveredNode: ANode | null = null;
+  let brandHovered = false;
+  let totalEngagements = 2847;
+  let brandPulse = 0; // 0-1, decays
+
+  // Ring rotation angles
+  let ringAngles = [0, 0, 0];
+  const RING_SPEEDS = [0.0003, -0.00018, 0.00009]; // rad/ms, alternating
+
+  const RING_RADII = [120, 200, 300];
+  const RING_COUNTS = [35, 60, 80];
+
+  function buildNodes(cx: number, cy: number) {
+    nodes = [];
+    for (let ring = 0; ring < 3; ring++) {
+      const count = RING_COUNTS[ring];
+      for (let i = 0; i < count; i++) {
+        const baseAngle = (i / count) * Math.PI * 2;
+        const jitter = (Math.random() - 0.5) * 0.18;
+        const radiusJitter = (Math.random() - 0.5) * 14;
+        const r = RING_RADII[ring] + radiusJitter;
+        const angle = baseAngle + jitter;
+        nodes.push({
+          ax: cx + Math.cos(angle) * r,
+          ay: cy + Math.sin(angle) * r,
+          ring, angle,
+          platformIdx: pickPlatform(),
+          name: pick(PERSONA_FIRST) + pick(PERSONA_LAST),
+          city: pick(CITIES),
+          niche: pick(NICHES),
+          followers: pick(FOLLOWER_COUNTS),
+          likesToday: Math.floor(Math.random() * 60) + 5,
+          commentsTd: Math.floor(Math.random() * 20) + 1,
+          sharesToday: Math.floor(Math.random() * 8),
+        });
+      }
+    }
+  }
+
+  let canvasCX = 0, canvasCY = 0;
+  let lastSpawn = 0;
+  const SPAWN_INTERVAL = 500; // ms
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    const w = Math.round(rect.width);
+    const h = Math.round(rect.height);
+    canvas.width  = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width  = `${w}px`;
+    canvas.style.height = `${h}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    canvasCX = w / 2;
+    canvasCY = h / 2;
+    buildNodes(canvasCX, canvasCY);
+    travelDots = [];
+  }
+
+  function getNodePos(n: ANode): [number, number] {
+    const ringAngle = ringAngles[n.ring];
+    const r = RING_RADII[n.ring] + (n.ay - (canvasCY + Math.sin(n.angle) * RING_RADII[n.ring])); // use original jitter
+    // Recompute from original angle + ring rotation
+    return [
+      canvasCX + Math.cos(n.angle + ringAngle) * (RING_RADII[n.ring] + (n.ax - canvasCX - Math.cos(n.angle) * RING_RADII[n.ring])),
+      canvasCY + Math.sin(n.angle + ringAngle) * (RING_RADII[n.ring] + (n.ay - canvasCY - Math.sin(n.angle) * RING_RADII[n.ring])),
+    ];
+  }
+
+  // Simpler: just rotate the angle offset, apply with original jitter radius
+  // Store base radius per node
+  let nodeBaseR: number[] = [];
+  function buildNodesFull(cx: number, cy: number) {
+    nodes = [];
+    nodeBaseR = [];
+    for (let ring = 0; ring < 3; ring++) {
+      const count = RING_COUNTS[ring];
+      for (let i = 0; i < count; i++) {
+        const baseAngle = (i / count) * Math.PI * 2;
+        const jitter    = (Math.random() - 0.5) * 0.18;
+        const rJitter   = (Math.random() - 0.5) * 14;
+        const r         = RING_RADII[ring] + rJitter;
+        const angle     = baseAngle + jitter;
+        nodeBaseR.push(r);
+        nodes.push({
+          ax: cx + Math.cos(angle) * r,
+          ay: cy + Math.sin(angle) * r,
+          ring, angle,
+          platformIdx: pickPlatform(),
+          name: pick(PERSONA_FIRST) + pick(PERSONA_LAST),
+          city: pick(CITIES),
+          niche: pick(NICHES),
+          followers: pick(FOLLOWER_COUNTS),
+          likesToday: Math.floor(Math.random() * 60) + 5,
+          commentsTd: Math.floor(Math.random() * 20) + 1,
+          sharesToday: Math.floor(Math.random() * 8),
+        });
+      }
+    }
+  }
+
+  function getPos(idx: number): [number, number] {
+    const n = nodes[idx];
+    const angle = n.angle + ringAngles[n.ring];
+    const r     = nodeBaseR[idx];
+    return [canvasCX + Math.cos(angle) * r, canvasCY + Math.sin(angle) * r];
+  }
+
+  function resize2() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    const w = Math.round(rect.width);
+    const h = Math.round(rect.height);
+    canvas.width  = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width  = `${w}px`;
+    canvas.style.height = `${h}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    canvasCX = w / 2;
+    canvasCY = h / 2;
+    buildNodesFull(canvasCX, canvasCY);
+    travelDots = [];
+  }
+
+  function spawnTravel(from: number) {
+    const [sx, sy] = getPos(from);
+    const type = ENGAGE_TYPES[Math.floor(Math.random() * ENGAGE_TYPES.length)];
+    const speed = 0.0008 + Math.random() * 0.0006;
+    // Control point for comment (curved)
+    const cpx = (sx + canvasCX) / 2 + (Math.random() - 0.5) * 80;
+    const cpy = (sy + canvasCY) / 2 + (Math.random() - 0.5) * 80;
+    travelDots.push({
+      sx, sy,
+      ex: canvasCX, ey: canvasCY,
+      cpx, cpy,
+      progress: 0,
+      speed,
+      type,
+      platIdx: nodes[from].platformIdx,
+      done: false,
+    });
+  }
+
+  // ─── Rounded rect ─────────────────────────────────────────────────────────────
+  function rrect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r);
+    c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r);
+    c.lineTo(x, y + r);
+    c.quadraticCurveTo(x, y, x + r, y);
+    c.closePath();
+  }
+
+  // ─── Tooltip ──────────────────────────────────────────────────────────────────
+  function drawNodeTooltip(idx: number) {
+    const n = nodes[idx];
+    const [npx, npy] = getPos(idx);
+    const plat = PLATFORMS_SOCIAL[n.platformIdx];
+    const [pr, pg, pb] = plat.color;
+    const W = canvas.width / dpr;
+
+    const tooltipW = 250;
+    const tooltipH = 128;
+    const pad = 14;
+
+    let tx = npx - tooltipW / 2;
+    let ty = npy - tooltipH - 14;
+    tx = Math.max(8, Math.min(W - tooltipW - 8, tx));
+    if (ty < 8) ty = npy + 10;
+
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.strokeStyle = `rgb(${pr},${pg},${pb})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(npx, ty < npy ? ty + tooltipH : ty);
+    ctx.lineTo(npx, npy);
+    ctx.stroke();
+
+    ctx.globalAlpha = 1;
+    ctx.shadowColor = `rgba(${pr},${pg},${pb},0.25)`;
+    ctx.shadowBlur = 20;
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 8);
+    ctx.fillStyle = 'rgba(8,4,16,0.88)';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 8);
+    ctx.fillStyle = `rgba(${pr},${pg},${pb},0.07)`;
+    ctx.fill();
+    ctx.strokeStyle = `rgba(${pr},${pg},${pb},0.35)`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = `rgb(${pr},${pg},${pb})`;
+    rrect(ctx, tx, ty, tooltipW, 3, 2);
+    ctx.fill();
+
+    ctx.globalAlpha = 1;
+    const mono = '"SF Mono","Fira Code",monospace';
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold 13px -apple-system,system-ui,sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.fillText(`@${n.name.toLowerCase().replace(' ','_')}`, tx + pad, ty + pad + 16);
+
+    ctx.fillStyle = `rgb(${pr},${pg},${pb})`;
+    ctx.font = `10px ${mono}`;
+    ctx.fillText(`${plat.name}`, tx + pad, ty + pad + 32);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.font = `9px ${mono}`;
+    ctx.fillText(`${n.niche} · ${n.city}`, tx + pad, ty + pad + 46);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `9px ${mono}`;
+    ctx.fillText(`ENGAGEMENT TODAY: ${n.likesToday} likes, ${n.commentsTd} comments, ${n.sharesToday} shares`, tx + pad, ty + pad + 62);
+
+    ctx.fillText(`FOLLOWERS: ${n.followers}`, tx + pad, ty + pad + 78);
+
+    ctx.restore();
+  }
+
+  function drawBrandTooltip() {
+    const W = canvas.width / dpr;
+    const tooltipW = 300;
+    const tooltipH = 72;
+    const pad = 14;
+    let tx = canvasCX - tooltipW / 2;
+    let ty = canvasCY - tooltipH - 24;
+    tx = Math.max(8, Math.min(W - tooltipW - 8, tx));
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(192,38,211,0.3)';
+    ctx.shadowBlur = 24;
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 8);
+    ctx.fillStyle = 'rgba(8,4,16,0.88)';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 8);
+    ctx.fillStyle = 'rgba(192,38,211,0.08)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(192,38,211,0.4)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = '#c026d3';
+    rrect(ctx, tx, ty, tooltipW, 3, 2);
+    ctx.fill();
+
+    ctx.globalAlpha = 1;
+    const mono = '"SF Mono","Fira Code",monospace';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold 13px -apple-system,system-ui,sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('YOUR BRAND', canvasCX, ty + pad + 16);
+
+    ctx.fillStyle = 'rgba(192,38,211,0.9)';
+    ctx.font = `9px ${mono}`;
+    ctx.fillText(`${totalEngagements.toLocaleString()} engagements today from ${nodes.length} accounts`, canvasCX, ty + pad + 36);
+
+    ctx.restore();
+  }
+
+  // ─── Frame ────────────────────────────────────────────────────────────────────
+  let lastTs = 0;
+
+  function frame(ts: number) {
+    requestAnimationFrame(frame);
+    const dt = ts - lastTs;
+    lastTs  = ts;
+
+    const W = canvas.width / dpr;
+    const H = canvas.height / dpr;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Advance ring rotations
+    for (let i = 0; i < 3; i++) ringAngles[i] += RING_SPEEDS[i] * dt;
+
+    // Spawn new travel dots
+    if (ts - lastSpawn > SPAWN_INTERVAL) {
+      const spawns = 3 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < spawns; i++) {
+        const idx = Math.floor(Math.random() * nodes.length);
+        spawnTravel(idx);
+      }
+      lastSpawn = ts;
+      totalEngagements += spawns;
+    }
+
+    // Draw faint ring guides
+    ctx.save();
+    for (let ring = 0; ring < 3; ring++) {
+      ctx.globalAlpha = 0.04;
+      ctx.strokeStyle = '#c026d3';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(canvasCX, canvasCY, RING_RADII[ring], 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Find hovered node
+    hoveredNode = null;
+    brandHovered = false;
+    if (mouse) {
+      const dx = mouse.x - canvasCX, dy = mouse.y - canvasCY;
+      if (Math.sqrt(dx * dx + dy * dy) < 18) {
+        brandHovered = true;
+      } else {
+        for (let i = 0; i < nodes.length; i++) {
+          const [nx, ny] = getPos(i);
+          const ndx = mouse.x - nx, ndy = mouse.y - ny;
+          if (Math.sqrt(ndx * ndx + ndy * ndy) < 8) {
+            hoveredNode = nodes[i];
+            break;
+          }
+        }
+      }
+    }
+
+    // Draw trail lines from active travel dots (faint)
+    ctx.save();
+    for (const td of travelDots) {
+      if (td.done) continue;
+      const [ecr, ecg, ecb] = engageColor(td.type);
+      ctx.globalAlpha = 0.04;
+      ctx.strokeStyle = `rgb(${ecr},${ecg},${ecb})`;
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      if (td.type === "comment") {
+        ctx.moveTo(td.sx, td.sy);
+        ctx.quadraticCurveTo(td.cpx, td.cpy, td.ex, td.ey);
+      } else {
+        ctx.moveTo(td.sx, td.sy);
+        ctx.lineTo(td.ex, td.ey);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Brighten lines for hovered node or brand
+    if (hoveredNode || brandHovered) {
+      const hIdx = hoveredNode ? nodes.indexOf(hoveredNode) : -1;
+      ctx.save();
+      for (const td of travelDots) {
+        if (td.done) continue;
+        let matches = false;
+        if (brandHovered) matches = true;
+        else if (hIdx >= 0) {
+          const [sx2, sy2] = getPos(hIdx);
+          matches = Math.abs(td.sx - sx2) < 2 && Math.abs(td.sy - sy2) < 2;
+        }
+        if (matches) {
+          const [ecr, ecg, ecb] = engageColor(td.type);
+          ctx.globalAlpha = 0.30;
+          ctx.strokeStyle = `rgb(${ecr},${ecg},${ecb})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          if (td.type === "comment") {
+            ctx.moveTo(td.sx, td.sy);
+            ctx.quadraticCurveTo(td.cpx, td.cpy, td.ex, td.ey);
+          } else {
+            ctx.moveTo(td.sx, td.sy);
+            ctx.lineTo(td.ex, td.ey);
+          }
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+
+    // Update & draw travel dots
+    for (let i = travelDots.length - 1; i >= 0; i--) {
+      const td = travelDots[i];
+      td.progress += td.speed * dt;
+      if (td.progress >= 1) {
+        td.done = true;
+        brandPulse = 1;
+        travelDots.splice(i, 1);
+        continue;
+      }
+      const p = td.progress;
+      let tx2: number, ty2: number;
+      if (td.type === "comment") {
+        const ip = 1 - p;
+        tx2 = ip * ip * td.sx + 2 * ip * p * td.cpx + p * p * td.ex;
+        ty2 = ip * ip * td.sy + 2 * ip * p * td.cpy + p * p * td.ey;
+      } else {
+        tx2 = td.sx + (td.ex - td.sx) * p;
+        ty2 = td.sy + (td.ey - td.sy) * p;
+      }
+      const [ecr, ecg, ecb] = engageColor(td.type);
+      const dotR = td.type === "follow" ? 2.5 : 1.5;
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = `rgb(${ecr},${ecg},${ecb})`;
+      ctx.beginPath();
+      ctx.arc(tx2, ty2, dotR, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // Draw nodes
+    for (let i = 0; i < nodes.length; i++) {
+      const n   = nodes[i];
+      const [nx, ny] = getPos(i);
+      const plat = PLATFORMS_SOCIAL[n.platformIdx];
+      const [pr, pg, pb] = plat.color;
+      const isHov = hoveredNode === n;
+
+      const brightness = n.ring === 0 ? 0.85 : n.ring === 1 ? 0.6 : 0.40;
+      const r = isHov ? 6 : 3;
+      const alpha = isHov ? 1 : brightness;
+
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = `rgb(${pr},${pg},${pb})`;
+      ctx.beginPath();
+      ctx.arc(nx, ny, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // Draw brand center node
+    brandPulse *= 0.94;
+    const brandR = 12 + brandPulse * 6;
+    const brandAlpha = brandHovered ? 1 : 0.85;
+
+    ctx.save();
+    if (brandPulse > 0.05) {
+      ctx.shadowColor = '#c026d3';
+      ctx.shadowBlur  = 20 + brandPulse * 20;
+    }
+    ctx.globalAlpha = brandAlpha;
+    ctx.fillStyle = '#c026d3';
+    ctx.beginPath();
+    ctx.arc(canvasCX, canvasCY, brandR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Pulsing ring around brand
+    ctx.globalAlpha = brandPulse * 0.35;
+    ctx.strokeStyle = '#e879f9';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(canvasCX, canvasCY, brandR + 8 + brandPulse * 12, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    // Brand label
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '9px "SF Mono","Fira Code",monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('YOUR BRAND', canvasCX, canvasCY + brandR + 14);
+    ctx.restore();
+
+    // Counter (top-right)
+    ctx.save();
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(192,38,211,0.55)';
+    ctx.font = '11px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${nodes.length} accounts · ${totalEngagements.toLocaleString()} engagements today · targeting YOUR BRAND`, W - 16, 24);
+    ctx.restore();
+
+    // Tooltips
+    if (brandHovered) {
+      drawBrandTooltip();
+    } else if (hoveredNode) {
+      const idx = nodes.indexOf(hoveredNode);
+      if (idx >= 0) drawNodeTooltip(idx);
+    }
+  }
+
+  // ─── Events ───────────────────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  });
+  wrap.addEventListener('mouseleave', () => { mouse = null; hoveredNode = null; brandHovered = false; });
+  wrap.addEventListener('touchstart', () => { mouse = null; hoveredNode = null; brandHovered = false; }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize2());
+  ro.observe(wrap);
+  resize2();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── FinalCTA: concentric rings with flowing dots ─────────────────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const ctaCanvas = document.createElement('canvas');
+      ctaCanvas.setAttribute('aria-hidden', 'true');
+      ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.style.position = 'relative';
+      ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+
+      const cc = ctaCanvas.getContext('2d')!;
+      let ctaDpr = 1;
+      let ctaCX = 0, ctaCY = 0;
+
+      interface CtaDot { progress: number; speed: number; ring: number; type: EngageType; }
+      const ctaDots: CtaDot[] = [];
+      for (let i = 0; i < 40; i++) {
+        ctaDots.push({
+          progress: Math.random(),
+          speed: 0.0003 + Math.random() * 0.0004,
+          ring: Math.floor(Math.random() * 3),
+          type: ENGAGE_TYPES[Math.floor(Math.random() * ENGAGE_TYPES.length)],
+        });
+      }
+
+      let ctaRingAngles = [0, 0, 0];
+      const CTA_RING_RADII = [50, 85, 125];
+      let ctaLastTs = 0;
+
+      function resizeCta() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        const w = Math.round(rect.width), h = Math.round(rect.height);
+        ctaCanvas.width  = w * ctaDpr;
+        ctaCanvas.height = h * ctaDpr;
+        ctaCanvas.style.width  = `${w}px`;
+        ctaCanvas.style.height = `${h}px`;
+        cc.setTransform(ctaDpr, 0, 0, ctaDpr, 0, 0);
+        ctaCX = w / 2;
+        ctaCY = h / 2;
+      }
+
+      function frameCta(ts: number) {
+        requestAnimationFrame(frameCta);
+        const dt2 = ts - ctaLastTs;
+        ctaLastTs = ts;
+        const W = ctaCanvas.width / ctaDpr;
+        const H = ctaCanvas.height / ctaDpr;
+        cc.clearRect(0, 0, W, H);
+
+        for (let i = 0; i < 3; i++) ctaRingAngles[i] += RING_SPEEDS[i] * dt2;
+
+        // Draw rings
+        cc.save();
+        for (let ring = 0; ring < 3; ring++) {
+          cc.globalAlpha = 0.06;
+          cc.strokeStyle = '#c026d3';
+          cc.lineWidth = 1;
+          cc.beginPath();
+          cc.arc(ctaCX, ctaCY, CTA_RING_RADII[ring], 0, Math.PI * 2);
+          cc.stroke();
+        }
+        cc.restore();
+
+        // Update and draw dots
+        for (const d of ctaDots) {
+          d.progress += d.speed * dt2;
+          if (d.progress >= 1) d.progress -= 1;
+
+          const angle = d.progress * Math.PI * 2 + ctaRingAngles[d.ring];
+          const sx = ctaCX + Math.cos(angle) * CTA_RING_RADII[d.ring];
+          const sy = ctaCY + Math.sin(angle) * CTA_RING_RADII[d.ring];
+          // Interpolate toward center
+          const frac = d.progress < 0.5 ? d.progress * 2 : (1 - d.progress) * 2;
+          const ex2 = sx + (ctaCX - sx) * frac * 0.5;
+          const ey2 = sy + (ctaCY - sy) * frac * 0.5;
+
+          const [ecr2, ecg2, ecb2] = engageColor(d.type);
+          cc.globalAlpha = 0.55;
+          cc.fillStyle = `rgb(${ecr2},${ecg2},${ecb2})`;
+          cc.beginPath();
+          cc.arc(ex2, ey2, 1.5, 0, Math.PI * 2);
+          cc.fill();
+        }
+
+        // Center brand dot
+        cc.globalAlpha = 0.6;
+        cc.fillStyle = '#c026d3';
+        cc.beginPath();
+        cc.arc(ctaCX, ctaCY, 6, 0, Math.PI * 2);
+        cc.fill();
+        cc.globalAlpha = 1;
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaCard);
+      resizeCta();
+      requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { ctaCanvas.style.opacity = '1'; });
+
+      const ctaGridTex = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGridTex) ctaGridTex.style.display = 'none';
+    }
+  }
+
+  }); // end requestIdleCallback
+</script>

@@ -1,0 +1,648 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloSocial — Device Rack | Phone Farm Dashboard" description="PelloSocial operates a real phone farm — hundreds of devices running 24/7 across every major social platform. Watch the live device rack.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="social-rack-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: #c026d3;
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #e879f9 !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(30,10,35,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(192,38,211,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Data constants ─────────────────────────────────────────────────────────
+  const PLATFORMS_SOCIAL = [
+    { name: "Instagram", color: [225, 48, 108] as [number,number,number], weight: 0.30 },
+    { name: "TikTok",    color: [0, 242, 234]  as [number,number,number], weight: 0.25 },
+    { name: "Twitter/X", color: [139, 92, 246] as [number,number,number], weight: 0.20 },
+    { name: "YouTube",   color: [255, 0, 0]    as [number,number,number], weight: 0.10 },
+    { name: "Facebook",  color: [24, 119, 242] as [number,number,number], weight: 0.10 },
+    { name: "Reddit",    color: [255, 69, 0]   as [number,number,number], weight: 0.05 },
+  ];
+  const PLAT_CUM: number[] = [];
+  { let s = 0; for (const p of PLATFORMS_SOCIAL) { s += p.weight; PLAT_CUM.push(s); } }
+
+  const PERSONA_FIRST = ["Alex","Jordan","Casey","Riley","Morgan","Taylor","Jamie","Quinn","Sage","Blake","Drew","Avery","Dakota","Skyler","Reese","Kai","Nova","Zara","Luna","Phoenix"];
+  const PERSONA_LAST  = ["Rivera","Kim","Santos","Nakamura","Ahmed","Berg","Costa","Johal","Novak","Park","Silva","Tanaka","Volkov","Wu","Zhang"];
+  const CITIES        = ["London","New York","LA","Tokyo","Berlin","Sydney","Toronto","Dubai","Singapore","São Paulo","Mumbai","Paris","Seoul","Amsterdam","Miami"];
+  const NICHES        = ["Fitness","Tech Reviews","Food","Travel","Fashion","Gaming","Finance","Wellness","Photography","Music"];
+  const PHONE_MODELS  = ["iPhone 15","iPhone 14","Pixel 8","Samsung S24","OnePlus 12"];
+  const FOLLOWER_COUNTS = ["2.3k","4.7k","8.1k","12.4k","18.9k","24.2k","31.5k","47.8k"];
+  const STATUSES_PHONE  = ["Active","Posting","Engaging","Idle","Warming"] as const;
+  type PhoneStatus = typeof STATUSES_PHONE[number];
+
+  function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+  function pickPlatform(): number {
+    const r = Math.random();
+    for (let i = 0; i < PLAT_CUM.length; i++) if (r < PLAT_CUM[i]) return i;
+    return PLATFORMS_SOCIAL.length - 1;
+  }
+
+  // ─── Block dimensions ───────────────────────────────────────────────────────
+  const BW = 14, BH = 10, GAP = 2;
+  const ROW_LABEL_W = 58;
+  const METRICS_H = 22;
+
+  // ─── Block interface ────────────────────────────────────────────────────────
+  interface Block {
+    rack: number;
+    slot: number;
+    x: number; y: number;
+    status: PhoneStatus;
+    nextTransition: number;
+    platformIdx: number;
+    name: string;
+    city: string;
+    niche: string;
+    phone: string;
+    followers: string;
+    postsToday: number;
+    uptime: number;
+    uptimeDays: number;
+    flashTime: number;    // timestamp of last "Posting" flash
+    batchFlash: number;   // timestamp of batch operation flash
+  }
+
+  // ─── Status colour lookup ───────────────────────────────────────────────────
+  function statusColor(s: PhoneStatus, alpha?: number): string {
+    switch (s) {
+      case "Active":   return `rgba(74,222,128,${alpha ?? 0.30})`;
+      case "Posting":  return `rgba(192,38,211,${alpha ?? 0.45})`;
+      case "Engaging": return `rgba(139,92,246,${alpha ?? 0.30})`;
+      case "Idle":     return `rgba(255,255,255,${alpha ?? 0.06})`;
+      case "Warming":  return `rgba(251,191,36,${alpha ?? 0.20})`;
+    }
+  }
+
+  // ─── Canvas / state ─────────────────────────────────────────────────────────
+  const canvas = document.querySelector<HTMLCanvasElement>('.social-rack-canvas')!;
+  const wrap   = document.getElementById('hero-wrap')!;
+  const ctx    = canvas.getContext('2d')!;
+
+  let blocks: Block[] = [];
+  let dpr = 1;
+  let mouse: { x: number; y: number } | null = null;
+  let hoveredBlock: Block | null = null;
+
+  // Upward particles when a block posts
+  interface Particle { x: number; y: number; vy: number; alpha: number; life: number; }
+  const particles: Particle[] = [];
+
+  // Batch operation state: { rackIdx, startTime }
+  let batchOp: { rackIdx: number; startTime: number } | null = null;
+  let lastBatchTime = 0;
+  const BATCH_INTERVAL = 8000; // ms
+
+  function pickStatus(): PhoneStatus {
+    const r = Math.random();
+    if (r < 0.60) return "Active";
+    if (r < 0.75) return "Posting";
+    if (r < 0.90) return "Engaging";
+    if (r < 0.95) return "Idle";
+    return "Warming";
+  }
+
+  function buildBlocks() {
+    blocks = [];
+    const W = canvas.width / dpr;
+    const H = canvas.height / dpr;
+    const availW = W - ROW_LABEL_W - 16;
+    const slotsPerRow = Math.max(1, Math.floor((availW + GAP) / (BW + GAP)));
+    const rows = Math.floor((H - METRICS_H - 12) / (BH + GAP + 2));
+    const now = performance.now();
+
+    for (let rack = 0; rack < rows; rack++) {
+      const bx0 = ROW_LABEL_W;
+      const by  = METRICS_H + 8 + rack * (BH + GAP + 2);
+      for (let slot = 0; slot < slotsPerRow; slot++) {
+        const bx = bx0 + slot * (BW + GAP);
+        blocks.push({
+          rack, slot,
+          x: bx, y: by,
+          status: pickStatus(),
+          nextTransition: now + Math.random() * 500,
+          platformIdx: pickPlatform(),
+          name: pick(PERSONA_FIRST) + pick(PERSONA_LAST),
+          city: pick(CITIES),
+          niche: pick(NICHES),
+          phone: pick(PHONE_MODELS),
+          followers: pick(FOLLOWER_COUNTS),
+          postsToday: Math.floor(Math.random() * 20) + 1,
+          uptime: 98 + Math.random() * 2,
+          uptimeDays: Math.floor(Math.random() * 60) + 5,
+          flashTime: -9999,
+          batchFlash: -9999,
+        });
+      }
+    }
+  }
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    const w = Math.round(rect.width);
+    const h = Math.round(rect.height);
+    canvas.width  = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width  = `${w}px`;
+    canvas.style.height = `${h}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildBlocks();
+  }
+
+  // ─── Rounded rect helper ─────────────────────────────────────────────────────
+  function rrect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r);
+    c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r);
+    c.lineTo(x, y + r);
+    c.quadraticCurveTo(x, y, x + r, y);
+    c.closePath();
+  }
+
+  // ─── Tooltip ─────────────────────────────────────────────────────────────────
+  function drawTooltip(b: Block) {
+    const W = canvas.width / dpr;
+    const px = b.x + BW / 2;
+    const py = b.y;
+    const plat = PLATFORMS_SOCIAL[b.platformIdx];
+    const [pr, pg, pb] = plat.color;
+
+    const tooltipW = 260;
+    const tooltipH = 148;
+    const pad = 14;
+
+    let tx = px - tooltipW / 2;
+    let ty = py - tooltipH - 14;
+    tx = Math.max(8, Math.min(W - tooltipW - 8, tx));
+    if (ty < METRICS_H + 4) ty = py + BH + 8;
+
+    ctx.save();
+
+    // Connecting line
+    ctx.globalAlpha = 0.18;
+    ctx.strokeStyle = `rgba(192,38,211,0.6)`;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(px, ty < py ? ty + tooltipH : ty);
+    ctx.lineTo(px, py);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.globalAlpha = 1;
+    ctx.shadowColor = 'rgba(192,38,211,0.25)';
+    ctx.shadowBlur = 24;
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 8);
+    ctx.fillStyle = 'rgba(8,4,16,0.88)';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 8);
+    ctx.fillStyle = 'rgba(192,38,211,0.07)';
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(192,38,211,0.35)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Top accent bar
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = '#c026d3';
+    rrect(ctx, tx, ty, tooltipW, 3, 2);
+    ctx.fill();
+
+    ctx.globalAlpha = 1;
+    const mono = '"SF Mono","Fira Code",monospace';
+
+    // DEVICE line
+    ctx.fillStyle = 'rgba(192,38,211,0.9)';
+    ctx.font = `bold 9px ${mono}`;
+    ctx.textAlign = 'left';
+    ctx.fillText(`DEVICE: ${b.phone} · Rack ${String(b.rack + 1).padStart(2,'0')}, Slot ${String(b.slot + 1).padStart(2,'0')}`, tx + pad, ty + pad + 10);
+
+    // Account name
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold 13px -apple-system,system-ui,sans-serif`;
+    ctx.fillText(`@${b.name.toLowerCase().replace(' ', '_')}`, tx + pad, ty + pad + 28);
+
+    // Platform + Niche
+    ctx.fillStyle = `rgb(${pr},${pg},${pb})`;
+    ctx.font = `10px ${mono}`;
+    ctx.fillText(`${plat.name} · ${b.niche}`, tx + pad, ty + pad + 44);
+
+    // Location
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.font = `9px ${mono}`;
+    ctx.fillText(`📍 ${b.city}`, tx + pad, ty + pad + 58);
+
+    // Status
+    const sLabel = b.status;
+    ctx.fillStyle = statusColor(b.status, 0.9);
+    ctx.font = `bold 9px ${mono}`;
+    ctx.fillText(`● ${sLabel.toUpperCase()}`, tx + pad, ty + pad + 74);
+
+    // Uptime
+    ctx.fillStyle = 'rgba(74,222,128,0.85)';
+    ctx.font = `9px ${mono}`;
+    ctx.fillText(`UPTIME: ${b.uptime.toFixed(1)}% · ${b.uptimeDays} days`, tx + pad, ty + pad + 88);
+
+    // Posts today
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `10px ${mono}`;
+    ctx.fillText(`POSTS TODAY: ${b.postsToday}  FOLLOWERS: ${b.followers}`, tx + pad, ty + pad + 103);
+
+    ctx.restore();
+  }
+
+  // ─── Metrics bar (dashboard) ─────────────────────────────────────────────────
+  let metricsCache = { active: 0, posting: 0, idle: 0, total: 0, uptime: 0, lastUpdate: 0 };
+
+  function updateMetrics(now: number) {
+    if (now - metricsCache.lastUpdate < 2000) return;
+    let active = 0, posting = 0, idle = 0, uptimeSum = 0;
+    for (const b of blocks) {
+      if (b.status === "Active" || b.status === "Engaging") active++;
+      if (b.status === "Posting") posting++;
+      if (b.status === "Idle") idle++;
+      uptimeSum += b.uptime;
+    }
+    metricsCache = { active, posting, idle, total: blocks.length, uptime: uptimeSum / (blocks.length || 1), lastUpdate: now };
+  }
+
+  function drawMetrics(W: number) {
+    const m = metricsCache;
+    ctx.save();
+    ctx.globalAlpha = 0.30;
+    ctx.fillStyle = '#c026d3';
+    ctx.font = `bold 8px "SF Mono","Fira Code",monospace`;
+    ctx.textAlign = 'left';
+    ctx.fillText(
+      `PHONES: ${m.total}  |  ACTIVE: ${m.active}  |  POSTING: ${m.posting}  |  IDLE: ${m.idle}  |  UPTIME: ${m.uptime.toFixed(1)}%`,
+      ROW_LABEL_W, 14
+    );
+    ctx.restore();
+  }
+
+  // ─── Frame loop ──────────────────────────────────────────────────────────────
+  function frame() {
+    requestAnimationFrame(frame);
+    const W   = canvas.width / dpr;
+    const H   = canvas.height / dpr;
+    const now = performance.now();
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Batch operation trigger
+    if (now - lastBatchTime > BATCH_INTERVAL) {
+      if (blocks.length > 0) {
+        const rackNums = [...new Set(blocks.map(b => b.rack))];
+        const rackIdx = rackNums[Math.floor(Math.random() * rackNums.length)];
+        batchOp = { rackIdx, startTime: now };
+        lastBatchTime = now;
+      }
+    }
+
+    // State transitions
+    for (const b of blocks) {
+      if (now >= b.nextTransition) {
+        const prevStatus = b.status;
+        const r = Math.random();
+        if (r < 0.60) b.status = "Active";
+        else if (r < 0.75) b.status = "Posting";
+        else if (r < 0.90) b.status = "Engaging";
+        else if (r < 0.95) b.status = "Idle";
+        else b.status = "Warming";
+
+        if (b.status === "Posting" && prevStatus !== "Posting") {
+          b.flashTime = now;
+          b.postsToday++;
+          particles.push({ x: b.x + BW / 2, y: b.y, vy: -0.8 - Math.random() * 0.4, alpha: 0.8, life: 1 });
+        }
+        b.nextTransition = now + 300 + Math.random() * 700;
+      }
+    }
+
+    // Batch op: sweep flash across rack row
+    if (batchOp) {
+      const elapsed = now - batchOp.startTime;
+      const SWEEP_DUR = 1000;
+      if (elapsed > SWEEP_DUR) {
+        batchOp = null;
+      } else {
+        const rowBlocks = blocks.filter(b => b.rack === batchOp!.rackIdx);
+        const slotsPerRow = rowBlocks.length;
+        for (const b of rowBlocks) {
+          const slotT = (b.slot / slotsPerRow) * SWEEP_DUR;
+          const age = elapsed - slotT;
+          if (age > 0 && age < 120) {
+            b.batchFlash = now;
+          }
+        }
+      }
+    }
+
+    // Find hovered block
+    hoveredBlock = null;
+    if (mouse) {
+      for (const b of blocks) {
+        if (mouse.x >= b.x && mouse.x <= b.x + BW && mouse.y >= b.y && mouse.y <= b.y + BH) {
+          hoveredBlock = b;
+          break;
+        }
+      }
+    }
+
+    // Draw rack labels
+    ctx.save();
+    ctx.font = `bold 7px "SF Mono","Fira Code",monospace`;
+    ctx.textAlign = 'right';
+    const rackNums2 = [...new Set(blocks.map(b => b.rack))];
+    for (const rn of rackNums2) {
+      const firstBlock = blocks.find(b => b.rack === rn);
+      if (!firstBlock) continue;
+      ctx.globalAlpha = 0.10;
+      ctx.fillStyle = '#c026d3';
+      ctx.fillText(`RACK ${String(rn + 1).padStart(2,'0')}`, ROW_LABEL_W - 4, firstBlock.y + BH - 1);
+    }
+    ctx.restore();
+
+    // Draw blocks
+    for (const b of blocks) {
+      const isHovered = hoveredBlock === b;
+      const flashAge  = now - b.flashTime;
+      const batchAge  = now - b.batchFlash;
+
+      let alpha = 1;
+      let extraGlow = false;
+
+      if (flashAge < 300) {
+        const t = flashAge / 300;
+        alpha = 1 + (1 - t) * 0.8;
+        extraGlow = true;
+      }
+      if (batchAge < 120) {
+        const t = batchAge / 120;
+        alpha = 1 + (1 - t) * 0.6;
+        extraGlow = true;
+      }
+
+      if (isHovered) {
+        // Enlarged 3x
+        const cx2 = b.x + BW / 2;
+        const cy2 = b.y + BH / 2;
+        const ew = BW * 3, eh = BH * 3;
+        ctx.save();
+        ctx.shadowColor = statusColor(b.status, 0.8);
+        ctx.shadowBlur = 10;
+        ctx.globalAlpha = 0.9;
+        ctx.fillStyle = statusColor(b.status, 0.85);
+        rrect(ctx, cx2 - ew / 2, cy2 - eh / 2, ew, eh, 2);
+        ctx.fill();
+        ctx.strokeStyle = statusColor(b.status, 1.0);
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.restore();
+      } else {
+        ctx.save();
+        if (extraGlow) {
+          ctx.shadowColor = '#c026d3';
+          ctx.shadowBlur = 6;
+        }
+        ctx.globalAlpha = Math.min(1, alpha);
+        ctx.fillStyle = statusColor(b.status);
+        rrect(ctx, b.x, b.y, BW, BH, 1);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // Particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.y += p.vy;
+      p.alpha -= 0.016;
+      p.life -= 0.016;
+      if (p.life <= 0) { particles.splice(i, 1); continue; }
+      ctx.globalAlpha = Math.max(0, p.alpha);
+      ctx.fillStyle = '#c026d3';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    updateMetrics(now);
+    drawMetrics(W);
+
+    // Counter top-right
+    const m = metricsCache;
+    ctx.save();
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(192,38,211,0.55)';
+    ctx.font = '11px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${m.total} devices online · ${m.uptime.toFixed(1)}% uptime · ${m.posting} posting now`, W - 16, 24);
+    ctx.restore();
+
+    // Tooltip
+    if (hoveredBlock) drawTooltip(hoveredBlock);
+  }
+
+  // ─── Events ───────────────────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  });
+  wrap.addEventListener('mouseleave', () => { mouse = null; hoveredBlock = null; });
+  wrap.addEventListener('touchstart', () => { mouse = null; hoveredBlock = null; }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── FinalCTA: small rack blocks, gentle pulse ─────────────────────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const ctaCanvas = document.createElement('canvas');
+      ctaCanvas.setAttribute('aria-hidden', 'true');
+      ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.style.position = 'relative';
+      ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+
+      const cc = ctaCanvas.getContext('2d')!;
+      interface CtaBlock { x: number; y: number; status: PhoneStatus; phase: number; }
+      let ctaBlocks: CtaBlock[] = [];
+      let ctaDpr = 1;
+
+      function buildCta() {
+        ctaBlocks = [];
+        const W = ctaCanvas.width / ctaDpr;
+        const H = ctaCanvas.height / ctaDpr;
+        const cols = Math.floor((W + GAP) / (BW + GAP));
+        const rows = Math.floor((H + GAP) / (BH + GAP));
+        for (let r = 0; r < rows; r++)
+          for (let c = 0; c < cols; c++)
+            ctaBlocks.push({ x: c * (BW + GAP), y: r * (BH + GAP), status: pickStatus(), phase: Math.random() * Math.PI * 2 });
+      }
+
+      function resizeCta() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        const w = Math.round(rect.width), h = Math.round(rect.height);
+        ctaCanvas.width  = w * ctaDpr;
+        ctaCanvas.height = h * ctaDpr;
+        ctaCanvas.style.width  = `${w}px`;
+        ctaCanvas.style.height = `${h}px`;
+        cc.setTransform(ctaDpr, 0, 0, ctaDpr, 0, 0);
+        buildCta();
+      }
+
+      function frameCta() {
+        requestAnimationFrame(frameCta);
+        const W = ctaCanvas.width / ctaDpr;
+        const H = ctaCanvas.height / ctaDpr;
+        const t = performance.now() * 0.001;
+        cc.clearRect(0, 0, W, H);
+        for (const b of ctaBlocks) {
+          const baseAlpha = b.status === "Posting" ? 0.22 : b.status === "Active" ? 0.12 : b.status === "Engaging" ? 0.10 : b.status === "Warming" ? 0.08 : 0.03;
+          const alpha = baseAlpha + Math.sin(t * 0.6 + b.phase) * 0.04;
+          cc.globalAlpha = Math.max(0, alpha);
+          cc.fillStyle = statusColor(b.status);
+          rrect(cc, b.x, b.y, BW, BH, 1);
+          cc.fill();
+        }
+        cc.globalAlpha = 1;
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaCard);
+      resizeCta();
+      requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { ctaCanvas.style.opacity = '1'; });
+
+      const ctaGridTex = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGridTex) ctaGridTex.style.display = 'none';
+    }
+  }
+
+  }); // end requestIdleCallback
+</script>
