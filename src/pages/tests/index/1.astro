@@ -1049,7 +1049,8 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
 
   function initReach(w: number, h: number): Record<string, unknown> {
     const NC = 15, NR = 12;
-    const VP_Y = h * 0.18, BOT_Y = h * 0.96, HALF_W = w * 0.50;
+    const VP_Y = h * 0.12, BOT_Y = h * 0.96, HALF_W = w * 0.32;
+    const GRID_CX = w * 0.72; // center of grid — right half of the card
     const total = (NC - 1) * (NR - 1);
     const cells: ReachCell[] = Array.from({ length: total }, reachGenCell);
     const particles: ReachParticle[] = Array.from({ length: 22 }, () => ({
@@ -1058,14 +1059,14 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     }));
     // Legend positioned to the right of the "YOUR WEBSITE" box
     const BOX_W_INIT = 160;
-    const legX = w / 2 + BOX_W_INIT / 2 + 16;
-    const legStartY = Math.max(4, h * 0.18 - 44 - 6); // aligned with box top
+    const legX = w * 0.72 + BOX_W_INIT / 2 + 16;
+    const legStartY = Math.max(4, h * 0.12 - 44 - 6); // aligned with box top
     const legItems: ReachLegItem[] = [
       { label: 'Delivered', status: 'delivered', color: 'rgba(139,92,246,0.5)', x: legX, y: legStartY, w: 150, h: 22 },
       { label: 'Opened',    status: 'opened',    color: 'rgba(168,85,247,0.6)', x: legX, y: legStartY + 24, w: 150, h: 22 },
       { label: 'Replied',   status: 'replied',   color: 'rgba(74,222,128,0.7)', x: legX, y: legStartY + 48, w: 150, h: 22 },
     ];
-    return { NC, NR, VP_Y, BOT_Y, HALF_W, cells, particles, emailCount: 18283, lastTick: 0, hovCellC: -1, hovCellR: -1, legItems, hoveredLegend: null, autoC: Math.floor(Math.random()*(NC-1)), autoR: Math.floor(Math.random()*(NR-1)), autoTimer: 0, userActive: false, userLeftAt: 0, stickyC: -1, stickyR: -1 };
+    return { NC, NR, VP_Y, BOT_Y, HALF_W, GRID_CX, cells, particles, emailCount: 18283, lastTick: 0, hovCellC: -1, hovCellR: -1, legItems, hoveredLegend: null, autoC: Math.floor(Math.random()*(NC-1)), autoR: Math.floor(Math.random()*(NR-1)), autoTimer: 0, userActive: false, userLeftAt: 0, stickyC: -1, stickyR: -1 };
   }
 
   function drawReachTooltip(c: CanvasRenderingContext2D, cell: ReachCell, sx: number, sy: number, W: number, H: number) {
@@ -1109,7 +1110,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
 
   function drawReach(ctx: CanvasRenderingContext2D, w: number, h: number, _t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
     const st = state as {
-      NC: number; NR: number; VP_Y: number; BOT_Y: number; HALF_W: number;
+      NC: number; NR: number; VP_Y: number; BOT_Y: number; HALF_W: number; GRID_CX: number;
       cells: ReachCell[]; particles: ReachParticle[];
       emailCount: number; lastTick: number;
       hovCellC: number; hovCellR: number;
@@ -1119,7 +1120,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       stickyC: number; stickyR: number;
     };
     const { NC, NR, cells, particles, legItems } = st;
-    const { VP_Y, BOT_Y, HALF_W } = st;
+    const { VP_Y, BOT_Y, HALF_W, GRID_CX } = st;
 
     const now = performance.now() * 0.001;
     if (now - st.lastTick > 0.3) { st.emailCount++; st.lastTick = now; }
@@ -1127,11 +1128,11 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     function project(c: number, r: number): { sx: number; sy: number } {
       const tFrac = Math.max(0.001, r / Math.max(1, NR - 1));
       const frac = (c - (NC - 1) / 2) / Math.max(1, (NC - 1) / 2);
-      return { sx: w / 2 + frac * HALF_W * tFrac, sy: VP_Y + (BOT_Y - VP_Y) * tFrac };
+      return { sx: GRID_CX + frac * HALF_W * tFrac, sy: VP_Y + (BOT_Y - VP_Y) * tFrac };
     }
     function screenToGrid(sx: number, sy: number): [number, number] {
       const t2 = Math.max(0.01, (sy - VP_Y) / Math.max(1, BOT_Y - VP_Y));
-      const frac = (sx - w / 2) / Math.max(0.01, HALF_W * t2);
+      const frac = (sx - GRID_CX) / Math.max(0.01, HALF_W * t2);
       return [
         Math.max(0, Math.min(NC - 2, (frac + 1) * (NC - 1) / 2)),
         Math.max(0, Math.min(NR - 2, t2 * (NR - 1))),
@@ -1233,9 +1234,9 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
 
     // 4. "YOUR WEBSITE" box
     const BOX_W = 160, BOX_H = 44;
-    const bx = w / 2 - BOX_W / 2, by = Math.max(4, VP_Y - BOX_H - 6);
+    const bx = GRID_CX - BOX_W / 2, by = Math.max(4, VP_Y - BOX_H - 6);
     ctx.save();
-    ctx.beginPath(); ctx.moveTo(w / 2, by + BOX_H); ctx.lineTo(w / 2, VP_Y);
+    ctx.beginPath(); ctx.moveTo(GRID_CX, by + BOX_H); ctx.lineTo(GRID_CX, VP_Y);
     ctx.strokeStyle = 'rgba(139,92,246,0.22)'; ctx.lineWidth = 1; ctx.stroke();
     ctx.shadowColor = 'rgba(139,92,246,0.35)'; ctx.shadowBlur = 16;
     rrect(ctx, bx, by, BOX_W, BOX_H, 8); ctx.fillStyle = 'rgba(6,7,18,0.65)'; ctx.fill();
@@ -1245,9 +1246,9 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     ctx.globalAlpha = 0.6; rrect(ctx, bx, by, BOX_W, 2, 2); ctx.fillStyle = '#8b5cf6'; ctx.fill(); ctx.globalAlpha = 1;
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(139,92,246,0.75)'; ctx.font = '9px "SF Mono","Fira Code",monospace';
-    ctx.fillText('YOUR WEBSITE', w / 2, by + 16);
+    ctx.fillText('YOUR WEBSITE', GRID_CX, by + 16);
     ctx.fillStyle = '#ffffff'; ctx.font = '500 11px -apple-system,system-ui,sans-serif';
-    ctx.fillText(`${st.emailCount.toLocaleString()} emails sent today`, w / 2, by + 33);
+    ctx.fillText(`${st.emailCount.toLocaleString()} emails sent today`, GRID_CX, by + 33);
     ctx.restore();
 
     // 5. Hovered cell border + tooltip
