@@ -263,6 +263,13 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
   .product-card[data-product="1"] .ps-visual {
     display: none !important;
   }
+  /* PelloSocial: hide the browser panel so globe fills the card */
+  .product-card[data-product="3"] .product-visual-panel {
+    display: none !important;
+  }
+  .product-card[data-product="3"] .ps-visual {
+    display: none !important;
+  }
   /* Tinted glass box around description text for ALL product cards */
   .product-card .ps-info .text-body-lg {
     backdrop-filter: blur(12px) saturate(1.2);
