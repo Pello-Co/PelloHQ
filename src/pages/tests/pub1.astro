@@ -135,6 +135,17 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
     { name: "YouTube",   icon: "YT", color: [255, 0, 0]    },
   ];
 
+  // ─── Real calendar dates ───────────────────────────────────────────────────
+  const NOW = new Date();
+  const CUR_YEAR = NOW.getFullYear();
+  const CUR_MONTH = NOW.getMonth(); // 0-indexed
+  const TODAY_DATE = NOW.getDate();
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const DAYS_IN_MONTH = new Date(CUR_YEAR, CUR_MONTH + 1, 0).getDate();
+  const FIRST_DOW = new Date(CUR_YEAR, CUR_MONTH, 1).getDay(); // 0=Sun
+  // Shift so Monday=0: (dow+6)%7
+  const FIRST_COL = (FIRST_DOW + 6) % 7;
+
   const CONTENT_TYPES = ["Carousel","Reel","Story","Blog Post","Thread","Short","Article","UGC Clip","Infographic","Poll"];
   const TOPICS_TMPL   = [
     "5 Ways AI is Changing {industry}",
@@ -198,6 +209,9 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
   interface CalendarCell {
     gridCol: number; gridRow: number; dayNum: number;
     markers: Marker[];
+    isToday: boolean;
+    isPast: boolean;
+    isEmpty: boolean; // no date (padding cells)
   }
 
   // ─── Canvas setup ──────────────────────────────────────────────────────────
@@ -206,9 +220,9 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
   const ctx     = canvas.getContext('2d')!;
 
   const CAL_COLS   = 7;
-  const CAL_ROWS   = 5;
+  const CAL_ROWS   = Math.ceil((FIRST_COL + DAYS_IN_MONTH) / 7);
   const SIDE_PAD   = 20;
-  const CAL_TOP    = 76;  // space above calendar (header row sits above)
+  const CAL_TOP    = 96;  // space above calendar (month header + day headers)
   const HEADER_H   = 22;  // height of Mon-Sun labels row
   const MARKER_H_SPACING = 14;
   const MARKER_V_SPACING = 14;
@@ -264,16 +278,33 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
     for (let r = 0; r < CAL_ROWS; r++) {
       cells[r] = [];
       for (let c = 0; c < CAL_COLS; c++) {
-        const dayNum = r * CAL_COLS + c + 1;
-        const cell: CalendarCell = { gridCol: c, gridRow: r, dayNum, markers: [] };
-        const count = 3 + Math.floor(Math.random() * 6); // 3–8
-        for (let i = 0; i < count; i++) {
-          const sr = Math.random();
-          const status: 0 | 1 | 2 = sr < 0.30 ? 0 : sr < 0.75 ? 1 : 2;
-          const m = makeMarker(cell, i, status);
-          if (status === 0) publishedCount++;
-          cell.markers.push(m);
-          allMarkers.push({ cell, marker: m });
+        const idx = r * CAL_COLS + c;
+        const dayNum = idx - FIRST_COL + 1;
+        const isEmpty = dayNum < 1 || dayNum > DAYS_IN_MONTH;
+        const isToday = dayNum === TODAY_DATE;
+        const isPast = dayNum < TODAY_DATE && !isEmpty;
+        const cell: CalendarCell = { gridCol: c, gridRow: r, dayNum, markers: [], isToday, isPast, isEmpty };
+        if (!isEmpty) {
+          const count = 3 + Math.floor(Math.random() * 6); // 3–8
+          for (let i = 0; i < count; i++) {
+            let status: 0 | 1 | 2;
+            if (isPast) {
+              // Past days: all published
+              status = 0;
+            } else if (isToday) {
+              // Today: mix — some published, most scheduled
+              const sr = Math.random();
+              status = sr < 0.45 ? 0 : sr < 0.85 ? 1 : 2;
+            } else {
+              // Future: mostly scheduled/drafts
+              const sr = Math.random();
+              status = sr < 0.05 ? 0 : sr < 0.65 ? 1 : 2;
+            }
+            const m = makeMarker(cell, i, status);
+            if (status === 0) publishedCount++;
+            cell.markers.push(m);
+            allMarkers.push({ cell, marker: m });
+          }
         }
         cells[r][c] = cell;
       }
@@ -493,6 +524,46 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
       }
     }
 
+    // ── Month header ────────────────────────────────────────────────────────
+    ctx.save();
+    ctx.textAlign = 'left';
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle = '#a855f7';
+    ctx.font = 'bold 16px -apple-system,system-ui,sans-serif';
+    ctx.fillText(`${MONTH_NAMES[CUR_MONTH]} ${CUR_YEAR}`, SIDE_PAD, 28);
+    // Progress bar
+    const pastDays = TODAY_DATE - 1;
+    const totalContent = allMarkers.length;
+    const pubCount = allMarkers.filter(m => m.marker.status === 0).length;
+    const progressPct = totalContent > 0 ? pubCount / totalContent : 0;
+    const barW = 180, barH = 6, barX = SIDE_PAD, barY = 40;
+    ctx.globalAlpha = 0.12;
+    ctx.fillStyle = '#a855f7';
+    rrect(ctx, barX, barY, barW, barH, 3); ctx.fill();
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = '#a855f7';
+    rrect(ctx, barX, barY, Math.max(6, barW * progressPct), barH, 3); ctx.fill();
+    ctx.globalAlpha = 0.45;
+    ctx.font = '9px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${pubCount} published · ${Math.round(progressPct * 100)}% complete`, barX + barW + 10, barY + 6);
+    ctx.restore();
+
+    // ── Platform legend (top-right) ─────────────────────────────────────────
+    ctx.save();
+    ctx.textAlign = 'right';
+    ctx.font = '8px "SF Mono","Fira Code",monospace';
+    for (let i = 0; i < PLATFORMS.length; i++) {
+      const p = PLATFORMS[i];
+      const lx = W - SIDE_PAD, ly = 18 + i * 14;
+      ctx.globalAlpha = 0.6;
+      ctx.fillStyle = `rgb(${p.color[0]},${p.color[1]},${p.color[2]})`;
+      ctx.beginPath(); ctx.arc(lx - ctx.measureText(p.name).width - 10, ly - 3, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 0.4;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(p.name, lx, ly);
+    }
+    ctx.restore();
+
     // ── Grid lines ────────────────────────────────────────────────────────
     ctx.save();
     ctx.strokeStyle = 'rgba(168,85,247,0.06)';
@@ -512,7 +583,7 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
     ctx.font = '9px "SF Mono","Fira Code",monospace';
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(168,85,247,1)';
-    ctx.globalAlpha = 0.28;
+    ctx.globalAlpha = 0.35;
     for (let c = 0; c < CAL_COLS; c++) {
       ctx.fillText(DAY_HEADERS[c], SIDE_PAD + c * cellW + cellW / 2, CAL_TOP + 14);
     }
@@ -541,29 +612,74 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
       }
     }
 
-    // ── Day numbers ────────────────────────────────────────────────────────
+    // ── Day numbers + today badge + past checkmarks ──────────────────────
     ctx.save();
-    ctx.font = '10px "SF Mono","Fira Code",monospace';
-    ctx.textAlign = 'left';
-    ctx.fillStyle = '#ffffff';
     for (let r = 0; r < CAL_ROWS; r++) {
       for (let c = 0; c < CAL_COLS; c++) {
         if (!cells[r] || !cells[r][c]) continue;
+        const cell = cells[r][c];
+        if (cell.isEmpty) continue;
+        const cx0 = SIDE_PAD + c * cellW;
+        const cy0 = CAL_TOP + HEADER_H + r * cellH;
         const isHov = c === hovCellCol && r === hovCellRow;
-        ctx.globalAlpha = isHov ? 0.4 : 0.14;
-        ctx.fillText(String(cells[r][c].dayNum), SIDE_PAD + c * cellW + 6, CAL_TOP + HEADER_H + r * cellH + 13);
+
+        if (cell.isToday) {
+          // Glowing background for today's cell
+          const pulse = 0.08 + Math.sin(t * 2) * 0.03;
+          ctx.globalAlpha = pulse;
+          ctx.fillStyle = '#a855f7';
+          ctx.fillRect(cx0 + 0.5, cy0 + 0.5, cellW - 1, cellH - 1);
+          // "TODAY" badge
+          ctx.globalAlpha = 0.85;
+          ctx.fillStyle = '#a855f7';
+          rrect(ctx, cx0 + cellW - 42, cy0 + 3, 38, 14, 4);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 8px "SF Mono","Fira Code",monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText('TODAY', cx0 + cellW - 23, cy0 + 13);
+          // Day number
+          ctx.globalAlpha = 0.9;
+          ctx.fillStyle = '#a855f7';
+          ctx.font = 'bold 12px "SF Mono","Fira Code",monospace';
+          ctx.textAlign = 'left';
+          ctx.fillText(String(cell.dayNum), cx0 + 6, cy0 + 14);
+        } else if (cell.isPast) {
+          // Subtle completed overlay
+          ctx.globalAlpha = 0.025;
+          ctx.fillStyle = '#4ade80';
+          ctx.fillRect(cx0 + 0.5, cy0 + 0.5, cellW - 1, cellH - 1);
+          // Day number with checkmark
+          ctx.globalAlpha = isHov ? 0.5 : 0.22;
+          ctx.fillStyle = '#4ade80';
+          ctx.font = '10px "SF Mono","Fira Code",monospace';
+          ctx.textAlign = 'left';
+          ctx.fillText(`${cell.dayNum} ✓`, cx0 + 6, cy0 + 13);
+        } else {
+          // Future day
+          ctx.globalAlpha = isHov ? 0.4 : 0.14;
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '10px "SF Mono","Fira Code",monospace';
+          ctx.textAlign = 'left';
+          ctx.fillText(String(cell.dayNum), cx0 + 6, cy0 + 13);
+        }
       }
     }
     ctx.restore();
 
     // ── Draw markers ──────────────────────────────────────────────────────
     for (const { cell, marker: m } of allMarkers) {
+      if (cell.isEmpty) continue;
       const [r, g, b] = PLATFORMS[m.platformIdx].color;
       const cellHov = cell.gridCol === hovCellCol && cell.gridRow === hovCellRow;
       const isHovMark = hoveredMarker === m;
 
+      // Past days: published markers are green-tinted and brighter
+      const isPastPublished = cell.isPast && m.status === 0;
+
       // Base alpha by status
-      let alpha = m.status === 0 ? 0.5 : m.status === 1 ? 0.3 : 0.15;
+      let alpha = isPastPublished ? 0.55 : m.status === 0 ? 0.5 : m.status === 1 ? 0.3 : 0.15;
 
       // Flash animation
       const flashAge = t - m.flashStart;
@@ -602,14 +718,16 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
     // ── Tooltip ────────────────────────────────────────────────────────────
     if (hoveredMarker) drawTooltip(hoveredMarker);
 
-    // ── Counter (top-right) ────────────────────────────────────────────────
-    const cx = W - 16;
+    // ── Bottom stats bar ─────────────────────────────────────────────────
+    const bsy = CAL_TOP + HEADER_H + CAL_ROWS * cellH + 12;
     ctx.save();
-    ctx.textAlign = 'right';
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = 'rgba(168,85,247,0.6)';
-    ctx.font = '11px "SF Mono","Fira Code",monospace';
-    ctx.fillText(`${publishedCount} pieces this month · 6 platforms · 10 formats`, cx, 24);
+    ctx.textAlign = 'center';
+    ctx.globalAlpha = 0.4;
+    ctx.fillStyle = '#a855f7';
+    ctx.font = '9px "SF Mono","Fira Code",monospace';
+    const schedCount = allMarkers.filter(m => m.marker.status === 1).length;
+    const draftCount = allMarkers.filter(m => m.marker.status === 2).length;
+    ctx.fillText(`● ${publishedCount} published  ◐ ${schedCount} scheduled  ○ ${draftCount} drafts  ·  ${DAYS_IN_MONTH - TODAY_DATE} days remaining`, W / 2, bsy);
     ctx.restore();
   }
 
