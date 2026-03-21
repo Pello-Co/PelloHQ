@@ -1,0 +1,250 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/layout/Header.astro';
+---
+
+<Layout title="404 — Page Not Found | Pello" description="This page doesn't exist. Let's get you back on track.">
+  <Header />
+  <main class="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <canvas id="bg-404" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+
+    <div class="relative z-10 text-center px-6 max-w-xl">
+      <p class="text-[8rem] sm:text-[12rem] font-bold leading-none select-none error-number">404</p>
+      <h1 class="text-2xl sm:text-3xl font-semibold text-white mb-4 -mt-4">Page not found</h1>
+      <p class="text-zinc-400 text-base sm:text-lg mb-10 max-w-md mx-auto">The page you're looking for doesn't exist, or has been moved. Let's get you back to solid ground.</p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+        <a href="/" class="btn-primary px-6 py-3">
+          Back to Home
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" class="ml-1.5">
+            <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+        <a href="/tests" class="text-sm text-zinc-500 hover:text-zinc-300 transition-colors py-3 px-4">View Experiments →</a>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<style is:global>
+  .error-number {
+    background: linear-gradient(180deg, rgba(162, 52, 250, 0.25) 0%, rgba(99, 102, 241, 0.08) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 60px rgba(139, 92, 246, 0.15));
+  }
+</style>
+
+<script>
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  const PERM = new Uint8Array(512);
+  {
+    const p = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) p[i] = i;
+    for (let i = 255; i > 0; i--) {
+      const j = ((i * 1664525 + 1013904223) >>> 0) % (i + 1);
+      const tmp = p[i]!; p[i] = p[j]!; p[j] = tmp;
+    }
+    for (let i = 0; i < 512; i++) PERM[i] = p[i & 255]!;
+  }
+  const GRADS2: [number,number][] = [[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+
+  function fade(t: number): number { return t * t * t * (t * (t * 6 - 15) + 10); }
+  function lerp(a: number, b: number, t: number): number { return a + t * (b - a); }
+  function grad2(h: number, x: number, y: number): number {
+    const e = GRADS2[h & 7]!;
+    return e[0] * x + e[1] * y;
+  }
+  function noise2(x: number, y: number): number {
+    const X = Math.floor(x) & 255;
+    const Y = Math.floor(y) & 255;
+    const xf = x - Math.floor(x);
+    const yf = y - Math.floor(y);
+    const u = fade(xf), v = fade(yf);
+    const aa = PERM[PERM[X]!     + Y]!;
+    const ab = PERM[PERM[X]!     + Y + 1]!;
+    const ba = PERM[PERM[X + 1]! + Y]!;
+    const bb = PERM[PERM[X + 1]! + Y + 1]!;
+    return lerp(
+      lerp(grad2(aa, xf,     yf),     grad2(ba, xf - 1, yf),     u),
+      lerp(grad2(ab, xf,     yf - 1), grad2(bb, xf - 1, yf - 1), u),
+      v
+    );
+  }
+
+  function sampleHeight(
+    gx: number, gy: number, t: number,
+    mouseX: number | null, mouseY: number | null, mouseStrength: number,
+    W: number, H: number, scale: number
+  ): number {
+    const nx = gx * scale;
+    const ny = gy * scale;
+    let v = noise2(nx + t * 0.3, ny + t * 0.2) * 0.6
+          + noise2(nx * 2 + t * 0.5, ny * 2 + t * 0.4) * 0.3
+          + noise2(nx * 4 + t * 0.8, ny * 4 + t * 0.7) * 0.1;
+    v = (v + 1) * 0.5;
+    v = Math.max(0, Math.min(1, v));
+    if (mouseX !== null && mouseY !== null && mouseStrength > 0) {
+      const dx = gx - mouseX;
+      const dy = gy - mouseY;
+      const sigma = Math.min(W, H) * 0.18;
+      v = Math.min(1, v + Math.exp(-(dx * dx + dy * dy) / (2 * sigma * sigma)) * mouseStrength * 0.55);
+    }
+    return v;
+  }
+
+  const BAND_COLORS: [number,number,number,number][] = [
+    [20,  5,  60, 0.10],
+    [40, 10,  90, 0.14],
+    [59, 20, 120, 0.18],
+    [76, 29, 149, 0.22],
+    [99,102, 241, 0.28],
+    [139,92, 246, 0.34],
+    [162,52, 250, 0.40],
+    [196,181,254, 0.48],
+  ];
+  const NUM_BANDS = BAND_COLORS.length;
+
+  const canvas = document.getElementById('bg-404') as HTMLCanvasElement;
+  const container = document.querySelector('main') as HTMLElement;
+  const dpr = window.devicePixelRatio || 1;
+  let W = 0, H = 0;
+
+  function resize() {
+    const rect = container.getBoundingClientRect();
+    W = Math.round(rect.width);
+    H = Math.round(rect.height);
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width  = `${W}px`;
+    canvas.style.height = `${H}px`;
+  }
+
+  resize();
+  const ctx = canvas.getContext('2d')!;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  let t = 0;
+  let mouseX: number | null = null;
+  let mouseY: number | null = null;
+  let mouseStrength = 0;
+  let mouseTarget = 0;
+
+  const mobile = W < 768;
+  const STEP = mobile ? 14 : 8;
+  const NOISE_SCALE = 0.0045;
+
+  function frame() {
+    requestAnimationFrame(frame);
+    t += 0.003;
+    mouseStrength += (mouseTarget - mouseStrength) * 0.05;
+
+    const cols = Math.ceil(W / STEP) + 1;
+    const rows = Math.ceil(H / STEP) + 1;
+
+    const field = new Float32Array(cols * rows);
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        field[r * cols + c] = sampleHeight(
+          c * STEP, r * STEP, t, mouseX, mouseY, mouseStrength, W, H, NOISE_SCALE
+        );
+      }
+    }
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+
+    for (let bi = 0; bi < NUM_BANDS; bi++) {
+      const isoLow  = bi       / NUM_BANDS;
+      const isoHigh = (bi + 1) / NUM_BANDS;
+      const [cr, cg, cb, ca] = BAND_COLORS[bi]!;
+      ctx.fillStyle = `rgba(${cr},${cg},${cb},${ca})`;
+
+      for (let r = 0; r < rows - 1; r++) {
+        for (let c = 0; c < cols - 1; c++) {
+          const avg = (
+            (field[r       * cols + c] ?? 0) +
+            (field[r       * cols + c + 1] ?? 0) +
+            (field[(r + 1) * cols + c] ?? 0) +
+            (field[(r + 1) * cols + c + 1] ?? 0)
+          ) * 0.25;
+
+          if (avg >= isoLow && avg < isoHigh) {
+            ctx.fillRect(c * STEP, r * STEP, STEP + 1, STEP + 1);
+          }
+        }
+      }
+    }
+
+    const NUM_LINES = mobile ? 5 : 9;
+    for (let li = 0; li < NUM_LINES; li++) {
+      const iso = (li + 1) / (NUM_LINES + 1);
+      ctx.beginPath();
+      ctx.strokeStyle = `rgba(167,139,250,${0.06 + iso * 0.08})`;
+      ctx.lineWidth = iso > 0.6 ? 0.75 : 0.5;
+
+      for (let r = 0; r < rows - 1; r++) {
+        for (let c = 0; c < cols - 1; c++) {
+          const x0 = c * STEP, y0 = r * STEP;
+          const vbl = field[r       * cols + c] ?? 0;
+          const vbr = field[r       * cols + c + 1] ?? 0;
+          const vtr = field[(r + 1) * cols + c + 1] ?? 0;
+          const vtl = field[(r + 1) * cols + c] ?? 0;
+
+          const code =
+            ((vbl > iso) ? 1 : 0) |
+            ((vbr > iso) ? 2 : 0) |
+            ((vtr > iso) ? 4 : 0) |
+            ((vtl > iso) ? 8 : 0);
+
+          const edgeTable: number[][] = [
+            [], [3,0], [0,1], [3,1], [1,2], [3,0,1,2], [0,2], [3,2],
+            [2,3], [0,2], [0,3,2,1], [1,2], [1,3], [0,1], [3,0], [],
+          ];
+          const edges = edgeTable[code] ?? [];
+          if (edges.length === 0) continue;
+
+          for (let e = 0; e < edges.length; e += 2) {
+            const e1 = edges[e]!, e2 = edges[e + 1]!;
+            const pts: [number,number][] = [];
+            for (const ei of [e1, e2]) {
+              switch (ei) {
+                case 0: { const tt = (iso - vbl) / (vbr - vbl + 1e-12); pts.push([x0 + tt * STEP, y0]); break; }
+                case 1: { const tt = (iso - vbr) / (vtr - vbr + 1e-12); pts.push([x0 + STEP, y0 + tt * STEP]); break; }
+                case 2: { const tt = (iso - vtl) / (vtr - vtl + 1e-12); pts.push([x0 + tt * STEP, y0 + STEP]); break; }
+                case 3: { const tt = (iso - vbl) / (vtl - vbl + 1e-12); pts.push([x0, y0 + tt * STEP]); break; }
+              }
+            }
+            if (pts.length === 2) {
+              ctx.moveTo(pts[0]![0], pts[0]![1]);
+              ctx.lineTo(pts[1]![0], pts[1]![1]);
+            }
+          }
+        }
+      }
+      ctx.stroke();
+    }
+  }
+
+  window.addEventListener('mousemove', (e) => {
+    const rect = container.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+    mouseTarget = 1;
+  });
+  window.addEventListener('mouseleave', () => { mouseTarget = 0; });
+
+  const ro = new ResizeObserver(() => {
+    resize();
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  });
+  ro.observe(container);
+
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+  }); // end ric
+</script>
