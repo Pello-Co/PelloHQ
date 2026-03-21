@@ -73,6 +73,79 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
 
 <a id="skip-link" href="#main-content">Skip to main content</a>
 
+<!-- Glassmorphism overrides for /9 — makes hero components translucent so aurora shows through -->
+<style is:global>
+  /* ── URL input bar — frosted glass ────────────────────────────── */
+  #dot-grid-wrap .url-input-wrap {
+    background: rgba(255, 255, 255, 0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  /* ── Hero text column — subtle glass card behind text ─────────── */
+  #dot-grid-wrap .container > div > div:first-child {
+    background: rgba(10, 10, 20, 0.35);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 1.5rem;
+    padding: 2.5rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  /* ── Right panel (HeroScene) — glass container ───────────────── */
+  #dot-grid-wrap .container > div > div:last-child {
+    background: rgba(10, 10, 20, 0.25);
+    backdrop-filter: blur(16px) saturate(1.2);
+    -webkit-backdrop-filter: blur(16px) saturate(1.2);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 1.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  }
+
+  /* ── Badge — glass pill ──────────────────────────────────────── */
+  #dot-grid-wrap .badge {
+    background: rgba(99, 102, 241, 0.1) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-color: rgba(99, 102, 241, 0.2) !important;
+  }
+
+  /* ── Mobile panel — glass card ───────────────────────────────── */
+  #dot-grid-wrap .hero-panel-mobile {
+    background: rgba(10, 10, 20, 0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  /* ── FinalCTA card — glass treatment ─────────────────────────── */
+  .final-cta {
+    background: rgba(20, 15, 40, 0.4) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99, 102, 241, 0.15) !important;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+  }
+
+  /* Hide the opaque backgrounds that would block the aurora */
+  #dot-grid-wrap .grid-texture,
+  #dot-grid-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] {
+    display: none !important;
+  }
+
+  /* Make hero section bg transparent so aurora shows through */
+  #hero {
+    background: transparent !important;
+  }
+</style>
+
 <script>
   // Polyfill requestIdleCallback for Safari
   const ric = window.requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
