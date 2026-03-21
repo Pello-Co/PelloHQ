@@ -1,0 +1,468 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="bg-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99,102,241,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  // Polyfill requestIdleCallback for Safari
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Concept 98: Spacetime Fabric ─────────────────────────────────────────
+  // Classic rubber-sheet visualisation: a perspective 3D grid deformed by 8
+  // product-mass dimples. Mouse is the heaviest mass. Surface particles roll
+  // along the curved grid under the influence of nearby depressions.
+
+  function createSpacetimeFabric(canvas: HTMLCanvasElement, container: HTMLElement) {
+    const dpr = window.devicePixelRatio || 1;
+    let W = 0, H = 0;
+
+    function resize() {
+      const rect = container.getBoundingClientRect();
+      W = Math.round(rect.width);
+      H = Math.round(rect.height);
+      canvas.width  = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width  = `${W}px`;
+      canvas.style.height = `${H}px`;
+    }
+
+    resize();
+    const ctx = canvas.getContext('2d')!;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const mobile = W < 768;
+    const NC = mobile ? 15 : 25;  // grid columns
+    const NR = mobile ? 15 : 25;  // grid rows
+    const NP = mobile ? 15 : 30;  // surface particles
+
+    // Perspective parameters
+    // Row 0 = top = far (near vanishing point), Row NR-1 = bottom = near viewer
+    const VP_Y    = H * 0.08;   // vanishing point y
+    const BOT_Y   = H * 0.96;   // near-viewer y
+    const HALF_W  = W * 0.52;   // grid half-width at near edge
+
+    // Deformation parameters (screen pixels at t=1, before perspective scaling)
+    const MAX_DEFORM  = H * 0.065;  // max depression per mass
+    const SIGMA2      = 9.0;        // Gaussian width in grid units²
+
+    // Per-product mass definitions: grid position (c, r) and RGB
+    interface Mass {
+      c: number; r: number;
+      rgb: [number, number, number];
+      phase: number;
+    }
+
+    function makeMasses(): Mass[] {
+      const cols = [
+        Math.round(NC * 0.18),
+        Math.round(NC * 0.50),
+        Math.round(NC * 0.82),
+      ];
+      const rows = [
+        Math.round(NR * 0.22),
+        Math.round(NR * 0.50),
+        Math.round(NR * 0.78),
+      ];
+      const palette: Array<[number, number, number]> = [
+        [99, 102, 241],   // PelloSEO — indigo
+        [139, 92, 246],   // PelloReach — violet
+        [168, 85, 247],   // PelloPublish — purple
+        [217, 70, 239],   // PelloSocial — fuchsia
+        [236, 72, 153],   // PelloPitch — pink
+        [99, 102, 241],   // PelloAds — indigo
+        [139, 92, 246],   // PelloFlow — violet
+        [168, 85, 247],   // PelloBuild — purple
+      ];
+      return [
+        { c: cols[0]!, r: rows[0]!, rgb: palette[0]!, phase: 0.0 },
+        { c: cols[2]!, r: rows[0]!, rgb: palette[1]!, phase: 0.9 },
+        { c: cols[0]!, r: rows[1]!, rgb: palette[2]!, phase: 1.8 },
+        { c: cols[2]!, r: rows[1]!, rgb: palette[3]!, phase: 2.7 },
+        { c: cols[0]!, r: rows[2]!, rgb: palette[4]!, phase: 3.6 },
+        { c: cols[2]!, r: rows[2]!, rgb: palette[5]!, phase: 4.5 },
+        { c: cols[1]!, r: rows[0]!, rgb: palette[6]!, phase: 5.4 },
+        { c: cols[1]!, r: rows[2]!, rgb: palette[7]!, phase: 0.4 },
+      ];
+    }
+
+    const MASSES = makeMasses();
+
+    // Project grid point (c, r) with vertical screen-space deformation to 2D
+    function project(c: number, r: number, deformPx: number): { sx: number; sy: number } {
+      const t    = r / Math.max(1, NR - 1);          // 0=far, 1=near
+      const tSafe = Math.max(0.001, t);
+      const syFlat = VP_Y + (BOT_Y - VP_Y) * tSafe;
+      const frac   = (c - (NC - 1) / 2) / Math.max(1, (NC - 1) / 2);  // -1..1
+      const sx     = W / 2 + frac * HALF_W * tSafe;
+      const sy     = syFlat + deformPx * tSafe;       // perspective-scaled depression
+      return { sx, sy };
+    }
+
+    // Compute total deformation at fractional grid position (fc, fr)
+    function getDeform(fc: number, fr: number, time: number, mGC: number | null, mGR: number | null): number {
+      let total = 0;
+      for (const m of MASSES) {
+        const strength = 1 + 0.2 * Math.sin(time * 0.7 + m.phase);  // breathing ±20%
+        const dc = fc - m.c, dr = fr - m.r;
+        const dist2 = dc * dc + dr * dr;
+        total += strength * MAX_DEFORM / (1 + dist2 / SIGMA2);
+      }
+      if (mGC !== null && mGR !== null) {
+        const dc = fc - mGC, dr = fr - mGR;
+        const dist2 = dc * dc + dr * dr;
+        total += 3.0 * MAX_DEFORM / (1 + dist2 / SIGMA2);  // mouse = 3× strength
+      }
+      return total;
+    }
+
+    // Precomputed deformation grid (updated each frame)
+    const deformGrid = new Float32Array(NC * NR);
+
+    // ── Surface particles ──────────────────────────────────────────────────
+    interface SParticle {
+      c: number; r: number;    // grid-space position (fractional)
+      vc: number; vr: number;  // grid-space velocity
+    }
+
+    const sparticles: SParticle[] = [];
+    for (let i = 0; i < NP; i++) {
+      sparticles.push({
+        c:  Math.random() * (NC - 1),
+        r:  Math.random() * (NR - 1),
+        vc: (Math.random() - 0.5) * 0.04,
+        vr: (Math.random() - 0.5) * 0.04,
+      });
+    }
+
+    const GRAV_FACTOR = 0.003;  // acceleration per unit deform gradient
+    const MAX_VP      = 0.12;   // max particle speed in grid units/frame
+
+    // Mouse
+    let mouseScreenX = 0, mouseScreenY = 0, mouseOn = false;
+    let mouseGridC = 0, mouseGridR = 0;  // lerped mouse grid position
+    let mouseGridCTarget = 0, mouseGridRTarget = 0;
+
+    // Convert screen coords to approximate grid coords (inverse of project at t=0.5 approx)
+    function screenToGrid(sx: number, sy: number): [number, number] {
+      const t    = Math.max(0.01, (sy - VP_Y) / (BOT_Y - VP_Y));
+      const frac = (sx - W / 2) / Math.max(0.01, HALF_W * t);
+      const gc   = (frac + 1) * (NC - 1) / 2;
+      const gr   = t * (NR - 1);
+      return [
+        Math.max(0, Math.min(NC - 1, gc)),
+        Math.max(0, Math.min(NR - 1, gr)),
+      ];
+    }
+
+    let t   = 0;
+    let rafId = 0;
+
+    function frame() {
+      rafId = requestAnimationFrame(frame);
+      t += 1 / 60;
+
+      // Smooth mouse grid position
+      if (mouseOn) {
+        mouseGridC += (mouseGridCTarget - mouseGridC) * 0.12;
+        mouseGridR += (mouseGridRTarget - mouseGridR) * 0.12;
+      }
+
+      const mGC: number | null = mouseOn ? mouseGridC : null;
+      const mGR: number | null = mouseOn ? mouseGridR : null;
+
+      // ── Recompute deformation grid ────────────────────────────────────────
+      for (let r = 0; r < NR; r++) {
+        for (let c = 0; c < NC; c++) {
+          deformGrid[r * NC + c] = getDeform(c, r, t, mGC, mGR);
+        }
+      }
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+
+      // ── Draw grid lines ───────────────────────────────────────────────────
+      // Identify "bright" rows/cols: those near a mass or near the mouse
+      const brightThreshold = MAX_DEFORM * 0.55;
+
+      // Horizontal lines (one per row)
+      for (let r = 0; r < NR; r++) {
+        // Determine max deform along this row
+        let rowMax = 0;
+        for (let c = 0; c < NC; c++) {
+          const d = deformGrid[r * NC + c]!;
+          if (d > rowMax) rowMax = d;
+        }
+        const bright = rowMax > brightThreshold;
+        const alpha  = bright ? 0.11 : 0.055;
+
+        ctx.beginPath();
+        for (let c = 0; c < NC; c++) {
+          const d  = deformGrid[r * NC + c]!;
+          const pt = project(c, r, d);
+          if (c === 0) ctx.moveTo(pt.sx, pt.sy);
+          else         ctx.lineTo(pt.sx, pt.sy);
+        }
+        ctx.strokeStyle = bright
+          ? `rgba(139,92,246,${alpha})`
+          : `rgba(99,102,241,${alpha})`;
+        ctx.lineWidth = bright ? 0.7 : 0.5;
+        ctx.stroke();
+      }
+
+      // Vertical lines (one per column)
+      for (let c = 0; c < NC; c++) {
+        let colMax = 0;
+        for (let r = 0; r < NR; r++) {
+          const d = deformGrid[r * NC + c]!;
+          if (d > colMax) colMax = d;
+        }
+        const bright = colMax > brightThreshold;
+        const alpha  = bright ? 0.11 : 0.055;
+
+        ctx.beginPath();
+        for (let r = 0; r < NR; r++) {
+          const d  = deformGrid[r * NC + c]!;
+          const pt = project(c, r, d);
+          if (r === 0) ctx.moveTo(pt.sx, pt.sy);
+          else         ctx.lineTo(pt.sx, pt.sy);
+        }
+        ctx.strokeStyle = bright
+          ? `rgba(168,85,247,${alpha})`
+          : `rgba(99,102,241,${alpha})`;
+        ctx.lineWidth = bright ? 0.7 : 0.5;
+        ctx.stroke();
+      }
+
+      // ── Draw product mass glowing dots ────────────────────────────────────
+      for (const m of MASSES) {
+        const d  = deformGrid[Math.round(m.r) * NC + Math.round(m.c)]!;
+        const pt = project(m.c, m.r, d);
+        const t2 = m.r / Math.max(1, NR - 1);
+        const radius = Math.max(1, 2.5 * t2);
+        ctx.beginPath();
+        ctx.arc(pt.sx, pt.sy, radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${m.rgb[0]},${m.rgb[1]},${m.rgb[2]},0.22)`;
+        ctx.fill();
+      }
+
+      // ── Draw mouse mass dot ───────────────────────────────────────────────
+      if (mouseOn) {
+        const mpt = project(mouseGridC, mouseGridR, getDeform(mouseGridC, mouseGridR, t, mGC, mGR));
+        const gr  = ctx.createRadialGradient(mpt.sx, mpt.sy, 0, mpt.sx, mpt.sy, 14);
+        gr.addColorStop(0, 'rgba(216,180,254,0.35)');
+        gr.addColorStop(1, 'rgba(216,180,254,0)');
+        ctx.beginPath();
+        ctx.arc(mpt.sx, mpt.sy, 14, 0, Math.PI * 2);
+        ctx.fillStyle = gr;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(mpt.sx, mpt.sy, 3, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(216,180,254,0.55)';
+        ctx.fill();
+      }
+
+      // ── Update & draw surface particles ───────────────────────────────────
+      const EPS = 0.5;  // finite-difference step in grid units
+
+      for (const p of sparticles) {
+        // Deformation gradient (steepest descent = direction of gravity)
+        const dc = getDeform(p.c + EPS, p.r, t, mGC, mGR) -
+                   getDeform(p.c - EPS, p.r, t, mGC, mGR);
+        const dr = getDeform(p.c, p.r + EPS, t, mGC, mGR) -
+                   getDeform(p.c, p.r - EPS, t, mGC, mGR);
+
+        // Accelerate down the slope (toward higher deform = deeper depression)
+        p.vc += dc * GRAV_FACTOR;
+        p.vr += dr * GRAV_FACTOR;
+
+        // Drag (prevent runaway)
+        p.vc *= 0.975;
+        p.vr *= 0.975;
+
+        // Speed cap
+        const spd = Math.sqrt(p.vc * p.vc + p.vr * p.vr);
+        if (spd > MAX_VP) { p.vc = p.vc / spd * MAX_VP; p.vr = p.vr / spd * MAX_VP; }
+
+        p.c += p.vc;
+        p.r += p.vr;
+
+        // Bounce at grid edges
+        if (p.c < 0.5) { p.c = 0.5; p.vc = Math.abs(p.vc) * 0.6; }
+        if (p.c > NC - 1.5) { p.c = NC - 1.5; p.vc = -Math.abs(p.vc) * 0.6; }
+        if (p.r < 0.5) { p.r = 0.5; p.vr = Math.abs(p.vr) * 0.6; }
+        if (p.r > NR - 1.5) { p.r = NR - 1.5; p.vr = -Math.abs(p.vr) * 0.6; }
+
+        // Project to screen at the deformed surface position
+        const pd  = getDeform(p.c, p.r, t, mGC, mGR);
+        const pt  = project(p.c, p.r, pd);
+        const tFrac = p.r / Math.max(1, NR - 1);
+        const pRad  = Math.max(0.8, 1.5 * tFrac);
+
+        ctx.beginPath();
+        ctx.arc(pt.sx, pt.sy, pRad, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(196,181,254,${0.25 + tFrac * 0.25})`;
+        ctx.fill();
+      }
+    }
+
+    // ── Events ────────────────────────────────────────────────────────────────
+    container.addEventListener('mousemove', (e: MouseEvent) => {
+      const rect = container.getBoundingClientRect();
+      mouseScreenX = e.clientX - rect.left;
+      mouseScreenY = e.clientY - rect.top;
+      mouseOn = true;
+      const [gc, gr] = screenToGrid(mouseScreenX, mouseScreenY);
+      mouseGridCTarget = gc;
+      mouseGridRTarget = gr;
+    });
+    container.addEventListener('mouseleave', () => { mouseOn = false; });
+
+    const ro = new ResizeObserver(() => {
+      resize();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    });
+    ro.observe(container);
+
+    rafId = requestAnimationFrame(frame);
+    requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+    return { stop: () => cancelAnimationFrame(rafId) };
+  }
+
+  // ─── Instantiate for hero ────────────────────────────────────────────────
+  const heroCanvas = document.querySelector<HTMLCanvasElement>('#hero-wrap .bg-canvas')!;
+  const heroWrap   = document.getElementById('hero-wrap')!;
+  if (heroCanvas && heroWrap) createSpacetimeFabric(heroCanvas, heroWrap);
+
+  const gridTex = heroWrap?.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── Instantiate for final-cta ───────────────────────────────────────────
+  const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+  if (ctaCard) {
+    const ctaCanvas = document.createElement('canvas');
+    ctaCanvas.setAttribute('aria-hidden', 'true');
+    ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+    ctaCard.style.position = 'relative';
+    ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+    createSpacetimeFabric(ctaCanvas, ctaCard);
+
+    const gridTexCta = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+    if (gridTexCta) gridTexCta.style.display = 'none';
+  }
+
+  }); // end ric
+</script>
