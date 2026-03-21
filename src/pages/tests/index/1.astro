@@ -1056,12 +1056,14 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       c: Math.random() * (NC - 1), r: Math.random() * (NR - 1),
       speed: 0.04 + Math.random() * 0.06,
     }));
-    // Legend positioned on the right side
-    const legX = w - 150;
+    // Legend positioned to the right of the "YOUR WEBSITE" box
+    const BOX_W_INIT = 160;
+    const legX = w / 2 + BOX_W_INIT / 2 + 16;
+    const legStartY = Math.max(4, h * 0.18 - 44 - 6); // aligned with box top
     const legItems: ReachLegItem[] = [
-      { label: 'Delivered', status: 'delivered', color: 'rgba(139,92,246,0.5)', x: legX, y: 14, w: 130, h: 20 },
-      { label: 'Opened',    status: 'opened',    color: 'rgba(168,85,247,0.6)', x: legX, y: 36, w: 130, h: 20 },
-      { label: 'Replied',   status: 'replied',   color: 'rgba(74,222,128,0.7)', x: legX, y: 58, w: 130, h: 20 },
+      { label: 'Delivered', status: 'delivered', color: 'rgba(139,92,246,0.5)', x: legX, y: legStartY, w: 150, h: 22 },
+      { label: 'Opened',    status: 'opened',    color: 'rgba(168,85,247,0.6)', x: legX, y: legStartY + 24, w: 150, h: 22 },
+      { label: 'Replied',   status: 'replied',   color: 'rgba(74,222,128,0.7)', x: legX, y: legStartY + 48, w: 150, h: 22 },
     ];
     return { NC, NR, VP_Y, BOT_Y, HALF_W, cells, particles, emailCount: 18283, lastTick: 0, hovCellC: -1, hovCellR: -1, legItems, hoveredLegend: null };
   }
@@ -1230,7 +1232,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       drawReachTooltip(ctx, cells[st.hovCellR * (NC - 1) + st.hovCellC], (tl.sx + br.sx) / 2, (tl.sy + br.sy) / 2 - 8, w, h);
     }
 
-    // 6. Legend (right side) with counts
+    // 6. Legend (right of "YOUR WEBSITE" box) with counts
     const deliveredCount = cells.filter(c => c.status === 'delivered').length;
     const openedCount = cells.filter(c => c.status === 'opened').length;
     const repliedCount = cells.filter(c => c.status === 'replied').length;
@@ -1238,64 +1240,63 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
 
     for (const item of legItems) {
       const isHovered = st.hoveredLegend === item.status;
-      const alpha = isHovered ? 1.0 : 0.6;
+      const alpha = isHovered ? 1.0 : 0.65;
       if (isHovered) {
         ctx.fillStyle = 'rgba(139,92,246,0.08)';
-        rrect(ctx, item.x - 6, item.y - 2, item.w + 12, item.h + 4, 4);
+        rrect(ctx, item.x - 6, item.y - 3, item.w + 12, item.h + 6, 5);
         ctx.fill();
       }
       ctx.globalAlpha = alpha;
       ctx.fillStyle = item.color;
-      ctx.beginPath(); ctx.arc(item.x + 6, item.y + item.h / 2, 3.5, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = isHovered ? '#ffffff' : 'rgba(255,255,255,0.55)';
-      ctx.font = `${isHovered ? 'bold ' : ''}9px "SF Mono","Fira Code",monospace`;
+      ctx.beginPath(); ctx.arc(item.x + 7, item.y + item.h / 2, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = isHovered ? '#ffffff' : 'rgba(255,255,255,0.6)';
+      ctx.font = `${isHovered ? 'bold ' : ''}11px "SF Mono","Fira Code",monospace`;
       ctx.textAlign = 'left';
-      ctx.fillText(item.label, item.x + 15, item.y + item.h / 2 + 3);
-      // Count number on the right
+      ctx.fillText(item.label, item.x + 18, item.y + item.h / 2 + 4);
       ctx.textAlign = 'right';
-      ctx.fillStyle = isHovered ? '#a78bfa' : 'rgba(139,92,246,0.5)';
-      ctx.fillText(`${legCounts[item.status]}`, item.x + item.w, item.y + item.h / 2 + 3);
+      ctx.fillStyle = isHovered ? '#c4b5fd' : 'rgba(139,92,246,0.6)';
+      ctx.font = `bold 11px "SF Mono","Fira Code",monospace`;
+      ctx.fillText(`${legCounts[item.status]}`, item.x + item.w, item.y + item.h / 2 + 4);
       ctx.globalAlpha = 1;
     }
 
-    // 7. Stats box (right side, below legend)
+    // 7. Stats box (below legend, right of box)
     const statsX = legItems[0].x - 6;
-    const statsY = 84;
+    const statsY = legItems[2].y + legItems[2].h + 10;
     const statsW = legItems[0].w + 12;
-    const statsH = 82;
+    const statsH = 92;
 
-    // Frosted glass background
     ctx.save();
-    ctx.shadowColor = 'rgba(139,92,246,0.12)';
-    ctx.shadowBlur = 12;
-    rrect(ctx, statsX, statsY, statsW, statsH, 6);
-    ctx.fillStyle = 'rgba(139,92,246,0.05)';
+    ctx.shadowColor = 'rgba(139,92,246,0.15)';
+    ctx.shadowBlur = 14;
+    rrect(ctx, statsX, statsY, statsW, statsH, 7);
+    ctx.fillStyle = 'rgba(139,92,246,0.06)';
     ctx.fill();
-    ctx.strokeStyle = 'rgba(139,92,246,0.12)';
+    ctx.strokeStyle = 'rgba(139,92,246,0.15)';
     ctx.lineWidth = 0.5;
     ctx.stroke();
     ctx.shadowBlur = 0;
     ctx.restore();
 
-    // Stats data
-    ctx.font = '8px "SF Mono","Fira Code",monospace';
     ctx.textAlign = 'left';
     const statsData = [
-      { label: 'Domains', value: '135', color: '#a78bfa' },
-      { label: 'Mailboxes', value: '405', color: '#a78bfa' },
+      { label: 'Domains', value: '135', color: '#c4b5fd' },
+      { label: 'Mailboxes', value: '405', color: '#c4b5fd' },
       { label: 'Inbox rate', value: '98.2%', color: '#4ade80' },
       { label: 'Reply rate', value: '4.7%', color: '#4ade80' },
     ];
     for (let si = 0; si < statsData.length; si++) {
       const sd = statsData[si];
-      const sy2 = statsY + 14 + si * 17;
-      ctx.globalAlpha = 0.45;
+      const sy2 = statsY + 16 + si * 19;
+      ctx.globalAlpha = 0.55;
       ctx.fillStyle = '#8b5cf6';
-      ctx.fillText(sd.label, statsX + 8, sy2);
-      ctx.globalAlpha = 0.7;
+      ctx.font = '10px "SF Mono","Fira Code",monospace';
+      ctx.fillText(sd.label, statsX + 10, sy2);
+      ctx.globalAlpha = 0.8;
       ctx.fillStyle = sd.color;
+      ctx.font = 'bold 10px "SF Mono","Fira Code",monospace';
       ctx.textAlign = 'right';
-      ctx.fillText(sd.value, statsX + statsW - 8, sy2);
+      ctx.fillText(sd.value, statsX + statsW - 10, sy2);
       ctx.textAlign = 'left';
     }
     ctx.globalAlpha = 1;
