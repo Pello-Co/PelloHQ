@@ -115,301 +115,292 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
 </style>
 
 <script>
+  // ── requestIdleCallback polyfill ─────────────────────────────────────────────
   const ric = (window as any).requestIdleCallback
     ? (window as any).requestIdleCallback
     : (cb: () => void) => setTimeout(cb, 1);
 
   ric(() => {
 
-  const PRODUCT_COLORS: string[] = ['#6366f1','#8b5cf6','#a855f7','#c026d3','#7c3aed','#4f46e5','#9333ea','#6d28d9'];
-  const PRODUCT_NAMES: string[] = ['PelloSEO','PelloReach','PelloPublish','PelloSocial','PelloPitch','PelloAds','PelloFlow','PelloBuild'];
-
-  const ECG_PARAMS = [
-    { bpm: 60,  pattern: 'steady',   peakH: 28 },
-    { bpm: 72,  pattern: 'double',   peakH: 24 },
-    { bpm: 55,  pattern: 'tall',     peakH: 32 },
-    { bpm: 100, pattern: 'rapid',    peakH: 20 },
-    { bpm: 80,  pattern: 'narrow',   peakH: 26 },
-    { bpm: 66,  pattern: 'varying',  peakH: 22 },
-    { bpm: 50,  pattern: 'metro',    peakH: 30 },
-    { bpm: 45,  pattern: 'wide',     peakH: 36 },
-  ] as const;
-
-  function valueNoise(x: number): number {
-    const i = Math.floor(x);
-    const f = x - i;
-    const u = f * f * (3 - 2 * f);
-    const a = Math.sin(i * 127.1) * 43758.5453;
-    const b = Math.sin((i + 1) * 127.1) * 43758.5453;
-    return (a - Math.floor(a)) * (1 - u) + (b - Math.floor(b)) * u;
+  // ── Helpers ───────────────────────────────────────────────────────────────────
+  function hexToRgb(hex: string): [number, number, number] {
+    return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
   }
 
-  function ecgSample(t: number, pattern: string, peakH: number, noiseAmp: number, noiseOffset: number): number {
-    const baselineNoise = (valueNoise(t * 50 + noiseOffset) - 0.5) * noiseAmp * 0.08;
+  // ── Product / channel definitions ─────────────────────────────────────────────
+  interface Channel {
+    name: string;
+    color: string;
+    rgb: [number, number, number];
+    bpm: number;       // base BPM (mouse-free)
+    style: string;     // QRS shape style
+    ampPx: number;     // R-peak amplitude in px at base BPM
+    yFrac: number;     // vertical centre as fraction of canvas H
+  }
 
-    let qrs = 0;
-    const qt = t - 0.45;
+  const CHANNELS: Channel[] = ([
+    { name: 'PelloSEO',     color: '#6366f1', bpm:  60, style: 'normal',     ampPx: 22 },
+    { name: 'PelloReach',   color: '#8b5cf6', bpm:  72, style: 'double',     ampPx: 19 },
+    { name: 'PelloPublish', color: '#a855f7', bpm:  55, style: 'tall',       ampPx: 31 },
+    { name: 'PelloSocial',  color: '#c026d3', bpm: 100, style: 'irregular',  ampPx: 18 },
+    { name: 'PelloPitch',   color: '#7c3aed', bpm:  80, style: 'narrow',     ampPx: 22 },
+    { name: 'PelloAds',     color: '#4f46e5', bpm:  66, style: 'varying',    ampPx: 22 },
+    { name: 'PelloFlow',    color: '#9333ea', bpm:  50, style: 'metronomic', ampPx: 24 },
+    { name: 'PelloBuild',   color: '#6d28d9', bpm:  45, style: 'wide',       ampPx: 28 },
+  ] as const).map((c, i) => ({
+    ...c,
+    rgb: hexToRgb(c.color),
+    yFrac: 0.07 + (i / 7) * 0.86,
+  }));
 
-    switch (pattern) {
-      case 'steady': {
-        if (qt > -0.03 && qt < 0.06) {
-          const q = qt / 0.09;
-          qrs = Math.exp(-q * q * 30) * peakH;
-          if (qt > -0.03 && qt < 0) qrs -= peakH * 0.15;
-          if (qt > 0.02 && qt < 0.05) qrs -= peakH * 0.12;
-        }
-        const pt2 = t - 0.2;
-        qrs += Math.exp(-pt2 * pt2 * 200) * peakH * 0.15;
-        break;
-      }
-      case 'double': {
-        const qt2a = t - 0.38;
-        const qt2b = t - 0.52;
-        qrs = Math.exp(-qt2a * qt2a * 40) * peakH * 0.7 + Math.exp(-qt2b * qt2b * 40) * peakH * 0.9;
-        break;
-      }
-      case 'tall': {
-        const beatNum = Math.floor(noiseOffset) % 3;
-        const multiplier = beatNum === 0 ? 1.8 : 1.0;
-        qrs = Math.exp(-qt * qt * 35) * peakH * multiplier;
-        break;
-      }
-      case 'rapid': {
-        qrs = Math.exp(-qt * qt * 50) * peakH * 0.9;
-        const qt3 = t - 0.25;
-        qrs += Math.exp(-qt3 * qt3 * 60) * peakH * 0.3;
-        break;
-      }
-      case 'narrow': {
-        qrs = Math.exp(-qt * qt * 80) * peakH;
-        break;
-      }
-      case 'varying': {
-        const varAmp = 0.6 + (valueNoise(noiseOffset * 0.1 + 0.5) * 0.8);
-        qrs = Math.exp(-qt * qt * 35) * peakH * varAmp;
-        break;
-      }
-      case 'metro': {
-        qrs = Math.exp(-qt * qt * 30) * peakH;
-        break;
-      }
-      case 'wide': {
-        qrs = Math.exp(-qt * qt * 15) * peakH * 1.1;
-        break;
-      }
+  // ── ECG constants ─────────────────────────────────────────────────────────────
+  const SCROLL_SPEED = 80;   // px / second  — cursor advance rate
+  const ERASE_WIDTH  = 22;   // px           — blank zone just ahead of cursor
+  const SEG          = 10;   // px           — segment size for alpha stepping
+
+  // ── ECG signal (returns unitless, ≈ –0.35 … 1.65; multiply by ampPx for px) ──
+  // tMs: absolute time in ms.  beat interval computed from bpm.
+  function ecg(tMs: number, bpm: number, style: string, seed: number): number {
+    // Irregular: wobble instantaneous BPM ±22 %
+    let period = 60000 / bpm;
+    if (style === 'irregular') {
+      period = period / (1 + 0.22 * Math.sin(tMs * 0.00097 + seed));
     }
 
-    return qrs + baselineNoise;
+    const phase    = ((tMs % period) + period) % period / period; // 0–1
+    const beatIdx  = Math.floor(((tMs % (period * 10000)) + period * 10000) / period);
+
+    // Window boundaries
+    const qrsS = 0.050;
+    const qrsW = style === 'narrow' ? 0.085 : style === 'wide' ? 0.270 : 0.155;
+    const qrsE = qrsS + qrsW;
+    const tWS  = qrsE + 0.065;
+    const tWE  = tWS  + 0.175;
+    const pWS  = 0.010;
+    const pWE  = qrsS - 0.008;
+
+    if (phase >= qrsS && phase < qrsE) {
+      const q = (phase - qrsS) / qrsW; // 0–1 within QRS
+
+      if (style === 'double') {
+        // Two R peaks — first slightly shorter
+        if (q < 0.43) return 0.85 * Math.sin((q / 0.43) * Math.PI);
+        if (q > 0.57) return 0.62 * Math.sin(((q - 0.57) / 0.43) * Math.PI);
+        return 0;
+      }
+
+      // Standard Q-R-S gaussians
+      const Q = -0.21 * Math.exp(-Math.pow((q - 0.12) / 0.055, 2));
+      const Rw = style === 'narrow' ? 0.075 : 0.125;
+      let   Rh = 1.00;
+      if (style === 'tall')       Rh = 1.65;
+      if (style === 'wide')       Rh = 1.22;
+      if (style === 'metronomic') Rh = 1.00; // perfectly consistent amplitude
+      if (style === 'varying')    Rh = 0.48 + Math.abs(Math.sin(beatIdx * 2.03 + seed));
+      const R = Rh * Math.exp(-Math.pow((q - 0.38) / Rw, 2));
+      const S = -0.31 * Math.exp(-Math.pow((q - 0.68) / 0.068, 2));
+
+      return Q + R + S;
+    }
+
+    if (phase >= tWS && phase < tWE) {
+      return 0.19 * Math.sin(((phase - tWS) / (tWE - tWS)) * Math.PI);
+    }
+
+    if (phase >= pWS && phase < pWE) {
+      return 0.10 * Math.sin(((phase - pWS) / (pWE - pWS)) * Math.PI);
+    }
+
+    return 0; // flat isoelectric baseline
   }
 
-  interface ECGWave {
-    yFrac: number;
-    bpm: number;
-    pattern: string;
-    peakH: number;
-    color: string;
-    name: string;
-    noiseOffset: number;
-    dotX: number;
-    dotSpeed: number;
-  }
+  // ── Canvas renderer ───────────────────────────────────────────────────────────
+  interface ECGState { mouse: { x: number; y: number } | null; }
 
-  let mouse: { x: number; y: number } | null = null;
-  let hoveredWaveIdx: number = -1;
-  let displayBpm: number[] = ECG_PARAMS.map(p => p.bpm);
-
-  const ECG_WAVES: ECGWave[] = PRODUCT_COLORS.map((color, i) => {
-    const p = ECG_PARAMS[i]!;
-    return {
-      yFrac: 0.06 + (i / 7) * 0.88,
-      bpm: p.bpm,
-      pattern: p.pattern,
-      peakH: p.peakH,
-      color,
-      name: PRODUCT_NAMES[i]!,
-      noiseOffset: i * 33.7,
-      dotX: 0,
-      dotSpeed: 0,
-    };
-  });
-
-  function setupCanvas(canvas: HTMLCanvasElement, wrap: HTMLElement, waves: ECGWave[], isSimple: boolean) {
+  function setupECG(
+    canvas: HTMLCanvasElement,
+    wrap: HTMLElement,
+    channels: Channel[],
+    simple: boolean,
+    state: ECGState
+  ): () => void {
     const ctx = canvas.getContext('2d')!;
-    let W = 0, H = 0;
-    let dpr = window.devicePixelRatio || 1;
+    let W = 0, H = 0, dpr = 1;
 
     function resize() {
       dpr = window.devicePixelRatio || 1;
-      const rect = wrap.getBoundingClientRect();
-      W = Math.round(rect.width);
-      H = Math.round(rect.height);
-      canvas.width = W * dpr;
+      const r = wrap.getBoundingClientRect();
+      W = Math.round(r.width);
+      H = Math.round(r.height);
+      canvas.width  = W * dpr;
       canvas.height = H * dpr;
-      canvas.style.width = W + 'px';
+      canvas.style.width  = W + 'px';
       canvas.style.height = H + 'px';
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      for (let i = 0; i < waves.length; i++) {
-        if (waves[i]) waves[i]!.dotX = 0;
-      }
     }
 
-    const ro = new ResizeObserver(() => resize());
+    const ro = new ResizeObserver(resize);
     ro.observe(wrap);
     resize();
 
-    const historySize = 1024;
-    const histories: Float32Array[] = waves.map(() => new Float32Array(historySize));
-    const historyPos: number[] = waves.map(() => 0);
-    const beatPhase: number[] = waves.map(() => Math.random());
-    let lastTime = performance.now();
+    let raf = 0;
 
-    function drawFrame() {
-      requestAnimationFrame(drawFrame);
-      if (W === 0 || H === 0) return;
+    function frame() {
+      raf = requestAnimationFrame(frame);
+      if (!W || !H) return;
       ctx.clearRect(0, 0, W, H);
 
-      const now = performance.now();
-      const dt = Math.min((now - lastTime) * 0.001, 0.05);
-      lastTime = now;
-      const tSec = now * 0.001;
+      const tNow   = performance.now(); // ms
+      const cursor = (tNow * SCROLL_SPEED / 1000) % W; // px — current write head
+      const sweep  = W / SCROLL_SPEED; // seconds for one full canvas width
 
-      const rh = H / waves.length;
-
-      if (!isSimple) {
-        ctx.globalAlpha = 0.04;
-        ctx.strokeStyle = '#6366f1';
+      // ── ECG grid (minor every 40 px, major every 200 px) ───────────────────────
+      if (!simple) {
+        ctx.save();
         ctx.lineWidth = 0.5;
-        for (let ri = 0; ri < waves.length; ri++) {
-          const baseY = (ri + 0.5) * rh;
-          for (let gy = -2; gy <= 2; gy++) {
-            const y = baseY + gy * rh * 0.2;
-            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-          }
+        ctx.strokeStyle = 'rgba(255,255,255,0.038)';
+        for (let x = 0; x < W; x += 40) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
         }
-        for (let gx = 0; gx <= W; gx += 60) {
-          ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,255,255,0.065)';
+        for (let x = 0; x < W; x += 200) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
         }
-        ctx.globalAlpha = 1;
+        ctx.strokeStyle = 'rgba(255,255,255,0.040)';
+        for (const ch of channels) {
+          const cy = ch.yFrac * H;
+          ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(W, cy); ctx.stroke();
+        }
+        ctx.restore();
       }
 
-      for (let wi = 0; wi < waves.length; wi++) {
-        const wave = waves[wi];
-        if (!wave) continue;
-        const baseY = (wi + 0.5) * rh;
+      // ── Per-channel ECG traces ─────────────────────────────────────────────────
+      for (let ci = 0; ci < channels.length; ci++) {
+        const ch = channels[ci]!;
+        const baseY = ch.yFrac * H;
+        const [r, g, b] = ch.rgb;
 
-        let bpmMultiplier = 1;
-        let ampMultiplier = 1;
-        if (!isSimple && mouse !== null) {
-          const dy = mouse.y - baseY;
-          const prox = Math.max(0, 1 - Math.abs(dy) / (rh * 0.7));
-          bpmMultiplier = 1 + prox;
-          ampMultiplier = 1 + prox * 0.5;
-          if (prox > 0.3) {
-            hoveredWaveIdx = wi;
-            displayBpm[wi] = Math.round(wave.bpm * bpmMultiplier);
-          }
+        // Mouse proximity → BPM and amplitude boost
+        let prox = 0;
+        if (!simple && state.mouse) {
+          const dy = Math.abs(state.mouse.y - baseY);
+          prox = Math.pow(Math.max(0, 1 - dy / (H * 0.13)), 2);
         }
 
-        const effectiveBpm = wave.bpm * bpmMultiplier;
-        const bps = effectiveBpm / 60;
+        const currentBpm = ch.bpm * (1 + prox);          // up to 2× BPM
+        const amp        = ch.ampPx * (1 + prox * 0.5);  // up to 1.5× amplitude
+        const seed       = ci * 7.39;
 
-        beatPhase[wi]! += dt * bps;
-        while (beatPhase[wi]! >= 1) beatPhase[wi]! -= 1;
+        // ── Segment-based rendering with age-based alpha ─────────────────────────
+        for (let x0 = 0; x0 < W; x0 += SEG) {
+          // Skip erase zone (blank gap just ahead of cursor)
+          const ahead = (x0 - cursor + W) % W;
+          if (ahead < ERASE_WIDTH) continue;
 
-        const dotSpeedPxPerSec = W * bps;
+          // Age of this segment (seconds behind the cursor)
+          const ageSec  = ((cursor - x0 + W) % W) / SCROLL_SPEED;
+          const fresh   = 1 - ageSec / sweep; // 1 = newest, 0 = oldest
 
-        wave.dotX += dotSpeedPxPerSec * dt;
-        if (wave.dotX > W) {
-          wave.dotX -= W;
-        }
-
-        const sampleY = ecgSample(beatPhase[wi]!, wave.pattern, wave.peakH * ampMultiplier, 1, wave.noiseOffset + tSec * 0.1);
-
-        const hIdx = Math.floor((wave.dotX / W) * historySize) % historySize;
-        histories[wi]![hIdx] = sampleY;
-
-        const dotPixel = wave.dotX;
-
-        ctx.lineWidth = isSimple ? 0.8 : 1.2;
-
-        const TRAIL_SAMPLES = isSimple ? 80 : 200;
-        ctx.beginPath();
-        let started = false;
-        for (let si = 0; si <= TRAIL_SAMPLES; si++) {
-          const frac = si / TRAIL_SAMPLES;
-          const px = frac * dotPixel;
-          const hSample = Math.floor((px / W) * historySize) % historySize;
-          const sy = histories[wi]![hSample] ?? 0;
-          const plotY = baseY - sy;
-
-          const age = 1 - frac;
-          const alpha = Math.max(0.05, 0.7 - age * 0.65);
-
-          if (!started) {
-            ctx.globalAlpha = alpha;
-            ctx.strokeStyle = wave.color;
-            ctx.beginPath();
-            ctx.moveTo(px, plotY);
-            started = true;
+          let alpha: number, lw: number;
+          if (simple) {
+            alpha = 0.05 + fresh * 0.22;
+            lw    = 0.8;
           } else {
-            ctx.lineTo(px, plotY);
+            alpha = 0.04 + fresh * 0.66;
+            lw    = fresh > 0.87 ? 2.0 : fresh > 0.60 ? 1.4 : 0.9;
           }
+
+          ctx.beginPath();
+          let moved = false;
+
+          for (let dx = 0; dx <= SEG; dx++) {
+            const x = x0 + dx;
+            if (x >= W) break;
+            if (((x - cursor + W) % W) < ERASE_WIDTH) break; // hit erase zone
+
+            const ageMs = ((cursor - x + W) % W) / SCROLL_SPEED * 1000;
+            const v     = ecg(tNow - ageMs, currentBpm, ch.style, seed);
+            const y     = baseY - v * amp;
+
+            if (!moved) { ctx.moveTo(x, y); moved = true; }
+            else         ctx.lineTo(x, y);
+          }
+
+          if (!moved) continue;
+
+          ctx.strokeStyle = `rgb(${r},${g},${b})`;
+          ctx.globalAlpha = alpha;
+          ctx.lineWidth   = lw;
+          ctx.stroke();
         }
-        ctx.globalAlpha = 0.7;
-        ctx.strokeStyle = wave.color;
-        ctx.stroke();
-        ctx.globalAlpha = 1;
 
-        ctx.globalAlpha = 0.05;
-        ctx.strokeStyle = wave.color;
-        ctx.lineWidth = 0.5;
-        ctx.beginPath();
-        ctx.moveTo(dotPixel, baseY);
-        ctx.lineTo(W, baseY);
-        ctx.stroke();
-        ctx.globalAlpha = 1;
+        // ── Glowing dot at cursor tip ────────────────────────────────────────────
+        if (!simple) {
+          const vNow = ecg(tNow, currentBpm, ch.style, seed);
+          const dotX = cursor;
+          const dotY = baseY - vNow * amp;
 
-        ctx.globalAlpha = 0.9;
-        ctx.fillStyle = wave.color;
-        ctx.beginPath();
-        ctx.arc(dotPixel, baseY - sampleY, isSimple ? 1.5 : 2.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = 1;
-
-        if (!isSimple) {
-          ctx.globalAlpha = 0.25;
-          ctx.fillStyle = wave.color;
-          ctx.font = '9px monospace';
-          ctx.textAlign = 'right';
-          ctx.fillText(`${displayBpm[wi] ?? wave.bpm} BPM`, W - 4, baseY - rh * 0.3);
-          ctx.textAlign = 'left';
+          // Soft halo
+          const grd = ctx.createRadialGradient(dotX, dotY, 0, dotX, dotY, 12);
+          grd.addColorStop(0, `rgba(${r},${g},${b},0.52)`);
+          grd.addColorStop(1, `rgba(${r},${g},${b},0.00)`);
           ctx.globalAlpha = 1;
+          ctx.fillStyle   = grd;
+          ctx.beginPath();
+          ctx.arc(dotX, dotY, 12, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Solid core
+          ctx.fillStyle   = `rgb(${r},${g},${b})`;
+          ctx.globalAlpha = 0.95;
+          ctx.beginPath();
+          ctx.arc(dotX, dotY, 2.5, 0, Math.PI * 2);
+          ctx.fill();
         }
+
+        // ── BPM counter + product name at right edge ─────────────────────────────
+        if (!simple) {
+          ctx.textAlign = 'right';
+
+          ctx.globalAlpha = 0.58 + prox * 0.38;
+          ctx.fillStyle   = `rgb(${r},${g},${b})`;
+          ctx.font        = '11px "Courier New", monospace';
+          ctx.fillText(Math.round(currentBpm) + ' bpm', W - 6, baseY - 5);
+
+          ctx.globalAlpha = 0.28 + prox * 0.22;
+          ctx.font        = '9px "Courier New", monospace';
+          ctx.fillText(ch.name, W - 6, baseY + 13);
+        }
+
+        ctx.globalAlpha = 1;
       }
+
+      ctx.textAlign = 'left'; // reset
     }
 
-    requestAnimationFrame(drawFrame);
+    frame();
     requestAnimationFrame(() => { canvas.style.opacity = '1'; });
-    return () => ro.disconnect();
+
+    return () => { cancelAnimationFrame(raf); ro.disconnect(); };
   }
 
-  const heroWrap = document.getElementById('hero-wrap')!;
+  // ── Hero canvas ───────────────────────────────────────────────────────────────
+  const heroWrap   = document.getElementById('hero-wrap')!;
   const heroCanvas = heroWrap.querySelector<HTMLCanvasElement>('.bg-canvas')!;
-  setupCanvas(heroCanvas, heroWrap, ECG_WAVES, false);
+  const heroState: ECGState = { mouse: null };
+
+  setupECG(heroCanvas, heroWrap, CHANNELS, false, heroState);
 
   heroWrap.addEventListener('mousemove', (e: MouseEvent) => {
-    const rect = heroWrap.getBoundingClientRect();
-    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    const rect      = heroWrap.getBoundingClientRect();
+    heroState.mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
   });
-  heroWrap.addEventListener('mouseleave', () => {
-    mouse = null;
-    hoveredWaveIdx = -1;
-    displayBpm = ECG_PARAMS.map(p => p.bpm);
-  });
+  heroWrap.addEventListener('mouseleave', () => { heroState.mouse = null; });
 
   const gridTex = heroWrap.querySelector<HTMLElement>('.grid-texture');
   if (gridTex) gridTex.style.display = 'none';
 
+  // ── Final CTA canvas ──────────────────────────────────────────────────────────
   const ctaCard = document.querySelector<HTMLElement>('.final-cta');
   if (ctaCard) {
     const ctaCanvas = document.createElement('canvas');
@@ -418,12 +409,14 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     ctaCard.style.position = 'relative';
     ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
 
-    const ctaWaves: ECGWave[] = [
-      { yFrac: 0.25, bpm: 60, pattern: 'steady', peakH: 18, color: '#6366f1', name: 'PelloSEO',     noiseOffset: 100, dotX: 0, dotSpeed: 0 },
-      { yFrac: 0.5,  bpm: 72, pattern: 'double', peakH: 16, color: '#a855f7', name: 'PelloPublish', noiseOffset: 200, dotX: 0, dotSpeed: 0 },
-      { yFrac: 0.75, bpm: 50, pattern: 'metro',  peakH: 20, color: '#4f46e5', name: 'PelloAds',     noiseOffset: 300, dotX: 0, dotSpeed: 0 },
+    const ctaChannels: Channel[] = [
+      { name: 'SEO',   color: '#6366f1', rgb: [99,102,241],  bpm: 60, style: 'normal', ampPx: 14, yFrac: 0.28 },
+      { name: 'Reach', color: '#a855f7', rgb: [168,85,247],  bpm: 72, style: 'double', ampPx: 12, yFrac: 0.50 },
+      { name: 'Flow',  color: '#4f46e5', rgb: [79,70,229],   bpm: 50, style: 'tall',   ampPx: 17, yFrac: 0.72 },
     ];
-    setupCanvas(ctaCanvas, ctaCard, ctaWaves, true);
+    const ctaState: ECGState = { mouse: null };
+    setupECG(ctaCanvas, ctaCard, ctaChannels, true, ctaState);
+
     const gridTexCta = ctaCard.querySelector<HTMLElement>('.grid-texture');
     if (gridTexCta) gridTexCta.style.display = 'none';
   }
