@@ -1,0 +1,284 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloPublish — Brand Voice Waveform | Pello" description="PelloPublish learns your brand voice and pulses content outward like sonar — every ping a real post, adapting in real-time to your audience.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="pub-waveform-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+    <HowItWorks />
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link { position:absolute;top:-100%;left:1rem;z-index:9999;padding:.75rem 1.25rem;background:var(--color-brand-primary);color:white;font-weight:600;border-radius:0 0 .5rem .5rem;text-decoration:none;transition:top .1s; }
+  #skip-link:focus { top:0; }
+  #hero-wrap .url-input-wrap,.final-cta .url-input-wrap { background:rgba(255,255,255,0.06)!important;backdrop-filter:blur(24px) saturate(1.4);-webkit-backdrop-filter:blur(24px) saturate(1.4);border:1px solid rgba(255,255,255,0.12)!important;box-shadow:0 4px 30px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.05); }
+  #hero-wrap .hero-panel { background:rgba(6,7,18,0.55)!important;backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(255,255,255,0.12)!important; }
+  #hero-wrap .panel-source-row { border-bottom:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .core-inner { background:rgba(0,0,0,0.15)!important;border:1px solid rgba(255,255,255,0.1)!important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px); }
+  #hero-wrap .panel-core-section { border-bottom:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .channel-node { background:rgba(255,255,255,0.03)!important;border:1px solid rgba(255,255,255,0.1)!important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px); }
+  #hero-wrap .panel-header-bar { border-bottom:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .panel-ready-bar { border-top:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .node-stat-text { color:#a78bfa!important; }
+  #hero-wrap .hero-panel-mobile { background:rgba(10,10,20,0.3);backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(255,255,255,0.08);border-radius:1.25rem;padding:1rem;box-shadow:0 8px 32px rgba(0,0,0,0.3); }
+  .final-cta { background:rgba(20,15,40,0.35)!important;backdrop-filter:blur(24px) saturate(1.4)!important;-webkit-backdrop-filter:blur(24px) saturate(1.4)!important;border-color:rgba(99,102,241,0.15)!important;box-shadow:0 8px 40px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.04)!important;overflow:hidden;position:relative; }
+  .final-cta > .absolute.inset-0.pointer-events-none { display:none!important; }
+  #hero-wrap .grid-texture,#hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display:none!important; }
+  #hero { background:transparent!important; }
+  #hero-headline,#hero-sub,#hero-headline-m,#hero-sub-m { display:none!important; }
+  #hero-panel,.hero-panel,.hero-panel-mobile { display:none!important; }
+  #hero-eyebrow,#hero-eyebrow-m,#hero-cta-row,#hero-cta-m,.url-input-wrap,.hero-panel-mobile { display:none!important; }
+</style>
+
+<script>
+const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+ric(() => {
+
+const PLATFORMS = [
+  { name:"Instagram", icon:"IG", color:[225,48,108] as [number,number,number] },
+  { name:"LinkedIn",  icon:"LI", color:[10,102,194] as [number,number,number] },
+  { name:"Twitter/X", icon:"X",  color:[139,92,246] as [number,number,number] },
+  { name:"TikTok",    icon:"TT", color:[0,242,234] as [number,number,number] },
+  { name:"Blog",      icon:"BL", color:[168,85,247] as [number,number,number] },
+  { name:"YouTube",   icon:"YT", color:[255,0,0] as [number,number,number] },
+];
+const PLAT_TITLES = [
+  ["5 Growth Hacks That Tripled Following","7 Scroll-Stopping Carousels","The Instagram Algorithm Explained","10K Followers in 90 Days","The Reel Formula: 100K+ Views","Stop Posting Random Content","Why Stories Outperform Feed","3 Hooks That Stop the Scroll","From 0 to 50K Strategy","Reels That Actually Convert","Aesthetic Consistency Guide","Behind the Scenes Content","Engagement Rate Secrets","Brand Story in 60 Seconds","Content Batching Method","Carousel Design That Saves"],
+  ["Why B2B Leaders Rethink Content","500 Leads from One Post","Why Most B2B Content Fails","The LinkedIn Algorithm 2026","7 Post Formats Executives Love","Company Page 10x in 6 Months","Cold Outreach Framework","Authenticity Beats Polish","From 200 to 20K Followers","Our Most Viral Post Formula","B2B Content Calendar Guide","Newsletter Strategy","The Comment Strategy","Followers to Customers","Thought Leadership Playbook","LinkedIn Analytics Guide"],
+  ["Thread: 7 content truths","The secret to going viral 🧵","Thread: 10,000 posts analyzed","Thread: How we 10x'd reach","Thread: 5 frameworks that convert","The engagement hack","Thread: Our workflow","Thread: Perfect post anatomy","Thread: 12 lessons from creators","How I got 100K followers","Twitter Lists for Business","Retweet Strategy Guide","Write Threads That Convert","Pinned Tweet Optimization","Quote Tweet Growth Strategy","Twitter SEO in 2026"],
+  ["POV: Content strategy clicks","3x/day for 30 days experiment","Content trick went viral 👀","TikTok growth hack 2026","AI writes all your content","Day 1 vs Day 365","60-second viral formula","$0 ads. 1M reached.","We A/B tested 50 hooks","Trending sound strategy","Duet Strategy for Brands","TikTok SEO Guide 2026","Comment Section Strategy","Going Viral Without Dancing","Niche Content Formula","Raw vs Polished Content"],
+  ["Complete Content Marketing Guide 2026","15 Strategies for Organic Traffic","AI-Powered Content Guide","Content Marketing ROI Breakdown","10 Repurposing Strategies","Content That Ranks on Google","The Distribution Framework","50K Visits in 90 Days","Anatomy of a Viral Post","Content Clusters SEO Strategy","Topic Cluster Guide","The Pillar Page Blueprint","How to Repurpose Blog Posts","Internal Linking Authority","Long-Form Content Formula","Blog to Video Content Strategy"],
+  ["We Tested 5 Content Strategies","YouTube Algorithm 2026 Guide","100K Views Without Going Viral","Film 30 Videos in One Day","0 to 100K Subscribers Playbook","Hook Formula for Watch Time","1,000 Viral Videos Analyzed","Why Shorts Changed YouTube","Repurpose One Video Into 15","Perfect Upload Schedule","Thumbnail A/B Testing Guide","Description Template","Building a YouTube Funnel","Community Tab Strategy","Monetization Beyond AdSense","Watch Time Optimization Tips"],
+];
+const CONTENT_TYPES = ["Carousel","Reel","Story","Blog Post","Thread","Short","Article","Poll","Infographic"];
+const TIMES = ["9:00 AM","10:30 AM","12:00 PM","1:15 PM","3:00 PM","4:30 PM","6:00 PM","7:45 PM"];
+const ENGAGEMENTS = ["1.2k likes","847 likes","2.3k views","412 shares","156 comments","3.1k reach","967 saves"];
+
+function pick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+interface SonarPing {
+  platIdx: number; angle: number;
+  r: number; maxR: number; // radius
+  title: string; contentType: string; time: string; engagement: string;
+  birthT: number; speed: number; id: number;
+}
+
+const canvas = document.querySelector<HTMLCanvasElement>('.pub-waveform-canvas')!;
+const wrap = document.getElementById('hero-wrap')!;
+const ctx = canvas.getContext('2d')!;
+let dpr=1, mouse: {x:number;y:number}|null=null, hovPing: SonarPing|null=null;
+let pings: SonarPing[] = [];
+let nextId=0, totalEmitted=0;
+let lastSpawnT=0;
+let voiceConsistency=94.2;
+
+function rrect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  c.beginPath(); c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.quadraticCurveTo(x+w,y,x+w,y+r);
+  c.lineTo(x+w,y+h-r); c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  c.lineTo(x+r,y+h); c.quadraticCurveTo(x,y+h,x,y+h-r);
+  c.lineTo(x,y+r); c.quadraticCurveTo(x,y,x+r,y); c.closePath();
+}
+
+function drawTooltip(ping: SonarPing, px: number, py: number) {
+  const W=canvas.width/dpr;
+  const plat=PLATFORMS[ping.platIdx]; const [r,g,b]=plat.color;
+  const tw=280, th=128;
+  let tx=px+12, ty=py-th/2;
+  if (tx+tw>W-8) tx=px-tw-12;
+  ty=Math.max(8,Math.min(canvas.height/dpr-th-8,ty));
+  ctx.save();
+  ctx.shadowColor=`rgba(${r},${g},${b},0.3)`; ctx.shadowBlur=22;
+  rrect(ctx,tx,ty,tw,th,10); ctx.fillStyle='rgba(6,7,18,0.92)'; ctx.fill(); ctx.shadowBlur=0;
+  rrect(ctx,tx,ty,tw,th,10); ctx.fillStyle=`rgba(${r},${g},${b},0.08)`; ctx.fill();
+  ctx.strokeStyle=`rgba(${r},${g},${b},0.3)`; ctx.lineWidth=1; ctx.stroke();
+  rrect(ctx,tx,ty,tw,3,3); ctx.fillStyle=`rgb(${r},${g},${b})`; ctx.globalAlpha=0.6; ctx.fill();
+  ctx.globalAlpha=1; ctx.textAlign='left';
+  ctx.fillStyle=`rgb(${r},${g},${b})`; ctx.font='bold 11px "SF Mono",monospace';
+  ctx.fillText(`${plat.icon}  ${plat.name}`,tx+12,ty+22);
+  ctx.fillStyle='#ffffff'; ctx.globalAlpha=0.45; ctx.font='10px "SF Mono",monospace';
+  ctx.textAlign='right'; ctx.fillText(ping.contentType.toUpperCase(),tx+tw-12,ty+22);
+  ctx.textAlign='left'; ctx.globalAlpha=1;
+  ctx.fillStyle='#ffffff'; ctx.font='500 13px -apple-system,sans-serif';
+  ctx.save(); ctx.beginPath(); ctx.rect(tx+12,ty+28,tw-24,18); ctx.clip();
+  ctx.fillText(ping.title,tx+12,ty+42); ctx.restore();
+  ctx.globalAlpha=0.4; ctx.font='9px "SF Mono",monospace';
+  ctx.fillText(ping.time,tx+12,ty+60);
+  ctx.globalAlpha=0.7; ctx.fillStyle='rgba(74,222,128,0.9)'; ctx.fillText('● Published',tx+80+12,ty+60);
+  ctx.globalAlpha=0.8; ctx.fillStyle='rgba(74,222,128,0.9)'; ctx.fillText(ping.engagement,tx+12,ty+76);
+  ctx.globalAlpha=0.5; ctx.fillStyle='rgba(168,85,247,0.9)'; ctx.font='8px "SF Mono",monospace';
+  ctx.fillText(`Voice consistency: ${voiceConsistency.toFixed(1)}%`,tx+12,ty+94);
+  ctx.restore();
+}
+
+function resize() {
+  dpr=window.devicePixelRatio||1;
+  const r=wrap.getBoundingClientRect();
+  const w=Math.round(r.width), h=Math.round(r.height);
+  canvas.width=w*dpr; canvas.height=h*dpr;
+  canvas.style.width=`${w}px`; canvas.style.height=`${h}px`;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  pings=[];
+}
+
+function frame() {
+  requestAnimationFrame(frame);
+  const W=canvas.width/dpr, H=canvas.height/dpr;
+  const t=performance.now()*0.001;
+  ctx.clearRect(0,0,W,H);
+
+  const cx=W/2, cy=H*0.5;
+  const maxR=Math.min(W,H)*0.46;
+
+  // Voice consistency drift
+  voiceConsistency=94.2+Math.sin(t*0.3)*0.8;
+
+  // Spawn pings
+  if (t-lastSpawnT>0.9) {
+    const p=Math.floor(Math.random()*6);
+    const angle=-Math.PI/2+(Math.random()-0.5)*Math.PI*1.8; // mostly upward fan
+    pings.push({ platIdx:p, angle, r:20, maxR:maxR*(0.7+Math.random()*0.3),
+      title:pick(PLAT_TITLES[p]), contentType:pick(CONTENT_TYPES),
+      time:pick(TIMES), engagement:pick(ENGAGEMENTS),
+      birthT:t, speed:50+Math.random()*60, id:nextId++ });
+    totalEmitted++; lastSpawnT=t;
+  }
+
+  // Remove dead pings
+  pings=pings.filter(p=>p.r<p.maxR);
+
+  // Draw waveform (central sine wave)
+  ctx.save();
+  const waveW=W*0.55, waveH=H*0.12;
+  const waveX=cx-waveW/2, waveY=cy;
+  const pts=80;
+  ctx.beginPath();
+  for (let i=0;i<=pts;i++) {
+    const px2=waveX+i*(waveW/pts);
+    const phase=i*(Math.PI*4/pts)-t*3;
+    const amp=Math.sin(phase)*waveH*0.5*(1+Math.sin(t*0.7)*0.2);
+    if (i===0) ctx.moveTo(px2,waveY+amp); else ctx.lineTo(px2,waveY+amp);
+  }
+  const wg=ctx.createLinearGradient(waveX,0,waveX+waveW,0);
+  wg.addColorStop(0,'rgba(168,85,247,0)'); wg.addColorStop(0.5,'rgba(168,85,247,0.7)'); wg.addColorStop(1,'rgba(168,85,247,0)');
+  ctx.strokeStyle=wg; ctx.lineWidth=2; ctx.stroke();
+  // Glow copy
+  ctx.shadowColor='rgba(168,85,247,0.4)'; ctx.shadowBlur=12; ctx.stroke();
+  ctx.restore();
+
+  // Central node
+  ctx.save();
+  const cGlow=ctx.createRadialGradient(cx,cy,0,cx,cy,32);
+  cGlow.addColorStop(0,'rgba(168,85,247,0.3)'); cGlow.addColorStop(1,'rgba(168,85,247,0)');
+  ctx.fillStyle=cGlow; ctx.beginPath(); ctx.arc(cx,cy,32,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='rgba(168,85,247,0.8)'; ctx.strokeStyle='rgba(168,85,247,0.4)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.arc(cx,cy,10,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle='#fff'; ctx.globalAlpha=0.8; ctx.font='bold 9px "SF Mono",monospace'; ctx.textAlign='center';
+  ctx.fillText('AI',cx,cy+3);
+  ctx.restore();
+
+  // Update and draw pings
+  hovPing=null; let bestDist=18;
+  for (const ping of pings) {
+    ping.r+=ping.speed*(1/60);
+    const [r,g,b]=PLATFORMS[ping.platIdx].color;
+    const progress=ping.r/ping.maxR;
+    const alpha=Math.max(0,1-progress)*0.8;
+    const px2=cx+ping.r*Math.cos(ping.angle);
+    const py2=cy+ping.r*Math.sin(ping.angle);
+
+    // Trail
+    ctx.save();
+    ctx.strokeStyle=`rgba(${r},${g},${b},${alpha*0.3})`; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(px2,py2); ctx.stroke();
+
+    // Dot
+    if (alpha>0.05) {
+      const sz=4+Math.sin(ping.r*0.1)*1;
+      if (mouse) {
+        const dx=px2-mouse.x, dy=py2-mouse.y;
+        const d=Math.sqrt(dx*dx+dy*dy);
+        if (d<bestDist) { bestDist=d; hovPing=ping; }
+      }
+      const isHov=hovPing===ping;
+      ctx.globalAlpha=isHov?1:alpha;
+      ctx.shadowColor=`rgb(${r},${g},${b})`; ctx.shadowBlur=isHov?14:6;
+      ctx.fillStyle=`rgb(${r},${g},${b})`;
+      ctx.beginPath(); ctx.arc(px2,py2,isHov?sz*2:sz,0,Math.PI*2); ctx.fill();
+
+      // Platform icon label near dot
+      if (alpha>0.5) {
+        ctx.globalAlpha=alpha*0.7; ctx.fillStyle=`rgb(${r},${g},${b})`;
+        ctx.font='7px "SF Mono",monospace'; ctx.textAlign='center';
+        ctx.fillText(PLATFORMS[ping.platIdx].icon,px2,py2-sz-3);
+      }
+    }
+    ctx.restore();
+  }
+
+  // Tooltip
+  if (hovPing) {
+    const px2=cx+hovPing.r*Math.cos(hovPing.angle);
+    const py2=cy+hovPing.r*Math.sin(hovPing.angle);
+    drawTooltip(hovPing,px2,py2);
+  }
+
+  // Platform legend
+  ctx.save(); ctx.font='8px "SF Mono",monospace';
+  for (let i=0;i<PLATFORMS.length;i++) {
+    const p=PLATFORMS[i]; const lx=W-100, ly=22+i*14;
+    ctx.globalAlpha=0.55; ctx.fillStyle=`rgb(${p.color[0]},${p.color[1]},${p.color[2]})`;
+    ctx.beginPath(); ctx.arc(lx,ly-3,3,0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha=0.35; ctx.fillStyle='#ffffff'; ctx.textAlign='left';
+    ctx.fillText(p.name,lx+8,ly);
+  }
+  ctx.restore();
+
+  // Stats
+  ctx.save(); ctx.textAlign='left';
+  ctx.fillStyle='#a855f7'; ctx.globalAlpha=0.85; ctx.font='bold 12px "SF Mono",monospace';
+  ctx.fillText('BRAND VOICE WAVEFORM',20,26);
+  ctx.globalAlpha=0.4; ctx.font='9px "SF Mono",monospace'; ctx.fillStyle='#ffffff';
+  ctx.fillText(`${totalEmitted} pieces emitted  ·  ${pings.length} active pings  ·  Voice consistency: ${voiceConsistency.toFixed(1)}%`,20,40);
+  ctx.restore();
+}
+
+wrap.addEventListener('mousemove',(e)=>{ const r=wrap.getBoundingClientRect(); mouse={x:e.clientX-r.left,y:e.clientY-r.top}; });
+wrap.addEventListener('mouseleave',()=>{ mouse=null; hovPing=null; });
+const ro=new ResizeObserver(()=>resize()); ro.observe(wrap);
+resize(); requestAnimationFrame(frame);
+requestAnimationFrame(()=>{ canvas.style.opacity='1'; });
+const g=wrap.querySelector('.grid-texture') as HTMLElement|null; if(g) g.style.display='none';
+
+}); // end ric
+</script>

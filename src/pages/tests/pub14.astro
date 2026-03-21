@@ -1,0 +1,320 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloPublish — Neural Network | Pello" description="Watch PelloPublish's AI neural network transform brand inputs into published content — live pulses flow through layers from topics to finished posts.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="pub-neural-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+    <HowItWorks />
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link { position:absolute;top:-100%;left:1rem;z-index:9999;padding:.75rem 1.25rem;background:var(--color-brand-primary);color:white;font-weight:600;border-radius:0 0 .5rem .5rem;text-decoration:none;transition:top .1s; }
+  #skip-link:focus { top:0; }
+  #hero-wrap .url-input-wrap,.final-cta .url-input-wrap { background:rgba(255,255,255,0.06)!important;backdrop-filter:blur(24px) saturate(1.4);-webkit-backdrop-filter:blur(24px) saturate(1.4);border:1px solid rgba(255,255,255,0.12)!important;box-shadow:0 4px 30px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.05); }
+  #hero-wrap .hero-panel { background:rgba(6,7,18,0.55)!important;backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(255,255,255,0.12)!important; }
+  #hero-wrap .panel-source-row { border-bottom:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .core-inner { background:rgba(0,0,0,0.15)!important;border:1px solid rgba(255,255,255,0.1)!important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px); }
+  #hero-wrap .panel-core-section { border-bottom:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .channel-node { background:rgba(255,255,255,0.03)!important;border:1px solid rgba(255,255,255,0.1)!important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px); }
+  #hero-wrap .panel-header-bar { border-bottom:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .panel-ready-bar { border-top:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .node-stat-text { color:#a78bfa!important; }
+  #hero-wrap .hero-panel-mobile { background:rgba(10,10,20,0.3);backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(255,255,255,0.08);border-radius:1.25rem;padding:1rem;box-shadow:0 8px 32px rgba(0,0,0,0.3); }
+  .final-cta { background:rgba(20,15,40,0.35)!important;backdrop-filter:blur(24px) saturate(1.4)!important;-webkit-backdrop-filter:blur(24px) saturate(1.4)!important;border-color:rgba(99,102,241,0.15)!important;box-shadow:0 8px 40px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.04)!important;overflow:hidden;position:relative; }
+  .final-cta > .absolute.inset-0.pointer-events-none { display:none!important; }
+  #hero-wrap .grid-texture,#hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display:none!important; }
+  #hero { background:transparent!important; }
+  #hero-headline,#hero-sub,#hero-headline-m,#hero-sub-m { display:none!important; }
+  #hero-panel,.hero-panel,.hero-panel-mobile { display:none!important; }
+  #hero-eyebrow,#hero-eyebrow-m,#hero-cta-row,#hero-cta-m,.url-input-wrap,.hero-panel-mobile { display:none!important; }
+</style>
+
+<script>
+const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+ric(() => {
+
+const PLATFORMS = [
+  { name:"Instagram", icon:"IG", color:[225,48,108] as [number,number,number] },
+  { name:"LinkedIn",  icon:"LI", color:[10,102,194] as [number,number,number] },
+  { name:"Twitter/X", icon:"X",  color:[139,92,246] as [number,number,number] },
+  { name:"TikTok",    icon:"TT", color:[0,242,234] as [number,number,number] },
+  { name:"Blog",      icon:"BL", color:[168,85,247] as [number,number,number] },
+  { name:"YouTube",   icon:"YT", color:[255,0,0] as [number,number,number] },
+];
+const PLAT_TITLES = [
+  ["5 Growth Hacks That Tripled Our Following","7 Scroll-Stopping Carousel Ideas","The Instagram Algorithm Explained","How We Grew to 10K in 90 Days","The Reel Formula: 100K+ Views","Stop Posting Random Content","Why Stories Outperform Feed Posts","3 Hooks That Stop the Scroll","From 0 to 50K: Our Strategy","Reels That Actually Convert"],
+  ["Why B2B Leaders Are Rethinking Content","How We Generated 500 Leads with One Post","Why Most B2B Content Fails","The LinkedIn Algorithm in 2026","7 Post Formats Executives Love","We Grew Our Page 10x in 6 Months","The Cold Outreach Framework","Why Authenticity Beats Polish","From 200 to 20K Followers","Our Most Viral Post Formula"],
+  ["Thread: 7 content truths no one shares","The secret to going viral 🧵","Thread: I analyzed 10,000 posts","Thread: How we 10x'd reach","Thread: 5 frameworks that convert","The engagement hack that works","Thread: Our complete workflow","Thread: The anatomy of a perfect post","Thread: 12 lessons from top creators","Everything I know about going viral"],
+  ["POV: When your content strategy clicks","We tried 3x/day for 30 days","This content trick went viral twice 👀","TikTok growth hack 2026","POV: AI writes your content","Day 1 vs Day 365 content","60-second viral formula","I spent $0 on ads. 1M reached.","We A/B tested 50 hooks","The trending sound strategy"],
+  ["The Complete Guide to Content Marketing 2026","15 Strategies for Organic Traffic","The AI-Powered Content Guide","Content Marketing ROI Breakdown","10 Repurposing Strategies","How to Write Content That Ranks","The Distribution Framework","50K Visits in 90 Days Breakdown","The Anatomy of a Viral Blog Post","Content Clusters SEO Strategy"],
+  ["We Tested 5 Content Strategies","The YouTube Algorithm 2026 Guide","100K Views Without Going Viral","Film 30 Videos in One Day","0 to 100K Subscribers Playbook","The Hook Formula for Watch Time","1,000 Viral Videos Analyzed","Why Shorts Changed YouTube","The Calendar That Keeps Consistent","Repurpose One Video Into 15 Pieces"],
+];
+
+const INPUT_LABELS = ["Brand Voice","Topics","Audience","Keywords","Tone","Competitor Data"];
+const HIDDEN_LABELS = [["Semantic\nAnalysis","Format\nSelection","Platform\nAdapt","Voice\nMatch","SEO\nOptim","Trend\nData"],["Hook\nGenerate","Body\nWrite","CTA\nCraft","Visual\nPlan","Schedule\nCalc","Quality\nCheck"]];
+
+function pick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+interface NNode { x: number; y: number; layer: number; idx: number; label?: string; platIdx?: number; title?: string; glowT: number; }
+interface Pulse { fromNode: NNode; toNode: NNode; progress: number; color: [number,number,number]; }
+
+const canvas = document.querySelector<HTMLCanvasElement>('.pub-neural-canvas')!;
+const wrap = document.getElementById('hero-wrap')!;
+const ctx = canvas.getContext('2d')!;
+let dpr = 1;
+let mouse: {x:number;y:number}|null = null;
+let hovNode: NNode|null = null;
+let nodes: NNode[][] = [];
+let pulses: Pulse[] = [];
+let publishedCount = 0;
+let lastPulseSpawnT = 0;
+
+function buildNetwork(W: number, H: number) {
+  nodes = [];
+  pulses = [];
+  const layers = [6, 6, 6, 6]; // input, hidden1, hidden2, output(6 platforms)
+  const layerX = [W*0.08, W*0.33, W*0.58, W*0.88];
+
+  for (let l=0;l<layers.length;l++) {
+    const count=layers[l];
+    const layerNodes: NNode[] = [];
+    for (let i=0;i<count;i++) {
+      const y=H*0.15+(H*0.7)*(i/(count-1));
+      layerNodes.push({
+        x: layerX[l], y,
+        layer: l, idx: i,
+        label: l===0?INPUT_LABELS[i]:(l===1||l===2)?HIDDEN_LABELS[l-1][i]:undefined,
+        platIdx: l===3?i:undefined,
+        title: l===3?pick(PLAT_TITLES[i]):undefined,
+        glowT: -99,
+      });
+    }
+    nodes.push(layerNodes);
+  }
+}
+
+function spawnPulse() {
+  if (nodes.length<4) return;
+  const inNode=nodes[0][Math.floor(Math.random()*6)];
+  // Cascade through layers
+  let prev=inNode;
+  for (let l=1;l<4;l++) {
+    const nextNode=nodes[l][Math.floor(Math.random()*nodes[l].length)];
+    const [r,g,b]=l===3?PLATFORMS[nextNode.platIdx!].color:[168,85,247];
+    pulses.push({ fromNode:prev, toNode:nextNode, progress:0, color:[r,g,b] as [number,number,number] });
+    prev=nextNode;
+  }
+}
+
+function rrect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  c.beginPath(); c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.quadraticCurveTo(x+w,y,x+w,y+r);
+  c.lineTo(x+w,y+h-r); c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  c.lineTo(x+r,y+h); c.quadraticCurveTo(x,y+h,x,y+h-r);
+  c.lineTo(x,y+r); c.quadraticCurveTo(x,y,x+r,y); c.closePath();
+}
+
+function drawTooltip(n: NNode) {
+  if (n.platIdx===undefined) return;
+  const W=canvas.width/dpr;
+  const plat=PLATFORMS[n.platIdx]; const [r,g,b]=plat.color;
+  const tw=280, th=96;
+  let tx=n.x+20, ty=n.y-th/2;
+  if (tx+tw>W-8) tx=n.x-tw-20;
+  ty=Math.max(8,Math.min(canvas.height/dpr-th-8,ty));
+  ctx.save();
+  ctx.shadowColor=`rgba(${r},${g},${b},0.3)`; ctx.shadowBlur=22;
+  rrect(ctx,tx,ty,tw,th,10); ctx.fillStyle='rgba(6,7,18,0.92)'; ctx.fill(); ctx.shadowBlur=0;
+  rrect(ctx,tx,ty,tw,th,10); ctx.fillStyle=`rgba(${r},${g},${b},0.08)`; ctx.fill();
+  ctx.strokeStyle=`rgba(${r},${g},${b},0.3)`; ctx.lineWidth=1; ctx.stroke();
+  rrect(ctx,tx,ty,tw,3,3); ctx.fillStyle=`rgb(${r},${g},${b})`; ctx.globalAlpha=0.6; ctx.fill();
+  ctx.globalAlpha=1; ctx.textAlign='left';
+  ctx.fillStyle=`rgb(${r},${g},${b})`; ctx.font='bold 11px "SF Mono",monospace';
+  ctx.fillText(`OUTPUT  ·  ${plat.icon}  ${plat.name}`,tx+12,ty+22);
+  ctx.fillStyle='#ffffff'; ctx.font='500 13px -apple-system,sans-serif';
+  ctx.save(); ctx.beginPath(); ctx.rect(tx+12,ty+28,tw-24,18); ctx.clip();
+  ctx.fillText(n.title||'',tx+12,ty+42); ctx.restore();
+  ctx.globalAlpha=0.4; ctx.font='9px "SF Mono",monospace';
+  ctx.fillText('Generated by AI  ·  Ready to publish',tx+12,ty+62);
+  ctx.globalAlpha=0.7; ctx.fillStyle='rgba(74,222,128,0.9)';
+  ctx.fillText('● Ready',tx+12,ty+76);
+  ctx.restore();
+}
+
+function resize() {
+  dpr=window.devicePixelRatio||1;
+  const r=wrap.getBoundingClientRect();
+  const w=Math.round(r.width), h=Math.round(r.height);
+  canvas.width=w*dpr; canvas.height=h*dpr;
+  canvas.style.width=`${w}px`; canvas.style.height=`${h}px`;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  buildNetwork(w,h);
+}
+
+let lastT=0;
+
+function frame() {
+  requestAnimationFrame(frame);
+  const W=canvas.width/dpr, H=canvas.height/dpr;
+  const t=performance.now()*0.001;
+  const dt=Math.min(t-lastT,0.05); lastT=t;
+  ctx.clearRect(0,0,W,H);
+
+  if (nodes.length===0) return;
+
+  // Spawn pulses
+  if (t-lastPulseSpawnT>0.6) { spawnPulse(); lastPulseSpawnT=t; }
+
+  // Layer labels
+  const LAYER_LABELS = ["INPUT","HIDDEN L1","HIDDEN L2","OUTPUT"];
+  const LAYER_SUBLABELS = ["Brand signals","Semantic processing","Content shaping","Published pieces"];
+
+  // Draw connections (all, subtle)
+  ctx.save();
+  for (let l=0;l<nodes.length-1;l++) {
+    for (const a of nodes[l]) {
+      for (const b of nodes[l+1]) {
+        ctx.globalAlpha=0.04; ctx.strokeStyle='rgba(168,85,247,1)'; ctx.lineWidth=0.5;
+        ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+      }
+    }
+  }
+  ctx.restore();
+
+  // Update & draw pulses
+  const toRemove: number[] = [];
+  for (let pi=0;pi<pulses.length;pi++) {
+    const p=pulses[pi];
+    p.progress=Math.min(1,p.progress+dt*1.2);
+    if (p.progress>=1) {
+      p.toNode.glowT=t;
+      if (p.toNode.layer===3) publishedCount++;
+      toRemove.push(pi);
+      continue;
+    }
+    const px=p.fromNode.x+(p.toNode.x-p.fromNode.x)*p.progress;
+    const py2=p.fromNode.y+(p.toNode.y-p.fromNode.y)*p.progress;
+    const [r,g,b]=p.color;
+    ctx.save();
+    // Connection line alpha
+    ctx.globalAlpha=0.25; ctx.strokeStyle=`rgb(${r},${g},${b})`; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(p.fromNode.x,p.fromNode.y); ctx.lineTo(p.toNode.x,p.toNode.y); ctx.stroke();
+    // Pulse dot
+    ctx.globalAlpha=0.9; ctx.shadowColor=`rgb(${r},${g},${b})`; ctx.shadowBlur=10;
+    ctx.fillStyle=`rgb(${r},${g},${b})`;
+    ctx.beginPath(); ctx.arc(px,py2,3.5,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  for (let i=toRemove.length-1;i>=0;i--) pulses.splice(toRemove[i],1);
+
+  // Hit test
+  hovNode=null;
+  if (mouse) {
+    let best=24;
+    for (const layer of nodes) for (const n of layer) {
+      const dx=n.x-mouse.x, dy=n.y-mouse.y;
+      const d=Math.sqrt(dx*dx+dy*dy);
+      if (d<best) { best=d; hovNode=n; }
+    }
+  }
+
+  // Draw nodes
+  for (let l=0;l<nodes.length;l++) {
+    // Layer label
+    const lx=nodes[l][0].x;
+    ctx.save();
+    ctx.textAlign='center'; ctx.fillStyle='rgba(168,85,247,0.55)'; ctx.font='bold 9px "SF Mono",monospace';
+    ctx.fillText(LAYER_LABELS[l],lx,H*0.08);
+    ctx.globalAlpha=0.3; ctx.fillStyle='#ffffff'; ctx.font='8px "SF Mono",monospace';
+    ctx.fillText(LAYER_SUBLABELS[l],lx,H*0.08+12);
+    ctx.restore();
+
+    for (const n of nodes[l]) {
+      const glowAge=t-n.glowT;
+      const glow=glowAge<0.8?Math.max(0,1-glowAge/0.8):0;
+      const isHov=hovNode===n;
+      const R=l===3?14:10;
+
+      // Node color
+      let nr=168, ng=85, nb=247;
+      if (l===3 && n.platIdx!==undefined) { [nr,ng,nb]=PLATFORMS[n.platIdx].color; }
+      if (l===0) { nr=100; ng=116; nb=139; }
+
+      ctx.save();
+      if (isHov||glow>0) { ctx.shadowColor=`rgb(${nr},${ng},${nb})`; ctx.shadowBlur=20*Math.max(glow,isHov?1:0); }
+      ctx.globalAlpha=isHov?1:0.7+glow*0.3;
+      // Node circle
+      ctx.fillStyle=`rgba(${nr},${ng},${nb},${isHov?0.35:0.18+glow*0.2})`;
+      ctx.beginPath(); ctx.arc(n.x,n.y,R,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle=`rgba(${nr},${ng},${nb},${isHov?0.9:0.5+glow*0.4})`; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.arc(n.x,n.y,R,0,Math.PI*2); ctx.stroke();
+
+      // Inner dot
+      ctx.fillStyle=`rgba(${nr},${ng},${nb},${0.6+glow*0.4})`;
+      ctx.beginPath(); ctx.arc(n.x,n.y,R*0.4,0,Math.PI*2); ctx.fill();
+
+      // Labels
+      ctx.globalAlpha=isHov?0.9:0.45;
+      ctx.fillStyle='#ffffff'; ctx.font='7px "SF Mono",monospace'; ctx.textAlign='center';
+      if (l===0) ctx.fillText(INPUT_LABELS[n.idx],n.x,n.y+R+11);
+      if (l===3 && n.platIdx!==undefined) {
+        ctx.fillStyle=`rgb(${nr},${ng},${nb})`; ctx.globalAlpha=0.8;
+        ctx.fillText(PLATFORMS[n.platIdx].icon,n.x,n.y+4);
+      }
+      ctx.restore();
+    }
+  }
+
+  // Tooltip for hovered output node
+  if (hovNode && hovNode.layer===3) drawTooltip(hovNode);
+
+  // Stats
+  ctx.save(); ctx.textAlign='left';
+  ctx.fillStyle='#a855f7'; ctx.globalAlpha=0.85; ctx.font='bold 12px "SF Mono",monospace';
+  ctx.fillText('AI NEURAL NETWORK',20,26);
+  ctx.globalAlpha=0.4; ctx.font='9px "SF Mono",monospace'; ctx.fillStyle='#ffffff';
+  ctx.fillText(`${publishedCount} pieces generated  ·  ${pulses.length} active pulses  ·  6 output channels`,20,40);
+  ctx.restore();
+}
+
+wrap.addEventListener('mousemove',(e)=>{ const r=wrap.getBoundingClientRect(); mouse={x:e.clientX-r.left,y:e.clientY-r.top}; });
+wrap.addEventListener('mouseleave',()=>{ mouse=null; hovNode=null; });
+const ro=new ResizeObserver(()=>{ resize(); lastT=performance.now()*0.001; }); ro.observe(wrap);
+resize(); lastT=performance.now()*0.001;
+requestAnimationFrame(frame);
+requestAnimationFrame(()=>{ canvas.style.opacity='1'; });
+const g=wrap.querySelector('.grid-texture') as HTMLElement|null; if(g) g.style.display='none';
+
+}); // end ric
+</script>

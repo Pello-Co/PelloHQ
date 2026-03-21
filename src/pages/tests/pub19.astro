@@ -1,0 +1,320 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloPublish — Dispatch Board | Pello" description="PelloPublish's live dispatch board — watch content flip from WRITING to EDITING to SCHEDULED to PUBLISHED in real time across every platform.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="pub-dispatch-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+    <HowItWorks />
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link { position:absolute;top:-100%;left:1rem;z-index:9999;padding:.75rem 1.25rem;background:var(--color-brand-primary);color:white;font-weight:600;border-radius:0 0 .5rem .5rem;text-decoration:none;transition:top .1s; }
+  #skip-link:focus { top:0; }
+  #hero-wrap .url-input-wrap,.final-cta .url-input-wrap { background:rgba(255,255,255,0.06)!important;backdrop-filter:blur(24px) saturate(1.4);-webkit-backdrop-filter:blur(24px) saturate(1.4);border:1px solid rgba(255,255,255,0.12)!important;box-shadow:0 4px 30px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.05); }
+  #hero-wrap .hero-panel { background:rgba(6,7,18,0.55)!important;backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(255,255,255,0.12)!important; }
+  #hero-wrap .panel-source-row { border-bottom:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .core-inner { background:rgba(0,0,0,0.15)!important;border:1px solid rgba(255,255,255,0.1)!important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px); }
+  #hero-wrap .panel-core-section { border-bottom:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .channel-node { background:rgba(255,255,255,0.03)!important;border:1px solid rgba(255,255,255,0.1)!important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px); }
+  #hero-wrap .panel-header-bar { border-bottom:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .panel-ready-bar { border-top:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .node-stat-text { color:#a78bfa!important; }
+  #hero-wrap .hero-panel-mobile { background:rgba(10,10,20,0.3);backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(255,255,255,0.08);border-radius:1.25rem;padding:1rem;box-shadow:0 8px 32px rgba(0,0,0,0.3); }
+  .final-cta { background:rgba(20,15,40,0.35)!important;backdrop-filter:blur(24px) saturate(1.4)!important;-webkit-backdrop-filter:blur(24px) saturate(1.4)!important;border-color:rgba(99,102,241,0.15)!important;box-shadow:0 8px 40px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.04)!important;overflow:hidden;position:relative; }
+  .final-cta > .absolute.inset-0.pointer-events-none { display:none!important; }
+  #hero-wrap .grid-texture,#hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display:none!important; }
+  #hero { background:transparent!important; }
+  #hero-headline,#hero-sub,#hero-headline-m,#hero-sub-m { display:none!important; }
+  #hero-panel,.hero-panel,.hero-panel-mobile { display:none!important; }
+  #hero-eyebrow,#hero-eyebrow-m,#hero-cta-row,#hero-cta-m,.url-input-wrap,.hero-panel-mobile { display:none!important; }
+</style>
+
+<script>
+const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+ric(() => {
+
+const PLATFORMS = [
+  { name:"Instagram", icon:"IG", color:[225,48,108] as [number,number,number] },
+  { name:"LinkedIn",  icon:"LI", color:[10,102,194] as [number,number,number] },
+  { name:"Twitter/X", icon:"X",  color:[139,92,246] as [number,number,number] },
+  { name:"TikTok",    icon:"TT", color:[0,242,234] as [number,number,number] },
+  { name:"Blog",      icon:"BL", color:[168,85,247] as [number,number,number] },
+  { name:"YouTube",   icon:"YT", color:[255,0,0] as [number,number,number] },
+];
+const PLAT_TITLES = [
+  ["5 Growth Hacks That Tripled Following","7 Scroll-Stopping Carousels","The Instagram Algorithm Explained","10K Followers in 90 Days","The Reel Formula: 100K+ Views","Stop Posting Random Content","Why Stories Outperform Feed","3 Hooks That Stop the Scroll","From 0 to 50K Strategy","Reels That Actually Convert","Aesthetic Consistency Guide","Behind the Scenes Content","Engagement Rate Secrets","Brand Story in 60 Seconds","Content Batching Method"],
+  ["Why B2B Leaders Rethink Content","500 Leads from One Post","Why Most B2B Content Fails","The LinkedIn Algorithm 2026","7 Post Formats Executives Love","Company Page 10x in 6 Months","Cold Outreach Framework","Authenticity Beats Polish","From 200 to 20K Followers","Our Most Viral Post Formula","B2B Content Calendar Guide","Newsletter Strategy","The Comment Strategy","Followers to Customers","Thought Leadership Playbook"],
+  ["Thread: 7 content truths no one shares","The secret to going viral 🧵","Thread: 10,000 posts analyzed","Thread: How we 10x'd reach","Thread: 5 frameworks that convert","The engagement hack","Thread: Our complete workflow","Thread: Perfect post anatomy","Thread: 12 lessons","How I got 100K followers","Twitter Lists for Business","Retweet Strategy Guide","Write Threads That Convert","Pinned Tweet Optimization","Quote Tweet Growth"],
+  ["POV: Content strategy finally clicks","3x/day for 30 days experiment","Content trick went viral 👀","TikTok growth hack 2026","AI writes all your content","Day 1 vs Day 365","60-second viral formula","$0 ads. 1M reached.","We A/B tested 50 hooks","Trending sound strategy","Duet Strategy for Brands","TikTok SEO Guide 2026","Comment Section Strategy","Going Viral Without Dancing","Niche Content Formula"],
+  ["Complete Content Marketing Guide 2026","15 Strategies for Organic Traffic","AI-Powered Content Guide","Content Marketing ROI Breakdown","10 Repurposing Strategies","Content That Ranks on Google","Distribution Framework","50K Visits in 90 Days","Anatomy of a Viral Post","Content Clusters SEO","Topic Cluster Strategy","The Pillar Page Blueprint","How to Repurpose Posts","Internal Linking Authority","Long-Form Content Formula"],
+  ["We Tested 5 Content Strategies","YouTube Algorithm 2026 Guide","100K Views Without Going Viral","Film 30 Videos in One Day","0 to 100K Subscribers Playbook","Hook Formula for Watch Time","1,000 Viral Videos Analyzed","Why Shorts Changed YouTube","Repurpose One Video x15","Perfect Upload Schedule","Thumbnail A/B Testing","Description Template","Building a YouTube Funnel","Community Tab Strategy","Monetization Beyond AdSense"],
+];
+const TIMES = ["9:00 AM","10:30 AM","12:00 PM","1:15 PM","3:00 PM","4:30 PM","6:00 PM","7:45 PM"];
+const ENGAGEMENTS = ["1.2k likes","847 likes","2.3k views","412 shares","156 comments","3.1k reach","967 saves"];
+const STAGE_LABELS = ["WRITING","EDITING","REVIEWING","SCHEDULED","PUBLISHED"];
+const STAGE_COLORS: [number,number,number][] = [[100,116,139],[139,92,246],[59,130,246],[168,85,247],[74,222,128]];
+
+function pick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+interface BoardRow {
+  platIdx: number; title: string; time: string; engagement: string;
+  stage: number; // 0-4
+  flipProgress: number; // 0=stable, >0=flipping, 1=done
+  flipFrom: number; flipTo: number;
+  lastFlipT: number; nextFlipT: number; id: number;
+  y: number; targetY: number; opacity: number;
+}
+
+const canvas = document.querySelector<HTMLCanvasElement>('.pub-dispatch-canvas')!;
+const wrap = document.getElementById('hero-wrap')!;
+const ctx = canvas.getContext('2d')!;
+let dpr=1, mouse: {x:number;y:number}|null=null, hovRow: BoardRow|null=null;
+let rows: BoardRow[] = [];
+let nextId=0, publishedCount=0, pipelineCount=0;
+let lastNewRowT=0, lastT=0;
+
+function rrect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  c.beginPath(); c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.quadraticCurveTo(x+w,y,x+w,y+r);
+  c.lineTo(x+w,y+h-r); c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  c.lineTo(x+r,y+h); c.quadraticCurveTo(x,y+h,x,y+h-r);
+  c.lineTo(x,y+r); c.quadraticCurveTo(x,y,x+r,y); c.closePath();
+}
+
+function addRow(t: number) {
+  const p=Math.floor(Math.random()*6);
+  const stage=Math.floor(Math.random()*4); // 0-3
+  rows.unshift({ platIdx:p, title:pick(PLAT_TITLES[p]), time:pick(TIMES),
+    engagement:pick(ENGAGEMENTS), stage, flipProgress:-1, flipFrom:stage, flipTo:stage,
+    lastFlipT:t, nextFlipT:t+2+Math.random()*4, id:nextId++,
+    y:0, targetY:0, opacity:0 });
+  pipelineCount++;
+  // Keep max rows
+  if (rows.length>20) rows.pop();
+}
+
+function resize() {
+  dpr=window.devicePixelRatio||1;
+  const r=wrap.getBoundingClientRect();
+  const w=Math.round(r.width), h=Math.round(r.height);
+  canvas.width=w*dpr; canvas.height=h*dpr;
+  canvas.style.width=`${w}px`; canvas.style.height=`${h}px`;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  // Pre-populate
+  rows=[];
+  const nowT=performance.now()*0.001;
+  for (let i=0;i<14;i++) addRow(nowT);
+  publishedCount=0; pipelineCount=rows.length;
+}
+
+function drawTooltip(row: BoardRow, rx: number, ry: number, rw: number, rh: number) {
+  const W=canvas.width/dpr;
+  const plat=PLATFORMS[row.platIdx]; const [r,g,b]=plat.color;
+  const tw=280, th=116;
+  let tx=rx+rw+8, ty=ry+rh/2-th/2;
+  if (tx+tw>W-8) tx=rx-tw-8;
+  ty=Math.max(8,Math.min(canvas.height/dpr-th-8,ty));
+  ctx.save();
+  ctx.shadowColor=`rgba(${r},${g},${b},0.3)`; ctx.shadowBlur=22;
+  rrect(ctx,tx,ty,tw,th,10); ctx.fillStyle='rgba(6,7,18,0.92)'; ctx.fill(); ctx.shadowBlur=0;
+  rrect(ctx,tx,ty,tw,th,10); ctx.fillStyle=`rgba(${r},${g},${b},0.08)`; ctx.fill();
+  ctx.strokeStyle=`rgba(${r},${g},${b},0.3)`; ctx.lineWidth=1; ctx.stroke();
+  rrect(ctx,tx,ty,tw,3,3); ctx.fillStyle=`rgb(${r},${g},${b})`; ctx.globalAlpha=0.6; ctx.fill();
+  ctx.globalAlpha=1; ctx.textAlign='left';
+  ctx.fillStyle=`rgb(${r},${g},${b})`; ctx.font='bold 11px "SF Mono",monospace';
+  ctx.fillText(`${plat.icon}  ${plat.name}`,tx+12,ty+22);
+  const [sr,sg,sb]=STAGE_COLORS[row.stage];
+  ctx.fillStyle=`rgb(${sr},${sg},${sb})`; ctx.textAlign='right'; ctx.font='bold 10px "SF Mono",monospace';
+  ctx.fillText(STAGE_LABELS[row.stage],tx+tw-12,ty+22);
+  ctx.textAlign='left'; ctx.globalAlpha=1;
+  ctx.fillStyle='#ffffff'; ctx.font='500 13px -apple-system,sans-serif';
+  ctx.save(); ctx.beginPath(); ctx.rect(tx+12,ty+28,tw-24,18); ctx.clip();
+  ctx.fillText(row.title,tx+12,ty+42); ctx.restore();
+  ctx.globalAlpha=0.4; ctx.font='9px "SF Mono",monospace';
+  ctx.fillText(row.time,tx+12,ty+60);
+  // Stage progress bar
+  const barW=tw-24;
+  rrect(ctx,tx+12,ty+68,barW,5,3); ctx.fillStyle='rgba(255,255,255,0.08)'; ctx.globalAlpha=0.5; ctx.fill();
+  const prog=(row.stage+1)/5;
+  rrect(ctx,tx+12,ty+68,barW*prog,5,3); ctx.fillStyle=`rgb(${sr},${sg},${sb})`; ctx.globalAlpha=0.7; ctx.fill();
+  if (row.stage>=4) { ctx.globalAlpha=0.8; ctx.fillStyle='rgba(74,222,128,0.9)'; ctx.fillText(row.engagement,tx+12,ty+86); }
+  ctx.restore();
+}
+
+function frame() {
+  requestAnimationFrame(frame);
+  const W=canvas.width/dpr, H=canvas.height/dpr;
+  const t=performance.now()*0.001;
+  const dt=Math.min(t-lastT,0.05); lastT=t;
+  ctx.clearRect(0,0,W,H);
+
+  const HEADER_H=62, ROW_H=34, ROW_GAP=4;
+  const LEFT=16, RIGHT=W-16, BOARD_W=RIGHT-LEFT;
+
+  // Col widths
+  const COL_PLAT=44, COL_STATUS=90, COL_TIME=68, COL_ENG=80;
+  const COL_TITLE=BOARD_W-COL_PLAT-COL_STATUS-COL_TIME-COL_ENG;
+
+  // New row every 2.5s
+  if (t-lastNewRowT>2.5) { addRow(t); lastNewRowT=t; }
+
+  // Update rows
+  hovRow=null;
+  const toRemove: number[]=[];
+  for (let i=0;i<rows.length;i++) {
+    const row=rows[i];
+    const ry=HEADER_H+i*(ROW_H+ROW_GAP);
+
+    // Fade in
+    row.opacity=Math.min(1,row.opacity+dt*4);
+
+    // Stage flip
+    if (row.flipProgress<0 && t>=row.nextFlipT && row.stage<4) {
+      row.flipFrom=row.stage; row.flipTo=row.stage+1;
+      row.flipProgress=0; row.lastFlipT=t;
+    }
+    if (row.flipProgress>=0) {
+      row.flipProgress=Math.min(1,row.flipProgress+dt*3);
+      if (row.flipProgress>=1) {
+        row.stage=row.flipTo;
+        if (row.stage>=4) publishedCount++;
+        row.flipProgress=-1;
+        row.nextFlipT=t+1.5+Math.random()*3;
+      }
+    }
+
+    if (mouse && mouse.x>=LEFT && mouse.x<=RIGHT && mouse.y>=ry && mouse.y<=ry+ROW_H) hovRow=row;
+    if (ry>H) toRemove.push(i);
+  }
+  for (let i=toRemove.length-1;i>=0;i--) rows.splice(toRemove[i],1);
+
+  // Header
+  ctx.save();
+  ctx.textAlign='left'; ctx.fillStyle='#a855f7'; ctx.globalAlpha=0.85; ctx.font='bold 13px "SF Mono",monospace';
+  ctx.fillText('DISPATCH BOARD',LEFT,22);
+  ctx.globalAlpha=0.4; ctx.font='9px "SF Mono",monospace'; ctx.fillStyle='#ffffff';
+  ctx.fillText(`${pipelineCount} in pipeline  ·  ${publishedCount} published today  ·  6 platforms active  ·  LIVE`,LEFT,36);
+
+  // Column headers
+  let hx=LEFT;
+  ctx.globalAlpha=0.35; ctx.font='8px "SF Mono",monospace'; ctx.fillStyle='rgba(168,85,247,1)';
+  ctx.fillText('PLATFORM',hx,HEADER_H-8); hx+=COL_PLAT+8;
+  ctx.fillText('TITLE',hx,HEADER_H-8); hx+=COL_TITLE;
+  ctx.fillText('STATUS',hx,HEADER_H-8); hx+=COL_STATUS;
+  ctx.fillText('TIME',hx,HEADER_H-8); hx+=COL_TIME;
+  ctx.fillText('ENGAGEMENT',hx,HEADER_H-8);
+
+  // Divider line
+  ctx.globalAlpha=0.1; ctx.strokeStyle='rgba(168,85,247,1)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(LEFT,HEADER_H-2); ctx.lineTo(RIGHT,HEADER_H-2); ctx.stroke();
+  ctx.restore();
+
+  // Draw rows
+  for (let i=0;i<rows.length;i++) {
+    const row=rows[i];
+    const ry=HEADER_H+i*(ROW_H+ROW_GAP);
+    if (ry+ROW_H>H-20) continue;
+    const isHov=hovRow===row;
+    const [pr,pg,pb]=PLATFORMS[row.platIdx].color;
+    const [sr,sg,sb]=STAGE_COLORS[row.stage];
+
+    ctx.save();
+    ctx.globalAlpha=row.opacity;
+
+    // Row background
+    rrect(ctx,LEFT,ry,BOARD_W,ROW_H,4);
+    ctx.fillStyle=isHov?`rgba(${pr},${pg},${pb},0.1)`:'rgba(255,255,255,0.025)'; ctx.fill();
+    if (isHov) { ctx.strokeStyle=`rgba(${pr},${pg},${pb},0.3)`; ctx.lineWidth=1; ctx.stroke(); }
+
+    let rx=LEFT;
+
+    // Platform badge
+    ctx.fillStyle=`rgba(${pr},${pg},${pb},0.8)`;
+    rrect(ctx,rx+4,ry+8,30,18,3); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='bold 8px "SF Mono",monospace'; ctx.textAlign='center';
+    ctx.fillText(PLATFORMS[row.platIdx].icon,rx+19,ry+20);
+    rx+=COL_PLAT+8;
+
+    // Title
+    ctx.fillStyle='#fff'; ctx.globalAlpha=isHov?row.opacity:row.opacity*0.7;
+    ctx.font='12px -apple-system,sans-serif'; ctx.textAlign='left';
+    ctx.save(); ctx.beginPath(); ctx.rect(rx,ry,COL_TITLE-8,ROW_H); ctx.clip();
+    ctx.fillText(row.title,rx,ry+ROW_H/2+4); ctx.restore();
+    rx+=COL_TITLE;
+
+    // Status with flip animation
+    const stLabel=STAGE_LABELS[row.flipProgress>=0?row.flipTo:row.stage];
+    const flipAlpha=row.flipProgress>=0?Math.abs(Math.sin(row.flipProgress*Math.PI)):1;
+    ctx.globalAlpha=row.opacity*flipAlpha;
+    rrect(ctx,rx,ry+7,82,20,3);
+    ctx.fillStyle=`rgba(${sr},${sg},${sb},0.2)`; ctx.fill();
+    ctx.strokeStyle=`rgba(${sr},${sg},${sb},0.5)`; ctx.lineWidth=0.8; ctx.stroke();
+    ctx.fillStyle=`rgb(${sr},${sg},${sb})`; ctx.font='bold 8px "SF Mono",monospace'; ctx.textAlign='center';
+    ctx.fillText(stLabel,rx+41,ry+20);
+    ctx.globalAlpha=row.opacity; rx+=COL_STATUS;
+
+    // Time
+    ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.font='9px "SF Mono",monospace'; ctx.textAlign='left';
+    ctx.fillText(row.time,rx,ry+ROW_H/2+4); rx+=COL_TIME;
+
+    // Engagement (only if published)
+    if (row.stage>=4) {
+      ctx.fillStyle='rgba(74,222,128,0.8)'; ctx.font='9px "SF Mono",monospace';
+      ctx.fillText(row.engagement,rx,ry+ROW_H/2+4);
+    } else {
+      ctx.fillStyle='rgba(255,255,255,0.15)'; ctx.font='9px "SF Mono",monospace';
+      ctx.fillText('—',rx,ry+ROW_H/2+4);
+    }
+
+    // Separator
+    ctx.globalAlpha=row.opacity*0.06; ctx.strokeStyle='rgba(168,85,247,1)'; ctx.lineWidth=0.5;
+    ctx.beginPath(); ctx.moveTo(LEFT,ry+ROW_H); ctx.lineTo(RIGHT,ry+ROW_H); ctx.stroke();
+
+    ctx.restore();
+
+    // Tooltip
+    if (isHov) drawTooltip(row,LEFT,ry,BOARD_W,ROW_H);
+  }
+}
+
+wrap.addEventListener('mousemove',(e)=>{ const r=wrap.getBoundingClientRect(); mouse={x:e.clientX-r.left,y:e.clientY-r.top}; });
+wrap.addEventListener('mouseleave',()=>{ mouse=null; hovRow=null; });
+const ro=new ResizeObserver(()=>{ resize(); lastT=performance.now()*0.001; }); ro.observe(wrap);
+resize(); lastT=performance.now()*0.001;
+requestAnimationFrame(frame);
+requestAnimationFrame(()=>{ canvas.style.opacity='1'; });
+const g=wrap.querySelector('.grid-texture') as HTMLElement|null; if(g) g.style.display='none';
+
+}); // end ric
+</script>

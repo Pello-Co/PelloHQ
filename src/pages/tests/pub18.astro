@@ -1,0 +1,326 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloPublish — Content Hive | Pello" description="PelloPublish operates like a hive — AI workers filling hundreds of hexagonal content cells simultaneously across every platform, every day.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="pub-hive-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+    <HowItWorks />
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link { position:absolute;top:-100%;left:1rem;z-index:9999;padding:.75rem 1.25rem;background:var(--color-brand-primary);color:white;font-weight:600;border-radius:0 0 .5rem .5rem;text-decoration:none;transition:top .1s; }
+  #skip-link:focus { top:0; }
+  #hero-wrap .url-input-wrap,.final-cta .url-input-wrap { background:rgba(255,255,255,0.06)!important;backdrop-filter:blur(24px) saturate(1.4);-webkit-backdrop-filter:blur(24px) saturate(1.4);border:1px solid rgba(255,255,255,0.12)!important;box-shadow:0 4px 30px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.05); }
+  #hero-wrap .hero-panel { background:rgba(6,7,18,0.55)!important;backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(255,255,255,0.12)!important; }
+  #hero-wrap .panel-source-row { border-bottom:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .core-inner { background:rgba(0,0,0,0.15)!important;border:1px solid rgba(255,255,255,0.1)!important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px); }
+  #hero-wrap .panel-core-section { border-bottom:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .channel-node { background:rgba(255,255,255,0.03)!important;border:1px solid rgba(255,255,255,0.1)!important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px); }
+  #hero-wrap .panel-header-bar { border-bottom:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .panel-ready-bar { border-top:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .node-stat-text { color:#a78bfa!important; }
+  #hero-wrap .hero-panel-mobile { background:rgba(10,10,20,0.3);backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(255,255,255,0.08);border-radius:1.25rem;padding:1rem;box-shadow:0 8px 32px rgba(0,0,0,0.3); }
+  .final-cta { background:rgba(20,15,40,0.35)!important;backdrop-filter:blur(24px) saturate(1.4)!important;-webkit-backdrop-filter:blur(24px) saturate(1.4)!important;border-color:rgba(99,102,241,0.15)!important;box-shadow:0 8px 40px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.04)!important;overflow:hidden;position:relative; }
+  .final-cta > .absolute.inset-0.pointer-events-none { display:none!important; }
+  #hero-wrap .grid-texture,#hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display:none!important; }
+  #hero { background:transparent!important; }
+  #hero-headline,#hero-sub,#hero-headline-m,#hero-sub-m { display:none!important; }
+  #hero-panel,.hero-panel,.hero-panel-mobile { display:none!important; }
+  #hero-eyebrow,#hero-eyebrow-m,#hero-cta-row,#hero-cta-m,.url-input-wrap,.hero-panel-mobile { display:none!important; }
+</style>
+
+<script>
+const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+ric(() => {
+
+const PLATFORMS = [
+  { name:"Instagram", icon:"IG", color:[225,48,108] as [number,number,number] },
+  { name:"LinkedIn",  icon:"LI", color:[10,102,194] as [number,number,number] },
+  { name:"Twitter/X", icon:"X",  color:[139,92,246] as [number,number,number] },
+  { name:"TikTok",    icon:"TT", color:[0,242,234] as [number,number,number] },
+  { name:"Blog",      icon:"BL", color:[168,85,247] as [number,number,number] },
+  { name:"YouTube",   icon:"YT", color:[255,0,0] as [number,number,number] },
+];
+const PLAT_TITLES = [
+  ["5 Growth Hacks That Tripled Following","7 Scroll-Stopping Carousels","The Instagram Algorithm Explained","10K Followers in 90 Days","The Reel Formula: 100K+ Views","Stop Posting Random Content","Why Stories Outperform Feed","3 Hooks That Stop the Scroll","From 0 to 50K Strategy","Reels That Actually Convert","Aesthetic Consistency Guide","Behind the Scenes Content","Engagement Rate Secrets","Brand Story in 60 Seconds","Content Batching Method","Carousel Design That Gets Saves"],
+  ["Why B2B Leaders Rethink Content","500 Leads from One Post","Why Most B2B Content Fails","The LinkedIn Algorithm 2026","7 Post Formats Executives Love","Company Page 10x in 6 Months","Cold Outreach Framework","Authenticity Beats Polish","From 200 to 20K Followers","Our Most Viral Post Formula","B2B Content Calendar Guide","Newsletter Strategy","The Comment Strategy","Followers to Customers","Thought Leadership Playbook","LinkedIn Analytics Breakdown"],
+  ["Thread: 7 content truths","The secret to going viral 🧵","Thread: 10,000 posts analyzed","Thread: How we 10x'd reach","Thread: 5 frameworks that convert","The engagement hack","Thread: Our workflow","Thread: Perfect post anatomy","Thread: 12 lessons","How I got 100K followers","Twitter Lists for Business","Retweet Strategy Guide","Threads That Convert","Pinned Tweet Optimization","Quote Tweet Growth","Twitter SEO 2026"],
+  ["POV: Content strategy clicks","3x/day for 30 days experiment","Content trick went viral 👀","TikTok growth hack 2026","AI writes all your content","Day 1 vs Day 365","60-second viral formula","$0 ads. 1M reached.","We A/B tested 50 hooks","Trending sound strategy","Duet Strategy for Brands","TikTok SEO Guide 2026","Comment Section Strategy","Going Viral Without Dancing","Niche Content Formula","Raw vs Polished Content Test"],
+  ["Complete Content Marketing Guide 2026","15 Strategies for Organic Traffic","AI-Powered Content Guide","Content Marketing ROI Breakdown","10 Repurposing Strategies","Content That Ranks on Google","The Distribution Framework","50K Visits in 90 Days","Anatomy of a Viral Post","Content Clusters SEO","Topic Cluster Guide","The Pillar Page Blueprint","How to Repurpose Blog Posts","Internal Linking Authority","Long-Form Content Formula","Blog-to-Video Strategy"],
+  ["We Tested 5 Content Strategies","YouTube Algorithm 2026 Guide","100K Views Without Going Viral","Film 30 Videos in One Day","0 to 100K Subscribers Playbook","Hook Formula for Watch Time","1,000 Viral Videos Analyzed","Why Shorts Changed YouTube","Repurpose One Video Into 15","Perfect Upload Schedule","Thumbnail A/B Testing","Description Template","Building a YouTube Funnel","Community Tab Strategy","Monetization Beyond AdSense","Watch Time Optimization"],
+];
+const CONTENT_TYPES = ["Carousel","Reel","Story","Blog Post","Thread","Short","Article","Poll","Infographic"];
+const TIMES = ["9:00 AM","10:30 AM","12:00 PM","1:15 PM","3:00 PM","4:30 PM","6:00 PM","7:45 PM"];
+const ENGAGEMENTS = ["1.2k likes","847 likes","2.3k views","412 shares","156 comments","3.1k reach","967 saves"];
+
+function pick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+interface HexCell {
+  cx: number; cy: number; col: number; row: number;
+  platIdx: number; title: string; contentType: string;
+  time: string; engagement: string;
+  fill: number; // 0=empty/idea, 0.5=draft, 1=published
+  fillTarget: number;
+}
+interface Worker { x: number; y: number; targetCell: number; progress: number; }
+
+const canvas = document.querySelector<HTMLCanvasElement>('.pub-hive-canvas')!;
+const wrap = document.getElementById('hero-wrap')!;
+const ctx = canvas.getContext('2d')!;
+let dpr=1, mouse: {x:number;y:number}|null=null, hovCell: HexCell|null=null;
+let cells: HexCell[] = [];
+let workers: Worker[] = [];
+let publishedCount=0, lastWorkerSpawnT=0, lastFillT=0;
+
+function hexPath(c: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
+  c.beginPath();
+  for (let i=0;i<6;i++) {
+    const a=Math.PI/6+i*Math.PI/3;
+    const x=cx+r*Math.cos(a), y=cy+r*Math.sin(a);
+    if (i===0) c.moveTo(x,y); else c.lineTo(x,y);
+  }
+  c.closePath();
+}
+
+function rrect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  c.beginPath(); c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.quadraticCurveTo(x+w,y,x+w,y+r);
+  c.lineTo(x+w,y+h-r); c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  c.lineTo(x+r,y+h); c.quadraticCurveTo(x,y+h,x,y+h-r);
+  c.lineTo(x,y+r); c.quadraticCurveTo(x,y,x+r,y); c.closePath();
+}
+
+function buildHive(W: number, H: number) {
+  cells = [];
+  const hexR=Math.min(W,H)*0.04;
+  const hexH=hexR*Math.sqrt(3);
+  const hexW=hexR*2;
+  const COLS=Math.floor((W-40)/(hexW*0.75));
+  const ROWS=Math.floor((H-80)/(hexH));
+  const startX=(W-(COLS*hexW*0.75))/2+hexR;
+  const startY=60;
+
+  for (let row=0;row<ROWS;row++) {
+    for (let col=0;col<COLS;col++) {
+      const x=startX+col*hexW*0.75;
+      const y=startY+row*hexH+(col%2===1?hexH/2:0);
+      if (x>W-hexR||y>H-hexR) continue;
+      const p=Math.floor(Math.random()*6);
+      const fillRand=Math.random();
+      cells.push({ cx:x, cy:y, col, row,
+        platIdx:p, title:pick(PLAT_TITLES[p]), contentType:pick(CONTENT_TYPES),
+        time:pick(TIMES), engagement:pick(ENGAGEMENTS),
+        fill:fillRand<0.45?1:fillRand<0.75?0.5:0,
+        fillTarget:fillRand<0.45?1:fillRand<0.75?0.5:0 });
+    }
+  }
+  publishedCount=cells.filter(c=>c.fill===1).length;
+
+  // Workers
+  workers=[];
+  for (let i=0;i<8;i++) {
+    const ti=Math.floor(Math.random()*cells.length);
+    workers.push({ x:cells[ti].cx, y:cells[ti].cy, targetCell:ti, progress:0 });
+  }
+}
+
+function drawTooltip(cell: HexCell) {
+  const W=canvas.width/dpr;
+  const plat=PLATFORMS[cell.platIdx]; const [r,g,b]=plat.color;
+  const st=cell.fill>=1?0:cell.fill>=0.5?1:2;
+  const tw=280, th=st===0?128:108;
+  let tx=cell.cx+24, ty=cell.cy-th/2;
+  if (tx+tw>W-8) tx=cell.cx-tw-24;
+  ty=Math.max(8,Math.min(canvas.height/dpr-th-8,ty));
+  ctx.save();
+  ctx.shadowColor=`rgba(${r},${g},${b},0.3)`; ctx.shadowBlur=22;
+  rrect(ctx,tx,ty,tw,th,10); ctx.fillStyle='rgba(6,7,18,0.92)'; ctx.fill(); ctx.shadowBlur=0;
+  rrect(ctx,tx,ty,tw,th,10); ctx.fillStyle=`rgba(${r},${g},${b},0.08)`; ctx.fill();
+  ctx.strokeStyle=`rgba(${r},${g},${b},0.3)`; ctx.lineWidth=1; ctx.stroke();
+  rrect(ctx,tx,ty,tw,3,3); ctx.fillStyle=`rgb(${r},${g},${b})`; ctx.globalAlpha=0.6; ctx.fill();
+  ctx.globalAlpha=1; ctx.textAlign='left';
+  ctx.fillStyle=`rgb(${r},${g},${b})`; ctx.font='bold 11px "SF Mono",monospace';
+  ctx.fillText(`${plat.icon}  ${plat.name}`,tx+12,ty+22);
+  ctx.fillStyle='#ffffff'; ctx.globalAlpha=0.45; ctx.font='10px "SF Mono",monospace';
+  ctx.textAlign='right'; ctx.fillText(cell.contentType.toUpperCase(),tx+tw-12,ty+22);
+  ctx.textAlign='left'; ctx.globalAlpha=1;
+  ctx.fillStyle='#ffffff'; ctx.font='500 13px -apple-system,sans-serif';
+  ctx.save(); ctx.beginPath(); ctx.rect(tx+12,ty+28,tw-24,18); ctx.clip();
+  ctx.fillText(cell.title,tx+12,ty+42); ctx.restore();
+  ctx.globalAlpha=0.4; ctx.font='9px "SF Mono",monospace';
+  ctx.fillText(cell.time,tx+12,ty+60);
+  const stLabel=st===0?'● Published':st===1?'◐ Draft':'○ Idea';
+  const stColor=st===0?'rgba(74,222,128,0.9)':st===1?`rgba(${r},${g},${b},0.8)`:'rgba(148,163,184,0.6)';
+  ctx.globalAlpha=0.9; ctx.fillStyle=stColor; ctx.fillText(stLabel,tx+80+12,ty+60);
+  if (st===0) { ctx.globalAlpha=0.8; ctx.fillStyle='rgba(74,222,128,0.9)'; ctx.fillText(cell.engagement,tx+12,ty+76); }
+  ctx.restore();
+}
+
+function resize() {
+  dpr=window.devicePixelRatio||1;
+  const r=wrap.getBoundingClientRect();
+  const w=Math.round(r.width), h=Math.round(r.height);
+  canvas.width=w*dpr; canvas.height=h*dpr;
+  canvas.style.width=`${w}px`; canvas.style.height=`${h}px`;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  buildHive(w,h);
+}
+
+let lastT=0;
+
+function frame() {
+  requestAnimationFrame(frame);
+  const W=canvas.width/dpr, H=canvas.height/dpr;
+  const t=performance.now()*0.001;
+  const dt=Math.min(t-lastT,0.05); lastT=t;
+  ctx.clearRect(0,0,W,H);
+
+  // Gradually fill cells toward targets
+  if (t-lastFillT>0.8) {
+    const empties=cells.filter(c=>c.fill<c.fillTarget);
+    if (empties.length>0) {
+      const c=empties[Math.floor(Math.random()*empties.length)];
+      c.fill=Math.min(c.fillTarget,c.fill+0.25);
+      if (c.fill>=1) publishedCount++;
+    }
+    // New idea cell occasionally
+    const ideas=cells.filter(c=>c.fill===0);
+    if (ideas.length>0) {
+      const c=ideas[Math.floor(Math.random()*ideas.length)];
+      c.fillTarget=Math.random()>0.5?1:0.5;
+    }
+    lastFillT=t;
+  }
+
+  const hexR=Math.min(W,H)*0.04;
+
+  // Hit test
+  hovCell=null;
+  if (mouse) {
+    let bestDist=hexR*1.1;
+    for (const cell of cells) {
+      const dx=cell.cx-mouse.x, dy=cell.cy-mouse.y;
+      const d=Math.sqrt(dx*dx+dy*dy);
+      if (d<bestDist) { bestDist=d; hovCell=cell; }
+    }
+  }
+
+  // Draw cells
+  for (const cell of cells) {
+    const [r,g,b]=PLATFORMS[cell.platIdx].color;
+    const isHov=hovCell===cell;
+
+    // Background hex
+    hexPath(ctx,cell.cx,cell.cy,hexR-1);
+    ctx.fillStyle=`rgba(${r},${g},${b},${isHov?0.15:0.04})`; ctx.fill();
+    ctx.strokeStyle=`rgba(${r},${g},${b},${isHov?0.6:0.2})`; ctx.lineWidth=isHov?1.5:0.8; ctx.stroke();
+
+    // Fill hex (clipped to fill level)
+    if (cell.fill>0) {
+      ctx.save();
+      hexPath(ctx,cell.cx,cell.cy,hexR-2);
+      ctx.clip();
+      // Fill from bottom
+      const fillH=(hexR*2)*cell.fill;
+      ctx.fillStyle=`rgba(${r},${g},${b},${cell.fill>=1?0.55:0.3})`;
+      ctx.fillRect(cell.cx-hexR,cell.cy+hexR-fillH,hexR*2,fillH);
+      ctx.restore();
+    }
+
+    // Glow if hov
+    if (isHov) {
+      ctx.save(); ctx.shadowColor=`rgb(${r},${g},${b})`; ctx.shadowBlur=16;
+      hexPath(ctx,cell.cx,cell.cy,hexR-1); ctx.strokeStyle=`rgb(${r},${g},${b})`; ctx.lineWidth=2; ctx.stroke();
+      ctx.restore();
+    }
+
+    // Platform icon in center
+    if (hexR>14) {
+      ctx.globalAlpha=isHov?0.9:0.4+cell.fill*0.3;
+      ctx.fillStyle=`rgb(${r},${g},${b})`;
+      ctx.font=`bold ${Math.max(7,hexR*0.5)}px "SF Mono",monospace`; ctx.textAlign='center';
+      ctx.fillText(PLATFORMS[cell.platIdx].icon,cell.cx,cell.cy+hexR*0.2);
+      ctx.globalAlpha=1;
+    }
+  }
+
+  // Workers (AI bees)
+  for (const w of workers) {
+    w.progress+=dt*1.5;
+    if (w.progress>=1) {
+      w.x=cells[w.targetCell].cx; w.y=cells[w.targetCell].cy;
+      const draftCells=cells.filter(c=>c.fill<c.fillTarget);
+      if (draftCells.length>0) {
+        const nc=draftCells[Math.floor(Math.random()*draftCells.length)];
+        w.targetCell=cells.indexOf(nc);
+      } else {
+        w.targetCell=Math.floor(Math.random()*cells.length);
+      }
+      w.progress=0;
+    }
+    const tc=cells[w.targetCell];
+    const wx=w.x+(tc.cx-w.x)*w.progress;
+    const wy=w.y+(tc.cy-w.y)*w.progress;
+    ctx.save();
+    ctx.fillStyle='rgba(168,85,247,0.8)'; ctx.globalAlpha=0.7;
+    ctx.beginPath(); ctx.arc(wx,wy,2.5,0,Math.PI*2); ctx.fill();
+    ctx.shadowColor='rgba(168,85,247,0.5)'; ctx.shadowBlur=6;
+    ctx.beginPath(); ctx.arc(wx,wy,2.5,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  // Tooltip
+  if (hovCell) drawTooltip(hovCell);
+
+  // Stats header
+  ctx.save(); ctx.textAlign='left';
+  ctx.fillStyle='#a855f7'; ctx.globalAlpha=0.85; ctx.font='bold 12px "SF Mono",monospace';
+  ctx.fillText('CONTENT HIVE',20,26);
+  ctx.globalAlpha=0.4; ctx.font='9px "SF Mono",monospace'; ctx.fillStyle='#ffffff';
+  const draftC=cells.filter(c=>c.fill>=0.5&&c.fill<1).length;
+  const ideaC=cells.filter(c=>c.fill===0).length;
+  ctx.fillText(`${publishedCount} published  ·  ${draftC} in progress  ·  ${ideaC} ideas  ·  ${workers.length} AI workers active`,20,40);
+  ctx.restore();
+}
+
+wrap.addEventListener('mousemove',(e)=>{ const r=wrap.getBoundingClientRect(); mouse={x:e.clientX-r.left,y:e.clientY-r.top}; });
+wrap.addEventListener('mouseleave',()=>{ mouse=null; hovCell=null; });
+const ro=new ResizeObserver(()=>{ resize(); lastT=performance.now()*0.001; }); ro.observe(wrap);
+resize(); lastT=performance.now()*0.001;
+requestAnimationFrame(frame);
+requestAnimationFrame(()=>{ canvas.style.opacity='1'; });
+const g=wrap.querySelector('.grid-texture') as HTMLElement|null; if(g) g.style.display='none';
+
+}); // end ric
+</script>

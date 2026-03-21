@@ -1,0 +1,336 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloPublish — Publishing Grid | Pello" description="PelloPublish fills your entire content grid automatically — every platform, every day, every time slot. Hover any cell to see what's queued.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="pub-pgrid-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+    <HowItWorks />
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link { position:absolute;top:-100%;left:1rem;z-index:9999;padding:.75rem 1.25rem;background:var(--color-brand-primary);color:white;font-weight:600;border-radius:0 0 .5rem .5rem;text-decoration:none;transition:top .1s; }
+  #skip-link:focus { top:0; }
+  #hero-wrap .url-input-wrap,.final-cta .url-input-wrap { background:rgba(255,255,255,0.06)!important;backdrop-filter:blur(24px) saturate(1.4);-webkit-backdrop-filter:blur(24px) saturate(1.4);border:1px solid rgba(255,255,255,0.12)!important;box-shadow:0 4px 30px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.05); }
+  #hero-wrap .hero-panel { background:rgba(6,7,18,0.55)!important;backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(255,255,255,0.12)!important; }
+  #hero-wrap .panel-source-row { border-bottom:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .core-inner { background:rgba(0,0,0,0.15)!important;border:1px solid rgba(255,255,255,0.1)!important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px); }
+  #hero-wrap .panel-core-section { border-bottom:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .channel-node { background:rgba(255,255,255,0.03)!important;border:1px solid rgba(255,255,255,0.1)!important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px); }
+  #hero-wrap .panel-header-bar { border-bottom:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .panel-ready-bar { border-top:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .node-stat-text { color:#a78bfa!important; }
+  #hero-wrap .hero-panel-mobile { background:rgba(10,10,20,0.3);backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(255,255,255,0.08);border-radius:1.25rem;padding:1rem;box-shadow:0 8px 32px rgba(0,0,0,0.3); }
+  .final-cta { background:rgba(20,15,40,0.35)!important;backdrop-filter:blur(24px) saturate(1.4)!important;-webkit-backdrop-filter:blur(24px) saturate(1.4)!important;border-color:rgba(99,102,241,0.15)!important;box-shadow:0 8px 40px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.04)!important;overflow:hidden;position:relative; }
+  .final-cta > .absolute.inset-0.pointer-events-none { display:none!important; }
+  #hero-wrap .grid-texture,#hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display:none!important; }
+  #hero { background:transparent!important; }
+  #hero-headline,#hero-sub,#hero-headline-m,#hero-sub-m { display:none!important; }
+  #hero-panel,.hero-panel,.hero-panel-mobile { display:none!important; }
+  #hero-eyebrow,#hero-eyebrow-m,#hero-cta-row,#hero-cta-m,.url-input-wrap,.hero-panel-mobile { display:none!important; }
+</style>
+
+<script>
+const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+ric(() => {
+
+const PLATFORMS = [
+  { name:"Instagram", icon:"IG", color:[225,48,108] as [number,number,number] },
+  { name:"LinkedIn",  icon:"LI", color:[10,102,194] as [number,number,number] },
+  { name:"Twitter/X", icon:"X",  color:[139,92,246] as [number,number,number] },
+  { name:"TikTok",    icon:"TT", color:[0,242,234] as [number,number,number] },
+  { name:"Blog",      icon:"BL", color:[168,85,247] as [number,number,number] },
+  { name:"YouTube",   icon:"YT", color:[255,0,0] as [number,number,number] },
+];
+const PLAT_TITLES = [
+  ["5 Growth Hacks That Tripled Following","7 Scroll-Stopping Carousel Ideas","The Instagram Algorithm Explained","How We Grew to 10K in 90 Days","The Reel Formula: 100K+ Views","Stop Posting Random Content","Why Stories Outperform Feed Posts","3 Hooks That Stop the Scroll","From 0 to 50K: Strategy","Reels That Convert","Aesthetic Consistency Guide","Behind the Scenes Content","Engagement Rate Secrets","POV: Brand Story in 60s","Content Batching Method"],
+  ["Why B2B Leaders Are Rethinking Content","500 Leads from One Post","Why Most B2B Content Fails","The LinkedIn Algorithm 2026","7 Post Formats Executives Love","We Grew Our Page 10x","Cold Outreach Framework","Why Authenticity Beats Polish","From 200 to 20K Followers","Our Most Viral Post Formula","B2B Content Calendar Guide","Personal Branding Playbook","LinkedIn Newsletter Strategy","The Comment Strategy","Turning Followers to Customers"],
+  ["Thread: 7 content truths no one shares","The secret to going viral 🧵","Thread: 10,000 posts analyzed","Thread: How we 10x'd reach","Thread: 5 frameworks that convert","The engagement hack","Thread: Our complete workflow","Thread: Perfect post anatomy","Thread: 12 lessons from creators","Everything about going viral","Twitter Lists for Business","Retweet Strategy That Builds","How to Write Threads That Convert","Pinned Tweet Optimization","Quote Tweet Growth Strategy"],
+  ["POV: Content strategy finally clicks","We tried 3x/day for 30 days","This content trick went viral 👀","TikTok growth hack 2026","POV: AI writes your content","Day 1 vs Day 365","60-second viral formula","$0 ads. 1M people reached.","We A/B tested 50 hooks","The trending sound strategy","Duet Strategy for Brands","TikTok SEO Guide 2026","Comment Section Strategy","Going Viral Without Dancing","The Niche Content Formula"],
+  ["Complete Guide to Content Marketing 2026","15 Strategies for Organic Traffic","AI-Powered Content Guide","Content Marketing ROI Breakdown","10 Repurposing Strategies","Content That Ranks on Google","The Distribution Framework","50K Visits in 90 Days","Anatomy of a Viral Blog Post","Content Clusters SEO Strategy","Topic Cluster Strategy Guide","The Pillar Page Blueprint","Repurpose Blog Content","Internal Linking Authority","Long-Form Content Formula"],
+  ["We Tested 5 Content Strategies","YouTube Algorithm 2026 Guide","100K Views Without Going Viral","Film 30 Videos in One Day","0 to 100K Subscribers Playbook","Hook Formula for Watch Time","1,000 Viral Videos Analyzed","Why Shorts Changed YouTube","Repurpose One Video Into 15","Perfect Upload Schedule","YouTube Thumbnail A/B Testing","Description Template That Ranks","Building a YouTube Funnel","Community Tab Strategy","Monetization Beyond AdSense"],
+];
+
+const CONTENT_TYPES = ["Carousel","Reel","Story","Blog Post","Thread","Short","Article","Poll","Infographic"];
+const TIMES = ["9:00 AM","10:30 AM","12:00 PM","1:15 PM","3:00 PM","4:30 PM","6:00 PM","7:45 PM"];
+const ENGAGEMENTS = ["1.2k likes","847 likes","2.3k views","412 shares","156 comments","3.1k reach","967 saves"];
+
+function pick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+const NOW = new Date();
+const TODAY = NOW.getDate();
+const CUR_MONTH = NOW.getMonth();
+const CUR_YEAR = NOW.getFullYear();
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAYS_IN_MONTH = new Date(CUR_YEAR, CUR_MONTH+1, 0).getDate();
+
+// Grid: rows = platforms (6), columns = days of month (DAYS_IN_MONTH)
+interface GridCell {
+  platIdx: number; day: number;
+  pieces: { title: string; contentType: string; time: string; status: 0|1|2; engagement: string; }[];
+}
+
+let grid: GridCell[][] = []; // [platIdx][dayIdx]
+let hovCell: {row:number;col:number}|null = null;
+let cursorDayX = 0;
+let lastNewPieceT = 0;
+
+function buildGrid() {
+  grid = [];
+  for (let p=0;p<6;p++) {
+    grid[p] = [];
+    for (let d=0;d<DAYS_IN_MONTH;d++) {
+      const day=d+1;
+      const isPast=day<TODAY, isToday=day===TODAY;
+      const sr=Math.random();
+      const status: 0|1|2 = isPast?0:isToday?(sr<0.5?0:sr<0.8?1:2):(sr<0.05?0:sr<0.6?1:2);
+      const hasPiece=Math.random()>0.15;
+      grid[p][d]={ platIdx:p, day,
+        pieces: hasPiece?[{ title:pick(PLAT_TITLES[p]), contentType:pick(CONTENT_TYPES), time:pick(TIMES), status, engagement:pick(ENGAGEMENTS) }]:[] };
+    }
+  }
+}
+
+const canvas = document.querySelector<HTMLCanvasElement>('.pub-pgrid-canvas')!;
+const wrap = document.getElementById('hero-wrap')!;
+const ctx = canvas.getContext('2d')!;
+let dpr=1, mouse: {x:number;y:number}|null=null;
+
+function rrect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  c.beginPath(); c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.quadraticCurveTo(x+w,y,x+w,y+r);
+  c.lineTo(x+w,y+h-r); c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  c.lineTo(x+r,y+h); c.quadraticCurveTo(x,y+h,x,y+h-r);
+  c.lineTo(x,y+r); c.quadraticCurveTo(x,y,x+r,y); c.closePath();
+}
+
+function drawTooltip(cell: GridCell, cx: number, cy: number) {
+  if (cell.pieces.length===0) return;
+  const piece=cell.pieces[0];
+  const plat=PLATFORMS[cell.platIdx]; const [r,g,b]=plat.color;
+  const W=canvas.width/dpr;
+  const tw=280, th=piece.status===0?128:108;
+  let tx=cx+10, ty=cy-th-10;
+  if (tx+tw>W-8) tx=cx-tw-10;
+  if (ty<8) ty=cy+10;
+  ctx.save();
+  ctx.shadowColor=`rgba(${r},${g},${b},0.3)`; ctx.shadowBlur=22;
+  rrect(ctx,tx,ty,tw,th,10); ctx.fillStyle='rgba(6,7,18,0.92)'; ctx.fill(); ctx.shadowBlur=0;
+  rrect(ctx,tx,ty,tw,th,10); ctx.fillStyle=`rgba(${r},${g},${b},0.08)`; ctx.fill();
+  ctx.strokeStyle=`rgba(${r},${g},${b},0.3)`; ctx.lineWidth=1; ctx.stroke();
+  rrect(ctx,tx,ty,tw,3,3); ctx.fillStyle=`rgb(${r},${g},${b})`; ctx.globalAlpha=0.6; ctx.fill();
+  ctx.globalAlpha=1; ctx.textAlign='left';
+  ctx.fillStyle=`rgb(${r},${g},${b})`; ctx.font='bold 11px "SF Mono",monospace';
+  ctx.fillText(`${plat.icon}  ${plat.name}  ·  Day ${cell.day}`,tx+12,ty+22);
+  ctx.fillStyle='#ffffff'; ctx.globalAlpha=0.45; ctx.font='10px "SF Mono",monospace';
+  ctx.textAlign='right'; ctx.fillText(piece.contentType.toUpperCase(),tx+tw-12,ty+22);
+  ctx.textAlign='left'; ctx.globalAlpha=1;
+  ctx.fillStyle='#ffffff'; ctx.font='500 13px -apple-system,sans-serif';
+  ctx.save(); ctx.beginPath(); ctx.rect(tx+12,ty+28,tw-24,18); ctx.clip();
+  ctx.fillText(piece.title,tx+12,ty+42); ctx.restore();
+  ctx.globalAlpha=0.4; ctx.font='9px "SF Mono",monospace';
+  ctx.fillText(piece.time,tx+12,ty+60);
+  const st=piece.status===0?'● Published':piece.status===1?'◐ Scheduled':'○ Draft';
+  const sc=piece.status===0?'rgba(74,222,128,0.9)':piece.status===1?`rgba(${r},${g},${b},0.8)`:'rgba(148,163,184,0.6)';
+  ctx.globalAlpha=0.9; ctx.fillStyle=sc; ctx.fillText(st,tx+80+12,ty+60);
+  if (piece.status===0) { ctx.globalAlpha=0.8; ctx.fillStyle='rgba(74,222,128,0.9)'; ctx.fillText(piece.engagement,tx+12,ty+76); }
+  ctx.restore();
+}
+
+function resize() {
+  dpr=window.devicePixelRatio||1;
+  const r=wrap.getBoundingClientRect();
+  const w=Math.round(r.width), h=Math.round(r.height);
+  canvas.width=w*dpr; canvas.height=h*dpr;
+  canvas.style.width=`${w}px`; canvas.style.height=`${h}px`;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  buildGrid();
+}
+
+function frame() {
+  requestAnimationFrame(frame);
+  const W=canvas.width/dpr, H=canvas.height/dpr;
+  const t=performance.now()*0.001;
+  ctx.clearRect(0,0,W,H);
+
+  const LEFT=68, TOP=54, RIGHT=W-16;
+  const gridW=RIGHT-LEFT, gridH=H-TOP-36;
+  const cellW=gridW/DAYS_IN_MONTH, cellH=gridH/6;
+
+  // Occasional new piece on today's row
+  if (t-lastNewPieceT>3.5) {
+    const p=Math.floor(Math.random()*6);
+    const todayIdx=TODAY-1;
+    if (grid[p]&&grid[p][todayIdx]&&grid[p][todayIdx].pieces.length===0) {
+      grid[p][todayIdx].pieces=[{ title:pick(PLAT_TITLES[p]), contentType:pick(CONTENT_TYPES), time:pick(TIMES), status:2, engagement:pick(ENGAGEMENTS) }];
+    }
+    lastNewPieceT=t;
+  }
+
+  // Cursor blink on today's column
+  const todayX=LEFT+(TODAY-1)*cellW+cellW/2;
+  cursorDayX=todayX;
+  const cursorVisible=Math.sin(t*3)>0;
+
+  // Hit test
+  hovCell=null;
+  if (mouse) {
+    const col=Math.floor((mouse.x-LEFT)/cellW);
+    const row=Math.floor((mouse.y-TOP)/cellH);
+    if (col>=0&&col<DAYS_IN_MONTH&&row>=0&&row<6) hovCell={row,col};
+  }
+
+  // Platform row labels
+  ctx.save();
+  for (let p=0;p<6;p++) {
+    const [r,g,b]=PLATFORMS[p].color;
+    const ry=TOP+p*cellH+cellH/2;
+    ctx.globalAlpha=0.7; ctx.fillStyle=`rgb(${r},${g},${b})`;
+    ctx.font='bold 9px "SF Mono",monospace'; ctx.textAlign='right';
+    ctx.fillText(PLATFORMS[p].icon,LEFT-6,ry+4);
+  }
+  ctx.restore();
+
+  // Day column headers
+  ctx.save();
+  ctx.font='7px "SF Mono",monospace'; ctx.textAlign='center';
+  for (let d=0;d<DAYS_IN_MONTH;d++) {
+    const cx2=LEFT+d*cellW+cellW/2;
+    const day=d+1;
+    ctx.globalAlpha=day===TODAY?0.8:0.2;
+    ctx.fillStyle=day===TODAY?'#a855f7':'#ffffff';
+    ctx.fillText(String(day),cx2,TOP-6);
+  }
+  ctx.restore();
+
+  // Month header
+  ctx.save();
+  ctx.textAlign='left'; ctx.fillStyle='#a855f7'; ctx.globalAlpha=0.8;
+  ctx.font='bold 12px "SF Mono",monospace';
+  ctx.fillText(`${MONTH_NAMES[CUR_MONTH]} ${CUR_YEAR}  ·  PUBLISHING GRID`,16,24);
+  ctx.restore();
+
+  // Grid cells
+  for (let p=0;p<6;p++) {
+    const [pr,pg,pb]=PLATFORMS[p].color;
+    for (let d=0;d<DAYS_IN_MONTH;d++) {
+      const cell=grid[p][d];
+      const cx2=LEFT+d*cellW, cy2=TOP+p*cellH;
+      const day=d+1, isToday=day===TODAY, isPast=day<TODAY;
+      const isHov=hovCell&&hovCell.row===p&&hovCell.col===d;
+
+      // Cell background
+      ctx.save();
+      if (isToday) {
+        ctx.globalAlpha=0.06+Math.sin(t*1.5)*0.02;
+        ctx.fillStyle='#a855f7';
+        ctx.fillRect(cx2,cy2,cellW,cellH);
+      } else if (isPast) {
+        ctx.globalAlpha=0.015; ctx.fillStyle='#4ade80';
+        ctx.fillRect(cx2,cy2,cellW,cellH);
+      }
+
+      // Grid lines
+      ctx.globalAlpha=0.06; ctx.strokeStyle='rgba(168,85,247,1)'; ctx.lineWidth=0.5;
+      ctx.strokeRect(cx2,cy2,cellW,cellH);
+      ctx.restore();
+
+      // Content marker
+      if (cell.pieces.length>0) {
+        const piece=cell.pieces[0];
+        ctx.save();
+        let alpha=piece.status===0?0.75:piece.status===1?0.45:0.2;
+        if (isHov) alpha=1;
+        ctx.globalAlpha=alpha;
+        const ms=Math.max(3,Math.min(cellW*0.55,cellH*0.55));
+        const mx=cx2+cellW/2, my=cy2+cellH/2;
+        if (piece.status===0) {
+          ctx.fillStyle=`rgb(${pr},${pg},${pb})`;
+          ctx.beginPath(); ctx.arc(mx,my,ms/2,0,Math.PI*2); ctx.fill();
+        } else if (piece.status===1) {
+          ctx.strokeStyle=`rgb(${pr},${pg},${pb})`; ctx.lineWidth=1.5;
+          ctx.beginPath(); ctx.arc(mx,my,ms/2,0,Math.PI*2); ctx.stroke();
+          ctx.fillStyle=`rgba(${pr},${pg},${pb},0.3)`; ctx.fill();
+        } else {
+          ctx.strokeStyle=`rgba(${pr},${pg},${pb},0.6)`; ctx.lineWidth=1; ctx.setLineDash([2,2]);
+          ctx.beginPath(); ctx.arc(mx,my,ms/2,0,Math.PI*2); ctx.stroke();
+          ctx.setLineDash([]);
+        }
+        ctx.restore();
+      }
+    }
+  }
+
+  // Today column top glow
+  ctx.save();
+  const tg=ctx.createLinearGradient(todayX-cellW/2,TOP,todayX+cellW/2,TOP);
+  tg.addColorStop(0,'rgba(168,85,247,0)'); tg.addColorStop(0.5,'rgba(168,85,247,0.15)'); tg.addColorStop(1,'rgba(168,85,247,0)');
+  ctx.fillStyle=tg; ctx.fillRect(todayX-cellW/2,TOP-12,cellW,10);
+  ctx.restore();
+
+  // Cursor blink on today
+  if (cursorVisible) {
+    ctx.save(); ctx.fillStyle='rgba(168,85,247,0.7)';
+    ctx.fillRect(todayX-1,TOP-16,2,8);
+    ctx.restore();
+  }
+
+  // Tooltip
+  if (hovCell) {
+    const cell=grid[hovCell.row][hovCell.col];
+    if (cell.pieces.length>0) {
+      const cx2=LEFT+hovCell.col*cellW+cellW/2;
+      const cy2=TOP+hovCell.row*cellH+cellH/2;
+      drawTooltip(cell,cx2,cy2);
+    }
+  }
+
+  // Bottom stats
+  const totalPieces=grid.flat().reduce((s,c)=>s+c.pieces.length,0);
+  const pubC=grid.flat().reduce((s,c)=>s+c.pieces.filter(p=>p.status===0).length,0);
+  const schedC=grid.flat().reduce((s,c)=>s+c.pieces.filter(p=>p.status===1).length,0);
+  ctx.save();
+  ctx.textAlign='center'; ctx.globalAlpha=0.4; ctx.font='9px "SF Mono",monospace'; ctx.fillStyle='#a855f7';
+  ctx.fillText(`● ${pubC} published  ◐ ${schedC} scheduled  ·  ${totalPieces} total pieces this month`,W/2,H-12);
+  ctx.restore();
+}
+
+wrap.addEventListener('mousemove',(e)=>{ const r=wrap.getBoundingClientRect(); mouse={x:e.clientX-r.left,y:e.clientY-r.top}; });
+wrap.addEventListener('mouseleave',()=>{ mouse=null; hovCell=null; });
+const ro=new ResizeObserver(()=>resize()); ro.observe(wrap);
+resize(); requestAnimationFrame(frame);
+requestAnimationFrame(()=>{ canvas.style.opacity='1'; });
+const g=wrap.querySelector('.grid-texture') as HTMLElement|null; if(g) g.style.display='none';
+
+}); // end ric
+</script>

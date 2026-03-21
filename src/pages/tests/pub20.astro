@@ -1,0 +1,345 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloPublish — Content Constellation | Pello" description="Every piece of content is a star. Watch PelloPublish populate the sky — 500+ posts, articles, and reels forming constellations by campaign, glowing brighter as engagement climbs.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="pub-constellation-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+    <HowItWorks />
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link { position:absolute;top:-100%;left:1rem;z-index:9999;padding:.75rem 1.25rem;background:var(--color-brand-primary);color:white;font-weight:600;border-radius:0 0 .5rem .5rem;text-decoration:none;transition:top .1s; }
+  #skip-link:focus { top:0; }
+  #hero-wrap .url-input-wrap,.final-cta .url-input-wrap { background:rgba(255,255,255,0.06)!important;backdrop-filter:blur(24px) saturate(1.4);-webkit-backdrop-filter:blur(24px) saturate(1.4);border:1px solid rgba(255,255,255,0.12)!important;box-shadow:0 4px 30px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.05); }
+  #hero-wrap .hero-panel { background:rgba(6,7,18,0.55)!important;backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(255,255,255,0.12)!important; }
+  #hero-wrap .panel-source-row { border-bottom:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .core-inner { background:rgba(0,0,0,0.15)!important;border:1px solid rgba(255,255,255,0.1)!important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px); }
+  #hero-wrap .panel-core-section { border-bottom:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .channel-node { background:rgba(255,255,255,0.03)!important;border:1px solid rgba(255,255,255,0.1)!important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px); }
+  #hero-wrap .panel-header-bar { border-bottom:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .panel-ready-bar { border-top:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .node-stat-text { color:#a78bfa!important; }
+  #hero-wrap .hero-panel-mobile { background:rgba(10,10,20,0.3);backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(255,255,255,0.08);border-radius:1.25rem;padding:1rem;box-shadow:0 8px 32px rgba(0,0,0,0.3); }
+  .final-cta { background:rgba(20,15,40,0.35)!important;backdrop-filter:blur(24px) saturate(1.4)!important;-webkit-backdrop-filter:blur(24px) saturate(1.4)!important;border-color:rgba(99,102,241,0.15)!important;box-shadow:0 8px 40px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.04)!important;overflow:hidden;position:relative; }
+  .final-cta > .absolute.inset-0.pointer-events-none { display:none!important; }
+  #hero-wrap .grid-texture,#hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display:none!important; }
+  #hero { background:transparent!important; }
+  #hero-headline,#hero-sub,#hero-headline-m,#hero-sub-m { display:none!important; }
+  #hero-panel,.hero-panel,.hero-panel-mobile { display:none!important; }
+  #hero-eyebrow,#hero-eyebrow-m,#hero-cta-row,#hero-cta-m,.url-input-wrap,.hero-panel-mobile { display:none!important; }
+</style>
+
+<script>
+const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+ric(() => {
+
+const PLATFORMS = [
+  { name:"Instagram", icon:"IG", color:[225,48,108] as [number,number,number] },
+  { name:"LinkedIn",  icon:"LI", color:[10,102,194] as [number,number,number] },
+  { name:"Twitter/X", icon:"X",  color:[139,92,246] as [number,number,number] },
+  { name:"TikTok",    icon:"TT", color:[0,242,234] as [number,number,number] },
+  { name:"Blog",      icon:"BL", color:[168,85,247] as [number,number,number] },
+  { name:"YouTube",   icon:"YT", color:[255,0,0] as [number,number,number] },
+];
+const PLAT_TITLES = [
+  ["5 Growth Hacks That Tripled Following","7 Scroll-Stopping Carousels","The Instagram Algorithm Explained","10K Followers in 90 Days","The Reel Formula: 100K+ Views","Stop Posting Random Content","Why Stories Outperform Feed Posts","3 Hooks That Stop the Scroll","From 0 to 50K: Our Strategy","Reels That Actually Convert","Aesthetic Consistency Guide","Behind the Scenes Content","Engagement Rate Secrets","Brand Story in 60 Seconds","Content Batching Method","Carousel Design That Gets Saves","Story Arc That Drives Follows"],
+  ["Why B2B Leaders Rethink Content","500 Leads from One Post","Why Most B2B Content Fails","The LinkedIn Algorithm 2026","7 Post Formats Executives Love","Company Page 10x in 6 Months","Cold Outreach Framework","Authenticity Beats Polish","From 200 to 20K Followers","Our Most Viral Post Formula","B2B Content Calendar Guide","Newsletter Strategy","The Comment Strategy","Followers to Customers","Thought Leadership Playbook","LinkedIn Analytics Breakdown","Personal Brand vs Company Page"],
+  ["Thread: 7 content truths no one shares","The secret to going viral 🧵","Thread: 10,000 posts analyzed","Thread: How we 10x'd reach","Thread: 5 frameworks that convert","The engagement hack that works","Thread: Our complete workflow","Thread: Perfect post anatomy","Thread: 12 lessons from creators","How I got 100K followers","Twitter Lists for Business Growth","Retweet Strategy Guide","Write Threads That Convert","Pinned Tweet Optimization","Quote Tweet Growth","Twitter SEO in 2026","The DM Strategy That Works"],
+  ["POV: Content strategy finally clicks","3x/day for 30 days experiment","Content trick went viral twice 👀","TikTok growth hack 2026","AI writes all your content","Day 1 vs Day 365 of posting","60-second viral formula","$0 ads. 1M people reached.","We A/B tested 50 hooks","Trending sound strategy","Duet Strategy for Brands","TikTok SEO Guide 2026","Comment Section Strategy","Going Viral Without Dancing","Niche Content Formula","Raw vs Polished Content Test","The Stitch Strategy Explained"],
+  ["Complete Content Marketing Guide 2026","15 Proven Strategies for Organic Traffic","The AI-Powered Content Guide","Content Marketing ROI Breakdown","10 Repurposing Strategies to 10x Output","Content That Ranks on Google in 2026","The Distribution Framework Every Brand Needs","How We Generated 50K Visits in 90 Days","The Anatomy of a Viral Blog Post","Content Clusters SEO Strategy","Topic Cluster Strategy Guide","The Pillar Page Blueprint","How to Repurpose Blog Posts","Internal Linking for SEO Authority","Long-Form Content Formula That Converts","Blog-to-Video Content Strategy","The Content Audit Framework"],
+  ["We Tested 5 Content Strategies — Results","YouTube Algorithm 2026 Complete Guide","100K Views Without Going Viral","Film 30 Videos in One Day — Our Setup","0 to 100K Subscribers: Our Playbook","The Hook Formula That Keeps Viewers","We Analyzed 1,000 Viral Videos","Why Shorts Changed Everything","Repurpose One Video Into 15 Pieces","The Perfect Upload Schedule","YouTube Thumbnail A/B Testing Guide","The Description Template That Ranks","Building a YouTube Content Funnel","Community Tab Strategy for Growth","Monetization Strategies Beyond AdSense","Watch Time Optimization Complete Guide","The End Screen Strategy That Works"],
+];
+const CONTENT_TYPES = ["Carousel","Reel","Story","Blog Post","Thread","Short","Article","Poll","Infographic"];
+const TIMES = ["9:00 AM","10:30 AM","12:00 PM","1:15 PM","3:00 PM","4:30 PM","6:00 PM","7:45 PM"];
+const ENGAGEMENTS = ["1.2k likes","847 likes","2.3k views","412 shares","156 comments","3.1k reach","967 saves","4.7k impressions","2.1k saves","5.3k reach"];
+
+const CAMPAIGN_NAMES = ["Brand Awareness","Lead Gen","Product Launch","Thought Leadership","Community Growth","Sales Push","Engagement Boost","SEO Authority","Viral Series","Platform Expansion"];
+
+function pick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+interface Star {
+  x: number; y: number; platIdx: number; campaignIdx: number;
+  title: string; contentType: string; time: string; engagement: string;
+  engScore: number; // 0-1 brightness
+  size: number; twinklePhase: number; birthT: number; published: boolean;
+  shootingSpeed?: number; shootingAngle?: number; isShootingStar?: boolean;
+}
+
+const canvas = document.querySelector<HTMLCanvasElement>('.pub-constellation-canvas')!;
+const wrap = document.getElementById('hero-wrap')!;
+const ctx = canvas.getContext('2d')!;
+let dpr=1, mouse: {x:number;y:number}|null=null, hovStar: Star|null=null;
+let stars: Star[] = [];
+let shootingStars: {x:number;y:number;angle:number;speed:number;len:number;alpha:number;platIdx:number}[] = [];
+let nextStarT=0, nextShootT=0, totalStars=0;
+
+// Nebula centers for each platform
+let nebulaCenters: {x:number;y:number}[] = [];
+
+function buildStars(W: number, H: number) {
+  stars = [];
+  nebulaCenters = [
+    { x:W*0.18, y:H*0.25 }, { x:W*0.82, y:H*0.20 },
+    { x:W*0.55, y:H*0.70 }, { x:W*0.28, y:H*0.72 },
+    { x:W*0.72, y:H*0.45 }, { x:W*0.40, y:H*0.38 },
+  ];
+  const N=380;
+  for (let i=0;i<N;i++) {
+    const p=Math.floor(Math.random()*6);
+    const nc=nebulaCenters[p];
+    // Cluster around nebula center with scatter
+    const scatter=Math.min(W,H)*0.22;
+    const angle=Math.random()*Math.PI*2;
+    const r=Math.random()*scatter;
+    const x=Math.max(20,Math.min(W-20,nc.x+r*Math.cos(angle)));
+    const y=Math.max(40,Math.min(H-20,nc.y+r*Math.sin(angle)));
+    const eng=0.1+Math.random()*0.9;
+    stars.push({ x, y, platIdx:p, campaignIdx:Math.floor(Math.random()*CAMPAIGN_NAMES.length),
+      title:pick(PLAT_TITLES[p]), contentType:pick(CONTENT_TYPES),
+      time:pick(TIMES), engagement:pick(ENGAGEMENTS),
+      engScore:eng, size:0.8+eng*3.5, twinklePhase:Math.random()*Math.PI*2,
+      birthT:-99, published:Math.random()>0.3 });
+  }
+  totalStars=N;
+}
+
+function rrect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  c.beginPath(); c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.quadraticCurveTo(x+w,y,x+w,y+r);
+  c.lineTo(x+w,y+h-r); c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  c.lineTo(x+r,y+h); c.quadraticCurveTo(x,y+h,x,y+h-r);
+  c.lineTo(x,y+r); c.quadraticCurveTo(x,y,x+r,y); c.closePath();
+}
+
+function drawTooltip(star: Star) {
+  const W=canvas.width/dpr;
+  const plat=PLATFORMS[star.platIdx]; const [r,g,b]=plat.color;
+  const tw=280, th=star.published?128:108;
+  let tx=star.x+14, ty=star.y-th/2;
+  if (tx+tw>W-8) tx=star.x-tw-14;
+  ty=Math.max(8,Math.min(canvas.height/dpr-th-8,ty));
+  ctx.save();
+  ctx.shadowColor=`rgba(${r},${g},${b},0.35)`; ctx.shadowBlur=24;
+  rrect(ctx,tx,ty,tw,th,10); ctx.fillStyle='rgba(6,7,18,0.92)'; ctx.fill(); ctx.shadowBlur=0;
+  rrect(ctx,tx,ty,tw,th,10); ctx.fillStyle=`rgba(${r},${g},${b},0.08)`; ctx.fill();
+  ctx.strokeStyle=`rgba(${r},${g},${b},0.3)`; ctx.lineWidth=1; ctx.stroke();
+  rrect(ctx,tx,ty,tw,3,3); ctx.fillStyle=`rgb(${r},${g},${b})`; ctx.globalAlpha=0.6; ctx.fill();
+  ctx.globalAlpha=1; ctx.textAlign='left';
+  ctx.fillStyle=`rgb(${r},${g},${b})`; ctx.font='bold 11px "SF Mono",monospace';
+  ctx.fillText(`${plat.icon}  ${plat.name}`,tx+12,ty+22);
+  ctx.fillStyle='#ffffff'; ctx.globalAlpha=0.45; ctx.font='10px "SF Mono",monospace';
+  ctx.textAlign='right'; ctx.fillText(star.contentType.toUpperCase(),tx+tw-12,ty+22);
+  ctx.textAlign='left'; ctx.globalAlpha=1;
+  ctx.fillStyle='#ffffff'; ctx.font='500 13px -apple-system,sans-serif';
+  ctx.save(); ctx.beginPath(); ctx.rect(tx+12,ty+28,tw-24,18); ctx.clip();
+  ctx.fillText(star.title,tx+12,ty+42); ctx.restore();
+  ctx.globalAlpha=0.4; ctx.font='9px "SF Mono",monospace';
+  ctx.fillText(star.time,tx+12,ty+60);
+  const stLabel=star.published?'● Published':'○ Scheduled';
+  const stColor=star.published?'rgba(74,222,128,0.9)':`rgba(${r},${g},${b},0.8)`;
+  ctx.globalAlpha=0.9; ctx.fillStyle=stColor; ctx.fillText(stLabel,tx+80+12,ty+60);
+  if (star.published) { ctx.globalAlpha=0.8; ctx.fillStyle='rgba(74,222,128,0.9)'; ctx.fillText(star.engagement,tx+12,ty+76); }
+  ctx.globalAlpha=0.45; ctx.fillStyle='rgba(168,85,247,0.8)'; ctx.font='8px "SF Mono",monospace';
+  ctx.fillText(`Campaign: ${CAMPAIGN_NAMES[star.campaignIdx]}`,tx+12,ty+(star.published?94:78));
+  ctx.restore();
+}
+
+function resize() {
+  dpr=window.devicePixelRatio||1;
+  const r=wrap.getBoundingClientRect();
+  const w=Math.round(r.width), h=Math.round(r.height);
+  canvas.width=w*dpr; canvas.height=h*dpr;
+  canvas.style.width=`${w}px`; canvas.style.height=`${h}px`;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  buildStars(w,h);
+}
+
+function frame() {
+  requestAnimationFrame(frame);
+  const W=canvas.width/dpr, H=canvas.height/dpr;
+  const t=performance.now()*0.001;
+  ctx.clearRect(0,0,W,H);
+
+  // Spawn new star every 2s
+  if (t>nextStarT && stars.length<520) {
+    const p=Math.floor(Math.random()*6);
+    const nc=nebulaCenters[p]||{x:W/2,y:H/2};
+    const scatter=Math.min(W,H)*0.22;
+    const angle=Math.random()*Math.PI*2, r2=Math.random()*scatter;
+    const x=Math.max(20,Math.min(W-20,nc.x+r2*Math.cos(angle)));
+    const y=Math.max(40,Math.min(H-20,nc.y+r2*Math.sin(angle)));
+    const eng=0.1+Math.random()*0.9;
+    stars.push({ x, y, platIdx:p, campaignIdx:Math.floor(Math.random()*CAMPAIGN_NAMES.length),
+      title:pick(PLAT_TITLES[p]), contentType:pick(CONTENT_TYPES),
+      time:pick(TIMES), engagement:pick(ENGAGEMENTS),
+      engScore:eng, size:0.8+eng*3.5, twinklePhase:Math.random()*Math.PI*2,
+      birthT:t, published:Math.random()>0.4 });
+    totalStars++; nextStarT=t+2;
+  }
+
+  // Shooting star every 6s
+  if (t>nextShootT) {
+    const p=Math.floor(Math.random()*6);
+    shootingStars.push({ x:Math.random()*W*0.8, y:Math.random()*H*0.4,
+      angle:Math.PI/4+Math.random()*0.5, speed:W*0.8, len:80+Math.random()*60,
+      alpha:1, platIdx:p });
+    nextShootT=t+6+Math.random()*4;
+  }
+
+  // Draw nebula clouds (per platform)
+  ctx.save();
+  for (let p=0;p<6;p++) {
+    if (!nebulaCenters[p]) continue;
+    const nc=nebulaCenters[p];
+    const [r,g,b]=PLATFORMS[p].color;
+    const ng=ctx.createRadialGradient(nc.x,nc.y,0,nc.x,nc.y,Math.min(W,H)*0.18);
+    ng.addColorStop(0,`rgba(${r},${g},${b},0.06)`);
+    ng.addColorStop(0.6,`rgba(${r},${g},${b},0.02)`);
+    ng.addColorStop(1,`rgba(${r},${g},${b},0)`);
+    ctx.fillStyle=ng; ctx.beginPath(); ctx.arc(nc.x,nc.y,Math.min(W,H)*0.18,0,Math.PI*2); ctx.fill();
+    // Nebula label
+    ctx.globalAlpha=0.2; ctx.fillStyle=`rgb(${r},${g},${b})`; ctx.textAlign='center';
+    ctx.font='8px "SF Mono",monospace';
+    ctx.fillText(PLATFORMS[p].name,nc.x,nc.y+Math.min(W,H)*0.19);
+  }
+  ctx.restore();
+
+  // Draw constellation lines (stars in same campaign, same platform)
+  ctx.save();
+  ctx.globalAlpha=0.07; ctx.lineWidth=0.8;
+  for (let i=0;i<stars.length;i++) {
+    const a=stars[i];
+    for (let j=i+1;j<stars.length;j++) {
+      const b=stars[j];
+      if (a.campaignIdx!==b.campaignIdx || a.platIdx!==b.platIdx) continue;
+      const dx=a.x-b.x, dy=a.y-b.y;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      if (dist>W*0.12) continue;
+      const [r,g,bl]=PLATFORMS[a.platIdx].color;
+      ctx.strokeStyle=`rgb(${r},${g},${bl})`;
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+    }
+  }
+  ctx.restore();
+
+  // Hit test
+  hovStar=null; let bestDist=16;
+  if (mouse) {
+    for (const s of stars) {
+      const dx=s.x-mouse.x, dy=s.y-mouse.y;
+      const d=Math.sqrt(dx*dx+dy*dy);
+      if (d<bestDist) { bestDist=d; hovStar=s; }
+    }
+  }
+
+  // Draw stars
+  for (const s of stars) {
+    const [r,g,b]=PLATFORMS[s.platIdx].color;
+    const isHov=hovStar===s;
+    const birthAge=s.birthT<0?9999:t-s.birthT;
+    const birthAlpha=Math.min(1,birthAge*1.5);
+    const twinkle=0.75+Math.sin(t*2+s.twinklePhase)*0.25;
+    const alpha=(s.published?0.85:0.45)*twinkle*birthAlpha;
+    const sz=isHov?s.size*2.5:s.size;
+
+    ctx.save();
+    if (isHov || s.engScore>0.85) {
+      ctx.shadowColor=`rgb(${r},${g},${b})`; ctx.shadowBlur=isHov?14:sz*3;
+    }
+    ctx.globalAlpha=isHov?1:alpha;
+    ctx.fillStyle=`rgb(${r},${g},${b})`;
+    ctx.beginPath(); ctx.arc(s.x,s.y,sz,0,Math.PI*2); ctx.fill();
+    // Bright star cross for high engagement
+    if (s.engScore>0.8 || isHov) {
+      ctx.globalAlpha=(isHov?1:alpha)*0.5; ctx.strokeStyle=`rgb(${r},${g},${b})`; ctx.lineWidth=0.5;
+      const cl=sz*2.5;
+      ctx.beginPath(); ctx.moveTo(s.x-cl,s.y); ctx.lineTo(s.x+cl,s.y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(s.x,s.y-cl); ctx.lineTo(s.x,s.y+cl); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // Draw shooting stars
+  for (let i=shootingStars.length-1;i>=0;i--) {
+    const ss=shootingStars[i];
+    ss.x+=ss.speed*(1/60)*Math.cos(ss.angle);
+    ss.y+=ss.speed*(1/60)*Math.sin(ss.angle);
+    ss.alpha-=0.03;
+    if (ss.alpha<=0||ss.x>W+100||ss.y>H+100) { shootingStars.splice(i,1); continue; }
+    const [r,g,b]=PLATFORMS[ss.platIdx].color;
+    ctx.save();
+    const sg=ctx.createLinearGradient(ss.x-ss.len*Math.cos(ss.angle),ss.y-ss.len*Math.sin(ss.angle),ss.x,ss.y);
+    sg.addColorStop(0,`rgba(${r},${g},${b},0)`);
+    sg.addColorStop(1,`rgba(${r},${g},${b},${ss.alpha})`);
+    ctx.strokeStyle=sg; ctx.lineWidth=2;
+    ctx.shadowColor=`rgb(${r},${g},${b})`; ctx.shadowBlur=8;
+    ctx.beginPath();
+    ctx.moveTo(ss.x-ss.len*Math.cos(ss.angle),ss.y-ss.len*Math.sin(ss.angle));
+    ctx.lineTo(ss.x,ss.y); ctx.stroke();
+    ctx.restore();
+  }
+
+  // Tooltip
+  if (hovStar) drawTooltip(hovStar);
+
+  // Platform legend
+  ctx.save(); ctx.font='8px "SF Mono",monospace';
+  for (let i=0;i<PLATFORMS.length;i++) {
+    const p=PLATFORMS[i]; const lx=W-100, ly=22+i*14;
+    ctx.globalAlpha=0.55; ctx.fillStyle=`rgb(${p.color[0]},${p.color[1]},${p.color[2]})`;
+    ctx.beginPath(); ctx.arc(lx,ly-3,3,0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha=0.35; ctx.fillStyle='#ffffff'; ctx.textAlign='left';
+    ctx.fillText(p.name,lx+8,ly);
+  }
+  ctx.restore();
+
+  // Stats
+  const pubC=stars.filter(s=>s.published).length;
+  ctx.save(); ctx.textAlign='left';
+  ctx.fillStyle='#a855f7'; ctx.globalAlpha=0.85; ctx.font='bold 12px "SF Mono",monospace';
+  ctx.fillText('CONTENT CONSTELLATION',20,26);
+  ctx.globalAlpha=0.4; ctx.font='9px "SF Mono",monospace'; ctx.fillStyle='#ffffff';
+  ctx.fillText(`${totalStars} pieces  ·  ${pubC} published  ·  ${CAMPAIGN_NAMES.length} campaigns  ·  New stars appearing...`,20,40);
+  ctx.restore();
+}
+
+wrap.addEventListener('mousemove',(e)=>{ const r=wrap.getBoundingClientRect(); mouse={x:e.clientX-r.left,y:e.clientY-r.top}; });
+wrap.addEventListener('mouseleave',()=>{ mouse=null; hovStar=null; });
+const ro=new ResizeObserver(()=>resize()); ro.observe(wrap);
+resize(); requestAnimationFrame(frame);
+requestAnimationFrame(()=>{ canvas.style.opacity='1'; });
+const g=wrap.querySelector('.grid-texture') as HTMLElement|null; if(g) g.style.display='none';
+
+}); // end ric
+</script>

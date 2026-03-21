@@ -1,0 +1,284 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloPublish — Content Rainfall | Pello" description="Watch content pour down from every platform simultaneously — PelloPublish produces a constant rainfall of posts, articles, reels, and threads across all 6 channels.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="pub-rainfall-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+    <HowItWorks />
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link { position:absolute;top:-100%;left:1rem;z-index:9999;padding:.75rem 1.25rem;background:var(--color-brand-primary);color:white;font-weight:600;border-radius:0 0 .5rem .5rem;text-decoration:none;transition:top .1s; }
+  #skip-link:focus { top:0; }
+  #hero-wrap .url-input-wrap,.final-cta .url-input-wrap { background:rgba(255,255,255,0.06)!important;backdrop-filter:blur(24px) saturate(1.4);-webkit-backdrop-filter:blur(24px) saturate(1.4);border:1px solid rgba(255,255,255,0.12)!important;box-shadow:0 4px 30px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.05); }
+  #hero-wrap .hero-panel { background:rgba(6,7,18,0.55)!important;backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(255,255,255,0.12)!important; }
+  #hero-wrap .panel-source-row { border-bottom:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .core-inner { background:rgba(0,0,0,0.15)!important;border:1px solid rgba(255,255,255,0.1)!important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px); }
+  #hero-wrap .panel-core-section { border-bottom:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .channel-node { background:rgba(255,255,255,0.03)!important;border:1px solid rgba(255,255,255,0.1)!important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px); }
+  #hero-wrap .panel-header-bar { border-bottom:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .panel-ready-bar { border-top:1px solid rgba(255,255,255,0.1)!important; }
+  #hero-wrap .node-stat-text { color:#a78bfa!important; }
+  #hero-wrap .hero-panel-mobile { background:rgba(10,10,20,0.3);backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(255,255,255,0.08);border-radius:1.25rem;padding:1rem;box-shadow:0 8px 32px rgba(0,0,0,0.3); }
+  .final-cta { background:rgba(20,15,40,0.35)!important;backdrop-filter:blur(24px) saturate(1.4)!important;-webkit-backdrop-filter:blur(24px) saturate(1.4)!important;border-color:rgba(99,102,241,0.15)!important;box-shadow:0 8px 40px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.04)!important;overflow:hidden;position:relative; }
+  .final-cta > .absolute.inset-0.pointer-events-none { display:none!important; }
+  #hero-wrap .grid-texture,#hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display:none!important; }
+  #hero { background:transparent!important; }
+  #hero-headline,#hero-sub,#hero-headline-m,#hero-sub-m { display:none!important; }
+  #hero-panel,.hero-panel,.hero-panel-mobile { display:none!important; }
+  #hero-eyebrow,#hero-eyebrow-m,#hero-cta-row,#hero-cta-m,.url-input-wrap,.hero-panel-mobile { display:none!important; }
+</style>
+
+<script>
+const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+ric(() => {
+
+const PLATFORMS = [
+  { name:"Instagram", icon:"IG", color:[225,48,108] as [number,number,number] },
+  { name:"LinkedIn",  icon:"LI", color:[10,102,194] as [number,number,number] },
+  { name:"Twitter/X", icon:"X",  color:[139,92,246] as [number,number,number] },
+  { name:"TikTok",    icon:"TT", color:[0,242,234] as [number,number,number] },
+  { name:"Blog",      icon:"BL", color:[168,85,247] as [number,number,number] },
+  { name:"YouTube",   icon:"YT", color:[255,0,0] as [number,number,number] },
+];
+const PLAT_TITLES = [
+  ["5 Growth Hacks That Tripled Following","7 Scroll-Stopping Carousels","The Instagram Algorithm Explained","10K Followers in 90 Days","The Reel Formula: 100K+ Views","Stop Posting Random Content","Why Stories Outperform Feed","3 Hooks That Stop the Scroll","From 0 to 50K Strategy","Reels That Actually Convert","Aesthetic Consistency Guide","Behind the Scenes Content","Engagement Rate Secrets","Brand Story in 60 Seconds","Content Batching Method"],
+  ["Why B2B Leaders Rethink Content","500 Leads from One Post","Why Most B2B Content Fails","The LinkedIn Algorithm 2026","7 Post Formats Executives Love","Company Page 10x in 6 Months","Cold Outreach Framework","Authenticity Beats Polish","From 200 to 20K Followers","Our Most Viral Post Formula","B2B Content Calendar Guide","The Newsletter Strategy","The Comment Strategy","Followers to Customers","Thought Leadership Playbook"],
+  ["Thread: 7 content truths","The secret to going viral 🧵","Thread: 10,000 posts analyzed","Thread: How we 10x'd reach","Thread: 5 frameworks that convert","The engagement hack","Thread: Our workflow","Thread: Perfect post anatomy","Thread: 12 lessons from creators","How I got 100K followers","Twitter Lists for Business","Retweet Strategy Guide","Write Threads That Convert","Pinned Tweet Optimization","Quote Tweet Growth"],
+  ["POV: Content strategy clicks","3x/day for 30 days experiment","Content trick went viral 👀","TikTok growth hack 2026","AI writes all your content","Day 1 vs Day 365","60-second viral formula","$0 ads. 1M reached.","We A/B tested 50 hooks","Trending sound strategy","Duet Strategy for Brands","TikTok SEO 2026","Comment Section Wins","Going Viral Without Dancing","Niche Content Formula"],
+  ["Complete Content Marketing Guide","15 Strategies for Organic Traffic","AI-Powered Content Guide","Content Marketing ROI","10 Repurposing Strategies","Content That Ranks on Google","The Distribution Framework","50K Visits in 90 Days","Anatomy of a Viral Post","Content Clusters SEO","Topic Cluster Strategy","The Pillar Page Blueprint","How to Repurpose Blog Posts","Internal Linking Authority","Long-Form Content Formula"],
+  ["We Tested 5 Content Strategies","YouTube Algorithm 2026","100K Views Without Going Viral","Film 30 Videos in One Day","0 to 100K Subscribers","Hook Formula for Watch Time","1,000 Viral Videos Analyzed","Why Shorts Changed YouTube","Repurpose One Video x15","Perfect Upload Schedule","Thumbnail A/B Testing","Description Template","Building a YouTube Funnel","Community Tab Strategy","Monetization Beyond AdSense"],
+];
+const CONTENT_TYPES = ["Carousel","Reel","Story","Blog Post","Thread","Short","Article","Poll","Infographic"];
+const TIMES = ["9:00 AM","10:30 AM","12:00 PM","1:15 PM","3:00 PM","4:30 PM","6:00 PM","7:45 PM"];
+const ENGAGEMENTS = ["1.2k likes","847 likes","2.3k views","412 shares","156 comments","3.1k reach","967 saves"];
+
+function pick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+const TILE_W = 110, TILE_H = 42;
+const FALL_SPEED = [55, 45, 65, 80, 35, 70]; // px/sec per platform column
+const SPAWN_INTERVAL = [2.2, 2.8, 1.9, 2.1, 3.5, 2.5]; // seconds between spawns
+
+interface FallingTile {
+  platIdx: number; y: number;
+  title: string; contentType: string; time: string; engagement: string;
+  status: 0|1|2; frozen: boolean; opacity: number;
+  id: number;
+}
+
+const canvas = document.querySelector<HTMLCanvasElement>('.pub-rainfall-canvas')!;
+const wrap = document.getElementById('hero-wrap')!;
+const ctx = canvas.getContext('2d')!;
+let dpr=1, mouse: {x:number;y:number}|null=null;
+let tiles: FallingTile[] = [];
+let stackHeights: number[] = [0,0,0,0,0,0]; // px from bottom for each column
+let nextId=0, publishedCount=0, hovTile: FallingTile|null=null;
+let lastSpawnT: number[] = [0,0,0,0,0,0];
+let lastT=0;
+
+function rrect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  c.beginPath(); c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.quadraticCurveTo(x+w,y,x+w,y+r);
+  c.lineTo(x+w,y+h-r); c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  c.lineTo(x+r,y+h); c.quadraticCurveTo(x,y+h,x,y+h-r);
+  c.lineTo(x,y+r); c.quadraticCurveTo(x,y,x+r,y); c.closePath();
+}
+
+function colX(platIdx: number, W: number): number {
+  const totalW = 6 * (TILE_W + 12) - 12;
+  const startX = (W - totalW) / 2;
+  return startX + platIdx * (TILE_W + 12);
+}
+
+function drawTooltip(tile: FallingTile, tx: number, ty: number) {
+  const W=canvas.width/dpr;
+  const plat=PLATFORMS[tile.platIdx]; const [r,g,b]=plat.color;
+  const ttw=280, tth=tile.status===0?128:108;
+  let ttx=tx+TILE_W+8, tty=ty-tth/2+TILE_H/2;
+  if (ttx+ttw>W-8) ttx=tx-ttw-8;
+  tty=Math.max(8,Math.min(canvas.height/dpr-tth-8,tty));
+  ctx.save();
+  ctx.shadowColor=`rgba(${r},${g},${b},0.3)`; ctx.shadowBlur=22;
+  rrect(ctx,ttx,tty,ttw,tth,10); ctx.fillStyle='rgba(6,7,18,0.92)'; ctx.fill(); ctx.shadowBlur=0;
+  rrect(ctx,ttx,tty,ttw,tth,10); ctx.fillStyle=`rgba(${r},${g},${b},0.08)`; ctx.fill();
+  ctx.strokeStyle=`rgba(${r},${g},${b},0.3)`; ctx.lineWidth=1; ctx.stroke();
+  rrect(ctx,ttx,tty,ttw,3,3); ctx.fillStyle=`rgb(${r},${g},${b})`; ctx.globalAlpha=0.6; ctx.fill();
+  ctx.globalAlpha=1; ctx.textAlign='left';
+  ctx.fillStyle=`rgb(${r},${g},${b})`; ctx.font='bold 11px "SF Mono",monospace';
+  ctx.fillText(`${plat.icon}  ${plat.name}`,ttx+12,tty+22);
+  ctx.fillStyle='#ffffff'; ctx.globalAlpha=0.45; ctx.font='10px "SF Mono",monospace';
+  ctx.textAlign='right'; ctx.fillText(tile.contentType.toUpperCase(),ttx+ttw-12,tty+22);
+  ctx.textAlign='left'; ctx.globalAlpha=1;
+  ctx.fillStyle='#ffffff'; ctx.font='500 13px -apple-system,sans-serif';
+  ctx.save(); ctx.beginPath(); ctx.rect(ttx+12,tty+28,ttw-24,18); ctx.clip();
+  ctx.fillText(tile.title,ttx+12,tty+42); ctx.restore();
+  ctx.globalAlpha=0.4; ctx.font='9px "SF Mono",monospace';
+  ctx.fillText(tile.time,ttx+12,tty+60);
+  if (tile.status===0) { ctx.globalAlpha=0.8; ctx.fillStyle='rgba(74,222,128,0.9)'; ctx.fillText(tile.engagement,ttx+12,tty+76); }
+  ctx.restore();
+}
+
+function resize() {
+  dpr=window.devicePixelRatio||1;
+  const r=wrap.getBoundingClientRect();
+  const w=Math.round(r.width), h=Math.round(r.height);
+  canvas.width=w*dpr; canvas.height=h*dpr;
+  canvas.style.width=`${w}px`; canvas.style.height=`${h}px`;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  tiles=[]; stackHeights=[0,0,0,0,0,0];
+}
+
+function frame() {
+  requestAnimationFrame(frame);
+  const W=canvas.width/dpr, H=canvas.height/dpr;
+  const t=performance.now()*0.001;
+  const dt=Math.min(t-lastT,0.05); lastT=t;
+  ctx.clearRect(0,0,W,H);
+
+  const HEADER_H=70, STACK_AREA=H-HEADER_H-40;
+
+  // Spawn tiles
+  for (let p=0;p<6;p++) {
+    if (t-lastSpawnT[p]>SPAWN_INTERVAL[p]) {
+      const sr=Math.random();
+      tiles.push({ platIdx:p, y:HEADER_H-TILE_H, title:pick(PLAT_TITLES[p]),
+        contentType:pick(CONTENT_TYPES), time:pick(TIMES), engagement:pick(ENGAGEMENTS),
+        status:sr<0.3?0:sr<0.7?1:2, frozen:false, opacity:0, id:nextId++ });
+      lastSpawnT[p]=t;
+    }
+  }
+
+  // Column headers (platform names)
+  for (let p=0;p<6;p++) {
+    const [r,g,b]=PLATFORMS[p].color;
+    const cx2=colX(p,W)+TILE_W/2;
+    ctx.save();
+    // Pipe effect
+    ctx.globalAlpha=0.1; ctx.fillStyle=`rgb(${r},${g},${b})`;
+    ctx.fillRect(cx2-2,HEADER_H-20,4,20);
+    ctx.globalAlpha=0.7; ctx.fillStyle=`rgb(${r},${g},${b})`;
+    ctx.font='bold 9px "SF Mono",monospace'; ctx.textAlign='center';
+    ctx.fillText(PLATFORMS[p].icon,cx2,24);
+    ctx.globalAlpha=0.4; ctx.fillStyle='#ffffff'; ctx.font='8px "SF Mono",monospace';
+    ctx.fillText(PLATFORMS[p].name,cx2,36);
+    // Speed indicator
+    ctx.globalAlpha=0.3; ctx.fillStyle=`rgb(${r},${g},${b})`; ctx.font='7px "SF Mono",monospace';
+    ctx.fillText(`${FALL_SPEED[p]}px/s`,cx2,48);
+    ctx.restore();
+  }
+
+  // Stack areas at bottom
+  for (let p=0;p<6;p++) {
+    const [r,g,b]=PLATFORMS[p].color;
+    const cx2=colX(p,W);
+    ctx.save();
+    ctx.globalAlpha=0.04; ctx.fillStyle=`rgb(${r},${g},${b})`;
+    ctx.fillRect(cx2,H-stackHeights[p]-4,TILE_W,stackHeights[p]+4);
+    ctx.restore();
+  }
+
+  // Update & draw tiles
+  hovTile=null;
+  const toRemove: number[]=[];
+
+  for (let i=0;i<tiles.length;i++) {
+    const tile=tiles[i];
+    if (!tile.frozen) {
+      tile.y+=FALL_SPEED[tile.platIdx]*dt;
+      tile.opacity=Math.min(1,tile.opacity+dt*3);
+    }
+    const tx=colX(tile.platIdx,W), ty=tile.y;
+
+    // Check if hit stack
+    const stackY=H-stackHeights[tile.platIdx]-TILE_H-4;
+    if (!tile.frozen && ty>=stackY) {
+      tile.frozen=true; tile.y=stackY;
+      stackHeights[tile.platIdx]=Math.min(stackHeights[tile.platIdx]+TILE_H+4, STACK_AREA*0.6);
+      publishedCount++;
+    }
+
+    // Remove tiles that are off screen (under stack)
+    if (tile.frozen && tile.y>H+TILE_H) { toRemove.push(i); continue; }
+
+    // Check hover
+    if (mouse&&mouse.x>=tx&&mouse.x<=tx+TILE_W&&mouse.y>=ty&&mouse.y<=ty+TILE_H) hovTile=tile;
+
+    const isHov=hovTile===tile;
+    const [r,g,b]=PLATFORMS[tile.platIdx].color;
+    ctx.save();
+    ctx.globalAlpha=tile.opacity*(isHov?1:tile.frozen?0.65:0.85);
+    if (isHov) { ctx.shadowColor=`rgb(${r},${g},${b})`; ctx.shadowBlur=12; }
+    rrect(ctx,tx,ty,TILE_W,TILE_H,5);
+    ctx.fillStyle=`rgba(${r},${g},${b},${isHov?0.22:tile.frozen?0.12:0.15})`; ctx.fill();
+    ctx.strokeStyle=`rgba(${r},${g},${b},${isHov?0.7:tile.frozen?0.25:0.4})`; ctx.lineWidth=1; ctx.stroke();
+    // Icon badge
+    rrect(ctx,tx+4,ty+7,18,18,3); ctx.fillStyle=`rgba(${r},${g},${b},0.8)`; ctx.fill();
+    ctx.fillStyle='#fff'; ctx.globalAlpha=0.9; ctx.font='bold 7px "SF Mono",monospace'; ctx.textAlign='center';
+    ctx.fillText(PLATFORMS[tile.platIdx].icon,tx+13,ty+19);
+    // Title
+    ctx.globalAlpha=isHov?0.9:0.55; ctx.fillStyle='#fff';
+    ctx.font='8px -apple-system,sans-serif'; ctx.textAlign='left';
+    ctx.save(); ctx.beginPath(); ctx.rect(tx+27,ty+4,TILE_W-32,TILE_H-8); ctx.clip();
+    ctx.fillText(tile.title,tx+27,ty+TILE_H/2+3); ctx.restore();
+    if (tile.frozen) {
+      ctx.globalAlpha=0.55; ctx.fillStyle='rgba(74,222,128,0.9)';
+      ctx.font='7px "SF Mono",monospace'; ctx.textAlign='right';
+      ctx.fillText('✓ LIVE',tx+TILE_W-4,ty+TILE_H-5);
+    }
+    ctx.restore();
+  }
+  for (let i=toRemove.length-1;i>=0;i--) tiles.splice(toRemove[i],1);
+
+  // Hover tooltip
+  if (hovTile) drawTooltip(hovTile, colX(hovTile.platIdx,W), hovTile.y);
+
+  // Stats
+  ctx.save(); ctx.textAlign='left';
+  ctx.fillStyle='#a855f7'; ctx.globalAlpha=0.85; ctx.font='bold 12px "SF Mono",monospace';
+  ctx.fillText('CONTENT RAINFALL',20,22);
+  ctx.globalAlpha=0.4; ctx.font='9px "SF Mono",monospace'; ctx.fillStyle='#ffffff';
+  ctx.fillText(`${publishedCount} published  ·  ${tiles.filter(t=>!t.frozen).length} falling  ·  6 platforms active`,20,36);
+  ctx.restore();
+}
+
+wrap.addEventListener('mousemove',(e)=>{ const r=wrap.getBoundingClientRect(); mouse={x:e.clientX-r.left,y:e.clientY-r.top}; });
+wrap.addEventListener('mouseleave',()=>{ mouse=null; hovTile=null; });
+const ro=new ResizeObserver(()=>resize()); ro.observe(wrap);
+resize(); lastT=performance.now()*0.001;
+requestAnimationFrame(frame);
+requestAnimationFrame(()=>{ canvas.style.opacity='1'; });
+const g=wrap.querySelector('.grid-texture') as HTMLElement|null; if(g) g.style.display='none';
+
+}); // end ric
+</script>
