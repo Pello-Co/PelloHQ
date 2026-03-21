@@ -298,8 +298,8 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
       const sx = GLOBE_CX + rx * GLOBE_R;
       const sy = GLOBE_CY - ry * GLOBE_R;
       const backDepth = Math.max(0, -rz - 0.05);
-      ctx.globalAlpha = 0.08 + backDepth * 0.07; // clearly visible: 0.08 at edge → 0.15 at back center
-      ctx.fillStyle = 'rgb(0,180,175)';
+      ctx.globalAlpha = 0.12 + backDepth * 0.10;
+      ctx.fillStyle = 'rgb(0,200,195)';
       ctx.beginPath(); ctx.arc(sx, sy, 0.8 + backDepth * 0.4, 0, Math.PI * 2); ctx.fill();
     }
 
@@ -343,8 +343,8 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
       const nearBeam = Math.abs(sy - beamY) < 10;
 
       const flicker = 0.92 + Math.sin(t * 8 + dot.x * 20 + dot.y * 30) * 0.08;
-      const baseAlpha = (0.18 + depth * 0.40) * flicker;
-      ctx.globalAlpha = nearBeam ? Math.min(1, baseAlpha + 0.5) : baseAlpha;
+      const baseAlpha = (0.28 + depth * 0.45) * flicker;
+      ctx.globalAlpha = nearBeam ? Math.min(1, baseAlpha + 0.45) : baseAlpha;
       ctx.fillStyle = nearBeam ? 'rgb(150,255,252)' : 'rgb(0,242,234)';
       const rad = (1.0 + depth * 0.9) * (nearBeam ? 1.4 : 1);
       ctx.beginPath(); ctx.arc(sx, sy, rad, 0, Math.PI * 2); ctx.fill();
@@ -390,7 +390,7 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
       const cr = Math.sqrt(Math.max(0, GLOBE_R*GLOBE_R - dy*dy));
       if (cr < 2) continue;
       const near = Math.abs(y-beamY) < 8;
-      ctx.globalAlpha = near ? 0.12 : 0.02;
+      ctx.globalAlpha = near ? 0.20 : 0.035;
       ctx.strokeStyle = '#00f2ea';
       ctx.beginPath(); ctx.moveTo(GLOBE_CX-cr,y); ctx.lineTo(GLOBE_CX+cr,y); ctx.stroke();
     }
@@ -566,7 +566,7 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
 
     // Globe edge ring
     ctx.save();
-    ctx.strokeStyle = `rgba(0,242,234,${0.06 + Math.sin(t * 0.3) * 0.02})`;
+    ctx.strokeStyle = `rgba(0,242,234,${0.12 + Math.sin(t * 0.3) * 0.04})`;
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.arc(GLOBE_CX, GLOBE_CY, GLOBE_R, 0, Math.PI * 2); ctx.stroke();
     ctx.restore();
@@ -596,85 +596,115 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
     const leftTop = GLOBE_CY - GLOBE_R * 0.7;
     ctx.textAlign='right';
 
-    // Panel header
-    ctx.globalAlpha = 0.55 + Math.sin(t*0.8)*0.08;
-    ctx.fillStyle='#00f2ea';
-    ctx.font='bold 11px "SF Mono","Fira Code",monospace';
-    ctx.fillText('─── INFRASTRUCTURE ───', leftX, leftTop);
-
-    // Data rows
-    ctx.font='11px "SF Mono","Fira Code",monospace';
-    const leftRows = [
-      { label: 'PHONES ONLINE', value: `${phones.length}`, phase: 0 },
-      { label: 'ACTIVE', value: `${activeCount} / ${phones.length}`, phase: 0.5 },
-      { label: 'CITIES', value: '12 regions', phase: 1.0 },
-      { label: 'UPTIME', value: '99.7%', phase: 1.5 },
-      { label: 'LATENCY', value: '< 14ms', phase: 2.0 },
-      { label: 'BANDWIDTH', value: 'NOMINAL', phase: 2.5 },
-      { label: 'SYNC MODE', value: 'REAL-TIME', phase: 3.0 },
-      { label: 'ENCRYPTION', value: 'AES-256', phase: 3.5 },
-    ];
-    for (let i = 0; i < leftRows.length; i++) {
-      const row = leftRows[i];
-      const ry = leftTop + 20 + i * 18;
-      const flicker = 0.35 + Math.sin(t * 1.1 + row.phase) * 0.08;
-      // Label
-      ctx.globalAlpha = flicker * 0.7;
-      ctx.fillStyle = '#00f2ea';
-      ctx.fillText(row.label, leftX - 80, ry);
-      // Value (brighter)
-      ctx.globalAlpha = flicker * 1.2;
-      ctx.fillStyle = i < 3 ? '#b0fffc' : '#50f5ef';
-      ctx.fillText(row.value, leftX, ry);
-    }
-
-    // ── Right HUD panel ──
-    const rightX = GLOBE_CX + GLOBE_R + 20;
-    const rightTop = GLOBE_CY - GLOBE_R * 0.7;
+    // ── Left HUD column — all system data ──
+    const hudX = 20;
+    const hudTop = GLOBE_CY - GLOBE_R * 0.85;
     ctx.textAlign='left';
 
-    // Panel header
-    ctx.globalAlpha = 0.55 + Math.sin(t*0.9+1)*0.08;
-    ctx.fillStyle='#00f2ea';
-    ctx.font='bold 11px "SF Mono","Fira Code",monospace';
-    ctx.fillText('─── OPERATIONS ───', rightX, rightTop);
+    // Section 1: Infrastructure
+    ctx.globalAlpha = 0.7 + Math.sin(t*0.8)*0.1;
+    ctx.fillStyle='#80fff8';
+    ctx.font='bold 12px "SF Mono","Fira Code",monospace';
+    ctx.fillText('INFRASTRUCTURE', hudX, hudTop);
 
-    // Data rows
+    // Separator line
+    ctx.globalAlpha = 0.3;
+    ctx.strokeStyle = '#00f2ea';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(hudX, hudTop + 6); ctx.lineTo(hudX + 160, hudTop + 6); ctx.stroke();
+
     ctx.font='11px "SF Mono","Fira Code",monospace';
-    const rightRows = [
-      { label: 'ACCOUNTS', value: `${totalAccts}`, phase: 0.3 },
-      { label: 'POSTS TODAY', value: `${totalPosts.toLocaleString()}`, phase: 0.8 },
-      { label: 'PLATFORMS', value: '6 active', phase: 1.3 },
-      { label: 'AI MODELS', value: 'GPT-4 + LLAMA', phase: 1.8 },
-      { label: 'QUEUE', value: `${Math.floor(47 + Math.sin(t*0.3)*12)} pending`, phase: 2.3 },
-      { label: 'ENGAGEMENT', value: '6.8% avg', phase: 2.8 },
-      { label: 'GROWTH RATE', value: '+14.2%/mo', phase: 3.3 },
-      { label: 'CONTENT GEN', value: 'ACTIVE', phase: 3.8 },
+    const infraRows = [
+      { label: 'PHONES', value: `${phones.length}`, phase: 0 },
+      { label: 'ACTIVE', value: `${activeCount}/${phones.length}`, phase: 0.5 },
+      { label: 'CITIES', value: '12', phase: 1.0 },
+      { label: 'UPTIME', value: '99.7%', phase: 1.5 },
+      { label: 'LATENCY', value: '< 14ms', phase: 2.0 },
+      { label: 'SYNC', value: 'REAL-TIME', phase: 2.5 },
     ];
-    for (let i = 0; i < rightRows.length; i++) {
-      const row = rightRows[i];
-      const ry = rightTop + 20 + i * 18;
-      const flicker = 0.35 + Math.sin(t * 1.2 + row.phase) * 0.08;
-      // Label
-      ctx.globalAlpha = flicker * 0.7;
+    for (let i = 0; i < infraRows.length; i++) {
+      const row = infraRows[i];
+      const ry = hudTop + 22 + i * 17;
+      const flicker = 0.55 + Math.sin(t * 1.1 + row.phase) * 0.1;
+      ctx.globalAlpha = flicker * 0.6;
       ctx.fillStyle = '#00f2ea';
-      ctx.fillText(row.label, rightX, ry);
-      // Value (brighter)
-      ctx.globalAlpha = flicker * 1.2;
-      ctx.fillStyle = i < 3 ? '#b0fffc' : '#50f5ef';
-      ctx.fillText(row.value, rightX + 100, ry);
+      ctx.fillText(row.label, hudX, ry);
+      ctx.globalAlpha = flicker;
+      ctx.fillStyle = '#b0fffc';
+      ctx.fillText(row.value, hudX + 100, ry);
     }
 
-    // ── Bottom center readout ──
+    // Section 2: Operations
+    const opsTop = hudTop + 22 + infraRows.length * 17 + 14;
+    ctx.globalAlpha = 0.7 + Math.sin(t*0.9+1)*0.1;
+    ctx.fillStyle='#80fff8';
+    ctx.font='bold 12px "SF Mono","Fira Code",monospace';
+    ctx.fillText('OPERATIONS', hudX, opsTop);
+
+    ctx.globalAlpha = 0.3;
+    ctx.beginPath(); ctx.moveTo(hudX, opsTop + 6); ctx.lineTo(hudX + 160, opsTop + 6); ctx.stroke();
+
+    ctx.font='11px "SF Mono","Fira Code",monospace';
+    const opsRows = [
+      { label: 'ACCOUNTS', value: `${totalAccts}`, phase: 0.3 },
+      { label: 'POSTS/DAY', value: `${totalPosts.toLocaleString()}`, phase: 0.8 },
+      { label: 'PLATFORMS', value: '6 active', phase: 1.3 },
+      { label: 'AI ENGINE', value: 'GPT-4 + LLAMA', phase: 1.8 },
+      { label: 'QUEUE', value: `${Math.floor(47 + Math.sin(t*0.3)*12)} pending`, phase: 2.3 },
+      { label: 'ENGAGEMENT', value: '6.8% avg', phase: 2.8 },
+    ];
+    for (let i = 0; i < opsRows.length; i++) {
+      const row = opsRows[i];
+      const ry = opsTop + 22 + i * 17;
+      const flicker = 0.55 + Math.sin(t * 1.2 + row.phase) * 0.1;
+      ctx.globalAlpha = flicker * 0.6;
+      ctx.fillStyle = '#00f2ea';
+      ctx.fillText(row.label, hudX, ry);
+      ctx.globalAlpha = flicker;
+      ctx.fillStyle = '#b0fffc';
+      ctx.fillText(row.value, hudX + 100, ry);
+    }
+
+    // Section 3: Growth
+    const growTop = opsTop + 22 + opsRows.length * 17 + 14;
+    ctx.globalAlpha = 0.7 + Math.sin(t*1.0+2)*0.1;
+    ctx.fillStyle='#80fff8';
+    ctx.font='bold 12px "SF Mono","Fira Code",monospace';
+    ctx.fillText('GROWTH', hudX, growTop);
+
+    ctx.globalAlpha = 0.3;
+    ctx.beginPath(); ctx.moveTo(hudX, growTop + 6); ctx.lineTo(hudX + 160, growTop + 6); ctx.stroke();
+
+    ctx.font='11px "SF Mono","Fira Code",monospace';
+    const growRows = [
+      { label: 'RATE', value: '+14.2%/mo', phase: 3.3 },
+      { label: 'CONTENT', value: 'GENERATING', phase: 3.8 },
+      { label: 'BANDWIDTH', value: 'NOMINAL', phase: 4.1 },
+      { label: 'ENCRYPTION', value: 'AES-256', phase: 4.5 },
+    ];
+    for (let i = 0; i < growRows.length; i++) {
+      const row = growRows[i];
+      const ry = growTop + 22 + i * 17;
+      const flicker = 0.55 + Math.sin(t * 1.0 + row.phase) * 0.1;
+      ctx.globalAlpha = flicker * 0.6;
+      ctx.fillStyle = '#00f2ea';
+      ctx.fillText(row.label, hudX, ry);
+      ctx.globalAlpha = flicker;
+      ctx.fillStyle = '#b0fffc';
+      ctx.fillText(row.value, hudX + 100, ry);
+    }
+
+    // ── Bottom status bar ──
     ctx.textAlign='center';
-    ctx.globalAlpha = 0.35 + Math.sin(t*0.6)*0.08;
+    ctx.globalAlpha = 0.50 + Math.sin(t*0.6)*0.1;
     ctx.font='10px "SF Mono","Fira Code",monospace';
-    ctx.fillStyle='#00f2ea';
+    ctx.fillStyle='#80fff8';
     const bottomY = GLOBE_CY + GLOBE_R + 28;
     const statusFlash = Math.floor(t * 2) % 2 === 0;
     ctx.fillText(`${statusFlash ? '●' : '○'}  ALL SYSTEMS OPERATIONAL  ${statusFlash ? '●' : '○'}`, GLOBE_CX, bottomY);
-    ctx.globalAlpha = 0.25 + Math.sin(t*0.4+1)*0.06;
-    ctx.fillText(`NETWORK THROUGHPUT: ${(2847 + Math.floor(Math.sin(t*0.2)*200)).toLocaleString()} ops/min  ·  ERROR RATE: 0.02%`, GLOBE_CX, bottomY + 16);
+    ctx.globalAlpha = 0.35 + Math.sin(t*0.4+1)*0.08;
+    ctx.fillStyle='#00f2ea';
+    ctx.fillText(`THROUGHPUT: ${(2847 + Math.floor(Math.sin(t*0.2)*200)).toLocaleString()} ops/min  ·  ERROR RATE: 0.02%`, GLOBE_CX, bottomY + 16);
 
     ctx.restore();
 
