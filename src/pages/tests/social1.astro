@@ -1,0 +1,806 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloSocial — Phone Grid Growth Infrastructure" description="PelloSocial manages hundreds of physical phones, each running multiple social accounts. AI-powered personas, geo-targeted growth, coordinated at server-farm scale.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="social-phone-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(192,38,211,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Data constants ─────────────────────────────────────────────────────────
+  const PHONE_MODELS = ["iPhone 15","iPhone 14","iPhone 13","Pixel 8","Pixel 7","Samsung S24","Samsung S23","Samsung A54","OnePlus 12","Xiaomi 14"];
+
+  interface Platform { name: string; color: [number,number,number]; weight: number; }
+  const PLATFORMS_SOCIAL: Platform[] = [
+    { name: "Instagram", color: [225, 48,  108], weight: 0.30 },
+    { name: "TikTok",    color: [0,   242, 234], weight: 0.25 },
+    { name: "Twitter/X", color: [139, 92,  246], weight: 0.20 },
+    { name: "YouTube",   color: [255, 0,   0  ], weight: 0.10 },
+    { name: "Facebook",  color: [24,  119, 242], weight: 0.10 },
+    { name: "Reddit",    color: [255, 69,  0  ], weight: 0.05 },
+  ];
+
+  const PLAT_CUM: number[] = [];
+  { let s = 0; for (const p of PLATFORMS_SOCIAL) { s += p.weight; PLAT_CUM.push(s); } }
+
+  const STATUS_NAMES   = ["Active","Posting","Engaging","Idle","Warming"];
+  const STATUS_WEIGHTS = [0.60, 0.15, 0.15, 0.05, 0.05];
+  const STATUS_CUM: number[] = [];
+  { let s = 0; for (const w of STATUS_WEIGHTS) { s += w; STATUS_CUM.push(s); } }
+
+  const PERSONA_FIRST = ["Alex","Jordan","Casey","Riley","Morgan","Taylor","Jamie","Quinn","Sage","Blake","Drew","Avery","Dakota","Skyler","Reese","Kai","Nova","Zara","Luna","Phoenix","Aria","Mika","Eden","Harlow","Ember"];
+  const PERSONA_LAST  = ["Rivera","Kim","Santos","Nakamura","Ahmed","Berg","Costa","Johal","Novak","Park","Silva","Tanaka","Volkov","Wu","Yilmaz","Zhang","Okafor","Müller","Sharma","Petrov"];
+  const CITIES        = ["London","New York","LA","Tokyo","Berlin","Sydney","Toronto","Dubai","Singapore","São Paulo","Mumbai","Paris","Seoul","Amsterdam","Miami","Austin","Barcelona","Bangkok","Cape Town","Stockholm"];
+  const NICHES        = ["Fitness","Tech Reviews","Food","Travel","Fashion","Gaming","Finance","Wellness","Photography","Music","Beauty","Lifestyle","Comedy","Education","Crypto"];
+  const POST_TYPES    = ["Reel","Story","Post","Carousel","Short","Thread","Review","UGC Clip","Live","Poll"];
+  const FOLLOWER_COUNTS  = ["2.3k","4.7k","8.1k","12.4k","18.9k","24.2k","31.5k","47.8k","63.1k","89.4k"];
+  const ENGAGEMENT_RATES = ["3.2%","4.1%","5.6%","6.8%","7.3%","8.9%","11.2%","14.5%"];
+  const POST_AGES        = ["2 min ago","5 min ago","12 min ago","23 min ago","45 min ago","1 hr ago","2 hrs ago"];
+  const WEEKLY_GROWTHS   = ["↑ 4%","↑ 8%","↑ 12%","↑ 15%","↑ 21%","↑ 7%","↑ 18%","↑ 9%"];
+
+  // ─── Phone grid config ──────────────────────────────────────────────────────
+  const PW = 45;   // phone width (logical px)
+  const PH = 75;   // phone height
+  const GAP = 3;   // gap between phones
+  const PR  = 8;   // border radius
+  const CW  = PW + GAP;
+  const CH  = PH + GAP;
+  const LINE_SPACING = 10;
+  const LINE_COUNT   = 8;   // lines in feed buffer (3-4 visible)
+
+  // ─── Types ──────────────────────────────────────────────────────────────────
+  interface FeedLine { w: number; x0: number; alpha: number; }
+
+  interface PhoneData {
+    col: number; row: number;
+    x: number; y: number;
+    model: string;
+    city: string;
+    handle: string;
+    platIdx: number;
+    niche: string;
+    followers: string;
+    engagement: string;
+    statusIdx: number;
+    postType: string;
+    postAge: string;
+    weeklyGrowth: string;
+    feedLines: FeedLine[];
+    feedOffset: number;
+    feedSpeed: number;
+    postFlash: number;   // 0-1, decays to 0
+    waveFlash: number;   // 0-1, set per-frame from wave calc
+    phase: number;
+  }
+
+  interface Particle {
+    x: number; y: number;
+    vx: number; vy: number;
+    life: number;
+  }
+
+  // ─── Canvas state ───────────────────────────────────────────────────────────
+  const canvas = document.querySelector<HTMLCanvasElement>('.social-phone-canvas')!;
+  const wrap   = document.getElementById('hero-wrap')!;
+  const ctx    = canvas.getContext('2d')!;
+
+  let phones: PhoneData[] = [];
+  let particles: Particle[] = [];
+  let hoveredPhoneIdx = -1;
+  let mouse: { x: number; y: number } | null = null;
+  let dpr = 1;
+  let totalCols = 0;
+  let totalRows = 0;
+  let gridOffX  = 0;
+  let gridOffY  = 0;
+  let lastPostTime  = -10;
+  let lastWaveTime  = -20;
+  let waveActive    = false;
+  let waveStartTime = 0;
+  let lastFrameTime = 0;
+
+  // ─── Helpers ────────────────────────────────────────────────────────────────
+  function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function pickW(cum: number[]): number {
+    const r = Math.random();
+    for (let i = 0; i < cum.length; i++) if (r < cum[i]) return i;
+    return cum.length - 1;
+  }
+
+  function rrect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r);
+    c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r);
+    c.lineTo(x, y + r);
+    c.quadraticCurveTo(x, y, x + r, y);
+    c.closePath();
+  }
+
+  // ─── Build grid ─────────────────────────────────────────────────────────────
+  function buildGrid() {
+    phones = [];
+    particles = [];
+    const W    = canvas.width / dpr;
+    const H    = canvas.height / dpr;
+    const cols = Math.floor((W + GAP) / CW);
+    const rows = Math.floor((H + GAP) / CH);
+    totalCols = cols;
+    totalRows = rows;
+    gridOffX  = Math.floor((W - cols * CW + GAP) / 2);
+    gridOffY  = Math.floor((H - rows * CH + GAP) / 2);
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const x = gridOffX + c * CW;
+        const y = gridOffY + r * CH;
+        const platIdx   = pickW(PLAT_CUM);
+        const statusIdx = pickW(STATUS_CUM);
+        const firstName = pick(PERSONA_FIRST).toLowerCase();
+        const lastName  = pick(PERSONA_LAST).toLowerCase();
+        const feedLines: FeedLine[] = [];
+        for (let l = 0; l < LINE_COUNT; l++) {
+          feedLines.push({
+            w:     0.35 + Math.random() * 0.55,
+            x0:    Math.random() * 0.12,
+            alpha: 0.03 + Math.random() * 0.045,
+          });
+        }
+        phones.push({
+          col: c, row: r, x, y,
+          model:        pick(PHONE_MODELS),
+          city:         pick(CITIES),
+          handle:       `@${firstName}_${lastName}`,
+          platIdx,
+          niche:        pick(NICHES),
+          followers:    pick(FOLLOWER_COUNTS),
+          engagement:   pick(ENGAGEMENT_RATES),
+          statusIdx,
+          postType:     pick(POST_TYPES),
+          postAge:      pick(POST_AGES),
+          weeklyGrowth: pick(WEEKLY_GROWTHS),
+          feedLines,
+          feedOffset:   Math.random() * (LINE_SPACING * LINE_COUNT),
+          feedSpeed:    0.055 + Math.random() * 0.07,
+          postFlash:    0,
+          waveFlash:    0,
+          phase:        Math.random() * Math.PI * 2,
+        });
+      }
+    }
+  }
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    const w = Math.round(rect.width);
+    const h = Math.round(rect.height);
+    canvas.width  = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width  = `${w}px`;
+    canvas.style.height = `${h}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildGrid();
+  }
+
+  // ─── Hit test for hover ──────────────────────────────────────────────────────
+  function findHoveredPhone(mx: number, my: number): number {
+    const col = Math.floor((mx - gridOffX) / CW);
+    const row = Math.floor((my - gridOffY) / CH);
+    if (col < 0 || row < 0 || col >= totalCols || row >= totalRows) return -1;
+    const px = gridOffX + col * CW;
+    const py = gridOffY + row * CH;
+    if (mx >= px && mx <= px + PW && my >= py && my <= py + PH) {
+      return row * totalCols + col;
+    }
+    return -1;
+  }
+
+  // ─── Draw a single phone ─────────────────────────────────────────────────────
+  function drawPhone(phone: PhoneData, t: number, hovered: boolean) {
+    const { x, y } = phone;
+    const plat   = PLATFORMS_SOCIAL[phone.platIdx];
+    const [pr, pg, pb] = plat.color;
+    const status = STATUS_NAMES[phone.statusIdx];
+    const dim    = status === 'Idle' ? 0.55 : 1.0;
+    const pf     = phone.postFlash;
+    const wf     = phone.waveFlash;
+
+    ctx.save();
+    ctx.globalAlpha = dim;
+
+    // Phone background
+    rrect(ctx, x, y, PW, PH, PR);
+    ctx.fillStyle = 'rgba(6,7,18,0.30)';
+    ctx.fill();
+
+    // Phone border
+    let bAlpha = 0.12 + pf * 0.32 + wf * 0.18;
+    if (hovered)         bAlpha = 0.55;
+    if (status === 'Idle') bAlpha = 0.06;
+    ctx.strokeStyle = `rgba(192,38,211,${Math.min(bAlpha, 0.75)})`;
+    ctx.lineWidth   = hovered ? 1.5 : 1;
+    rrect(ctx, x, y, PW, PH, PR);
+    ctx.stroke();
+
+    // ── Clip for interior content ───────────────────────────────────────────
+    ctx.save();
+    ctx.beginPath();
+    rrect(ctx, x + 1, y + 1, PW - 2, PH - 2, PR - 1);
+    ctx.clip();
+
+    // Status bar (2px, platform colour, alpha 0.20)
+    ctx.fillStyle = `rgba(${pr},${pg},${pb},0.20)`;
+    ctx.fillRect(x + 1, y + 1, PW - 2, 2);
+
+    // Notch (4×2 px centred, near-opaque dark)
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.fillRect(x + PW / 2 - 2, y + 1, 4, 2);
+
+    // Scrolling feed lines
+    const lax = x + 2;
+    const lay = y + 6;
+    const law = PW - 4;
+    const lah = PH - 10;
+    const off = phone.feedOffset % LINE_SPACING;
+
+    for (let l = 0; l < LINE_COUNT; l++) {
+      const fl = phone.feedLines[l];
+      const ly = lay + l * LINE_SPACING - off;
+      // also render wrapped-around lines
+      const ly2 = ly + LINE_COUNT * LINE_SPACING;
+      for (const lineY of [ly, ly2]) {
+        if (lineY < lay - 1 || lineY > lay + lah + 1) continue;
+        ctx.fillStyle = `rgba(255,255,255,${fl.alpha})`;
+        ctx.fillRect(lax + law * fl.x0, lineY, law * fl.w, 1);
+      }
+    }
+
+    // Platform dot — bottom-left of interior (2px)
+    ctx.fillStyle = `rgba(${pr},${pg},${pb},0.65)`;
+    ctx.beginPath();
+    ctx.arc(x + 5, y + PH - 6, 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore(); // end clip
+
+    // ── Status glow at bottom edge ──────────────────────────────────────────
+    if (status === 'Active') {
+      ctx.strokeStyle = 'rgba(74,222,128,0.22)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x + PR, y + PH);
+      ctx.lineTo(x + PW - PR, y + PH);
+      ctx.stroke();
+    } else if (status === 'Posting' || pf > 0.05) {
+      ctx.strokeStyle = `rgba(192,38,211,${0.20 + pf * 0.45})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x + PR, y + PH);
+      ctx.lineTo(x + PW - PR, y + PH);
+      ctx.stroke();
+    } else if (status === 'Warming') {
+      ctx.strokeStyle = 'rgba(251,191,36,0.22)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x + PR, y + PH);
+      ctx.lineTo(x + PW - PR, y + PH);
+      ctx.stroke();
+    }
+
+    // ── Engaging: 3 dots orbiting outside the phone rect ───────────────────
+    if (status === 'Engaging') {
+      const cx = x + PW / 2;
+      const cy = y + PH / 2;
+      const rx = PW / 2 + 3.5;
+      const ry = PH / 2 + 3.5;
+      for (let d = 0; d < 3; d++) {
+        const angle = t * 1.1 + phone.phase + (d * Math.PI * 2 / 3);
+        const ex = cx + Math.cos(angle) * rx;
+        const ey = cy + Math.sin(angle) * ry;
+        ctx.globalAlpha = 0.38 * dim;
+        ctx.fillStyle   = `rgba(${pr},${pg},${pb},1)`;
+        ctx.beginPath();
+        ctx.arc(ex, ey, 1, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = dim;
+      }
+    }
+
+    // Post flash: bright magenta border overlay
+    if (pf > 0.05) {
+      ctx.globalAlpha = pf * 0.5 * dim;
+      ctx.shadowColor = 'rgba(192,38,211,0.7)';
+      ctx.shadowBlur  = 6;
+      rrect(ctx, x, y, PW, PH, PR);
+      ctx.strokeStyle = 'rgba(192,38,211,0.9)';
+      ctx.lineWidth   = 1.5;
+      ctx.stroke();
+      ctx.shadowBlur  = 0;
+      ctx.shadowColor = 'transparent';
+      ctx.globalAlpha = dim;
+    }
+
+    ctx.restore();
+  }
+
+  // ─── Tooltip ─────────────────────────────────────────────────────────────────
+  function drawTooltip(phone: PhoneData) {
+    const W = canvas.width / dpr;
+    const plat   = PLATFORMS_SOCIAL[phone.platIdx];
+    const [pr, pg, pb] = plat.color;
+    const status = STATUS_NAMES[phone.statusIdx];
+
+    // 2x phone centre and top
+    const phoneCX   = phone.x + PW / 2;
+    const phone2xTopY = phone.y - PH / 2;  // top of phone at 2x scale
+
+    const tooltipW = 262;
+    const tooltipH = 148;
+    const pad = 12;
+
+    let tx = phoneCX - tooltipW / 2;
+    let ty = phone2xTopY - tooltipH - 14;
+    tx = Math.max(8, Math.min(W - tooltipW - 8, tx));
+    if (ty < 8) ty = phone.y + PH + PH / 2 + 14;
+
+    ctx.save();
+
+    // Connecting line from tooltip to phone top-centre
+    const lineEndY = ty < phone2xTopY ? ty + tooltipH : ty;
+    ctx.globalAlpha = 0.16;
+    ctx.strokeStyle = `rgb(${pr},${pg},${pb})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(phoneCX, phone2xTopY);
+    ctx.lineTo(phoneCX, lineEndY);
+    ctx.stroke();
+
+    ctx.globalAlpha = 1;
+
+    // Shadow glow
+    ctx.shadowColor = `rgba(${pr},${pg},${pb},0.22)`;
+    ctx.shadowBlur  = 28;
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 10);
+    ctx.fillStyle = 'rgba(6,7,18,0.70)';
+    ctx.fill();
+    ctx.shadowBlur  = 0;
+    ctx.shadowColor = 'transparent';
+
+    // Tint
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 10);
+    ctx.fillStyle = `rgba(${pr},${pg},${pb},0.07)`;
+    ctx.fill();
+
+    // Border
+    ctx.strokeStyle = `rgba(${pr},${pg},${pb},0.28)`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Accent top bar
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle   = `rgb(${pr},${pg},${pb})`;
+    rrect(ctx, tx, ty, tooltipW, 3, 3);
+    ctx.fill();
+
+    const lx = tx + pad;
+    let   ly = ty + 3 + pad;
+
+    ctx.textAlign = 'left';
+
+    // Row 1: DEVICE
+    ctx.globalAlpha = 0.75;
+    ctx.fillStyle   = `rgb(${pr},${pg},${pb})`;
+    ctx.font        = '10px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${phone.model} · ${phone.city}`, lx, ly + 9);
+    ly += 16;
+
+    // Row 2: ACCOUNT handle
+    ctx.globalAlpha = 1;
+    ctx.fillStyle   = '#ffffff';
+    ctx.font        = 'bold 15px -apple-system,system-ui,BlinkMacSystemFont,sans-serif';
+    ctx.fillText(phone.handle, lx, ly + 13);
+    ly += 19;
+
+    // Row 3: PLATFORM · niche (platform colour dot + text)
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle   = `rgb(${pr},${pg},${pb})`;
+    ctx.beginPath();
+    ctx.arc(lx + 4, ly + 4, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = '11px -apple-system,system-ui,BlinkMacSystemFont,sans-serif';
+    ctx.fillText(`${plat.name} · ${phone.niche}`, lx + 12, ly + 8);
+    ly += 15;
+
+    // Row 4: FOLLOWERS + weekly growth
+    ctx.globalAlpha = 0.90;
+    ctx.fillStyle   = '#ffffff';
+    ctx.font        = '12px -apple-system,system-ui,BlinkMacSystemFont,sans-serif';
+    ctx.fillText(phone.followers, lx, ly + 9);
+    ctx.globalAlpha = 0.75;
+    ctx.fillStyle   = 'rgba(74,222,128,0.9)';
+    ctx.font        = '10px -apple-system,system-ui,BlinkMacSystemFont,sans-serif';
+    ctx.fillText(phone.weeklyGrowth + ' this week', lx + 48, ly + 9);
+    ly += 15;
+
+    // Row 5: ENGAGEMENT
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle   = 'rgba(74,222,128,0.9)';
+    ctx.font        = '11px -apple-system,system-ui,BlinkMacSystemFont,sans-serif';
+    ctx.fillText(`${phone.engagement} engagement`, lx, ly + 8);
+    ly += 14;
+
+    // Row 6: STATUS
+    const statusColor = status === 'Active' ? 'rgba(74,222,128,0.9)'
+      : status === 'Posting'  ? 'rgba(192,38,211,0.9)'
+      : status === 'Engaging' ? 'rgba(74,222,128,0.85)'
+      : status === 'Warming'  ? 'rgba(251,191,36,0.85)'
+      : 'rgba(255,255,255,0.35)';
+    const statusDot = status === 'Idle' ? '○' : '●';
+    const statusDesc = status === 'Active'   ? 'posting 4x/day'
+      : status === 'Posting'  ? 'live now'
+      : status === 'Engaging' ? 'engaging followers'
+      : status === 'Idle'     ? 'scheduled'
+      : 'warming up';
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle   = statusColor;
+    ctx.font        = '10px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${statusDot} ${status} — ${statusDesc}`, lx, ly + 7);
+    ly += 13;
+
+    // Row 7: LAST POST
+    ctx.globalAlpha = 0.38;
+    ctx.fillStyle   = '#ffffff';
+    ctx.font        = '9px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${phone.postType} · ${phone.postAge}`, lx, ly + 7);
+
+    ctx.restore();
+  }
+
+  // ─── Main frame loop ─────────────────────────────────────────────────────────
+  function frame() {
+    requestAnimationFrame(frame);
+
+    const W  = canvas.width / dpr;
+    const H  = canvas.height / dpr;
+    const t  = performance.now() * 0.001;
+    const dt = lastFrameTime > 0 ? Math.min(t - lastFrameTime, 0.1) : 1 / 60;
+    lastFrameTime = t;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Hover detection
+    if (mouse) {
+      hoveredPhoneIdx = findHoveredPhone(mouse.x, mouse.y);
+    } else {
+      hoveredPhoneIdx = -1;
+    }
+
+    // Post event: every 1.5s
+    if (t - lastPostTime > 1.5 && phones.length > 0) {
+      const idx = Math.floor(Math.random() * phones.length);
+      phones[idx].postFlash = 1.0;
+      // Spawn 3 particles above the phone
+      const p = phones[idx];
+      for (let i = 0; i < 3; i++) {
+        particles.push({
+          x:  p.x + PW / 2 + (Math.random() - 0.5) * 10,
+          y:  p.y + PH / 2,
+          vx: (Math.random() - 0.5) * 0.6,
+          vy: -1.0 - Math.random() * 0.6,
+          life: 1.0,
+        });
+      }
+      lastPostTime = t;
+    }
+
+    // Wave: every 5s, sweep left → right
+    if (t - lastWaveTime > 5.0 && !waveActive) {
+      waveActive    = true;
+      waveStartTime = t;
+      lastWaveTime  = t;
+    }
+    if (waveActive && t - waveStartTime > totalCols * 0.05 + 0.8) {
+      waveActive = false;
+    }
+
+    // Draw all phones (hovered last)
+    for (let i = 0; i < phones.length; i++) {
+      const phone = phones[i];
+
+      // Advance feed
+      phone.feedOffset += phone.feedSpeed;
+
+      // Decay post flash
+      phone.postFlash = Math.max(0, phone.postFlash - dt * 1.4);
+
+      // Compute wave flash
+      phone.waveFlash = 0;
+      if (waveActive) {
+        const wt = t - waveStartTime;
+        const delay = phone.col * 0.05;
+        const age   = wt - delay;
+        if (age > 0 && age < 0.45) {
+          phone.waveFlash = Math.sin((age / 0.45) * Math.PI) * 0.7;
+        }
+      }
+
+      if (i === hoveredPhoneIdx) continue;  // draw hovered last
+
+      drawPhone(phone, t, false);
+    }
+
+    // Draw hovered phone at 2× scale around its centre
+    if (hoveredPhoneIdx >= 0) {
+      const phone = phones[hoveredPhoneIdx];
+      const cx = phone.x + PW / 2;
+      const cy = phone.y + PH / 2;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.scale(2, 2);
+      ctx.translate(-cx, -cy);
+      drawPhone(phone, t, true);
+      ctx.restore();
+      drawTooltip(phone);
+    }
+
+    // Draw particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x   += p.vx;
+      p.y   += p.vy;
+      p.vy  += 0.01;   // gentle deceleration (upward)
+      p.life -= dt * 1.6;
+      if (p.life <= 0) { particles.splice(i, 1); continue; }
+      ctx.globalAlpha = p.life * 0.85;
+      ctx.fillStyle   = 'rgba(192,38,211,1)';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // Counter (top-right)
+    const counterX = W - 16;
+    const citiesSet = new Set(phones.map(p => p.city));
+    ctx.save();
+    ctx.textAlign   = 'right';
+    ctx.globalAlpha = 1;
+    ctx.fillStyle   = 'rgba(192,38,211,0.55)';
+    ctx.font        = '11px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${phones.length} phones · ${phones.length * 3} accounts · ${citiesSet.size} cities`, counterX, 24);
+    ctx.globalAlpha = 0.28;
+    ctx.fillStyle   = '#ffffff';
+    ctx.font        = '9px "SF Mono","Fira Code",monospace';
+    ctx.fillText('6 platforms · AI-managed · 24/7', counterX, 38);
+    ctx.restore();
+  }
+
+  // ─── Mouse tracking ──────────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    wrap.style.cursor = findHoveredPhone(mouse.x, mouse.y) >= 0 ? 'pointer' : '';
+  });
+  wrap.addEventListener('mouseleave', () => {
+    mouse = null;
+    hoveredPhoneIdx = -1;
+    wrap.style.cursor = '';
+  });
+  wrap.addEventListener('touchstart', () => { mouse = null; hoveredPhoneIdx = -1; }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── FinalCTA: phone outlines, gentle pulse, no interaction ─────────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const ctaCanvas = document.createElement('canvas');
+      ctaCanvas.setAttribute('aria-hidden', 'true');
+      ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.style.position = 'relative';
+      ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+
+      const cc  = ctaCanvas.getContext('2d')!;
+      const CPW = 26, CPH = 44, CGAP = 4, CPR = 5;
+      const CCW = CPW + CGAP, CCH = CPH + CGAP;
+
+      interface CtaPhone { x: number; y: number; phase: number; platIdx: number; }
+      let ctaPhones: CtaPhone[] = [];
+      let ctaDpr = 1;
+
+      function crrect(x: number, y: number, w: number, h: number, r: number) {
+        cc.beginPath();
+        cc.moveTo(x + r, y);
+        cc.lineTo(x + w - r, y);
+        cc.quadraticCurveTo(x + w, y, x + w, y + r);
+        cc.lineTo(x + w, y + h - r);
+        cc.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        cc.lineTo(x + r, y + h);
+        cc.quadraticCurveTo(x, y + h, x, y + h - r);
+        cc.lineTo(x, y + r);
+        cc.quadraticCurveTo(x, y, x + r, y);
+        cc.closePath();
+      }
+
+      function buildCtaGrid() {
+        ctaPhones = [];
+        const W = ctaCanvas.width / ctaDpr;
+        const H = ctaCanvas.height / ctaDpr;
+        const cols = Math.floor((W + CGAP) / CCW);
+        const rows = Math.floor((H + CGAP) / CCH);
+        const ox   = Math.floor((W - cols * CCW + CGAP) / 2);
+        const oy   = Math.floor((H - rows * CCH + CGAP) / 2);
+        for (let r = 0; r < rows; r++)
+          for (let c = 0; c < cols; c++)
+            ctaPhones.push({
+              x: ox + c * CCW,
+              y: oy + r * CCH,
+              phase: Math.random() * Math.PI * 2,
+              platIdx: pickW(PLAT_CUM),
+            });
+      }
+
+      function resizeCta() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        const w = Math.round(rect.width), h = Math.round(rect.height);
+        ctaCanvas.width  = w * ctaDpr;
+        ctaCanvas.height = h * ctaDpr;
+        ctaCanvas.style.width  = `${w}px`;
+        ctaCanvas.style.height = `${h}px`;
+        cc.setTransform(ctaDpr, 0, 0, ctaDpr, 0, 0);
+        buildCtaGrid();
+      }
+
+      function frameCta() {
+        requestAnimationFrame(frameCta);
+        const W = ctaCanvas.width / ctaDpr;
+        const H = ctaCanvas.height / ctaDpr;
+        const t = performance.now() * 0.001;
+        cc.clearRect(0, 0, W, H);
+        for (const p of ctaPhones) {
+          const alpha = 0.06 + Math.sin(t * 0.65 + p.phase) * 0.035;
+          cc.strokeStyle = `rgba(192,38,211,${alpha})`;
+          cc.lineWidth   = 1;
+          crrect(p.x, p.y, CPW, CPH, CPR);
+          cc.stroke();
+        }
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaCard);
+      resizeCta();
+      requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { ctaCanvas.style.opacity = '1'; });
+
+      const ctaGridTex = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGridTex) ctaGridTex.style.display = 'none';
+    }
+  }
+
+  }); // end requestIdleCallback
+</script>
