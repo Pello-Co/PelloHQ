@@ -1,14 +1,14 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import Header from '../components/layout/Header.astro';
-import Footer from '../components/layout/Footer.astro';
-import HeroPello from '../components/sections/HeroPello.astro';
-import HowItWorks from '../components/sections/HowItWorks.astro';
-import ProductSection from '../components/sections/ProductSection.astro';
-import UseCases from '../components/sections/UseCases.astro';
-import Stats from '../components/sections/Stats.astro';
-import FAQ from '../components/sections/FAQ.astro';
-import FinalCTA from '../components/sections/FinalCTA.astro';
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
 ---
 
 <Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
@@ -93,12 +93,13 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
 </style>
 
 <script>
-// ─── 41: Wandering Peaks ──────────────────────────────────────────────────────
-// 5 autonomous elevation peaks drift via Lissajous curves, constantly moving.
-// Mouse adds a 6th peak and increases all drift speed by 1.5x.
+// ─── 43: Ridge Warp ───────────────────────────────────────────────────────────
+// Domain-warped Perlin noise creates elongated, geological ridgelines.
+// Warp domain drifts over time → ridges constantly evolve (~40s rotation cycle).
+// High ridges drawn twice (glow). Mouse creates vortex distortion.
 
-const ric41 = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
-ric41(() => {
+const ric43 = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+ric43(() => {
 
 // ─── Perlin Noise ─────────────────────────────────────────────────────────────
 const PERM = new Uint8Array(512);
@@ -151,16 +152,6 @@ const MST: number[][] = [
   [2,3],[0,2],[0,3,2,1],[1,2],[1,3],[0,1],[3,0],[],
 ];
 
-// ─── Peak config ──────────────────────────────────────────────────────────────
-type Peak = { ax:number;ay:number;fx:number;fy:number;px:number;py:number;str:number;sig:number };
-const PEAKS: Peak[] = [
-  { ax:0.32, ay:0.28, fx:1.3,  fy:1.7,  px:0.0, py:1.5, str:0.55, sig:0.17 },
-  { ax:0.38, ay:0.32, fx:2.1,  fy:0.9,  px:2.1, py:0.7, str:0.50, sig:0.15 },
-  { ax:0.28, ay:0.38, fx:0.8,  fy:1.5,  px:1.0, py:3.2, str:0.45, sig:0.18 },
-  { ax:0.22, ay:0.22, fx:1.6,  fy:2.3,  px:4.1, py:0.3, str:0.40, sig:0.14 },
-  { ax:0.40, ay:0.20, fx:0.7,  fy:1.1,  px:2.8, py:1.9, str:0.38, sig:0.16 },
-];
-
 // ─── Renderer ─────────────────────────────────────────────────────────────────
 function createTopo(canvas: HTMLCanvasElement, container: HTMLElement) {
   const dpr = window.devicePixelRatio || 1;
@@ -176,50 +167,53 @@ function createTopo(canvas: HTMLCanvasElement, container: HTMLElement) {
   ctx.setTransform(dpr,0,0,dpr,0,0);
 
   let t=0, mX: number|null=null, mY: number|null=null;
-  let mStr=0, mTgt=0, spd=1, spdTgt=1;
+  let mStr=0, mTgt=0;
   const mobile = W < 768;
   const STEP = mobile ? 8 : 4;
-  const SCALE = 0.0045;
+  const SCALE = 0.004;
+  const WARP = 3.2; // warp amplitude in noise-space
   const NL = mobile ? 7 : 12;
   let raf = 0;
 
   function sample(gx: number, gy: number): number {
     const nx=gx*SCALE, ny=gy*SCALE;
-    let v = noise2(nx+t*0.3, ny+t*0.2)*0.6
-          + noise2(nx*2+t*0.5, ny*2+t*0.4)*0.3
-          + noise2(nx*4+t*0.8, ny*4+t*0.7)*0.1;
+
+    // Domain warp — first layer (slow drift)
+    const wt = t * 0.05;
+    const wx = noise2(nx + wt,       ny + 1.7 + wt) * WARP;
+    const wy = noise2(nx + 5.2 + wt, ny + wt)       * WARP;
+
+    // Second layer using warped coords
+    const wnx = nx + wx, wny = ny + wy;
+    let v = noise2(wnx + t*0.08, wny + t*0.06) * 0.6
+          + noise2(wnx*2 + t*0.14, wny*2 + t*0.12) * 0.3
+          + noise2(wnx*4 + t*0.22, wny*4 + t*0.18) * 0.1;
     v = (v+1)*0.5;
-    for (const p of PEAKS) {
-      const px=W*0.5+p.ax*W*Math.sin(p.fx*t+p.px);
-      const py=H*0.5+p.ay*H*Math.sin(p.fy*t+p.py);
-      const dx=gx-px, dy=gy-py;
-      const sg=Math.min(W,H)*p.sig;
-      v += Math.exp(-(dx*dx+dy*dy)/(2*sg*sg))*p.str;
-    }
+
+    // Mouse vortex
     if (mX!==null && mStr>0) {
       const dx=gx-mX, dy=gy-mY!;
-      const sg=Math.min(W,H)*0.18;
-      v += Math.exp(-(dx*dx+dy*dy)/(2*sg*sg))*0.65*mStr;
+      const dist=Math.sqrt(dx*dx+dy*dy)+1;
+      const vRad=220;
+      if (dist < vRad) {
+        const ang=Math.atan2(dy,dx);
+        const str2=(1-dist/vRad)*mStr;
+        const sv = noise2(wnx+Math.cos(ang)*2.5*str2, wny+Math.sin(ang)*2.5*str2)*0.35*str2;
+        v = (v + sv + 1) * 0.5;
+        v += Math.exp(-(dx*dx+dy*dy)/(2*90*90))*0.4*mStr;
+      }
     }
     return Math.max(0, Math.min(1, v));
   }
 
-  function frame() {
-    raf = requestAnimationFrame(frame);
-    spd += (spdTgt-spd)*0.03;
-    mStr += (mTgt-mStr)*0.05;
-    t += 0.005 * spd;
-    const cols=Math.ceil(W/STEP)+1, rows=Math.ceil(H/STEP)+1;
-    const field = new Float32Array(cols*rows);
-    for (let r=0;r<rows;r++) for (let c=0;c<cols;c++) field[r*cols+c]=sample(c*STEP,r*STEP);
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-    ctx.clearRect(0,0,W,H);
-    for (let li=0;li<NL;li++) {
-      const iso=(li+0.5)/NL;
-      const [cr,cg,cb,ca]=cColor(iso);
-      const lw=iso>0.75?1.1:iso>0.5?0.8:0.5;
+  function drawContours(field: Float32Array, cols: number, rows: number, isoList: number[], glowPass: boolean) {
+    for (const iso of isoList) {
+      const [cr,cg,cb,ca] = cColor(iso);
+      const lw = glowPass ? (iso > 0.7 ? 2.5 : 0) : (iso > 0.75 ? 1.1 : iso > 0.5 ? 0.8 : 0.5);
+      if (lw === 0) continue;
+      const alpha = glowPass ? ca * 0.35 : ca;
       ctx.beginPath();
-      ctx.strokeStyle=`rgba(${cr},${cg},${cb},${ca})`;
+      ctx.strokeStyle=`rgba(${cr},${cg},${cb},${alpha})`;
       ctx.lineWidth=lw;
       for (let r=0;r<rows-1;r++) {
         for (let c=0;c<cols-1;c++) {
@@ -240,11 +234,30 @@ function createTopo(canvas: HTMLCanvasElement, container: HTMLElement) {
     }
   }
 
+  function frame() {
+    raf = requestAnimationFrame(frame);
+    mStr += (mTgt-mStr)*0.05;
+    t += 0.0015;
+    const cols=Math.ceil(W/STEP)+1, rows=Math.ceil(H/STEP)+1;
+    const field = new Float32Array(cols*rows);
+    for (let r=0;r<rows;r++) for (let c=0;c<cols;c++) field[r*cols+c]=sample(c*STEP,r*STEP);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,W,H);
+
+    const isoList: number[] = [];
+    for (let li=0;li<NL;li++) isoList.push((li+0.5)/NL);
+
+    // Glow pass for high ridges
+    drawContours(field, cols, rows, isoList, true);
+    // Main pass
+    drawContours(field, cols, rows, isoList, false);
+  }
+
   container.addEventListener('mousemove',(e:MouseEvent)=>{
     const r=container.getBoundingClientRect();
-    mX=e.clientX-r.left; mY=e.clientY-r.top; mTgt=1; spdTgt=1.5;
+    mX=e.clientX-r.left; mY=e.clientY-r.top; mTgt=1;
   });
-  container.addEventListener('mouseleave',()=>{ mTgt=0; spdTgt=1; });
+  container.addEventListener('mouseleave',()=>{ mTgt=0; });
   const ro=new ResizeObserver(()=>{ resize(); ctx.setTransform(dpr,0,0,dpr,0,0); });
   ro.observe(container);
   raf=requestAnimationFrame(frame);

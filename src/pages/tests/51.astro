@@ -1,14 +1,14 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import Header from '../components/layout/Header.astro';
-import Footer from '../components/layout/Footer.astro';
-import HeroPello from '../components/sections/HeroPello.astro';
-import HowItWorks from '../components/sections/HowItWorks.astro';
-import ProductSection from '../components/sections/ProductSection.astro';
-import UseCases from '../components/sections/UseCases.astro';
-import Stats from '../components/sections/Stats.astro';
-import FAQ from '../components/sections/FAQ.astro';
-import FinalCTA from '../components/sections/FinalCTA.astro';
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
 ---
 
 <Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
@@ -131,12 +131,17 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
   }
 
   const PRODUCTS = [
-    { color: '#6366f1' }, { color: '#8b5cf6' }, { color: '#a855f7' },
-    { color: '#c026d3' }, { color: '#7c3aed' }, { color: '#4f46e5' },
-    { color: '#9333ea' }, { color: '#6d28d9' },
+    { name: 'PELLOSEO',     color: '#6366f1', stat: '+340% traffic'  },
+    { name: 'PELLOREACH',   color: '#8b5cf6', stat: '500+ domains'   },
+    { name: 'PELLOPUBLISH', color: '#a855f7', stat: '60 pieces/mo'   },
+    { name: 'PELLOSOCIAL',  color: '#c026d3', stat: '3.2k accounts'  },
+    { name: 'PELLOPITCH',   color: '#7c3aed', stat: '8–12% CVR'      },
+    { name: 'PELLOADS',     color: '#4f46e5', stat: '2.8x ROAS'      },
+    { name: 'PELLOFLOW',    color: '#9333ea', stat: '0 manual steps' },
+    { name: 'PELLOBUILD',   color: '#6d28d9', stat: '<2wk ship'      },
   ];
 
-  interface SpectralWave {
+  interface WaveLabel {
     yFrac: number;
     freq: number;
     baseAmp: number;
@@ -145,25 +150,31 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     noiseOffset: number;
     noisePeriod: number;
     color: string;
+    name: string;
+    stat: string;
   }
 
-  const WAVES: SpectralWave[] = PRODUCTS.map((p, i) => ({
-    yFrac: 0.12 + (i / 7) * 0.76,
-    freq: 0.009 + i * 0.0015,
-    baseAmp: 12 + Math.sin(i * 2) * 4,
-    phase: i * 0.9,
-    phaseSpeed: 0.006 + i * 0.0012,
-    noiseOffset: i * 87.3,
-    noisePeriod: 3.5 + i * 0.25,
+  const WAVES: WaveLabel[] = PRODUCTS.map((p, i) => ({
+    yFrac: 0.1 + (i / 7) * 0.8,
+    freq: 0.008 + i * 0.002,
+    baseAmp: 10 + Math.sin(i * 1.5) * 4,
+    phase: i * 0.8,
+    phaseSpeed: 0.007 + i * 0.001,
+    noiseOffset: i * 100.7,
+    noisePeriod: 3 + i * 0.3,
     color: p.color,
+    name: p.name,
+    stat: p.stat,
   }));
 
   let mouseY: number | null = null;
+  let mouseX: number | null = null;
 
-  function setupCanvas(canvas: HTMLCanvasElement, wrap: HTMLElement, waves: SpectralWave[], isSimple: boolean): () => void {
+  function setupCanvas(canvas: HTMLCanvasElement, wrap: HTMLElement, waves: WaveLabel[], isSimple: boolean): () => void {
     const ctx = canvas.getContext('2d')!;
     let W = 0, H = 0;
     let dpr = window.devicePixelRatio || 1;
+    let animId = 0;
 
     function resize() {
       dpr = window.devicePixelRatio || 1;
@@ -184,13 +195,14 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     const mobile = () => W < 768;
 
     function draw() {
-      requestAnimationFrame(draw);
+      animId = requestAnimationFrame(draw);
       if (W === 0 || H === 0) return;
       ctx.clearRect(0, 0, W, H);
 
-      const SAMPLES = mobile() ? 80 : 160;
+      const t = performance.now() * 0.001;
+      const SAMPLES = mobile() ? 100 : 200;
 
-      // Find closest wave
+      // Find closest wave to mouseY
       let closestIdx = -1;
       let closestDist = Infinity;
       if (!isSimple && mouseY !== null) {
@@ -198,88 +210,91 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
           const d = Math.abs(mouseY - waves[i].yFrac * H);
           if (d < closestDist) { closestDist = d; closestIdx = i; }
         }
-        if (closestDist > H * 0.2) closestIdx = -1;
+        if (closestDist > H * 0.15) closestIdx = -1;
       }
 
-      const t = performance.now() * 0.001;
-
-      // Draw back-to-front (index 0 first = back)
       for (let wi = 0; wi < waves.length; wi++) {
         const w = waves[wi];
         const baseY = w.yFrac * H;
+        const noiseT = t / w.noisePeriod + w.noiseOffset;
+        const noiseVal = valueNoise(noiseT);
+        let amp = w.baseAmp * (0.6 + noiseVal * 0.8);
+
         const isSelected = wi === closestIdx;
         const hasSelection = closestIdx !== -1;
 
-        const noiseVal = valueNoise(t / w.noisePeriod + w.noiseOffset);
-        const amp = w.baseAmp * (0.6 + noiseVal * 0.8);
-        const finalAmp = isSelected ? amp * 1.8 : amp;
+        if (isSelected) amp *= 2.5;
 
-        // Build points
-        const pts: {x:number,y:number}[] = [];
+        let alpha = 0.35;
+        if (hasSelection) alpha = isSelected ? 0.9 : 0.2;
+        // Scan line
+        const scanY = ((t % 8) / 8) * H;
+        const scanBright = Math.max(0, 1 - Math.abs(baseY - scanY) / 40);
+        alpha = Math.min(1, alpha + scanBright * 0.15);
+
+        // Build path
+        ctx.beginPath();
         for (let s = 0; s <= SAMPLES; s++) {
           const x = (s / SAMPLES) * W;
-          const y = baseY + Math.sin(x * w.freq + w.phase) * finalAmp;
-          pts.push({x, y});
+          let y = baseY + Math.sin(x * w.freq + w.phase) * amp;
+          if (!isSimple && mouseX !== null && isSelected) {
+            const dx = x - mouseX;
+            const g = Math.exp(-(dx * dx) / (2 * 80 * 80));
+            y += g * amp * 0.4;
+          }
+          if (s === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
         }
 
-        // Fill path
-        ctx.beginPath();
-        ctx.moveTo(pts[0].x, pts[0].y);
-        for (let s = 1; s < pts.length; s++) ctx.lineTo(pts[s].x, pts[s].y);
-        ctx.lineTo(W, baseY);
-        ctx.lineTo(0, baseY);
-        ctx.closePath();
+        // Fill under selected wave
+        if (isSelected && !isSimple) {
+          ctx.lineTo(W, baseY);
+          ctx.lineTo(0, baseY);
+          ctx.closePath();
+          ctx.fillStyle = w.color;
+          ctx.globalAlpha = 0.06;
+          ctx.fill();
+          // Redraw path for stroke
+          ctx.beginPath();
+          for (let s = 0; s <= SAMPLES; s++) {
+            const x = (s / SAMPLES) * W;
+            let y = baseY + Math.sin(x * w.freq + w.phase) * amp;
+            if (mouseX !== null) {
+              const dx = x - mouseX;
+              const g = Math.exp(-(dx * dx) / (2 * 80 * 80));
+              y += g * amp * 0.4;
+            }
+            if (s === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+          }
+        }
 
-        const fillAlpha: number = isSimple ? 0.06 : (hasSelection ? (isSelected ? 0.2 : 0.03) : 0.06);
-        ctx.fillStyle = w.color;
-        ctx.globalAlpha = fillAlpha;
-        ctx.fill();
+        ctx.strokeStyle = w.color;
+        ctx.globalAlpha = alpha;
+        ctx.lineWidth = isSelected ? 2 : 0.7;
+        ctx.stroke();
         ctx.globalAlpha = 1;
 
-        // Stroke
-        if (isSelected && !isSimple) {
-          // Bloom pass
-          ctx.beginPath();
-          ctx.moveTo(pts[0].x, pts[0].y);
-          for (let s = 1; s < pts.length; s++) ctx.lineTo(pts[s].x, pts[s].y);
-          ctx.strokeStyle = w.color;
-          ctx.globalAlpha = 0.1;
-          ctx.lineWidth = 4;
-          ctx.stroke();
-          ctx.globalAlpha = 1;
-          // Crisp pass
-          ctx.beginPath();
-          ctx.moveTo(pts[0].x, pts[0].y);
-          for (let s = 1; s < pts.length; s++) ctx.lineTo(pts[s].x, pts[s].y);
-          ctx.strokeStyle = w.color;
-          ctx.globalAlpha = 0.7;
-          ctx.lineWidth = 1;
-          ctx.stroke();
-          ctx.globalAlpha = 1;
-        } else {
-          ctx.beginPath();
-          ctx.moveTo(pts[0].x, pts[0].y);
-          for (let s = 1; s < pts.length; s++) ctx.lineTo(pts[s].x, pts[s].y);
-          const scanY = ((t % 8) / 8) * H;
-          const scanBright = Math.max(0, 1 - Math.abs(baseY - scanY) / 40);
-          const strokeAlpha = Math.min(0.8, (hasSelection ? (isSelected ? 0.8 : 0.15) : 0.4) + scanBright * 0.2);
-          ctx.strokeStyle = w.color;
-          ctx.globalAlpha = strokeAlpha;
-          ctx.lineWidth = 0.8;
-          ctx.stroke();
-          ctx.globalAlpha = 1;
-        }
+        // Labels
+        ctx.font = '10px \'SF Mono\', \'Fira Code\', monospace';
+        ctx.fillStyle = w.color;
+        ctx.globalAlpha = isSelected ? 1.0 : (hasSelection ? 0.15 : alpha * 0.8);
+        ctx.textAlign = 'left';
+        ctx.fillText(w.name, 8, baseY - 4);
+        ctx.font = '9px \'SF Mono\', \'Fira Code\', monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText(w.stat, W - 8, baseY - 4);
+        ctx.globalAlpha = 1;
+        ctx.textAlign = 'left';
       }
 
       // Scan line
       if (!isSimple) {
         const scanY = ((t % 8) / 8) * H;
-        const sg = ctx.createLinearGradient(0, scanY - 12, 0, scanY + 12);
+        const sg = ctx.createLinearGradient(0, scanY - 10, 0, scanY + 10);
         sg.addColorStop(0, 'rgba(162,52,250,0)');
         sg.addColorStop(0.5, 'rgba(162,52,250,0.05)');
         sg.addColorStop(1, 'rgba(162,52,250,0)');
         ctx.fillStyle = sg;
-        ctx.fillRect(0, scanY - 12, W, 24);
+        ctx.fillRect(0, scanY - 10, W, 20);
       }
 
       for (const w of waves) w.phase += w.phaseSpeed;
@@ -287,9 +302,10 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
 
     requestAnimationFrame(draw);
     requestAnimationFrame(() => { canvas.style.opacity = '1'; });
-    return () => ro.disconnect();
+    return () => { ro.disconnect(); cancelAnimationFrame(animId); };
   }
 
+  // Hero
   const heroWrap = document.getElementById('hero-wrap')!;
   const heroCanvas = heroWrap.querySelector<HTMLCanvasElement>('.bg-canvas')!;
   setupCanvas(heroCanvas, heroWrap, WAVES, false);
@@ -297,12 +313,14 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
   heroWrap.addEventListener('mousemove', (e: MouseEvent) => {
     const rect = heroWrap.getBoundingClientRect();
     mouseY = e.clientY - rect.top;
+    mouseX = e.clientX - rect.left;
   });
-  heroWrap.addEventListener('mouseleave', () => { mouseY = null; });
+  heroWrap.addEventListener('mouseleave', () => { mouseY = null; mouseX = null; });
 
   const gridTex = heroWrap.querySelector<HTMLElement>('.grid-texture');
   if (gridTex) gridTex.style.display = 'none';
 
+  // Final CTA
   const ctaCard = document.querySelector<HTMLElement>('.final-cta');
   if (ctaCard) {
     const ctaCanvas = document.createElement('canvas');
@@ -310,24 +328,24 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
     ctaCard.style.position = 'relative';
     ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
-    const ctaWaves: SpectralWave[] = [
+    const ctaWaves: WaveLabel[] = [
       {
-        yFrac: 0.3, baseAmp: 10,
+        yFrac: 0.3, baseAmp: 8,
         freq: WAVES[0]!.freq, phase: WAVES[0]!.phase, phaseSpeed: WAVES[0]!.phaseSpeed,
         noiseOffset: WAVES[0]!.noiseOffset, noisePeriod: WAVES[0]!.noisePeriod,
-        color: WAVES[0]!.color,
+        color: WAVES[0]!.color, name: WAVES[0]!.name, stat: WAVES[0]!.stat,
       },
       {
-        yFrac: 0.5, baseAmp: 12,
+        yFrac: 0.5, baseAmp: 10,
         freq: WAVES[3]!.freq, phase: WAVES[3]!.phase, phaseSpeed: WAVES[3]!.phaseSpeed,
         noiseOffset: WAVES[3]!.noiseOffset, noisePeriod: WAVES[3]!.noisePeriod,
-        color: WAVES[3]!.color,
+        color: WAVES[3]!.color, name: WAVES[3]!.name, stat: WAVES[3]!.stat,
       },
       {
-        yFrac: 0.7, baseAmp: 9,
+        yFrac: 0.7, baseAmp: 8,
         freq: WAVES[6]!.freq, phase: WAVES[6]!.phase, phaseSpeed: WAVES[6]!.phaseSpeed,
         noiseOffset: WAVES[6]!.noiseOffset, noisePeriod: WAVES[6]!.noisePeriod,
-        color: WAVES[6]!.color,
+        color: WAVES[6]!.color, name: WAVES[6]!.name, stat: WAVES[6]!.stat,
       },
     ];
     setupCanvas(ctaCanvas, ctaCard, ctaWaves, true);

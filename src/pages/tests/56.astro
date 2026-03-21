@@ -1,14 +1,14 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import Header from '../components/layout/Header.astro';
-import Footer from '../components/layout/Footer.astro';
-import HeroPello from '../components/sections/HeroPello.astro';
-import HowItWorks from '../components/sections/HowItWorks.astro';
-import ProductSection from '../components/sections/ProductSection.astro';
-import UseCases from '../components/sections/UseCases.astro';
-import Stats from '../components/sections/Stats.astro';
-import FAQ from '../components/sections/FAQ.astro';
-import FinalCTA from '../components/sections/FinalCTA.astro';
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
 ---
 
 <Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
@@ -57,8 +57,6 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     transition: top 0.1s;
   }
   #skip-link:focus { top: 0; }
-
-  /* Glassmorphism overrides */
   #hero-wrap .url-input-wrap,
   .final-cta .url-input-wrap {
     background: rgba(255,255,255,0.06) !important;
@@ -121,8 +119,6 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
 
   ric(() => {
 
-  const PRODUCT_COLORS: string[] = ['#6366f1','#8b5cf6','#a855f7','#c026d3','#7c3aed','#4f46e5','#9333ea','#6d28d9'];
-
   function valueNoise(x: number): number {
     const i = Math.floor(x);
     const f = x - i;
@@ -132,45 +128,45 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     return (a - Math.floor(a)) * (1 - u) + (b - Math.floor(b)) * u;
   }
 
-  interface Wave {
+  const PRODUCTS = [
+    { name: 'PELLOSEO',     color: '#6366f1' },
+    { name: 'PELLOREACH',   color: '#8b5cf6' },
+    { name: 'PELLOPUBLISH', color: '#a855f7' },
+    { name: 'PELLOSOCIAL',  color: '#c026d3' },
+    { name: 'PELLOPITCH',   color: '#7c3aed' },
+    { name: 'PELLOADS',     color: '#4f46e5' },
+    { name: 'PELLOFLOW',    color: '#9333ea' },
+    { name: 'PELLOBUILD',   color: '#6d28d9' },
+  ];
+
+  interface SpectrumWave {
     yFrac: number;
     freq: number;
-    amp: number;
     baseAmp: number;
-    phaseA: number;
-    phaseB: number;
-    phaseSpeedA: number;
-    phaseSpeedB: number;
+    phase: number;
+    phaseSpeed: number;
     noiseOffset: number;
     noisePeriod: number;
     color: string;
+    name: string;
   }
 
-  const WAVES: Wave[] = PRODUCT_COLORS.map((color, i) => ({
-    yFrac: 0.06 + (i / 7) * 0.88,
-    freq: 0.010 + i * 0.002,
-    amp: 14 + i * 1.5,
-    baseAmp: 14 + i * 1.5,
-    phaseA: i * 0.7,
-    phaseB: i * 0.7,
-    phaseSpeedA: 0.007 + i * 0.0008,
-    phaseSpeedB: -(0.007 + i * 0.0008),
-    noiseOffset: i * 88.1,
-    noisePeriod: 3 + i * 0.35,
-    color,
+  const WAVES: SpectrumWave[] = PRODUCTS.map((p, i) => ({
+    yFrac: 0.1 + (i / 7) * 0.8,
+    freq: 0.01 + i * 0.002,
+    baseAmp: 14 + Math.sin(i * 1.8) * 4,
+    phase: i * 0.9,
+    phaseSpeed: 0.007 + i * 0.001,
+    noiseOffset: i * 91.4,
+    noisePeriod: 3 + i * 0.3,
+    color: p.color,
+    name: p.name,
   }));
 
-  let mouse: { x: number; y: number } | null = null;
-  let mousePhaseBOffset = 0;
+  let mouseX: number | null = null;
+  let mouseY: number | null = null;
 
-  function hexToRgb(hex: string): [number,number,number] {
-    const r = parseInt(hex.slice(1,3),16);
-    const g = parseInt(hex.slice(3,5),16);
-    const b = parseInt(hex.slice(5,7),16);
-    return [r,g,b];
-  }
-
-  function setupCanvas(canvas: HTMLCanvasElement, wrap: HTMLElement, waves: Wave[], isSimple: boolean) {
+  function setupCanvas(canvas: HTMLCanvasElement, wrap: HTMLElement, waves: SpectrumWave[], isSimple: boolean): () => void {
     const ctx = canvas.getContext('2d')!;
     let W = 0, H = 0;
     let dpr = window.devicePixelRatio || 1;
@@ -191,97 +187,88 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     ro.observe(wrap);
     resize();
 
-    function drawFrame() {
-      requestAnimationFrame(drawFrame);
+    const mobile = () => W < 768;
+
+    // Row height = H / waves.length, each wave uses its row
+    // Bars: 2px wide, 1px gap = 3px per bar
+
+    function draw() {
+      requestAnimationFrame(draw);
       if (W === 0 || H === 0) return;
       ctx.clearRect(0, 0, W, H);
 
-      const SAMPLES = isSimple ? 150 : 300;
+      const now = performance.now() * 0.001;
+      const BARS = mobile() ? 40 : 80;
+      const barW = 2;
+      const rowH = H / waves.length;
+
+      // Find nearest wave to mouseY
+      let nearestIdx = -1;
+      let nearestDist = Infinity;
+      if (!isSimple && mouseY !== null) {
+        for (let i = 0; i < waves.length; i++) {
+          const rowCenterY = waves[i].yFrac * H;
+          const d = Math.abs(mouseY - rowCenterY);
+          if (d < nearestDist) { nearestDist = d; nearestIdx = i; }
+        }
+        if (nearestDist > rowH * 0.6) nearestIdx = -1;
+      }
 
       for (let wi = 0; wi < waves.length; wi++) {
-        const wave = waves[wi];
-        if (!wave) continue;
-        const baseY = wave.yFrac * H;
+        const w = waves[wi];
+        const baseY = w.yFrac * H;
+        const noiseVal = valueNoise(now / w.noisePeriod + w.noiseOffset);
+        const ampMod = 0.6 + noiseVal * 0.8;
+        const isNear = wi === nearestIdx;
 
-        const noiseT = performance.now() * 0.001 / wave.noisePeriod + wave.noiseOffset;
-        const noiseVal = valueNoise(noiseT);
-        const noiseAmp = wave.baseAmp * (0.6 + noiseVal * 0.7);
-
-        let yProximity = 0;
-        if (!isSimple && mouse !== null) {
-          const dy = mouse.y - baseY;
-          yProximity = Math.max(0, 1 - Math.abs(dy) / (H * 0.12));
-          yProximity = yProximity * yProximity;
-        }
-        const finalAmp = noiseAmp * (1 + yProximity * 1.5);
-
-        const [r, g, b] = hexToRgb(wave.color);
-
+        // Baseline indicator line
+        ctx.strokeStyle = w.color;
+        ctx.globalAlpha = 0.08;
+        ctx.lineWidth = 0.5;
         ctx.beginPath();
-        for (let s = 0; s <= SAMPLES; s++) {
-          const x = (s / SAMPLES) * W;
-          const yA = Math.sin(x * wave.freq + wave.phaseA) * finalAmp;
-          const yB = Math.sin(-x * wave.freq + wave.phaseB + mousePhaseBOffset) * finalAmp;
-          const ySum = baseY + (yA + yB);
-          if (s === 0) ctx.moveTo(x, ySum); else ctx.lineTo(x, ySum);
-        }
+        ctx.moveTo(0, baseY);
         ctx.lineTo(W, baseY);
-        ctx.lineTo(0, baseY);
-        ctx.closePath();
-
-        ctx.fillStyle = `rgba(${r},${g},${b},0.04)`;
-        ctx.fill();
-
-        ctx.beginPath();
-        for (let s = 0; s <= SAMPLES; s++) {
-          const x = (s / SAMPLES) * W;
-          const yA = Math.sin(x * wave.freq + wave.phaseA) * finalAmp;
-          const yB = Math.sin(-x * wave.freq + wave.phaseB + mousePhaseBOffset) * finalAmp;
-          const ySum = baseY + (yA + yB);
-
-          if (s === 0) ctx.moveTo(x, ySum);
-          else ctx.lineTo(x, ySum);
-        }
-        const baseAlpha = 0.3 + yProximity * 0.3;
-        ctx.strokeStyle = `rgba(${r},${g},${b},${baseAlpha})`;
-        ctx.lineWidth = isSimple ? 0.8 : 1.5;
-        ctx.globalAlpha = 1;
         ctx.stroke();
+        ctx.globalAlpha = 1;
 
-        if (!isSimple) {
-          for (let s = 0; s < SAMPLES; s++) {
-            const x = (s / SAMPLES) * W;
-            const yA = Math.sin(x * wave.freq + wave.phaseA) * finalAmp;
-            const yB = Math.sin(-x * wave.freq + wave.phaseB + mousePhaseBOffset) * finalAmp;
-            const ySum = baseY + (yA + yB);
-            const constructiveness = Math.abs(yA + yB) / (finalAmp * 2 + 0.001);
+        for (let b = 0; b < BARS; b++) {
+          const x = (b / BARS) * W;
+          const waveVal = Math.sin(x * w.freq + w.phase);
+          let barH = Math.abs(waveVal) * w.baseAmp * ampMod;
 
-            if (constructiveness > 0.6) {
-              const brightness = (constructiveness - 0.6) / 0.4;
-              const wr = Math.round(r + (255 - r) * brightness);
-              const wg = Math.round(g + (255 - g) * brightness);
-              const wb = Math.round(b + (255 - b) * brightness);
-              ctx.globalAlpha = brightness * 0.6;
-              ctx.strokeStyle = `rgb(${wr},${wg},${wb})`;
-              ctx.lineWidth = 2;
-              ctx.beginPath();
-              ctx.moveTo(x, ySum);
-              const x2 = ((s + 1) / SAMPLES) * W;
-              const yA2 = Math.sin(x2 * wave.freq + wave.phaseA) * finalAmp;
-              const yB2 = Math.sin(-x2 * wave.freq + wave.phaseB + mousePhaseBOffset) * finalAmp;
-              ctx.lineTo(x2, baseY + (yA2 + yB2));
-              ctx.stroke();
-            }
+          // Mouse proximity: bars near cursor X spike
+          if (!isSimple && mouseX !== null && isNear) {
+            const dx = x - mouseX;
+            const proximity = Math.exp(-(dx * dx) / (2 * 60 * 60));
+            barH = barH + proximity * w.baseAmp * 2;
           }
+
+          // Mirrored bars: up and down from baseline
+          const brightness = Math.min(1, barH / (w.baseAmp * 1.5));
+          ctx.fillStyle = w.color;
+          ctx.globalAlpha = (isNear ? 0.7 : 0.4) * (0.3 + brightness * 0.7);
+          ctx.fillRect(x, baseY - barH, barW, barH);
+          ctx.globalAlpha = (isNear ? 0.5 : 0.25) * (0.3 + brightness * 0.7);
+          ctx.fillRect(x, baseY, barW, barH);
           ctx.globalAlpha = 1;
         }
 
-        wave.phaseA += wave.phaseSpeedA;
-        wave.phaseB += wave.phaseSpeedB;
+        // Product name above row when nearest
+        if (!isSimple && isNear) {
+          ctx.font = '11px sans-serif';
+          ctx.fillStyle = w.color;
+          ctx.globalAlpha = 0.9;
+          ctx.textAlign = 'center';
+          ctx.fillText(w.name, W / 2, baseY - w.baseAmp * 1.5 - 6);
+          ctx.globalAlpha = 1;
+          ctx.textAlign = 'left';
+        }
       }
+
+      for (const w of waves) w.phase += w.phaseSpeed;
     }
 
-    requestAnimationFrame(drawFrame);
+    requestAnimationFrame(draw);
     requestAnimationFrame(() => { canvas.style.opacity = '1'; });
     return () => ro.disconnect();
   }
@@ -292,10 +279,10 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
 
   heroWrap.addEventListener('mousemove', (e: MouseEvent) => {
     const rect = heroWrap.getBoundingClientRect();
-    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-    mousePhaseBOffset = (mouse.x / rect.width) * Math.PI * 2 - Math.PI;
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
   });
-  heroWrap.addEventListener('mouseleave', () => { mouse = null; });
+  heroWrap.addEventListener('mouseleave', () => { mouseX = null; mouseY = null; });
 
   const gridTex = heroWrap.querySelector<HTMLElement>('.grid-texture');
   if (gridTex) gridTex.style.display = 'none';
@@ -307,14 +294,14 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
     ctaCard.style.position = 'relative';
     ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
-    const ctaWaves: Wave[] = [
-      { yFrac: 0.3, freq: 0.015, amp: 12, baseAmp: 12, phaseA: 0, phaseB: 0, phaseSpeedA: 0.008, phaseSpeedB: -0.008, noiseOffset: 200, noisePeriod: 4, color: '#6366f1' },
-      { yFrac: 0.5, freq: 0.018, amp: 14, baseAmp: 14, phaseA: 1.5, phaseB: 1.5, phaseSpeedA: 0.010, phaseSpeedB: -0.010, noiseOffset: 350, noisePeriod: 3.5, color: '#a855f7' },
-      { yFrac: 0.7, freq: 0.012, amp: 10, baseAmp: 10, phaseA: 3.0, phaseB: 3.0, phaseSpeedA: 0.007, phaseSpeedB: -0.007, noiseOffset: 500, noisePeriod: 5, color: '#4f46e5' },
+    const ctaWaves: SpectrumWave[] = [
+      { yFrac: 0.3, freq: 0.012, baseAmp: 12, phase: 0, phaseSpeed: 0.008, noiseOffset: 200, noisePeriod: 4, color: '#6366f1', name: 'PELLOSEO' },
+      { yFrac: 0.5, freq: 0.016, baseAmp: 14, phase: 1.5, phaseSpeed: 0.01, noiseOffset: 350, noisePeriod: 3.5, color: '#a855f7', name: 'PELLOPUBLISH' },
+      { yFrac: 0.7, freq: 0.01, baseAmp: 11, phase: 3.0, phaseSpeed: 0.007, noiseOffset: 500, noisePeriod: 5, color: '#9333ea', name: 'PELLOFLOW' },
     ];
     setupCanvas(ctaCanvas, ctaCard, ctaWaves, true);
-    const gridTexCta = ctaCard.querySelector<HTMLElement>('.grid-texture');
-    if (gridTexCta) gridTexCta.style.display = 'none';
+    const gt = ctaCard.querySelector<HTMLElement>('.grid-texture');
+    if (gt) gt.style.display = 'none';
   }
 
   }); // end ric

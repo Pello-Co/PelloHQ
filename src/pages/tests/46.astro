@@ -1,14 +1,14 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import Header from '../components/layout/Header.astro';
-import Footer from '../components/layout/Footer.astro';
-import HeroPello from '../components/sections/HeroPello.astro';
-import HowItWorks from '../components/sections/HowItWorks.astro';
-import ProductSection from '../components/sections/ProductSection.astro';
-import UseCases from '../components/sections/UseCases.astro';
-import Stats from '../components/sections/Stats.astro';
-import FAQ from '../components/sections/FAQ.astro';
-import FinalCTA from '../components/sections/FinalCTA.astro';
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
 ---
 
 <Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
@@ -173,27 +173,42 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
       const dy = gy - mouseY;
       const sigma = Math.min(W, H) * 0.18;
       const gaussian = Math.exp(-(dx * dx + dy * dy) / (2 * sigma * sigma));
-      v = Math.min(1, v + gaussian * mouseStrength * 0.55);
+      v = Math.min(1, v + gaussian * mouseStrength * 0.45);
     }
     return v;
   }
 
-  // ─── Band colors: darkest violet → near-white at peaks ───────────────────
-  // 8 elevation bands
-  const BAND_COLORS: [number,number,number,number][] = [
-    [20,  5,  60, 0.10],   // 0.00-0.125  deepest violet
-    [40, 10,  90, 0.14],   // 0.125-0.25  dark violet
-    [59, 20, 120, 0.18],   // 0.25-0.375  deep indigo
-    [76, 29, 149, 0.22],   // 0.375-0.50  indigo
-    [99,102, 241, 0.28],   // 0.50-0.625  electric blue
-    [139,92, 246, 0.34],   // 0.625-0.75  purple
-    [162,52, 250, 0.40],   // 0.75-0.875  bright purple
-    [196,181,254, 0.48],   // 0.875-1.0   near-white lavender
-  ];
-  const NUM_BANDS = BAND_COLORS.length;
+  function contourColor(level: number): [number,number,number,number] {
+    if (level < 0.25)       return [52,  14, 185, 0.08];
+    else if (level < 0.45)  return [76,  29, 149, 0.11];
+    else if (level < 0.60)  return [99, 102, 241, 0.14];
+    else if (level < 0.72)  return [139, 92, 246, 0.18];
+    else if (level < 0.82)  return [162, 52, 250, 0.23];
+    else if (level < 0.90)  return [180, 100, 255, 0.29];
+    else                    return [196, 181, 254, 0.34];
+  }
 
-  // ─── Main filled-band renderer ─────────────────────────────────────────────
-  function createFilledBands(canvas: HTMLCanvasElement, container: HTMLElement) {
+  // Marching squares edge midpoint (interpolated)
+  function edgeMidpoint(
+    edge: number, x0: number, y0: number, step: number,
+    vbl: number, vbr: number, vtr: number, vtl: number, iso: number
+  ): [number,number] {
+    switch (edge) {
+      case 0: { const t = (iso - vbl) / (vbr - vbl + 1e-12); return [x0 + t * step, y0]; }
+      case 1: { const t = (iso - vbr) / (vtr - vbr + 1e-12); return [x0 + step, y0 + t * step]; }
+      case 2: { const t = (iso - vtl) / (vtr - vtl + 1e-12); return [x0 + t * step, y0 + step]; }
+      case 3: { const t = (iso - vbl) / (vtl - vbl + 1e-12); return [x0, y0 + t * step]; }
+    }
+    return [x0, y0];
+  }
+
+  const MS_TABLE: number[][] = [
+    [], [3,0], [0,1], [3,1], [1,2], [3,0,1,2], [0,2], [3,2],
+    [2,3], [0,2], [0,3,2,1], [1,2], [1,3], [0,1], [3,0], [],
+  ];
+
+  // ─── Tremor renderer ──────────────────────────────────────────────────────
+  function createTremor(canvas: HTMLCanvasElement, container: HTMLElement) {
     const dpr = window.devicePixelRatio || 1;
     let W = 0, H = 0;
 
@@ -218,21 +233,23 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     let mouseTarget = 0;
 
     const mobile = W < 768;
-    const STEP = mobile ? 14 : 8;
+    const STEP = mobile ? 8 : 4;
     const NOISE_SCALE = 0.0045;
+    const NUM_LEVELS = mobile ? 6 : 11;
+    // Mouse seismic zone radius
+    const SEISMIC_RADIUS_FACTOR = 0.22;
 
     let rafId = 0;
 
     function frame() {
       rafId = requestAnimationFrame(frame);
-      t += 0.003; // fast: terrain evolves visibly
+      t += 0.002; // constant tremor drift
 
       mouseStrength += (mouseTarget - mouseStrength) * 0.05;
 
       const cols = Math.ceil(W / STEP) + 1;
       const rows = Math.ceil(H / STEP) + 1;
 
-      // Build height field
       const field = new Float32Array(cols * rows);
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
@@ -245,41 +262,24 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, W, H);
 
-      // Draw filled bands — lowest to highest so higher bands paint over lower
-      for (let bi = 0; bi < NUM_BANDS; bi++) {
-        const isoLow  = bi       / NUM_BANDS;
-        const isoHigh = (bi + 1) / NUM_BANDS;
-        const [cr, cg, cb, ca] = BAND_COLORS[bi]!;
-        ctx.fillStyle = `rgba(${cr},${cg},${cb},${ca})`;
+      const seismicRadius = Math.min(W, H) * SEISMIC_RADIUS_FACTOR;
 
-        for (let r = 0; r < rows - 1; r++) {
-          for (let c = 0; c < cols - 1; c++) {
-            // Average of the 4 cell corners
-            const avg = (
-              (field[r       * cols + c] ?? 0) +
-              (field[r       * cols + c + 1] ?? 0) +
-              (field[(r + 1) * cols + c] ?? 0) +
-              (field[(r + 1) * cols + c + 1] ?? 0)
-            ) * 0.25;
+      for (let li = 0; li < NUM_LEVELS; li++) {
+        const iso = (li + 0.5) / NUM_LEVELS;
+        const [cr, cg, cb, ca] = contourColor(iso);
+        const lw = iso > 0.75 ? 1.0 : iso > 0.5 ? 0.75 : 0.5;
+        // Higher contours tremble more
+        const baseAmp = 0.5 + iso * 1.5;
 
-            if (avg >= isoLow && avg < isoHigh) {
-              ctx.fillRect(c * STEP, r * STEP, STEP + 1, STEP + 1);
-            }
-          }
-        }
-      }
-
-      // Draw contour lines on top for crisp band edges
-      const NUM_LINES = mobile ? 5 : 9;
-      for (let li = 0; li < NUM_LINES; li++) {
-        const iso = (li + 1) / (NUM_LINES + 1);
         ctx.beginPath();
-        ctx.strokeStyle = `rgba(167,139,250,${0.06 + iso * 0.08})`;
-        ctx.lineWidth = iso > 0.6 ? 0.75 : 0.5;
+        ctx.strokeStyle = `rgba(${cr},${cg},${cb},${ca})`;
+        ctx.lineWidth = lw;
 
         for (let r = 0; r < rows - 1; r++) {
           for (let c = 0; c < cols - 1; c++) {
-            const x0 = c * STEP, y0 = r * STEP;
+            const x0 = c * STEP;
+            const y0 = r * STEP;
+
             const vbl = field[r       * cols + c] ?? 0;
             const vbr = field[r       * cols + c + 1] ?? 0;
             const vtr = field[(r + 1) * cols + c + 1] ?? 0;
@@ -291,31 +291,44 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
               ((vtr > iso) ? 4 : 0) |
               ((vtl > iso) ? 8 : 0);
 
-            const edgeTable: number[][] = [
-              [], [3,0], [0,1], [3,1], [1,2], [3,0,1,2], [0,2], [3,2],
-              [2,3], [0,2], [0,3,2,1], [1,2], [1,3], [0,1], [3,0], [],
-            ];
-            const edges = edgeTable[code] ?? [];
+            const edges = MS_TABLE[code] ?? [];
             if (edges.length === 0) continue;
 
             for (let e = 0; e < edges.length; e += 2) {
-              const e1 = edges[e]!, e2 = edges[e + 1]!;
-              const pts: [number,number][] = [];
-              for (const ei of [e1, e2]) {
-                switch (ei) {
-                  case 0: { const tt = (iso - vbl) / (vbr - vbl + 1e-12); pts.push([x0 + tt * STEP, y0]); break; }
-                  case 1: { const tt = (iso - vbr) / (vtr - vbr + 1e-12); pts.push([x0 + STEP, y0 + tt * STEP]); break; }
-                  case 2: { const tt = (iso - vtl) / (vtr - vtl + 1e-12); pts.push([x0 + tt * STEP, y0 + STEP]); break; }
-                  case 3: { const tt = (iso - vbl) / (vtl - vbl + 1e-12); pts.push([x0, y0 + tt * STEP]); break; }
+              const [x1, y1] = edgeMidpoint(edges[e]!, x0, y0, STEP, vbl, vbr, vtr, vtl, iso);
+              const [x2, y2] = edgeMidpoint(edges[e + 1]!, x0, y0, STEP, vbl, vbr, vtr, vtl, iso);
+
+              // Compute segment normal: perpendicular to (dx, dy)
+              const sdx = x2 - x1;
+              const sdy = y2 - y1;
+              const slen = Math.sqrt(sdx * sdx + sdy * sdy) + 1e-12;
+              const nx = -sdy / slen;
+              const ny =  sdx / slen;
+
+              // Sample tremor at segment centre using animated noise
+              const cx = (x1 + x2) * 0.5;
+              const cy = (y1 + y2) * 0.5;
+              // Phase offset by position for wave-like shudder
+              const phase = noise2(cx * 0.009 + t * 2.5, cy * 0.009 + t * 1.8);
+
+              // Amplitude scales with elevation and tremor phase
+              let amp = baseAmp * phase;
+
+              // Mouse proximity amplifies 3–5x in seismic zone
+              if (mouseX !== null && mouseY !== null) {
+                const distSq = (cx - mouseX) * (cx - mouseX) + (cy - mouseY) * (cy - mouseY);
+                if (distSq < seismicRadius * seismicRadius) {
+                  const factor = 1 - Math.sqrt(distSq) / seismicRadius;
+                  amp *= (1 + factor * (3 + mouseStrength * 2));
                 }
               }
-              if (pts.length === 2) {
-                ctx.moveTo(pts[0]![0], pts[0]![1]);
-                ctx.lineTo(pts[1]![0], pts[1]![1]);
-              }
+
+              ctx.moveTo(x1 + nx * amp, y1 + ny * amp);
+              ctx.lineTo(x2 + nx * amp, y2 + ny * amp);
             }
           }
         }
+
         ctx.stroke();
       }
     }
@@ -343,7 +356,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
   // ─── Instantiate for hero wrap ─────────────────────────────────────────────
   const heroCanvas = document.querySelector<HTMLCanvasElement>('#hero-wrap .bg-canvas')!;
   const heroWrap   = document.getElementById('hero-wrap')!;
-  if (heroCanvas && heroWrap) createFilledBands(heroCanvas, heroWrap);
+  if (heroCanvas && heroWrap) createTremor(heroCanvas, heroWrap);
 
   const gridTex = heroWrap?.querySelector('.grid-texture') as HTMLElement | null;
   if (gridTex) gridTex.style.display = 'none';
@@ -356,7 +369,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
     ctaCard.style.position = 'relative';
     ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
-    createFilledBands(ctaCanvas, ctaCard);
+    createTremor(ctaCanvas, ctaCard);
 
     const gridTexCta = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
     if (gridTexCta) gridTexCta.style.display = 'none';

@@ -1,14 +1,14 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import Header from '../components/layout/Header.astro';
-import Footer from '../components/layout/Footer.astro';
-import HeroPello from '../components/sections/HeroPello.astro';
-import HowItWorks from '../components/sections/HowItWorks.astro';
-import ProductSection from '../components/sections/ProductSection.astro';
-import UseCases from '../components/sections/UseCases.astro';
-import Stats from '../components/sections/Stats.astro';
-import FAQ from '../components/sections/FAQ.astro';
-import FinalCTA from '../components/sections/FinalCTA.astro';
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
 ---
 
 <Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
@@ -120,7 +120,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
 
   ric(() => {
 
-  // ─── 2D Perlin Noise (inline, no imports) ─────────────────────────────────
+  // ─── 2D Perlin Noise (inline) ─────────────────────────────────────────────
   const PERM = new Uint8Array(512);
   {
     const p = new Uint8Array(256);
@@ -139,7 +139,6 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     const entry = GRADS2[h & 7]!;
     return entry[0] * x + entry[1] * y;
   }
-
   function noise2(x: number, y: number): number {
     const X = Math.floor(x) & 255;
     const Y = Math.floor(y) & 255;
@@ -157,104 +156,44 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     );
   }
 
-  // Sample the height field at a point including mouse peak
   function sampleHeight(
-    gx: number, gy: number,
-    t: number,
-    mouseX: number | null, mouseY: number | null,
-    mouseStrength: number,
-    W: number, H: number,
-    scale: number
+    gx: number, gy: number, t: number,
+    mouseX: number | null, mouseY: number | null, mouseStrength: number,
+    W: number, H: number, scale: number
   ): number {
-    // Animated Perlin value mapped to 0–1
     const nx = gx * scale;
     const ny = gy * scale;
     let v = noise2(nx + t * 0.3, ny + t * 0.2) * 0.6
           + noise2(nx * 2 + t * 0.5, ny * 2 + t * 0.4) * 0.3
           + noise2(nx * 4 + t * 0.8, ny * 4 + t * 0.7) * 0.1;
-    // Remap from roughly [-1,1] to [0,1]
     v = (v + 1) * 0.5;
     v = Math.max(0, Math.min(1, v));
-
-    // Add Gaussian mouse peak
     if (mouseX !== null && mouseY !== null && mouseStrength > 0) {
       const dx = gx - mouseX;
       const dy = gy - mouseY;
       const sigma = Math.min(W, H) * 0.18;
       const gaussian = Math.exp(-(dx * dx + dy * dy) / (2 * sigma * sigma));
-      v = Math.min(1, v + gaussian * mouseStrength * 0.45);
+      v = Math.min(1, v + gaussian * mouseStrength * 0.55);
     }
-
     return v;
   }
 
-  // ─── Contour level colors ──────────────────────────────────────────────────
-  // Returns [r,g,b,a] for a given iso-level 0–1
-  function contourColor(level: number): [number,number,number,number] {
-    if (level < 0.25)       return [52,  14, 185, 0.08];
-    else if (level < 0.45)  return [76,  29, 149, 0.10];
-    else if (level < 0.60)  return [99, 102, 241, 0.13];
-    else if (level < 0.72)  return [139, 92, 246, 0.17];
-    else if (level < 0.82)  return [162, 52, 250, 0.22];
-    else if (level < 0.90)  return [180, 100, 255, 0.28];
-    else                    return [196, 181, 254, 0.32];
-  }
-
-  // ─── Marching Squares ─────────────────────────────────────────────────────
-  // Lookup table: each cell corner (bl, br, tr, tl) is above(1) or below(0) threshold.
-  // Returns line segments as pairs of edge midpoints in cell-local 0–1 coords.
-  // Edges: 0=bottom, 1=right, 2=top, 3=left
-  // Edge midpoint functions (interpolated along the edge):
-  function edgeMidpoint(
-    edge: number,
-    x0: number, y0: number, step: number,
-    vbl: number, vbr: number, vtr: number, vtl: number,
-    iso: number
-  ): [number,number] {
-    switch (edge) {
-      case 0: { // bottom: bl→br
-        const t = (iso - vbl) / (vbr - vbl + 1e-12);
-        return [x0 + t * step, y0];
-      }
-      case 1: { // right: br→tr
-        const t = (iso - vbr) / (vtr - vbr + 1e-12);
-        return [x0 + step, y0 + t * step];
-      }
-      case 2: { // top: tl→tr
-        const t = (iso - vtl) / (vtr - vtl + 1e-12);
-        return [x0 + t * step, y0 + step];
-      }
-      case 3: { // left: bl→tl
-        const t = (iso - vbl) / (vtl - vbl + 1e-12);
-        return [x0, y0 + t * step];
-      }
-    }
-    return [x0, y0];
-  }
-
-  // Marching squares case → edge pairs
-  // Index = 4-bit code: bit3=tl, bit2=tr, bit1=br, bit0=bl
-  const MS_TABLE: number[][] = [
-    [],           // 0000 — all below
-    [3,0],        // 0001 — bl above
-    [0,1],        // 0010 — br above
-    [3,1],        // 0011 — bl,br above
-    [1,2],        // 0100 — tr above
-    [3,0,1,2],    // 0101 — bl,tr above (saddle — two segments)
-    [0,2],        // 0110 — br,tr above
-    [3,2],        // 0111 — bl,br,tr above
-    [2,3],        // 1000 — tl above
-    [0,2],        // 1001 — bl,tl above  ← Note: same as 0110 (saddle variant)
-    [0,3,2,1],    // 1010 — br,tl above (saddle)
-    [1,2],        // 1011 — bl,br,tl above ← same as 0100
-    [1,3],        // 1100 — tr,tl above
-    [0,1],        // 1101 — bl,tr,tl above ← same as 0010
-    [3,0],        // 1110 — br,tr,tl above ← same as 0001
-    [],           // 1111 — all above
+  // ─── Band colors: darkest violet → near-white at peaks ───────────────────
+  // 8 elevation bands
+  const BAND_COLORS: [number,number,number,number][] = [
+    [20,  5,  60, 0.10],   // 0.00-0.125  deepest violet
+    [40, 10,  90, 0.14],   // 0.125-0.25  dark violet
+    [59, 20, 120, 0.18],   // 0.25-0.375  deep indigo
+    [76, 29, 149, 0.22],   // 0.375-0.50  indigo
+    [99,102, 241, 0.28],   // 0.50-0.625  electric blue
+    [139,92, 246, 0.34],   // 0.625-0.75  purple
+    [162,52, 250, 0.40],   // 0.75-0.875  bright purple
+    [196,181,254, 0.48],   // 0.875-1.0   near-white lavender
   ];
+  const NUM_BANDS = BAND_COLORS.length;
 
-  // ─── Main topographic renderer ────────────────────────────────────────────
-  function createTopographic(canvas: HTMLCanvasElement, container: HTMLElement) {
+  // ─── Main filled-band renderer ─────────────────────────────────────────────
+  function createFilledBands(canvas: HTMLCanvasElement, container: HTMLElement) {
     const dpr = window.devicePixelRatio || 1;
     let W = 0, H = 0;
 
@@ -275,21 +214,19 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     let t = 0;
     let mouseX: number | null = null;
     let mouseY: number | null = null;
-    let mouseStrength = 0;       // smoothly ramps 0→1 when mouse enters, 0 when leaves
+    let mouseStrength = 0;
     let mouseTarget = 0;
 
-    const STEP = 4; // grid resolution in px
-    const NOISE_SCALE = 0.0045;
     const mobile = W < 768;
-    const NUM_LEVELS = mobile ? 6 : 11;
+    const STEP = mobile ? 14 : 8;
+    const NOISE_SCALE = 0.0045;
 
     let rafId = 0;
 
     function frame() {
       rafId = requestAnimationFrame(frame);
-      t += 0.0003;
+      t += 0.003; // fast: terrain evolves visibly
 
-      // Smooth mouse strength
       mouseStrength += (mouseTarget - mouseStrength) * 0.05;
 
       const cols = Math.ceil(W / STEP) + 1;
@@ -299,10 +236,8 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
       const field = new Float32Array(cols * rows);
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-          const gx = c * STEP;
-          const gy = r * STEP;
           field[r * cols + c] = sampleHeight(
-            gx, gy, t, mouseX, mouseY, mouseStrength, W, H, NOISE_SCALE
+            c * STEP, r * STEP, t, mouseX, mouseY, mouseStrength, W, H, NOISE_SCALE
           );
         }
       }
@@ -310,21 +245,41 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, W, H);
 
-      // Draw contour levels
-      for (let li = 0; li < NUM_LEVELS; li++) {
-        const iso = (li + 0.5) / NUM_LEVELS;
-        const [cr, cg, cb, ca] = contourColor(iso);
-        const lw = iso > 0.75 ? 1.0 : iso > 0.5 ? 0.75 : 0.5;
-
-        ctx.beginPath();
-        ctx.strokeStyle = `rgba(${cr},${cg},${cb},${ca})`;
-        ctx.lineWidth = lw;
+      // Draw filled bands — lowest to highest so higher bands paint over lower
+      for (let bi = 0; bi < NUM_BANDS; bi++) {
+        const isoLow  = bi       / NUM_BANDS;
+        const isoHigh = (bi + 1) / NUM_BANDS;
+        const [cr, cg, cb, ca] = BAND_COLORS[bi]!;
+        ctx.fillStyle = `rgba(${cr},${cg},${cb},${ca})`;
 
         for (let r = 0; r < rows - 1; r++) {
           for (let c = 0; c < cols - 1; c++) {
-            const x0 = c * STEP;
-            const y0 = r * STEP;
+            // Average of the 4 cell corners
+            const avg = (
+              (field[r       * cols + c] ?? 0) +
+              (field[r       * cols + c + 1] ?? 0) +
+              (field[(r + 1) * cols + c] ?? 0) +
+              (field[(r + 1) * cols + c + 1] ?? 0)
+            ) * 0.25;
 
+            if (avg >= isoLow && avg < isoHigh) {
+              ctx.fillRect(c * STEP, r * STEP, STEP + 1, STEP + 1);
+            }
+          }
+        }
+      }
+
+      // Draw contour lines on top for crisp band edges
+      const NUM_LINES = mobile ? 5 : 9;
+      for (let li = 0; li < NUM_LINES; li++) {
+        const iso = (li + 1) / (NUM_LINES + 1);
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(167,139,250,${0.06 + iso * 0.08})`;
+        ctx.lineWidth = iso > 0.6 ? 0.75 : 0.5;
+
+        for (let r = 0; r < rows - 1; r++) {
+          for (let c = 0; c < cols - 1; c++) {
+            const x0 = c * STEP, y0 = r * STEP;
             const vbl = field[r       * cols + c] ?? 0;
             const vbr = field[r       * cols + c + 1] ?? 0;
             const vtr = field[(r + 1) * cols + c + 1] ?? 0;
@@ -336,32 +291,42 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
               ((vtr > iso) ? 4 : 0) |
               ((vtl > iso) ? 8 : 0);
 
-            const edges = MS_TABLE[code] ?? [];
+            const edgeTable: number[][] = [
+              [], [3,0], [0,1], [3,1], [1,2], [3,0,1,2], [0,2], [3,2],
+              [2,3], [0,2], [0,3,2,1], [1,2], [1,3], [0,1], [3,0], [],
+            ];
+            const edges = edgeTable[code] ?? [];
             if (edges.length === 0) continue;
 
             for (let e = 0; e < edges.length; e += 2) {
-              const [x1, y1] = edgeMidpoint(edges[e]!, x0, y0, STEP, vbl, vbr, vtr, vtl, iso);
-              const [x2, y2] = edgeMidpoint(edges[e + 1]!, x0, y0, STEP, vbl, vbr, vtr, vtl, iso);
-              ctx.moveTo(x1, y1);
-              ctx.lineTo(x2, y2);
+              const e1 = edges[e]!, e2 = edges[e + 1]!;
+              const pts: [number,number][] = [];
+              for (const ei of [e1, e2]) {
+                switch (ei) {
+                  case 0: { const tt = (iso - vbl) / (vbr - vbl + 1e-12); pts.push([x0 + tt * STEP, y0]); break; }
+                  case 1: { const tt = (iso - vbr) / (vtr - vbr + 1e-12); pts.push([x0 + STEP, y0 + tt * STEP]); break; }
+                  case 2: { const tt = (iso - vtl) / (vtr - vtl + 1e-12); pts.push([x0 + tt * STEP, y0 + STEP]); break; }
+                  case 3: { const tt = (iso - vbl) / (vtl - vbl + 1e-12); pts.push([x0, y0 + tt * STEP]); break; }
+                }
+              }
+              if (pts.length === 2) {
+                ctx.moveTo(pts[0]![0], pts[0]![1]);
+                ctx.lineTo(pts[1]![0], pts[1]![1]);
+              }
             }
           }
         }
-
         ctx.stroke();
       }
     }
 
-    // Mouse tracking
     container.addEventListener('mousemove', (e: MouseEvent) => {
       const rect = container.getBoundingClientRect();
       mouseX = e.clientX - rect.left;
       mouseY = e.clientY - rect.top;
       mouseTarget = 1;
     });
-    container.addEventListener('mouseleave', () => {
-      mouseTarget = 0;
-    });
+    container.addEventListener('mouseleave', () => { mouseTarget = 0; });
 
     const ro = new ResizeObserver(() => {
       resizeCanvas();
@@ -378,11 +343,8 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
   // ─── Instantiate for hero wrap ─────────────────────────────────────────────
   const heroCanvas = document.querySelector<HTMLCanvasElement>('#hero-wrap .bg-canvas')!;
   const heroWrap   = document.getElementById('hero-wrap')!;
-  if (heroCanvas && heroWrap) {
-    createTopographic(heroCanvas, heroWrap);
-  }
+  if (heroCanvas && heroWrap) createFilledBands(heroCanvas, heroWrap);
 
-  // Hide grid-texture
   const gridTex = heroWrap?.querySelector('.grid-texture') as HTMLElement | null;
   if (gridTex) gridTex.style.display = 'none';
 
@@ -394,7 +356,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
     ctaCard.style.position = 'relative';
     ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
-    createTopographic(ctaCanvas, ctaCard);
+    createFilledBands(ctaCanvas, ctaCard);
 
     const gridTexCta = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
     if (gridTexCta) gridTexCta.style.display = 'none';

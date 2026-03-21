@@ -1,14 +1,14 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import Header from '../components/layout/Header.astro';
-import Footer from '../components/layout/Footer.astro';
-import HeroPello from '../components/sections/HeroPello.astro';
-import HowItWorks from '../components/sections/HowItWorks.astro';
-import ProductSection from '../components/sections/ProductSection.astro';
-import UseCases from '../components/sections/UseCases.astro';
-import Stats from '../components/sections/Stats.astro';
-import FAQ from '../components/sections/FAQ.astro';
-import FinalCTA from '../components/sections/FinalCTA.astro';
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
 ---
 
 <Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
@@ -157,7 +157,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     );
   }
 
-  // Sample height field including mouse elevation peak
+  // Sample the height field at a point including mouse peak
   function sampleHeight(
     gx: number, gy: number,
     t: number,
@@ -166,43 +166,30 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     W: number, H: number,
     scale: number
   ): number {
+    // Animated Perlin value mapped to 0–1
     const nx = gx * scale;
     const ny = gy * scale;
     let v = noise2(nx + t * 0.3, ny + t * 0.2) * 0.6
           + noise2(nx * 2 + t * 0.5, ny * 2 + t * 0.4) * 0.3
           + noise2(nx * 4 + t * 0.8, ny * 4 + t * 0.7) * 0.1;
+    // Remap from roughly [-1,1] to [0,1]
     v = (v + 1) * 0.5;
     v = Math.max(0, Math.min(1, v));
 
-    // Add Gaussian mouse peak — particles will flow away from this high point
+    // Add Gaussian mouse peak
     if (mouseX !== null && mouseY !== null && mouseStrength > 0) {
       const dx = gx - mouseX;
       const dy = gy - mouseY;
       const sigma = Math.min(W, H) * 0.18;
       const gaussian = Math.exp(-(dx * dx + dy * dy) / (2 * sigma * sigma));
-      v = Math.min(1, v + gaussian * mouseStrength * 0.55);
+      v = Math.min(1, v + gaussian * mouseStrength * 0.45);
     }
 
     return v;
   }
 
-  // Compute gradient of the height field via finite differences
-  function heightGradient(
-    px: number, py: number,
-    t: number,
-    mouseX: number | null, mouseY: number | null,
-    mouseStrength: number,
-    W: number, H: number,
-    scale: number,
-    eps: number
-  ): [number, number] {
-    const h0 = sampleHeight(px, py, t, mouseX, mouseY, mouseStrength, W, H, scale);
-    const hx = sampleHeight(px + eps, py, t, mouseX, mouseY, mouseStrength, W, H, scale);
-    const hy = sampleHeight(px, py + eps, t, mouseX, mouseY, mouseStrength, W, H, scale);
-    return [(hx - h0) / eps, (hy - h0) / eps];
-  }
-
-  // Contour level colors
+  // ─── Contour level colors ──────────────────────────────────────────────────
+  // Returns [r,g,b,a] for a given iso-level 0–1
   function contourColor(level: number): [number,number,number,number] {
     if (level < 0.25)       return [52,  14, 185, 0.08];
     else if (level < 0.45)  return [76,  29, 149, 0.10];
@@ -213,16 +200,11 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     else                    return [196, 181, 254, 0.32];
   }
 
-  // Particle color based on its current elevation
-  function particleColor(elevation: number): [number,number,number] {
-    if (elevation < 0.3)        return [99,  102, 241];  // indigo-500
-    else if (elevation < 0.5)   return [129,  82, 252];  // violet-500
-    else if (elevation < 0.7)   return [139,  92, 246];  // violet-400
-    else if (elevation < 0.85)  return [162,  52, 250];  // purple-500
-    else                        return [196, 181, 254];  // violet-300
-  }
-
-  // Marching squares edge midpoint
+  // ─── Marching Squares ─────────────────────────────────────────────────────
+  // Lookup table: each cell corner (bl, br, tr, tl) is above(1) or below(0) threshold.
+  // Returns line segments as pairs of edge midpoints in cell-local 0–1 coords.
+  // Edges: 0=bottom, 1=right, 2=top, 3=left
+  // Edge midpoint functions (interpolated along the edge):
   function edgeMidpoint(
     edge: number,
     x0: number, y0: number, step: number,
@@ -230,19 +212,19 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     iso: number
   ): [number,number] {
     switch (edge) {
-      case 0: {
+      case 0: { // bottom: bl→br
         const t = (iso - vbl) / (vbr - vbl + 1e-12);
         return [x0 + t * step, y0];
       }
-      case 1: {
+      case 1: { // right: br→tr
         const t = (iso - vbr) / (vtr - vbr + 1e-12);
         return [x0 + step, y0 + t * step];
       }
-      case 2: {
+      case 2: { // top: tl→tr
         const t = (iso - vtl) / (vtr - vtl + 1e-12);
         return [x0 + t * step, y0 + step];
       }
-      case 3: {
+      case 3: { // left: bl→tl
         const t = (iso - vbl) / (vtl - vbl + 1e-12);
         return [x0, y0 + t * step];
       }
@@ -250,72 +232,29 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     return [x0, y0];
   }
 
+  // Marching squares case → edge pairs
+  // Index = 4-bit code: bit3=tl, bit2=tr, bit1=br, bit0=bl
   const MS_TABLE: number[][] = [
-    [],
-    [3,0],
-    [0,1],
-    [3,1],
-    [1,2],
-    [3,0,1,2],
-    [0,2],
-    [3,2],
-    [2,3],
-    [0,2],
-    [0,3,2,1],
-    [1,2],
-    [1,3],
-    [0,1],
-    [3,0],
-    [],
+    [],           // 0000 — all below
+    [3,0],        // 0001 — bl above
+    [0,1],        // 0010 — br above
+    [3,1],        // 0011 — bl,br above
+    [1,2],        // 0100 — tr above
+    [3,0,1,2],    // 0101 — bl,tr above (saddle — two segments)
+    [0,2],        // 0110 — br,tr above
+    [3,2],        // 0111 — bl,br,tr above
+    [2,3],        // 1000 — tl above
+    [0,2],        // 1001 — bl,tl above  ← Note: same as 0110 (saddle variant)
+    [0,3,2,1],    // 1010 — br,tl above (saddle)
+    [1,2],        // 1011 — bl,br,tl above ← same as 0100
+    [1,3],        // 1100 — tr,tl above
+    [0,1],        // 1101 — bl,tr,tl above ← same as 0010
+    [3,0],        // 1110 — br,tr,tl above ← same as 0001
+    [],           // 1111 — all above
   ];
 
-  // ─── Particle type ────────────────────────────────────────────────────────
-  interface Particle {
-    x: number;
-    y: number;
-    trail: Array<[number, number]>; // last 8 positions
-    speed: number;
-    stuckFrames: number;
-  }
-
-  function spawnParticle(W: number, H: number): Particle {
-    return {
-      x: Math.random() * W,
-      y: Math.random() * H,
-      trail: [],
-      speed: 0.6 + Math.random() * 1.2,
-      stuckFrames: 0,
-    };
-  }
-
-  // Respawn at a high-elevation position by sampling random candidates
-  function respawnAtPeak(
-    W: number, H: number,
-    t: number,
-    mouseX: number | null, mouseY: number | null,
-    mouseStrength: number,
-    scale: number
-  ): Particle {
-    let bestX = Math.random() * W;
-    let bestY = Math.random() * H;
-    let bestH = 0;
-    for (let i = 0; i < 10; i++) {
-      const cx = Math.random() * W;
-      const cy = Math.random() * H;
-      const h = sampleHeight(cx, cy, t, mouseX, mouseY, mouseStrength, W, H, scale);
-      if (h > bestH) { bestH = h; bestX = cx; bestY = cy; }
-    }
-    return {
-      x: bestX,
-      y: bestY,
-      trail: [],
-      speed: 0.6 + Math.random() * 1.2,
-      stuckFrames: 0,
-    };
-  }
-
-  // ─── Main renderer ────────────────────────────────────────────────────────
-  function createFlowField(canvas: HTMLCanvasElement, container: HTMLElement) {
+  // ─── Main topographic renderer ────────────────────────────────────────────
+  function createTopographic(canvas: HTMLCanvasElement, container: HTMLElement) {
     const dpr = window.devicePixelRatio || 1;
     let W = 0, H = 0;
 
@@ -336,28 +275,19 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     let t = 0;
     let mouseX: number | null = null;
     let mouseY: number | null = null;
-    let mouseStrength = 0;
+    let mouseStrength = 0;       // smoothly ramps 0→1 when mouse enters, 0 when leaves
     let mouseTarget = 0;
 
-    const STEP = 4;
+    const STEP = 4; // grid resolution in px
     const NOISE_SCALE = 0.0045;
-    const GRAD_EPS = 3.0;
     const mobile = W < 768;
     const NUM_LEVELS = mobile ? 6 : 11;
-    const NUM_PARTICLES = mobile ? 220 : 500;
-    const TRAIL_LEN = 8;
-
-    // Initialise particles spread around the canvas
-    let particles: Particle[] = [];
-    for (let i = 0; i < NUM_PARTICLES; i++) {
-      particles.push(spawnParticle(W, H));
-    }
 
     let rafId = 0;
 
     function frame() {
       rafId = requestAnimationFrame(frame);
-      t += 0.002; // faster terrain shift for flow field
+      t += 0.0003;
 
       // Smooth mouse strength
       mouseStrength += (mouseTarget - mouseStrength) * 0.05;
@@ -365,7 +295,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
       const cols = Math.ceil(W / STEP) + 1;
       const rows = Math.ceil(H / STEP) + 1;
 
-      // Build height field for contours
+      // Build height field
       const field = new Float32Array(cols * rows);
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
@@ -380,7 +310,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, W, H);
 
-      // ── Draw contour lines ────────────────────────────────────────────────
+      // Draw contour levels
       for (let li = 0; li < NUM_LEVELS; li++) {
         const iso = (li + 0.5) / NUM_LEVELS;
         const [cr, cg, cb, ca] = contourColor(iso);
@@ -420,64 +350,6 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
 
         ctx.stroke();
       }
-
-      // ── Update + draw particles ───────────────────────────────────────────
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i]!;
-
-        // Record trail position before moving
-        p.trail.push([p.x, p.y]);
-        if (p.trail.length > TRAIL_LEN) p.trail.shift();
-
-        // Gradient descent: move downhill (negative gradient = steepest descent)
-        const [gx, gy] = heightGradient(
-          p.x, p.y, t, mouseX, mouseY, mouseStrength, W, H, NOISE_SCALE, GRAD_EPS
-        );
-        const gLen = Math.sqrt(gx * gx + gy * gy) + 1e-12;
-        const nx = -gx / gLen;  // downhill direction
-        const ny = -gy / gLen;
-
-        p.x += nx * p.speed;
-        p.y += ny * p.speed;
-
-        // Check if stuck (very flat — gradient magnitude tiny)
-        if (gLen < 0.0001) {
-          p.stuckFrames++;
-        } else {
-          p.stuckFrames = 0;
-        }
-
-        const outOfBounds = p.x < -10 || p.x > W + 10 || p.y < -10 || p.y > H + 10;
-        const stuck = p.stuckFrames > 40;
-
-        if (outOfBounds || stuck) {
-          particles[i] = respawnAtPeak(W, H, t, mouseX, mouseY, mouseStrength, NOISE_SCALE);
-          continue;
-        }
-
-        // Get current elevation for color
-        const elev = sampleHeight(p.x, p.y, t, mouseX, mouseY, mouseStrength, W, H, NOISE_SCALE);
-        const [pr, pg, pb] = particleColor(elev);
-
-        // Draw fading trail
-        for (let j = 0; j < p.trail.length; j++) {
-          const trailFrac = j / TRAIL_LEN; // 0 = oldest, 1 = newest
-          const alpha = 0.08 + trailFrac * 0.25; // 0.08 at tail, 0.33 near head
-          const radius = 0.6 + trailFrac * 0.9;  // smaller at tail
-          const [tx, ty] = p.trail[j]!;
-          ctx.beginPath();
-          ctx.arc(tx, ty, radius, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(${pr},${pg},${pb},${alpha})`;
-          ctx.fill();
-        }
-
-        // Draw particle head
-        const headAlpha = 0.45 + elev * 0.2; // 0.45–0.65
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${pr},${pg},${pb},${headAlpha})`;
-        ctx.fill();
-      }
     }
 
     // Mouse tracking
@@ -494,11 +366,6 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     const ro = new ResizeObserver(() => {
       resizeCanvas();
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      // Re-scatter particles on resize
-      particles = [];
-      for (let i = 0; i < NUM_PARTICLES; i++) {
-        particles.push(spawnParticle(W, H));
-      }
     });
     ro.observe(container);
 
@@ -512,7 +379,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
   const heroCanvas = document.querySelector<HTMLCanvasElement>('#hero-wrap .bg-canvas')!;
   const heroWrap   = document.getElementById('hero-wrap')!;
   if (heroCanvas && heroWrap) {
-    createFlowField(heroCanvas, heroWrap);
+    createTopographic(heroCanvas, heroWrap);
   }
 
   // Hide grid-texture
@@ -527,7 +394,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
     ctaCard.style.position = 'relative';
     ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
-    createFlowField(ctaCanvas, ctaCard);
+    createTopographic(ctaCanvas, ctaCard);
 
     const gridTexCta = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
     if (gridTexCta) gridTexCta.style.display = 'none';

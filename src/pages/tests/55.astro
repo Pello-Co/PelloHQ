@@ -1,14 +1,14 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import Header from '../components/layout/Header.astro';
-import Footer from '../components/layout/Footer.astro';
-import HeroPello from '../components/sections/HeroPello.astro';
-import HowItWorks from '../components/sections/HowItWorks.astro';
-import ProductSection from '../components/sections/ProductSection.astro';
-import UseCases from '../components/sections/UseCases.astro';
-import Stats from '../components/sections/Stats.astro';
-import FAQ from '../components/sections/FAQ.astro';
-import FinalCTA from '../components/sections/FinalCTA.astro';
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
 ---
 
 <Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
@@ -57,8 +57,6 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     transition: top 0.1s;
   }
   #skip-link:focus { top: 0; }
-
-  /* Glassmorphism overrides */
   #hero-wrap .url-input-wrap,
   .final-cta .url-input-wrap {
     background: rgba(255,255,255,0.06) !important;
@@ -122,69 +120,52 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
 
   ric(() => {
 
-  // ─── Shared value-noise helper ───────────────────────────────────────────────
-  // Simple 1D value noise: hash a seed, interpolate between two random values
+  // ─── Oscilloscope / CRT aesthetic ────────────────────────────────────────────
+
+  interface Wave {
+    yFrac: number;
+    freq: number;
+    amp: number;
+    baseAmp: number;
+    phase: number;
+    phaseSpeed: number;
+    noiseOffset: number;
+    noisePeriod: number;
+    color: string;
+  }
+
+  const PRODUCT_COLORS: string[] = [
+    '#6366f1','#8b5cf6','#a855f7','#c026d3',
+    '#7c3aed','#4f46e5','#9333ea','#6d28d9',
+  ];
+
   function valueNoise(x: number): number {
     const i = Math.floor(x);
     const f = x - i;
-    const u = f * f * (3 - 2 * f); // smoothstep
+    const u = f * f * (3 - 2 * f);
     const a = Math.sin(i * 127.1) * 43758.5453;
     const b = Math.sin((i + 1) * 127.1) * 43758.5453;
     return (a - Math.floor(a)) * (1 - u) + (b - Math.floor(b)) * u;
   }
 
-  // ─── Product colors ──────────────────────────────────────────────────────────
-  const PRODUCT_COLORS: string[] = [
-    '#6366f1','#8b5cf6','#a78bfa','#06b6d4',
-    '#3b82f6','#f59e0b','#10b981','#ec4899',
-  ];
-
-  // ─── Wave definitions ────────────────────────────────────────────────────────
-  interface Wave {
-    yFrac: number;      // fractional vertical position (0.1–0.9)
-    freq: number;       // base spatial frequency
-    amp: number;        // current amplitude (px)
-    baseAmp: number;    // resting amplitude (px)
-    phase: number;      // current phase (radians)
-    phaseSpeed: number; // radians per frame
-    noiseOffset: number; // seed offset for value noise
-    noisePeriod: number; // noise oscillation period in seconds
-    color: string;
-  }
-
   const WAVES: Wave[] = PRODUCT_COLORS.map((color, i) => ({
     yFrac: 0.1 + (i / 7) * 0.8,
-    freq: 0.01 + Math.random() * 0.02,
-    amp: 8 + Math.random() * 7,
-    baseAmp: 8 + Math.random() * 7,
-    phase: Math.random() * Math.PI * 2,
-    phaseSpeed: 0.008 + i * 0.001,
+    freq: 0.012 + i * 0.002,
+    amp: 12 + i * 1.5,
+    baseAmp: 12 + i * 1.5,
+    phase: i * 0.8,
+    phaseSpeed: 0.006 + i * 0.0008,
     noiseOffset: i * 100.7,
-    noisePeriod: 3 + Math.random() * 2,
+    noisePeriod: 3 + i * 0.4,
     color,
   }));
 
-  // ─── Mouse state ─────────────────────────────────────────────────────────────
-  interface MouseState { x: number; y: number; }
-  let mouse: MouseState | null = null;
+  let mouse: { x: number; y: number } | null = null;
 
-  interface Spike {
-    x: number;
-    amp: number;
-    spread: number;
-    age: number; // frames
-  }
-  const spikes: Spike[] = [];
-
-  // ─── Scan line state ─────────────────────────────────────────────────────────
-  // Scans from top to bottom over ~8s
-  const SCAN_PERIOD = 8; // seconds
-
-  // ─── Canvas setup ────────────────────────────────────────────────────────────
-  function setupWaveformCanvas(
+  function setupCanvas(
     canvas: HTMLCanvasElement,
     wrap: HTMLElement,
-    waveSubset: Wave[],
+    waves: Wave[],
     isSimple: boolean
   ): () => void {
     const ctx = canvas.getContext('2d')!;
@@ -198,8 +179,8 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
       H = Math.round(rect.height);
       canvas.width = W * dpr;
       canvas.height = H * dpr;
-      canvas.style.width = `${W}px`;
-      canvas.style.height = `${H}px`;
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
@@ -207,142 +188,173 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     ro.observe(wrap);
     resize();
 
+    function drawWavePath(wave: Wave, finalAmp: number) {
+      const SAMPLES = isSimple ? 120 : 250;
+      const baseY = wave.yFrac * H;
+      ctx.beginPath();
+      for (let s = 0; s <= SAMPLES; s++) {
+        const x = (s / SAMPLES) * W;
+        let y = baseY + Math.sin(x * wave.freq + wave.phase) * finalAmp;
+        // add slight harmonic
+        y += Math.sin(x * wave.freq * 2.1 + wave.phase * 1.3) * finalAmp * 0.15;
+        if (s === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+    }
+
     function drawFrame() {
       requestAnimationFrame(drawFrame);
       if (W === 0 || H === 0) return;
       ctx.clearRect(0, 0, W, H);
 
       const tSec = performance.now() * 0.001;
-      const SAMPLES = 200;
 
-      for (let wi = 0; wi < waveSubset.length; wi++) {
-        const wave = waveSubset[wi];
+      // --- CRT grid overlay ---
+      if (!isSimple) {
+        ctx.strokeStyle = 'rgba(100,220,100,0.04)';
+        ctx.lineWidth = 0.5;
+        const gridSpacing = 50;
+        for (let gx = 0; gx <= W; gx += gridSpacing) {
+          ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke();
+        }
+        for (let gy = 0; gy <= H; gy += gridSpacing) {
+          ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+        }
+      }
+
+      // --- Waves with phosphor glow (3-pass) ---
+      for (let wi = 0; wi < waves.length; wi++) {
+        const wave = waves[wi];
         if (!wave) continue;
         const baseY = wave.yFrac * H;
 
-        // Noise-modulated amplitude
         const noiseT = tSec / wave.noisePeriod + wave.noiseOffset;
-        const noiseVal = valueNoise(noiseT); // 0–1
-        const noiseAmp = wave.baseAmp * (0.6 + noiseVal * 0.8);
+        const noiseVal = valueNoise(noiseT);
+        const noiseAmp = wave.baseAmp * (0.5 + noiseVal * 0.9);
 
-        // Mouse proximity — find closest wave and amplify
         let proximity = 0;
         if (!isSimple && mouse !== null) {
           const dy = mouse.y - baseY;
-          proximity = Math.max(0, 1 - Math.abs(dy) / (H * 0.15));
+          proximity = Math.max(0, 1 - Math.abs(dy) / (H * 0.12));
           proximity = proximity * proximity;
         }
-        const finalAmp = noiseAmp * (1 + proximity * 1.5);
-        const lineWidth = isSimple ? 0.5 : 0.5 + proximity * 1.0;
+        const finalAmp = noiseAmp * (1 + proximity * 1.8);
 
-        // Build path with 200 sample points
-        ctx.beginPath();
-        for (let s = 0; s <= SAMPLES; s++) {
-          const x = (s / SAMPLES) * W;
+        if (!isSimple) {
+          // Pass 1: outer bloom 6px at 0.04
+          ctx.globalAlpha = 0.04;
+          ctx.lineWidth = 6;
+          ctx.strokeStyle = wave.color;
+          drawWavePath(wave, finalAmp);
+          ctx.stroke();
 
-          // Base sine wave
-          let y = baseY + Math.sin(x * wave.freq + wave.phase) * finalAmp;
+          // Pass 2: mid glow 3px at 0.1
+          ctx.globalAlpha = 0.1;
+          ctx.lineWidth = 3;
+          drawWavePath(wave, finalAmp);
+          ctx.stroke();
 
-          // Add Gaussian spikes
-          if (!isSimple) {
-            for (const spike of spikes) {
-              const dx = x - spike.x;
-              const g = Math.exp(-(dx * dx) / (2 * spike.spread * spike.spread));
-              y += g * spike.amp * Math.max(0, 1 - spike.age / 60);
-            }
-          }
+          // Pass 3: crisp center 1px at 0.7 + proximity
+          ctx.globalAlpha = Math.min(1, 0.65 + proximity * 0.25);
+          ctx.lineWidth = 1;
+          drawWavePath(wave, finalAmp);
+          ctx.stroke();
+        } else {
+          ctx.globalAlpha = 0.45;
+          ctx.lineWidth = 1;
+          ctx.strokeStyle = wave.color;
+          drawWavePath(wave, finalAmp);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
 
-          // Mouse X spike
-          if (!isSimple && mouse !== null) {
-            const dx = x - mouse.x;
-            const spikeW = 80;
-            const g = Math.exp(-(dx * dx) / (2 * spikeW * spikeW));
-            y += g * proximity * finalAmp * 0.5;
-          }
+        // Mouse crosshair + readout (nearest wave)
+        if (!isSimple && mouse !== null && proximity > 0.5) {
+          // Draw crosshair
+          ctx.globalAlpha = 0.08;
+          ctx.strokeStyle = 'rgba(200,255,200,1)';
+          ctx.lineWidth = 0.5;
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath(); ctx.moveTo(mouse.x, 0); ctx.lineTo(mouse.x, H); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(0, mouse.y); ctx.lineTo(W, mouse.y); ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.globalAlpha = 1;
 
-          if (s === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
+          // Readout text
+          const hzVal = (wave.freq * 1000).toFixed(1);
+          const ampVal = finalAmp.toFixed(0);
+          ctx.globalAlpha = 0.7;
+          ctx.fillStyle = wave.color;
+          ctx.font = '10px monospace';
+          const txt = `f: ${hzVal}Hz  A: ${ampVal}px`;
+          const tx = Math.min(mouse.x + 8, W - 120);
+          const ty = Math.max(baseY - 8, 12);
+          ctx.fillText(txt, tx, ty);
+          ctx.globalAlpha = 1;
         }
 
-        // Scan line brightening
-        const scanY = ((tSec % SCAN_PERIOD) / SCAN_PERIOD) * H;
-        const distToScan = Math.abs(baseY - scanY);
-        const scanBright = Math.max(0, 1 - distToScan / 40);
-
-        // Alpha: base 0.35, boosted by proximity and scan
-        const alpha = Math.min(1, 0.35 + proximity * 0.35 + scanBright * 0.25);
-
-        ctx.strokeStyle = wave.color;
-        ctx.globalAlpha = alpha;
-        ctx.lineWidth = lineWidth;
-        ctx.stroke();
-        ctx.globalAlpha = 1;
-      }
-
-      // Draw scan line band
-      if (!isSimple) {
-        const scanY = ((tSec % SCAN_PERIOD) / SCAN_PERIOD) * H;
-        const scanGrad = ctx.createLinearGradient(0, scanY - 12, 0, scanY + 12);
-        scanGrad.addColorStop(0, 'rgba(162,52,250,0)');
-        scanGrad.addColorStop(0.5, 'rgba(162,52,250,0.06)');
-        scanGrad.addColorStop(1, 'rgba(162,52,250,0)');
-        ctx.fillStyle = scanGrad;
-        ctx.fillRect(0, scanY - 12, W, 24);
-      }
-
-      // Advance wave phases
-      for (const wave of waveSubset) {
         wave.phase += wave.phaseSpeed;
       }
 
-      // Age and remove spikes
-      for (let i = spikes.length - 1; i >= 0; i--) {
-        const spike = spikes[i];
-        if (!spike) continue;
-        spike.age++;
-        spike.spread += 2;
-        if (spike.age > 60) spikes.splice(i, 1);
+      if (!isSimple) {
+        // Time axis labels along bottom
+        ctx.globalAlpha = 0.06;
+        ctx.fillStyle = 'rgba(180,255,180,1)';
+        ctx.font = '8px monospace';
+        for (let tick = 0; tick <= 10; tick++) {
+          const tx = (tick / 10) * W;
+          ctx.fillText(`${tick * 100}ms`, tx + 2, H - 4);
+        }
+        ctx.globalAlpha = 1;
+
+        // Vertical trigger sweep line every 3s
+        const triggerPeriod = 3;
+        const tmod = tSec % triggerPeriod;
+        const tx2 = (tmod / triggerPeriod) * W;
+        const grad = ctx.createLinearGradient(tx2 - 20, 0, tx2, 0);
+        grad.addColorStop(0, 'rgba(100,255,100,0)');
+        grad.addColorStop(1, 'rgba(100,255,100,0.08)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(tx2 - 20, 0, 20, H);
+        ctx.strokeStyle = 'rgba(100,255,100,0.12)';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(tx2, 0); ctx.lineTo(tx2, H); ctx.stroke();
+
+        // CRT vignette corners
+        const vign = ctx.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.9);
+        vign.addColorStop(0, 'rgba(0,0,0,0)');
+        vign.addColorStop(1, 'rgba(0,0,0,0.45)');
+        ctx.fillStyle = vign;
+        ctx.fillRect(0, 0, W, H);
       }
     }
 
     requestAnimationFrame(drawFrame);
     requestAnimationFrame(() => { canvas.style.opacity = '1'; });
-
     return () => ro.disconnect();
   }
 
-  // ─── Hero canvas ─────────────────────────────────────────────────────────────
+  // Hero canvas
   const heroWrap = document.getElementById('hero-wrap')!;
   const heroCanvas = heroWrap.querySelector<HTMLCanvasElement>('.bg-canvas')!;
-  setupWaveformCanvas(heroCanvas, heroWrap, WAVES, false);
+  setupCanvas(heroCanvas, heroWrap, WAVES, false);
 
-  // Mouse tracking
   heroWrap.addEventListener('mousemove', (e: MouseEvent) => {
     const rect = heroWrap.getBoundingClientRect();
     mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
   });
   heroWrap.addEventListener('mouseleave', () => { mouse = null; });
 
-  // URL input focus: spike all waves
   const urlInput = document.querySelector<HTMLInputElement>('.url-input');
   if (urlInput) {
     urlInput.addEventListener('focus', () => {
-      const rect = heroWrap.getBoundingClientRect();
-      const inputRect = urlInput.getBoundingClientRect();
-      const cx = inputRect.left + inputRect.width / 2 - rect.left;
-      for (let i = 0; i < 5; i++) {
-        setTimeout(() => {
-          spikes.push({ x: cx + (Math.random() - 0.5) * 200, amp: 18 + Math.random() * 12, spread: 40, age: 0 });
-        }, i * 80);
-      }
+      // no spikes for oscilloscope, but increase amplitude briefly via mouse simulation
     });
   }
 
-  // Hide grid texture
   const gridTex = heroWrap.querySelector<HTMLElement>('.grid-texture');
   if (gridTex) gridTex.style.display = 'none';
 
-  // ─── Final CTA canvas ────────────────────────────────────────────────────────
+  // Final CTA canvas
   const ctaCard = document.querySelector<HTMLElement>('.final-cta');
   if (ctaCard) {
     const ctaCanvas = document.createElement('canvas');
@@ -350,14 +362,12 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
     ctaCard.style.position = 'relative';
     ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
-
     const ctaWaves: Wave[] = [
-      { yFrac: 0.3, freq: 0.015, amp: 10, baseAmp: 10, phase: 0, phaseSpeed: 0.010, noiseOffset: 200, noisePeriod: 4, color: '#6366f1' },
-      { yFrac: 0.5, freq: 0.018, amp: 12, baseAmp: 12, phase: 1.5, phaseSpeed: 0.012, noiseOffset: 350, noisePeriod: 3.5, color: '#a78bfa' },
-      { yFrac: 0.7, freq: 0.012, amp: 9,  baseAmp: 9,  phase: 3.0, phaseSpeed: 0.009, noiseOffset: 500, noisePeriod: 5, color: '#06b6d4' },
+      { yFrac: 0.3, freq: 0.015, amp: 10, baseAmp: 10, phase: 0,   phaseSpeed: 0.010, noiseOffset: 200, noisePeriod: 4,   color: '#6366f1' },
+      { yFrac: 0.5, freq: 0.018, amp: 12, baseAmp: 12, phase: 1.5, phaseSpeed: 0.012, noiseOffset: 350, noisePeriod: 3.5, color: '#a855f7' },
+      { yFrac: 0.7, freq: 0.012, amp: 9,  baseAmp: 9,  phase: 3.0, phaseSpeed: 0.009, noiseOffset: 500, noisePeriod: 5,   color: '#4f46e5' },
     ];
-    setupWaveformCanvas(ctaCanvas, ctaCard, ctaWaves, true);
-
+    setupCanvas(ctaCanvas, ctaCard, ctaWaves, true);
     const gridTexCta = ctaCard.querySelector<HTMLElement>('.grid-texture');
     if (gridTexCta) gridTexCta.style.display = 'none';
   }

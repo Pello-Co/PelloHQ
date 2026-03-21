@@ -1,14 +1,14 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import Header from '../components/layout/Header.astro';
-import Footer from '../components/layout/Footer.astro';
-import HeroPello from '../components/sections/HeroPello.astro';
-import HowItWorks from '../components/sections/HowItWorks.astro';
-import ProductSection from '../components/sections/ProductSection.astro';
-import UseCases from '../components/sections/UseCases.astro';
-import Stats from '../components/sections/Stats.astro';
-import FAQ from '../components/sections/FAQ.astro';
-import FinalCTA from '../components/sections/FinalCTA.astro';
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
 ---
 
 <Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
@@ -129,11 +129,13 @@ function valueNoise(x: number): number {
 }
 
 const COLORS: string[] = ['#6366f1','#8b5cf6','#a855f7','#c026d3','#7c3aed','#4f46e5','#9333ea','#6d28d9'];
+const BASE_FREQ = 0.004; // fundamental spatial frequency
 
-interface FusionWave {
+interface HarmonicWave {
   yFrac: number;
-  freq: number;
+  harmonic: number;   // 1, 2, 3, ... 8
   baseAmp: number;
+  ampBoost: number;   // current extra amplitude from excitation
   phase: number;
   phaseSpeed: number;
   noiseOffset: number;
@@ -141,26 +143,27 @@ interface FusionWave {
   color: string;
 }
 
-const WAVES: FusionWave[] = COLORS.map((color, i) => ({
+const WAVES: HarmonicWave[] = COLORS.map((color, i) => ({
   yFrac: 0.1 + (i / 7) * 0.8,
-  freq: 0.008 + i * 0.002,
-  baseAmp: 10 + Math.sin(i) * 4,
-  phase: i * 0.8,
-  phaseSpeed: 0.006 + i * 0.001,
-  noiseOffset: i * 93.7,
-  noisePeriod: 3 + i * 0.3,
+  harmonic: i + 1,
+  baseAmp: 18 - i * 1.5, // higher harmonics have less amplitude
+  ampBoost: 0,
+  phase: i * 0.5,
+  phaseSpeed: 0.005 + i * 0.0008,
+  noiseOffset: i * 71.3,
+  noisePeriod: 4 + i * 0.2,
   color,
 }));
 
-// Cycle timing: 0-5s normal, 5-8s converge, 8-10s merged, 10-13s split, 13-18s normal, repeat at 18s
-const CYCLE = 18;
+// Excitation pulse state: travels from wave 7 (bottom) to wave 0 (top)
+// Fires every 4 seconds
+let lastPulseTime = -2; // start 2s in
+let pulseWaveIdx = -1;
 
 let mouseY: number | null = null;
-let isHovering = false;
-// Epoch start for cycle timing
-let epochStart = performance.now() * 0.001;
+let hoveredWaveIdx = -1;
 
-function setupCanvas(canvas: HTMLCanvasElement, wrap: HTMLElement, waves: FusionWave[], isSimple: boolean): () => void {
+function setupCanvas(canvas: HTMLCanvasElement, wrap: HTMLElement, waves: HarmonicWave[], isSimple: boolean): () => void {
   const ctx = canvas.getContext('2d')!;
   let W = 0, H = 0;
   let dpr = window.devicePixelRatio || 1;
@@ -182,6 +185,7 @@ function setupCanvas(canvas: HTMLCanvasElement, wrap: HTMLElement, waves: Fusion
   resize();
 
   const mobile = () => W < 768;
+  let lastNow = 0;
 
   function draw() {
     requestAnimationFrame(draw);
@@ -189,105 +193,115 @@ function setupCanvas(canvas: HTMLCanvasElement, wrap: HTMLElement, waves: Fusion
     ctx.clearRect(0, 0, W, H);
 
     const now = performance.now() * 0.001;
-    const speed = isHovering ? 2 : 1;
-    // Advance epoch-based time faster when hovering
-    const elapsed = (now - epochStart) * speed;
-    const cycleT = elapsed % CYCLE;
+    const dt = now - lastNow;
+    lastNow = now;
 
-    const SAMPLES = mobile() ? 100 : 200;
+    const SAMPLES = mobile() ? 80 : 180;
 
-    // Determine phase of cycle
-    // convergence target Y: center of canvas, or mouse Y if hovering
-    const targetY = (!isSimple && mouseY !== null) ? mouseY : H * 0.5;
+    // Pulse logic: every 4s, excite bottom wave, then travel up
+    if (!isSimple) {
+      if (now - lastPulseTime > 4) {
+        lastPulseTime = now;
+        pulseWaveIdx = WAVES.length - 1;
+      }
+      // Pulse travels: each wave excited for 0.4s, then passes to next
+      if (pulseWaveIdx >= 0) {
+        const pulseAge = now - lastPulseTime;
+        const currentPulseWave = WAVES.length - 1 - Math.floor(pulseAge / 0.4);
+        for (let i = 0; i < WAVES.length; i++) {
+          const w = WAVES[i];
+          const wAge = pulseAge - (WAVES.length - 1 - i) * 0.4;
+          if (wAge >= 0 && wAge < 0.6) {
+            const spike = Math.sin((wAge / 0.6) * Math.PI) * 25;
+            w.ampBoost = spike;
+          } else {
+            w.ampBoost = Math.max(0, w.ampBoost - 0.5);
+          }
+        }
+        if (currentPulseWave < 0) pulseWaveIdx = -1;
+      }
 
-    let mergeT = 0; // 0 = fully separated, 1 = fully merged
-    let phase: 'normal' | 'converging' | 'merged' | 'splitting' = 'normal';
-
-    if (cycleT < 5) {
-      phase = 'normal'; mergeT = 0;
-    } else if (cycleT < 8) {
-      phase = 'converging'; mergeT = (cycleT - 5) / 3;
-    } else if (cycleT < 10) {
-      phase = 'merged'; mergeT = 1;
-    } else if (cycleT < 13) {
-      phase = 'splitting'; mergeT = 1 - (cycleT - 10) / 3;
-    } else {
-      phase = 'normal'; mergeT = 0;
+      // Mouse hover: pluck wave
+      if (mouseY !== null) {
+        let closest = 0, closestDist = Infinity;
+        for (let i = 0; i < WAVES.length; i++) {
+          const d = Math.abs(mouseY - WAVES[i].yFrac * H);
+          if (d < closestDist) { closestDist = d; closest = i; }
+        }
+        if (closestDist < H * 0.12) {
+          hoveredWaveIdx = closest;
+          // Boost hovered wave and harmonically related ones
+          for (let i = 0; i < WAVES.length; i++) {
+            const harmDist = Math.abs(WAVES[i].harmonic - WAVES[closest].harmonic);
+            const boost = 15 * Math.exp(-harmDist * 0.4);
+            WAVES[i].ampBoost = Math.max(WAVES[i].ampBoost, boost);
+          }
+        } else {
+          hoveredWaveIdx = -1;
+        }
+      } else {
+        hoveredWaveIdx = -1;
+      }
     }
 
-    const isMerged = phase === 'merged';
-
-    if (isMerged) {
-      // Draw single composite wave
-      const SAMPLES2 = mobile() ? 100 : 200;
-      ctx.beginPath();
-      for (let s = 0; s <= SAMPLES2; s++) {
-        const x = (s / SAMPLES2) * W;
-        let y = targetY;
-        for (const w of waves) {
-          const noiseVal = valueNoise(now / w.noisePeriod + w.noiseOffset);
-          const amp = w.baseAmp * (0.6 + noiseVal * 0.8);
-          y += Math.sin(x * w.freq + w.phase) * amp * 0.5;
+    // Draw connector lines between waves in resonance
+    if (!isSimple) {
+      for (let i = 0; i < WAVES.length - 1; i++) {
+        if (WAVES[i].ampBoost > 2 && WAVES[i+1].ampBoost > 2) {
+          const y1 = WAVES[i].yFrac * H;
+          const y2 = WAVES[i+1].yFrac * H;
+          ctx.beginPath();
+          ctx.moveTo(W * 0.15, y1);
+          ctx.lineTo(W * 0.15, y2);
+          ctx.strokeStyle = WAVES[i].color;
+          ctx.globalAlpha = 0.08;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          ctx.globalAlpha = 1;
         }
+      }
+    }
+
+    // Draw waves
+    for (let wi = 0; wi < waves.length; wi++) {
+      const w = waves[wi];
+      const baseY = w.yFrac * H;
+      const noiseVal = valueNoise(now / w.noisePeriod + w.noiseOffset);
+      const amp = w.baseAmp * (0.6 + noiseVal * 0.5) + w.ampBoost;
+
+      const spatialFreq = BASE_FREQ * w.harmonic;
+
+      ctx.beginPath();
+      for (let s = 0; s <= SAMPLES; s++) {
+        const x = (s / SAMPLES) * W;
+        const y = baseY + Math.sin(x * spatialFreq + w.phase) * amp;
         if (s === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
-      // Glow
-      ctx.strokeStyle = '#ffffff';
-      ctx.globalAlpha = 0.12;
-      ctx.lineWidth = 6;
-      ctx.stroke();
-      ctx.strokeStyle = '#f5d87a';
-      ctx.globalAlpha = 0.7;
-      ctx.lineWidth = 1.5;
+
+      const exciteBoost = Math.min(0.5, w.ampBoost / 30);
+      const scanY = ((now % 8) / 8) * H;
+      const scanBright = Math.max(0, 1 - Math.abs(baseY - scanY) / 40);
+      const alpha = Math.min(0.9, 0.3 + exciteBoost + scanBright * 0.2);
+
+      ctx.strokeStyle = w.color;
+      ctx.globalAlpha = alpha;
+      ctx.lineWidth = 0.7 + exciteBoost * 2;
       ctx.stroke();
       ctx.globalAlpha = 1;
-
-      // Labels
-      ctx.font = 'bold 13px sans-serif';
-      ctx.fillStyle = '#ffffff';
-      ctx.globalAlpha = 0.8;
-      ctx.textAlign = 'center';
-      ctx.fillText('ONE PLATFORM', W * 0.35, H * 0.42);
-      ctx.fillText('EVERY CHANNEL', W * 0.65, H * 0.58);
-      ctx.globalAlpha = 1;
-      ctx.textAlign = 'left';
-    } else {
-      // Draw individual waves lerped toward targetY
-      for (let wi = 0; wi < waves.length; wi++) {
-        const w = waves[wi];
-        const baseY = w.yFrac * H;
-        const currentY = baseY + (targetY - baseY) * mergeT;
-
-        const noiseVal = valueNoise(now / w.noisePeriod + w.noiseOffset);
-        const amp = w.baseAmp * (0.6 + noiseVal * 0.8);
-
-        ctx.beginPath();
-        for (let s = 0; s <= SAMPLES; s++) {
-          const x = (s / SAMPLES) * W;
-          const y = currentY + Math.sin(x * w.freq + w.phase) * amp;
-          if (s === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        }
-        const alphaMult = isMerged ? 0 : (mergeT > 0 ? 0.5 : 1);
-        ctx.strokeStyle = w.color;
-        ctx.globalAlpha = 0.4 * alphaMult;
-        ctx.lineWidth = 0.8 + mergeT * 0.5;
-        ctx.stroke();
-        ctx.globalAlpha = 1;
-      }
     }
 
     // Scan line
-    if (!isSimple && !isMerged) {
-      const scanY2 = ((now % 8) / 8) * H;
-      const sg = ctx.createLinearGradient(0, scanY2 - 10, 0, scanY2 + 10);
+    if (!isSimple) {
+      const scanY = ((now % 8) / 8) * H;
+      const sg = ctx.createLinearGradient(0, scanY - 10, 0, scanY + 10);
       sg.addColorStop(0, 'rgba(162,52,250,0)');
       sg.addColorStop(0.5, 'rgba(162,52,250,0.05)');
       sg.addColorStop(1, 'rgba(162,52,250,0)');
       ctx.fillStyle = sg;
-      ctx.fillRect(0, scanY2 - 10, W, 20);
+      ctx.fillRect(0, scanY - 10, W, 20);
     }
 
-    for (const w of waves) w.phase += w.phaseSpeed * (isHovering ? 2 : 1);
+    for (const w of waves) w.phase += w.phaseSpeed;
   }
 
   requestAnimationFrame(draw);
@@ -302,10 +316,8 @@ setupCanvas(heroCanvas, heroWrap, WAVES, false);
 heroWrap.addEventListener('mousemove', (e: MouseEvent) => {
   const rect = heroWrap.getBoundingClientRect();
   mouseY = e.clientY - rect.top;
-  mouseX = e.clientX - rect.left;
-  if (!isHovering) { isHovering = true; epochStart = performance.now() * 0.001 - ((performance.now() * 0.001 - epochStart) * 0.5); }
 });
-heroWrap.addEventListener('mouseleave', () => { mouseY = null; mouseX = null; isHovering = false; });
+heroWrap.addEventListener('mouseleave', () => { mouseY = null; });
 
 const gridTex = heroWrap.querySelector<HTMLElement>('.grid-texture');
 if (gridTex) gridTex.style.display = 'none';
@@ -317,10 +329,10 @@ if (ctaCard) {
   ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
   ctaCard.style.position = 'relative';
   ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
-  const ctaWaves: FusionWave[] = [
-    { yFrac: 0.3, freq: 0.012, baseAmp: 9, phase: 0, phaseSpeed: 0.008, noiseOffset: 200, noisePeriod: 4, color: '#6366f1' },
-    { yFrac: 0.5, freq: 0.015, baseAmp: 11, phase: 1.5, phaseSpeed: 0.01, noiseOffset: 350, noisePeriod: 3.5, color: '#a855f7' },
-    { yFrac: 0.7, freq: 0.01, baseAmp: 8, phase: 3.0, phaseSpeed: 0.007, noiseOffset: 500, noisePeriod: 5, color: '#9333ea' },
+  const ctaWaves: HarmonicWave[] = [
+    { yFrac: 0.3, harmonic: 1, baseAmp: 14, ampBoost: 0, phase: 0, phaseSpeed: 0.007, noiseOffset: 200, noisePeriod: 4, color: '#6366f1' },
+    { yFrac: 0.5, harmonic: 3, baseAmp: 10, ampBoost: 0, phase: 1.5, phaseSpeed: 0.009, noiseOffset: 350, noisePeriod: 3.5, color: '#a855f7' },
+    { yFrac: 0.7, harmonic: 5, baseAmp: 8, ampBoost: 0, phase: 3.0, phaseSpeed: 0.011, noiseOffset: 500, noisePeriod: 5, color: '#9333ea' },
   ];
   setupCanvas(ctaCanvas, ctaCard, ctaWaves, true);
   const gt = ctaCard.querySelector<HTMLElement>('.grid-texture');
