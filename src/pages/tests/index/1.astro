@@ -256,20 +256,12 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     -webkit-backdrop-filter: blur(8px) saturate(1.1);
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
   }
-  /* Hide the visual panel on PelloReach card so the canvas animation takes its place */
-  .product-card[data-product="1"] .ps-visual {
+  /* PelloReach: hide the browser panel, keep 2-column grid with text on right */
+  .product-card[data-product="1"] .product-visual-panel {
     display: none !important;
   }
-  .product-card[data-product="1"] .ps-section .grid {
-    grid-template-columns: 1fr !important;
-  }
-  .product-card[data-product="1"] .ps-info {
-    max-width: 600px;
-    margin: 0 auto;
-    text-align: center;
-  }
-  .product-card[data-product="1"] .ps-info .flex {
-    justify-content: center;
+  .product-card[data-product="1"] .ps-visual {
+    display: none !important;
   }
   /* Prevent GSAP opacity animation from breaking backdrop-filter on product cards */
   .product-card .ps-visual,
