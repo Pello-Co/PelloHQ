@@ -253,7 +253,7 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
     ctx.lineWidth = 0.5;
     for (const lat of [-60,-30,0,30,60]) {
       const eq = lat===0;
-      ctx.strokeStyle = eq ? 'rgba(192,38,211,0.08)' : 'rgba(192,38,211,0.06)';
+      ctx.strokeStyle = 'rgba(192,38,211,0.03)';
       ctx.beginPath(); let go = false;
       for (let lon=-180; lon<=180; lon+=3) {
         const [x,y,z] = latLonTo3D(lat,lon); const p = project(x,y,z);
@@ -264,7 +264,7 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
     }
     for (let lon=0; lon<360; lon+=30) {
       const pm = lon===0||lon===180;
-      ctx.strokeStyle = pm ? 'rgba(192,38,211,0.08)' : 'rgba(192,38,211,0.06)';
+      ctx.strokeStyle = 'rgba(192,38,211,0.03)';
       ctx.beginPath(); let go = false;
       for (let lat=-90; lat<=90; lat+=3) {
         const [x,y,z] = latLonTo3D(lat,lon); const p = project(x,y,z);
@@ -396,17 +396,43 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
     drawWireframe();
 
     // ── Continent coastlines ──────────────────────────────────────────────
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = 'rgba(192,38,211,0.18)';
+    // Layer 1: Land fill
+    for (const coast of COASTLINES) {
+      ctx.beginPath(); let started = false;
+      for (const [clat,clon] of coast) {
+        const [cx3,cy3,cz3] = latLonTo3D(clat,clon); const cp = project(cx3,cy3,cz3);
+        if (!cp.visible) { started = false; continue; }
+        if (!started) { ctx.moveTo(cp.sx,cp.sy); started = true; } else ctx.lineTo(cp.sx,cp.sy);
+      }
+      if (started) { ctx.closePath(); ctx.fillStyle = 'rgba(192,38,211,0.04)'; ctx.fill(); }
+    }
+    // Layer 2: Glow stroke
+    ctx.save();
+    ctx.shadowColor = 'rgba(192,38,211,0.15)'; ctx.shadowBlur = 8;
+    ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(192,38,211,0.25)';
     for (const coast of COASTLINES) {
       ctx.beginPath(); let cpv = false;
-      for (const [clat, clon] of coast) {
-        const [cx3,cy3,cz3] = latLonTo3D(clat, clon);
-        const cp = project(cx3, cy3, cz3);
-        if (cp.visible) { if (!cpv) ctx.moveTo(cp.sx, cp.sy); else ctx.lineTo(cp.sx, cp.sy); cpv = true; }
+      for (const [clat,clon] of coast) {
+        const [cx3,cy3,cz3] = latLonTo3D(clat,clon); const cp = project(cx3,cy3,cz3);
+        if (cp.visible) { if (!cpv) ctx.moveTo(cp.sx,cp.sy); else ctx.lineTo(cp.sx,cp.sy); cpv = true; }
         else { if (cpv) { ctx.stroke(); ctx.beginPath(); } cpv = false; }
       }
       if (cpv) ctx.stroke();
+    }
+    ctx.restore();
+    // Layer 3: Core bright line with depth alpha
+    ctx.lineWidth = 0.8;
+    for (const coast of COASTLINES) {
+      let prevCP: {sx:number;sy:number;depth:number;visible:boolean}|null = null;
+      for (const [clat,clon] of coast) {
+        const [cx3,cy3,cz3] = latLonTo3D(clat,clon); const cp = project(cx3,cy3,cz3);
+        if (prevCP && prevCP.visible && cp.visible) {
+          const da = Math.max(0.15, (prevCP.depth + cp.depth) * 0.5);
+          ctx.strokeStyle = `rgba(220,80,240,${(0.40*da).toFixed(3)})`;
+          ctx.beginPath(); ctx.moveTo(prevCP.sx,prevCP.sy); ctx.lineTo(cp.sx,cp.sy); ctx.stroke();
+        }
+        prevCP = {sx:cp.sx, sy:cp.sy, depth:cp.depth, visible:cp.visible};
+      }
     }
 
     // Arcs
