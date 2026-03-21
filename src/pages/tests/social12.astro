@@ -290,28 +290,28 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
   let lastPulseSpawn = 0;
 
   function drawGlobeDots(beamY: number, t: number) {
-    // Pass 1: BACK hemisphere land dots (behind the globe — faded/transparent)
+    // Pass 1: BACK hemisphere land dots (visible through the globe — faded but clearly there)
     for (const dot of globeDots) {
       if (!dot.isLand) continue;
       const [rx, ry, rz] = applyRotations(dot.x, dot.y, dot.z);
-      if (rz >= -0.05) continue; // skip front hemisphere — drawn later
+      if (rz >= -0.05) continue;
       const sx = GLOBE_CX + rx * GLOBE_R;
       const sy = GLOBE_CY - ry * GLOBE_R;
-      const backDepth = Math.max(0, -rz - 0.05); // 0 at edge, ~1 at back center
-      ctx.globalAlpha = 0.03 + backDepth * 0.04; // very faint, max ~0.07
-      ctx.fillStyle = 'rgb(0,150,145)'; // dimmer cyan
-      ctx.beginPath(); ctx.arc(sx, sy, 0.6 + backDepth * 0.3, 0, Math.PI * 2); ctx.fill();
+      const backDepth = Math.max(0, -rz - 0.05);
+      ctx.globalAlpha = 0.08 + backDepth * 0.07; // clearly visible: 0.08 at edge → 0.15 at back center
+      ctx.fillStyle = 'rgb(0,180,175)';
+      ctx.beginPath(); ctx.arc(sx, sy, 0.8 + backDepth * 0.4, 0, Math.PI * 2); ctx.fill();
     }
 
-    // Pass 2: BACK hemisphere ocean dots
+    // Pass 2: BACK hemisphere ocean dots (very subtle structure)
     for (const dot of globeDots) {
       if (dot.isLand) continue;
       const [rx, ry, rz] = applyRotations(dot.x, dot.y, dot.z);
       if (rz >= -0.05) continue;
       const sx = GLOBE_CX + rx * GLOBE_R;
       const sy = GLOBE_CY - ry * GLOBE_R;
-      ctx.globalAlpha = 0.008;
-      ctx.fillStyle = 'rgb(0,60,58)';
+      ctx.globalAlpha = 0.015;
+      ctx.fillStyle = 'rgb(0,70,68)';
       ctx.beginPath(); ctx.arc(sx, sy, 0.4, 0, Math.PI * 2); ctx.fill();
     }
 
