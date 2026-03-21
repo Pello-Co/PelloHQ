@@ -1722,23 +1722,36 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
         } else { st.hoveredPhone=null; }
       }
     } else {
+      // No mouse — use sticky or auto-hover
       if (st.stickyPhone) {
         const pp=proj(st.stickyPhone.x3d,st.stickyPhone.y3d,st.stickyPhone.z3d);
-        st.hoveredPhone=(pp.visible&&pp.depth>0.05)?st.stickyPhone:null;
-        if (!st.hoveredPhone) st.stickyPhone=null;
+        if (pp.visible && pp.depth > 0.05) {
+          st.hoveredPhone = st.stickyPhone;
+        } else {
+          // Sticky phone rotated out — clear it and immediately pick a new auto target
+          st.stickyPhone = null;
+          st.hoveredPhone = null;
+          st.autoHoverTimer = 0; // force immediate auto-pick
+        }
       }
       if (!st.hoveredPhone) {
-        if (t-st.autoHoverTimer>4) {
-          st.autoHoverTimer=t;
-          for (let tries=0;tries<st.socPhones.length;tries++) {
-            st.autoHoverIdx=(st.autoHoverIdx+1)%st.socPhones.length;
-            const pp=proj(st.socPhones[st.autoHoverIdx].x3d,st.socPhones[st.autoHoverIdx].y3d,st.socPhones[st.autoHoverIdx].z3d);
-            if (pp.visible) break;
+        // Auto-hover: pick a visible phone, rotate every 4s or immediately if none shown
+        if (t - st.autoHoverTimer > 4 || !st.socPhones[st.autoHoverIdx] || !proj(st.socPhones[st.autoHoverIdx].x3d, st.socPhones[st.autoHoverIdx].y3d, st.socPhones[st.autoHoverIdx].z3d).visible) {
+          st.autoHoverTimer = t;
+          // Find a visible phone
+          let found = false;
+          for (let tries = 0; tries < st.socPhones.length; tries++) {
+            st.autoHoverIdx = (st.autoHoverIdx + 1) % st.socPhones.length;
+            const pp = proj(st.socPhones[st.autoHoverIdx].x3d, st.socPhones[st.autoHoverIdx].y3d, st.socPhones[st.autoHoverIdx].z3d);
+            if (pp.visible && pp.depth > 0.15) { found = true; break; }
           }
+          if (!found) st.autoHoverIdx = 0; // fallback
         }
-        const ap=st.socPhones[st.autoHoverIdx];
-        const apr=proj(ap.x3d,ap.y3d,ap.z3d);
-        st.hoveredPhone=apr.visible?ap:null;
+        const ap = st.socPhones[st.autoHoverIdx];
+        if (ap) {
+          const apr = proj(ap.x3d, ap.y3d, ap.z3d);
+          st.hoveredPhone = (apr.visible && apr.depth > 0.1) ? ap : null;
+        }
       }
     }
 
