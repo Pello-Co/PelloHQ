@@ -209,14 +209,14 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
     function initStars() {
       stars.length = 0;
       for (let i = 0; i < NUM_STARS; i++) {
-        const bright = i < 10;
+        const bright = i < 25;
         stars.push({
           trueX: Math.random() * W,
           trueY: Math.random() * H,
           vx: (Math.random() - 0.5) * 0.04,
           vy: (Math.random() - 0.5) * 0.04,
-          size: bright ? 2 : 0.5 + Math.random() * 1.5,
-          baseAlpha: bright ? 0.25 + Math.random() * 0.1 : 0.05 + Math.random() * 0.25,
+          size: bright ? 2.5 : 0.8 + Math.random() * 1.8,
+          baseAlpha: bright ? 0.5 + Math.random() * 0.2 : 0.12 + Math.random() * 0.35,
           warm: Math.random() < 0.6,
         });
       }
@@ -248,8 +248,8 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
 
       // Soft dot via shadow blur
       ctx.save();
-      ctx.shadowColor = `rgba(${r},${g},${b},${alpha * 0.5})`;
-      ctx.shadowBlur = size * 3;
+      ctx.shadowColor = `rgba(${r},${g},${b},${alpha * 0.8})`;
+      ctx.shadowBlur = size * 4;
       ctx.beginPath();
       ctx.arc(sx, sy, size * Math.min(2, magnification * 0.5 + 0.5), 0, Math.PI * 2);
       ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
@@ -278,7 +278,7 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
       // ── Einstein radius indicator (very faint circle) ──────────────────────
       ctx.beginPath();
       ctx.arc(lensX, lensY, EINSTEIN_RADIUS, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(150,180,255,0.03)`;
+      ctx.strokeStyle = `rgba(150,180,255,0.08)`;
       ctx.lineWidth = 1;
       ctx.stroke();
 
@@ -308,12 +308,12 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
           if (isRing) {
             // Einstein ring
             ctx.save();
-            ctx.shadowColor = `rgba(150,180,255,0.4)`;
-            ctx.shadowBlur = 6;
+            ctx.shadowColor = `rgba(150,180,255,0.7)`;
+            ctx.shadowBlur = 10;
             ctx.beginPath();
             ctx.arc(lensX, lensY, EINSTEIN_RADIUS, 0, Math.PI * 2);
-            ctx.strokeStyle = `rgba(180,200,255,${s.baseAlpha * 2.5})`;
-            ctx.lineWidth = s.size * 1.5;
+            ctx.strokeStyle = `rgba(180,200,255,${Math.min(1, s.baseAlpha * 3.5)})`;
+            ctx.lineWidth = s.size * 2;
             ctx.stroke();
             ctx.restore();
           } else {
