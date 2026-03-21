@@ -312,7 +312,45 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     border: 1px solid rgba(0, 242, 234, 0.12);
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(0, 242, 234, 0.06);
     opacity: 1 !important;
-    display: none; /* shown by JS */
+    display: none;
+    padding: 10px 12px;
+    font-family: "SF Mono","Fira Code",monospace;
+  }
+  .soc-hud-section { margin-bottom: 8px; }
+  .soc-hud-title {
+    font-size: 9px;
+    font-weight: bold;
+    color: #80fff8;
+    text-align: center;
+    opacity: 0.8;
+    letter-spacing: 0.5px;
+  }
+  .soc-hud-sep {
+    height: 1px;
+    background: rgba(0, 242, 234, 0.2);
+    margin: 4px 0 6px;
+  }
+  .soc-hud-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    line-height: 1.55;
+  }
+  .soc-hud-label {
+    color: #00f2ea;
+    opacity: 0.5;
+  }
+  .soc-hud-val {
+    color: #b0fffc;
+    opacity: 0.7;
+  }
+  .soc-hud-status {
+    text-align: center;
+    font-size: 8px;
+    color: #80fff8;
+    opacity: 0.45;
+    margin-top: 6px;
+    letter-spacing: 0.3px;
   }
   .product-card[data-product="4"] .ps-info .text-body-lg { background: rgba(217, 70, 239, 0.06) !important; border: 1px solid rgba(217, 70, 239, 0.15) !important; }
   .product-card[data-product="5"] .ps-info .text-body-lg { background: rgba(124, 58, 237, 0.06) !important; border: 1px solid rgba(124, 58, 237, 0.15) !important; }
@@ -1787,84 +1825,61 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       drawSocTooltip(ctx,st.hoveredPhone,p.sx,p.sy,w,h);
     }
 
-    // ── HUD panel — frosted glass box centered on globe ──
-    ctx.save();
-    const allRows = [
-      {label:'PHONES',value:`${st.totalPhones}`,phase:0,section:'INFRASTRUCTURE'},
-      {label:'ACTIVE',value:`${st.totalPhones-3}/${st.totalPhones}`,phase:0.5},
-      {label:'CITIES',value:'12',phase:1.0},
-      {label:'UPTIME',value:'99.7%',phase:1.5},
-      {label:'LATENCY',value:'< 14ms',phase:2.0},
-      {label:'SYNC',value:'REAL-TIME',phase:2.5},
-      {label:'ACCOUNTS',value:`${st.totalAccounts}`,phase:0.3,section:'OPERATIONS'},
-      {label:'POSTS/DAY',value:'1,247',phase:0.8},
-      {label:'PLATFORMS',value:'5 active',phase:1.3},
-      {label:'QUEUE',value:`${Math.floor(47+Math.sin(t*0.3)*12)} pending`,phase:2.3},
-      {label:'ENGAGEMENT',value:'6.8% avg',phase:2.8},
-    ];
-    const ROW_H=14, SEC_GAP=20, PAD=12;
-    // Calculate box height
-    let boxH=PAD*2; let sectionCount=0;
-    for (const r of allRows) { if (r.section) sectionCount++; }
-    boxH += allRows.length*ROW_H + sectionCount*(SEC_GAP) + (sectionCount-1?4:0);
-    const BOX_W=180, BOX_H=boxH;
-    const bx=GLOBE_CX-BOX_W/2, by=GLOBE_CY-BOX_H/2;
+    // ── HUD panel — position glass div + render HTML text inside ──
+    const BOX_W=190, BOX_H_EST=260;
+    const bx=GLOBE_CX-BOX_W/2, by=GLOBE_CY-BOX_H_EST/2;
 
-    // Position the real glass overlay div
     const glassEl = document.getElementById('soc-hud-glass');
     if (glassEl) {
       const card = glassEl.parentElement!;
       const cardRect = card.getBoundingClientRect();
-      const canvasRect = (card.querySelector('.product-bg') as HTMLElement)?.getBoundingClientRect();
+      const canvasEl = card.querySelector('.product-bg') as HTMLElement;
+      const canvasRect = canvasEl?.getBoundingClientRect();
       if (canvasRect) {
         const offX = canvasRect.left - cardRect.left;
         const offY = canvasRect.top - cardRect.top;
         glassEl.style.display = 'block';
-        glassEl.style.left = `${offX + bx - 4}px`;
-        glassEl.style.top = `${offY + by - 4}px`;
-        glassEl.style.width = `${BOX_W + 8}px`;
-        glassEl.style.height = `${BOX_H + 8}px`;
+        glassEl.style.left = `${offX + bx}px`;
+        glassEl.style.top = `${offY + by}px`;
+        glassEl.style.width = `${BOX_W}px`;
+
+        // Build HTML content (only rebuild occasionally to avoid DOM thrash)
+        if (!glassEl.dataset.built) {
+          glassEl.dataset.built = '1';
+          const queueVal = 47;
+          glassEl.innerHTML = `
+            <div class="soc-hud-section">
+              <div class="soc-hud-title">INFRASTRUCTURE</div>
+              <div class="soc-hud-sep"></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">PHONES</span><span class="soc-hud-val">${st.totalPhones}</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">ACTIVE</span><span class="soc-hud-val">${st.totalPhones-3}/${st.totalPhones}</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">CITIES</span><span class="soc-hud-val">12</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">UPTIME</span><span class="soc-hud-val">99.7%</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">LATENCY</span><span class="soc-hud-val">&lt; 14ms</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">SYNC</span><span class="soc-hud-val">REAL-TIME</span></div>
+            </div>
+            <div class="soc-hud-section">
+              <div class="soc-hud-title">OPERATIONS</div>
+              <div class="soc-hud-sep"></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">ACCOUNTS</span><span class="soc-hud-val">${st.totalAccounts}</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">POSTS/DAY</span><span class="soc-hud-val">1,247</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">PLATFORMS</span><span class="soc-hud-val">5 active</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">QUEUE</span><span class="soc-hud-val" id="soc-hud-queue">${queueVal} pending</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">ENGAGEMENT</span><span class="soc-hud-val">6.8% avg</span></div>
+            </div>
+            <div class="soc-hud-status" id="soc-hud-status">● ALL SYSTEMS OPERATIONAL ●</div>
+          `;
+        }
+        // Update dynamic values
+        const queueEl = document.getElementById('soc-hud-queue');
+        if (queueEl) queueEl.textContent = `${Math.floor(47+Math.sin(t*0.3)*12)} pending`;
+        const statusEl = document.getElementById('soc-hud-status');
+        if (statusEl) {
+          const flash = Math.floor(t*2)%2===0;
+          statusEl.textContent = `${flash?'●':'○'}  ALL SYSTEMS OPERATIONAL  ${flash?'●':'○'}`;
+        }
       }
     }
-
-    // Subtle dark fill behind text (glass div handles the blur)
-    ctx.globalAlpha=0.15;
-    ctx.fillStyle='rgba(0,12,14,0.25)';
-    rrect(ctx,bx,by,BOX_W,BOX_H,10); ctx.fill();
-
-    // Draw rows
-    let cy=by+PAD;
-    for (const row of allRows) {
-      if (row.section) {
-        // Section header
-        ctx.globalAlpha=0.7+Math.sin(t*0.8+(row.section==='OPERATIONS'?1:0))*0.1;
-        ctx.fillStyle='#80fff8';
-        ctx.font='bold 9px "SF Mono","Fira Code",monospace';
-        ctx.textAlign='center';
-        ctx.fillText(row.section,GLOBE_CX,cy+10);
-        // Separator
-        ctx.globalAlpha=0.2; ctx.strokeStyle='#00f2ea'; ctx.lineWidth=0.5;
-        ctx.beginPath(); ctx.moveTo(bx+PAD,cy+14); ctx.lineTo(bx+BOX_W-PAD,cy+14); ctx.stroke();
-        cy+=SEC_GAP;
-      }
-      const fl=0.6+Math.sin(t*1.1+row.phase)*0.1;
-      ctx.globalAlpha=fl; ctx.fillStyle='#b0fffc';
-      ctx.font='9px "SF Mono","Fira Code",monospace';
-      ctx.textAlign='right';
-      ctx.fillText(row.value,bx+BOX_W-PAD,cy+10);
-      ctx.globalAlpha=fl*0.6; ctx.fillStyle='#00f2ea';
-      ctx.textAlign='left';
-      ctx.fillText(row.label,bx+PAD,cy+10);
-      cy+=ROW_H;
-    }
-
-    // Bottom status bar
-    ctx.textAlign='center';
-    ctx.globalAlpha=0.40+Math.sin(t*0.6)*0.1; ctx.font='8px "SF Mono","Fira Code",monospace'; ctx.fillStyle='#80fff8';
-    const bottomY=by+BOX_H+14;
-    const statusFlash=Math.floor(t*2)%2===0;
-    ctx.fillText(`${statusFlash?'●':'○'}  ALL SYSTEMS OPERATIONAL  ${statusFlash?'●':'○'}`,GLOBE_CX,bottomY);
-    ctx.restore();
   }
 
   // ── Product 4: Pitch Topo Contours ───────────────────────────────────────
