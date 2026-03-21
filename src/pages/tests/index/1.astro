@@ -247,6 +247,62 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
   }
 </style>
 
+<!-- Product card sub-component glassmorphism -->
+<style is:global>
+  /* The visual panel (browser-style box on the left/right) */
+  .product-card .product-visual-panel {
+    background: rgba(6, 7, 18, 0.45) !important;
+    backdrop-filter: blur(16px) saturate(1.3);
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+
+  /* Panel header bar */
+  .product-card .product-visual-panel > div:first-child {
+    background: rgba(0, 0, 0, 0.2) !important;
+  }
+
+  /* Data rows inside the panel */
+  .product-card .product-visual-panel [style*="background: rgba(255,255,255,0.03)"] {
+    background: rgba(255, 255, 255, 0.04) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  }
+
+  /* Feature pills / checkmark items */
+  .product-card .feature-pill {
+    backdrop-filter: blur(12px) saturate(1.2);
+    -webkit-backdrop-filter: blur(12px) saturate(1.2);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+
+  /* CTA buttons — frosted glass */
+  .product-card .btn-primary,
+  .product-card .btn-secondary {
+    backdrop-filter: blur(12px) saturate(1.3);
+    -webkit-backdrop-filter: blur(12px) saturate(1.3);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  /* Product icon badge container */
+  .product-card .ps-info > div:first-child > div:first-child {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  /* Metrics strip at bottom of visual panel */
+  .product-card .product-visual-panel [style*="border-color: rgba(255,255,255,0.055)"] {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  /* Status badges (Ready, Active, Queued) */
+  .product-card .product-visual-panel span[class*="rounded-full"] {
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+</style>
+
 <script>
   // Polyfill requestIdleCallback for Safari
   const ric = window.requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
@@ -727,7 +783,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       }
       dot.x+=(tx-dot.x)*LERP;
       dot.y+=(ty-dot.y)*LERP;
-      const alpha=inf>0 ? 0.30+inf*0.6 : 0.25;
+      const alpha=inf>0 ? 0.40+inf*0.6 : 0.40;
       ctx.globalAlpha=alpha;
       ctx.fillStyle=`rgb(${r},${g},${b})`;
       ctx.beginPath(); ctx.arc(dot.x,dot.y,1,0,Math.PI*2); ctx.fill();
@@ -749,7 +805,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
         const dy=Math.abs(my-yPos);
         if (dy < h/numWaves) amp*=1+(1-dy/(h/numWaves));
       }
-      ctx.strokeStyle=`rgba(${r},${g},${b},0.18)`;
+      ctx.strokeStyle=`rgba(${r},${g},${b},0.35)`;
       ctx.beginPath();
       for (let x=0;x<=w;x+=2) {
         const y=yPos+Math.sin(x*0.025+phase+phaseOff)*amp;
@@ -769,7 +825,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       const dashes: RainDash[]=[];
       for (let d=0;d<10;d++) dashes.push({
         y: Math.random()*h,
-        alpha: 0.14+Math.random()*0.08,
+        alpha: 0.30+Math.random()*0.15,
         speed: 0.3+Math.random()*0.5,
       });
       columns.push({ x: c*colW+colW/2, dashes });
@@ -785,8 +841,8 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       const alphaMult=near ? 1.8 : 1;
       for (const dash of col.dashes) {
         dash.y+=dash.speed*speedMult;
-        if (dash.y > h+5) { dash.y=-5; dash.speed=0.3+Math.random()*0.5; dash.alpha=0.14+Math.random()*0.08; }
-        const a=Math.min(0.44, dash.alpha*alphaMult);
+        if (dash.y > h+5) { dash.y=-5; dash.speed=0.3+Math.random()*0.5; dash.alpha=0.30+Math.random()*0.15; }
+        const a=Math.min(0.55, dash.alpha*alphaMult);
         ctx.strokeStyle=`rgba(${r},${g},${b},${a})`;
         ctx.lineWidth=2;
         ctx.beginPath(); ctx.moveTo(col.x-1.5, dash.y); ctx.lineTo(col.x+1.5, dash.y); ctx.stroke();
@@ -822,7 +878,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       const dx=nodes[i].x-nodes[j].x, dy=nodes[i].y-nodes[j].y;
       const d=Math.sqrt(dx*dx+dy*dy);
       if (d<120) {
-        ctx.strokeStyle=`rgba(${r},${g},${b},${0.20*(1-d/120)})`;
+        ctx.strokeStyle=`rgba(${r},${g},${b},${0.30*(1-d/120)})`;
         ctx.lineWidth=1;
         ctx.beginPath(); ctx.moveTo(nodes[i].x,nodes[i].y); ctx.lineTo(nodes[j].x,nodes[j].y); ctx.stroke();
       }
@@ -852,7 +908,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       }
     }
     const levels=[-0.5,-0.3,-0.1,0.1,0.3,0.5];
-    const alphas=[0.10,0.14,0.16,0.20,0.24,0.26];
+    const alphas=[0.20,0.25,0.30,0.35,0.40,0.45];
     for (let li=0;li<levels.length;li++) {
       const level=levels[li];
       ctx.strokeStyle=`rgba(${r},${g},${b},${alphas[li]})`;
@@ -893,7 +949,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
         const dx=Math.abs(mx-bCx);
         if (dx<60) barH=Math.max(barH, Math.pow(1-dx/60,2)*35);
       }
-      const alpha=0.10+(barH/34)*0.26;
+      const alpha=0.25+(barH/34)*0.25;
       ctx.fillStyle=`rgba(${r},${g},${b},${alpha})`;
       ctx.fillRect(x, centerY-barH, barW, barH);
     }
@@ -929,11 +985,11 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       if (p.x<0) p.x+=w; if (p.x>w) p.x-=w;
       if (p.y<0) p.y+=h; if (p.y>h) p.y-=h;
       for (let ti=1;ti<p.trail.length;ti++) {
-        ctx.strokeStyle=`rgba(${r},${g},${b},${(ti/p.trail.length)*0.26})`;
+        ctx.strokeStyle=`rgba(${r},${g},${b},${(ti/p.trail.length)*0.25})`;
         ctx.lineWidth=1;
         ctx.beginPath(); ctx.moveTo(p.trail[ti-1].x,p.trail[ti-1].y); ctx.lineTo(p.trail[ti].x,p.trail[ti].y); ctx.stroke();
       }
-      ctx.fillStyle=`rgba(${r},${g},${b},0.26)`;
+      ctx.fillStyle=`rgba(${r},${g},${b},0.40)`;
       ctx.beginPath(); ctx.arc(p.x,p.y,1,0,Math.PI*2); ctx.fill();
     }
   }
@@ -956,18 +1012,18 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     }
     st.builds=st.builds.filter((bld:BuildAnim)=>(now-bld.startTime)<1500);
     for (let y=0;y<=h;y+=BG) {
-      const alpha=hasMouse&&Math.abs(my-y)<BG ? 0.14 : 0.07;
+      const alpha=hasMouse&&Math.abs(my-y)<BG ? 0.22 : 0.12;
       ctx.strokeStyle=`rgba(${r},${g},${b},${alpha})`; ctx.lineWidth=0.5;
       ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke();
     }
     for (let x=0;x<=w;x+=BG) {
-      const alpha=hasMouse&&Math.abs(mx-x)<BG ? 0.14 : 0.07;
+      const alpha=hasMouse&&Math.abs(mx-x)<BG ? 0.22 : 0.12;
       ctx.strokeStyle=`rgba(${r},${g},${b},${alpha})`; ctx.lineWidth=0.5;
       ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke();
     }
     for (const bld of st.builds) {
       const elapsed=(now-bld.startTime)/1000;
-      const alpha=elapsed<0.5 ? 0.30 : 0.30*(1-(elapsed-0.5)/1.0);
+      const alpha=elapsed<0.5 ? 0.40 : 0.40*(1-(elapsed-0.5)/1.0);
       if (alpha<0.005) continue;
       const progress=Math.min(1,elapsed/0.5);
       ctx.strokeStyle=`rgba(${r},${g},${b},${alpha})`; ctx.lineWidth=2;
@@ -1017,7 +1073,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     if (i >= 8) return;
     const bgCanvas = card.querySelector<HTMLCanvasElement>('.product-bg')!;
     const bgCtx = bgCanvas.getContext('2d')!;
-    const halfDpr = Math.max(0.5, (window.devicePixelRatio||1) * 0.75);
+    const halfDpr = Math.max(1.0, (window.devicePixelRatio||1) * 1.0);
     const rect = card.getBoundingClientRect();
     const cw = Math.round(rect.width) || 800;
     const ch = Math.round(rect.height) || 400;
