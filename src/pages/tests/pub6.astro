@@ -1,0 +1,478 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloPublish — Publishing Pulse | Your Content Cadence Visualised" description="PelloPublish maps every piece of content you publish across time. Watch your weekly publishing rhythm unfold in a radial timeline.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="pub6-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+    <HowItWorks />
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute; top: -100%; left: 1rem; z-index: 9999;
+    padding: 0.75rem 1.25rem; background: var(--color-brand-primary); color: white;
+    font-weight: 600; border-radius: 0 0 0.5rem 0.5rem; text-decoration: none; transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+  #hero-wrap .url-input-wrap, .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important; backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3); border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important; border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important; border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3); backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem; padding: 1rem; box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important; backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99,102,241,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden; position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+  ric(() => {
+
+  // ─── Data ─────────────────────────────────────────────────────────────────
+  const PLATFORMS: { name: string; color: [number,number,number] }[] = [
+    { name: "Instagram", color: [225, 48,  108] },
+    { name: "LinkedIn",  color: [10,  102, 194] },
+    { name: "Twitter/X", color: [139, 92,  246] },
+    { name: "TikTok",    color: [0,   200, 180] },
+    { name: "Blog",      color: [168, 85,  247] },
+    { name: "YouTube",   color: [220, 50,  50]  },
+  ];
+  const CONTENT_TYPES = ["Carousel","Reel","Story","Blog Post","Thread","Short","Article","UGC Clip","Infographic","Poll"];
+  const TOPICS_T = [
+    "5 Ways AI is Changing {industry}",
+    "Behind the Scenes: How We {action}",
+    "Why {topic} Matters More Than Ever",
+    "{number} Tips for Better {goal}",
+    "The Future of {industry} in 2026",
+    "How Brands Grew 3× with {strategy}",
+    "Stop {mistake} — Do This Instead",
+    "We Tested {strategy} for 30 Days",
+  ];
+  const INDUSTRIES  = ["SaaS","E-commerce","Healthcare","Finance","Education","Real Estate"];
+  const GOALS       = ["Engagement","Conversions","Brand Awareness","Lead Quality"];
+  const STRATEGIES  = ["Content Repurposing","AI Writing","Video-First","Community Building"];
+  const ENGAGEMENTS = ["1.2k likes","847 likes","2.3k views","412 shares","156 comments","3.1k reach","967 saves"];
+  const TIMES = ["7:30 AM","8:15 AM","9:00 AM","10:30 AM","11:45 AM","12:00 PM","1:30 PM","2:15 PM","3:00 PM","4:30 PM","5:15 PM","6:00 PM","7:30 PM","8:00 PM","9:15 PM"];
+  const DAY_LABELS  = ["Today","Yesterday","Monday","Tuesday","Wednesday","Thursday","Friday"];
+  const DOT_COUNTS  = [13, 11, 10, 9, 8, 7, 6];
+  const DOT_BASE_ALPHAS  = [0.55, 0.42, 0.34, 0.27, 0.22, 0.17, 0.12];
+  const RING_BASE_ALPHAS = [0.08, 0.06, 0.05, 0.04, 0.04, 0.03, 0.03];
+  const ROTATION_SPEED = 0.00035;
+  const PLATFORM_COUNTS = [18, 12, 14, 8, 5, 3];
+
+  function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function genTopic(): string {
+    let t = pick(TOPICS_T);
+    return t
+      .replace('{industry}', pick(INDUSTRIES))
+      .replace('{action}',   pick(['Launch','Scale','Win']))
+      .replace('{topic}',    pick(['Authenticity','Short-Form Video','AI Content']))
+      .replace('{number}',   String(3 + Math.floor(Math.random() * 6)))
+      .replace('{goal}',     pick(GOALS))
+      .replace('{strategy}', pick(STRATEGIES))
+      .replace('{mistake}',  pick(['Over-Posting','Trend Chasing','Ignoring Data']));
+  }
+
+  // ─── Types ────────────────────────────────────────────────────────────────
+  interface RingDot {
+    angle: number;
+    platformIdx: number;
+    contentType: string;
+    topic: string;
+    engagement: string;
+    time: string;
+    isScheduled: boolean;
+    pushOffset: number;
+  }
+  interface Ring {
+    radius: number;
+    dayLabel: string;
+    rotDir: number;
+    rotation: number;
+    dots: RingDot[];
+  }
+  interface ComputedDot { ri: number; di: number; x: number; y: number; }
+
+  // ─── State ────────────────────────────────────────────────────────────────
+  const canvas = document.querySelector<HTMLCanvasElement>('.pub6-canvas')!;
+  const wrap   = document.getElementById('hero-wrap')!;
+  const ctx    = canvas.getContext('2d')!;
+
+  let dpr = 1, W = 0, H = 0, cx = 0, cy = 0;
+  let rings: Ring[] = [];
+  let lastPulseTime = -99;
+  let mouse: { x: number; y: number } | null = null;
+  let hovDot: ComputedDot | null = null;
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+  function rrect(x: number, y: number, w: number, h: number, r: number) {
+    ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+  }
+
+  function drawDotTooltip(dot: RingDot, ring: Ring, px: number, py: number) {
+    const [r,g,b] = PLATFORMS[dot.platformIdx].color;
+    const TW = 278, TH = 100, pad = 12;
+    let tx = px - TW/2, ty = py - TH - 16;
+    tx = Math.max(8, Math.min(W - TW - 8, tx));
+    if (ty < 8) ty = py + 16;
+    ctx.save();
+    ctx.shadowColor = `rgba(${r},${g},${b},0.35)`; ctx.shadowBlur = 18;
+    rrect(tx,ty,TW,TH,8); ctx.fillStyle = 'rgba(6,7,18,0.88)'; ctx.fill();
+    ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+    rrect(tx,ty,TW,TH,8); ctx.fillStyle = `rgba(${r},${g},${b},0.10)`; ctx.fill();
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.4)`; ctx.lineWidth = 1; ctx.stroke();
+    ctx.globalAlpha = 0.65; rrect(tx,ty,TW,3,3); ctx.fillStyle = `rgb(${r},${g},${b})`; ctx.fill(); ctx.globalAlpha = 1;
+    ctx.textAlign = 'left';
+    ctx.font = 'bold 9px "SF Mono","Fira Code",monospace';
+    ctx.fillStyle = `rgba(${r},${g},${b},0.85)`;
+    ctx.fillText(`${PLATFORMS[dot.platformIdx].name.toUpperCase()} · ${dot.contentType.toUpperCase()}`, tx+pad, ty+16);
+    ctx.font = '500 11px -apple-system,system-ui,sans-serif'; ctx.fillStyle = '#ffffff';
+    ctx.save(); ctx.beginPath(); ctx.rect(tx+pad, ty+22, TW-pad*2, 26); ctx.clip();
+    ctx.fillText(dot.topic, tx+pad, ty+36); ctx.restore();
+    ctx.font = 'bold 9px "SF Mono","Fira Code",monospace'; ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.fillText(`${ring.dayLabel} · ${dot.time}`, tx+pad, ty+60);
+    ctx.fillStyle = 'rgba(74,222,128,0.85)';
+    ctx.fillText(`● ${dot.engagement}`, tx+pad, ty+TH-10);
+    ctx.restore();
+  }
+
+  // ─── Init rings ───────────────────────────────────────────────────────────
+  function initRings() {
+    rings = [];
+    const minDim  = Math.min(W, H);
+    const innerR  = minDim * 0.085;
+    const step    = minDim * 0.057;
+    for (let ri = 0; ri < 7; ri++) {
+      const nDots = DOT_COUNTS[ri];
+      const dots: RingDot[] = [];
+      for (let di = 0; di < nDots; di++) {
+        dots.push({
+          angle:       (di / nDots) * Math.PI * 2 + Math.random() * 0.4,
+          platformIdx: Math.floor(Math.random() * 6),
+          contentType: pick(CONTENT_TYPES),
+          topic:       genTopic(),
+          engagement:  pick(ENGAGEMENTS),
+          time:        pick(TIMES),
+          isScheduled: ri === 0 && Math.random() < 0.28,
+          pushOffset:  0,
+        });
+      }
+      rings.push({
+        radius:   innerR + ri * step,
+        dayLabel: DAY_LABELS[ri],
+        rotDir:   ri % 2 === 0 ? 1 : -1,
+        rotation: Math.random() * Math.PI * 2,
+        dots,
+      });
+    }
+  }
+
+  // ─── Resize ───────────────────────────────────────────────────────────────
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    W = Math.round(rect.width); H = Math.round(rect.height);
+    canvas.width = W*dpr; canvas.height = H*dpr;
+    canvas.style.width = `${W}px`; canvas.style.height = `${H}px`;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    cx = W * 0.5; cy = H * 0.5;
+    initRings();
+    lastPulseTime = performance.now() * 0.001 - 0.5;
+  }
+
+  // ─── Smoothstep ───────────────────────────────────────────────────────────
+  function ss(x: number): number { x = Math.max(0, Math.min(1, x)); return x*x*(3-2*x); }
+
+  // ─── Frame ────────────────────────────────────────────────────────────────
+  function frame() {
+    requestAnimationFrame(frame);
+    const now = performance.now() * 0.001;
+    ctx.clearRect(0, 0, W, H);
+
+    // Restart pulse every 3s
+    if (now - lastPulseTime > 3) lastPulseTime = now;
+    const pulseAge    = now - lastPulseTime;
+    const pulseRadius = pulseAge * 138; // px/s
+
+    // Update rotations + mouse push
+    const computed: ComputedDot[] = [];
+    for (let ri = 0; ri < rings.length; ri++) {
+      const ring = rings[ri];
+      ring.rotation += ring.rotDir * ROTATION_SPEED;
+      for (let di = 0; di < ring.dots.length; di++) {
+        const dot   = ring.dots[di];
+        const angle = dot.angle + ring.rotation;
+        const baseX = cx + Math.cos(angle) * ring.radius;
+        const baseY = cy + Math.sin(angle) * ring.radius;
+        if (mouse) {
+          const mdx = baseX - mouse.x, mdy = baseY - mouse.y;
+          const md  = Math.sqrt(mdx*mdx + mdy*mdy);
+          if (md < 35) {
+            const push = ss(1 - md/35) * 30;
+            dot.pushOffset = Math.max(dot.pushOffset, push);
+          }
+        }
+        dot.pushOffset *= 0.93;
+        const effR = ring.radius + dot.pushOffset;
+        computed.push({ ri, di, x: cx + Math.cos(angle)*effR, y: cy + Math.sin(angle)*effR });
+      }
+    }
+
+    // Hover detection
+    if (mouse) {
+      let bestD = 18;
+      hovDot = null;
+      for (const cd of computed) {
+        const dx = cd.x - mouse.x, dy = cd.y - mouse.y;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        if (d < bestD) { bestD = d; hovDot = cd; }
+      }
+    } else { hovDot = null; }
+
+    // ── Draw rings ──
+    for (let ri = 0; ri < rings.length; ri++) {
+      const ring     = rings[ri];
+      const isHovRing = hovDot?.ri === ri;
+      const alpha    = RING_BASE_ALPHAS[ri] * (isHovRing ? 2.8 : 1);
+      ctx.beginPath();
+      ctx.arc(cx, cy, ring.radius, 0, Math.PI*2);
+      ctx.strokeStyle = `rgba(168,85,247,${alpha})`;
+      ctx.lineWidth   = 0.5;
+      ctx.stroke();
+      // Day label on right side
+      ctx.save();
+      ctx.globalAlpha  = isHovRing ? 0.35 : 0.14;
+      ctx.fillStyle    = '#ffffff';
+      ctx.font         = '8px "SF Mono","Fira Code",monospace';
+      ctx.textAlign    = 'left';
+      ctx.fillText(ring.dayLabel, cx + ring.radius + 7, cy + 3);
+      ctx.restore();
+    }
+
+    // ── Draw dots ──
+    for (const cd of computed) {
+      const ring = rings[cd.ri];
+      const dot  = ring.dots[cd.di];
+      const [r,g,b] = PLATFORMS[dot.platformIdx].color;
+      const isHov  = hovDot?.ri === cd.ri && hovDot?.di === cd.di;
+
+      // Pulse flash when pulse wave crosses this ring
+      const pDiff    = Math.abs(pulseRadius - ring.radius);
+      const pulseFlash = pDiff < 22 ? (1 - pDiff/22) * 0.5 : 0;
+
+      const base  = DOT_BASE_ALPHAS[cd.ri];
+      const alpha = Math.min(1, base + pulseFlash + (isHov ? 0.45 : 0));
+
+      ctx.save();
+      if (isHov) {
+        ctx.shadowColor = `rgba(${r},${g},${b},0.7)`; ctx.shadowBlur = 14;
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle   = `rgb(${r},${g},${b})`;
+        ctx.beginPath(); ctx.arc(cd.x, cd.y, 6, 0, Math.PI*2); ctx.fill();
+        // Ring brightens
+        ctx.shadowBlur = 0;
+        ctx.beginPath();
+        ctx.arc(cx, cy, ring.radius, 0, Math.PI*2);
+        ctx.strokeStyle = `rgba(168,85,247,0.18)`; ctx.lineWidth = 0.8; ctx.stroke();
+      } else if (dot.isScheduled) {
+        // Pulsing scheduled dot
+        const scheduledA = base * (0.45 + Math.sin(Date.now()*0.002 + dot.angle)*0.35);
+        ctx.globalAlpha = scheduledA + pulseFlash;
+        ctx.fillStyle   = `rgb(${r},${g},${b})`;
+        ctx.beginPath(); ctx.arc(cd.x, cd.y, 2.5, 0, Math.PI*2); ctx.fill();
+      } else {
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle   = `rgb(${r},${g},${b})`;
+        ctx.beginPath(); ctx.arc(cd.x, cd.y, 3, 0, Math.PI*2); ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // ── Center statistics ──
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.globalAlpha = 0.5; ctx.fillStyle = '#a855f7';
+    ctx.font = 'bold 28px -apple-system,system-ui,sans-serif';
+    ctx.fillText('60', cx, cy + 6);
+    ctx.globalAlpha = 0.25; ctx.fillStyle = '#ffffff';
+    ctx.font = '9px "SF Mono","Fira Code",monospace';
+    ctx.fillText('pieces this month', cx, cy + 24);
+    ctx.globalAlpha = 0.16;
+    ctx.fillText(`IG: ${PLATFORM_COUNTS[0]} · LI: ${PLATFORM_COUNTS[1]} · X: ${PLATFORM_COUNTS[2]} · TT: ${PLATFORM_COUNTS[3]} · BL: ${PLATFORM_COUNTS[4]} · YT: ${PLATFORM_COUNTS[5]}`, cx, cy + 40);
+    ctx.restore();
+
+    // ── Tooltip ──
+    if (hovDot) {
+      const ring = rings[hovDot.ri];
+      const dot  = ring.dots[hovDot.di];
+      drawDotTooltip(dot, ring, hovDot.x, hovDot.y);
+    }
+  }
+
+  // ─── Events ───────────────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', e => {
+    const rect = wrap.getBoundingClientRect();
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  });
+  wrap.addEventListener('mouseleave', () => { mouse = null; hovDot = null; });
+  wrap.addEventListener('touchstart', () => { mouse = null; hovDot = null; }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+  const gt = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gt) gt.style.display = 'none';
+
+  // ─── FinalCTA: concentric rings + coloured dots, gentle pulse ─────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const cc2 = document.createElement('canvas');
+      cc2.setAttribute('aria-hidden', 'true');
+      cc2.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.style.position = 'relative';
+      ctaCard.insertBefore(cc2, ctaCard.firstChild);
+      const cc = cc2.getContext('2d')!;
+      let ctaDpr = 1, cW = 0, cH = 0;
+
+      interface CtaDot { angle: number; pIdx: number; }
+      interface CtaRing { radius: number; rotation: number; rotDir: number; dots: CtaDot[]; }
+      let ctaRings: CtaRing[] = [];
+      let ctaLastPulse = -99;
+
+      function initCtaRings() {
+        ctaRings = [];
+        const minDim = Math.min(cW, cH);
+        const inner  = minDim * 0.08;
+        const step   = minDim * 0.05;
+        const nDots  = [5, 4, 4, 4, 3, 3, 3];
+        for (let ri = 0; ri < 7; ri++) {
+          const dots: CtaDot[] = [];
+          for (let di = 0; di < nDots[ri]; di++) {
+            dots.push({ angle: (di / nDots[ri]) * Math.PI*2 + Math.random()*0.5, pIdx: Math.floor(Math.random()*6) });
+          }
+          ctaRings.push({ radius: inner + ri*step, rotation: Math.random()*Math.PI*2, rotDir: ri%2===0?1:-1, dots });
+        }
+      }
+
+      function resizeCta() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        cW = Math.round(rect.width); cH = Math.round(rect.height);
+        cc2.width = cW*ctaDpr; cc2.height = cH*ctaDpr;
+        cc2.style.width = `${cW}px`; cc2.style.height = `${cH}px`;
+        cc.setTransform(ctaDpr,0,0,ctaDpr,0,0);
+        initCtaRings();
+      }
+
+      function frameCta() {
+        requestAnimationFrame(frameCta);
+        const t = performance.now() * 0.001;
+        cc.clearRect(0, 0, cW, cH);
+        const ccx = cW/2, ccy = cH/2;
+        if (t - ctaLastPulse > 3) ctaLastPulse = t;
+        const pAge = t - ctaLastPulse;
+        const pR   = pAge * 120;
+        for (let ri = 0; ri < ctaRings.length; ri++) {
+          const ring = ctaRings[ri];
+          ring.rotation += ring.rotDir * ROTATION_SPEED;
+          // Ring circle
+          const pDiff  = Math.abs(pR - ring.radius);
+          const pFlash = pDiff < 20 ? (1 - pDiff/20) * 0.06 : 0;
+          cc.beginPath(); cc.arc(ccx, ccy, ring.radius, 0, Math.PI*2);
+          cc.strokeStyle = `rgba(168,85,247,${0.04 + pFlash})`; cc.lineWidth = 0.5; cc.stroke();
+          // Dots
+          for (const dot of ring.dots) {
+            const angle = dot.angle + ring.rotation;
+            const dx = ccx + Math.cos(angle) * ring.radius;
+            const dy = ccy + Math.sin(angle) * ring.radius;
+            const [r,g,b] = PLATFORMS[dot.pIdx].color;
+            const dotFlash = pDiff < 20 ? (1 - pDiff/20) * 0.35 : 0;
+            const a = 0.22 + dotFlash + Math.sin(t*0.8 + dot.angle)*0.05;
+            cc.save(); cc.globalAlpha = a; cc.fillStyle = `rgb(${r},${g},${b})`;
+            cc.beginPath(); cc.arc(dx, dy, 2.5, 0, Math.PI*2); cc.fill(); cc.restore();
+          }
+        }
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaCard); resizeCta();
+      requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { cc2.style.opacity = '1'; });
+      const ctaGt = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGt) ctaGt.style.display = 'none';
+    }
+  }
+
+  }); // end ric
+</script>

@@ -1,0 +1,526 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloPublish — Broadcast Tower | One Voice, Six Platforms" description="PelloPublish broadcasts your brand voice across every platform simultaneously. Watch content radiate outward from one source to six channels.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="pub5-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+    <HowItWorks />
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute; top: -100%; left: 1rem; z-index: 9999;
+    padding: 0.75rem 1.25rem; background: var(--color-brand-primary); color: white;
+    font-weight: 600; border-radius: 0 0 0.5rem 0.5rem; text-decoration: none; transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+  #hero-wrap .url-input-wrap, .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important; backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3); border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important; border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important; border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3); backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem; padding: 1rem; box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important; backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99,102,241,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden; position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+  ric(() => {
+
+  // ─── Data ─────────────────────────────────────────────────────────────────
+  const PLATFORMS: { name: string; color: [number,number,number] }[] = [
+    { name: "Instagram", color: [225, 48,  108] },
+    { name: "LinkedIn",  color: [10,  102, 194] },
+    { name: "Twitter/X", color: [139, 92,  246] },
+    { name: "TikTok",    color: [0,   200, 180] },
+    { name: "Blog",      color: [168, 85,  247] },
+    { name: "YouTube",   color: [220, 50,  50]  },
+  ];
+  const CONTENT_TYPES = ["Carousel","Reel","Story","Blog Post","Thread","Short","Article","UGC Clip","Infographic","Poll"];
+  const TOPICS_T = [
+    "5 Ways AI is Changing {industry}",
+    "Behind the Scenes: How We {action}",
+    "Why {topic} Matters More Than Ever",
+    "{number} Tips for Better {goal}",
+    "The Future of {industry} in 2026",
+    "How Brands Grew 3× with {strategy}",
+    "Stop {mistake} — Do This Instead",
+    "We Tested {strategy} for 30 Days",
+  ];
+  const INDUSTRIES = ["SaaS","E-commerce","Healthcare","Finance","Education","Real Estate"];
+  const GOALS      = ["Engagement","Conversions","Brand Awareness","Lead Quality"];
+  const STRATEGIES = ["Content Repurposing","AI Writing","Video-First","Community Building"];
+  const ENGAGEMENTS = ["1.2k likes","847 likes","2.3k views","412 shares","156 comments","3.1k reach","967 saves"];
+  const SPAWN_PROBS = [0.9, 0.7, 0.75, 0.65, 0.4, 0.5];
+  const MONTHLY_POSTS = [28, 22, 18, 15, 8, 12];
+  const NODE_ANGLES_DEG = [-70, -42, -14, 14, 42, 70];
+  const NODE_DIST_MULTS = [0.80, 0.92, 1.0, 1.0, 0.92, 0.80];
+
+  function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function genTopic(): string {
+    let t = pick(TOPICS_T);
+    return t
+      .replace('{industry}', pick(INDUSTRIES))
+      .replace('{action}',   pick(['Launch','Scale','Win']))
+      .replace('{topic}',    pick(['Authenticity','Short-Form Video','AI Content']))
+      .replace('{number}',   String(3 + Math.floor(Math.random() * 6)))
+      .replace('{goal}',     pick(GOALS))
+      .replace('{strategy}', pick(STRATEGIES))
+      .replace('{mistake}',  pick(['Over-Posting','Trend Chasing','Ignoring Data']));
+  }
+
+  // ─── Types ────────────────────────────────────────────────────────────────
+  interface NodeData { x: number; y: number; dist: number; }
+  interface SignalWave { birthTime: number; radius: number; triggered: Set<number>; }
+  interface ContentCard {
+    x: number; y: number; vx: number; vy: number;
+    platformIdx: number; birthTime: number;
+    contentType: string; topic: string; engagement: string;
+  }
+
+  // ─── State ────────────────────────────────────────────────────────────────
+  const canvas = document.querySelector<HTMLCanvasElement>('.pub5-canvas')!;
+  const wrap   = document.getElementById('hero-wrap')!;
+  const ctx    = canvas.getContext('2d')!;
+
+  let dpr = 1, W = 0, H = 0;
+  let transmitter = { x: 0, y: 0 };
+  let nodes: NodeData[] = [];
+  let maxNodeDist = 0;
+  let waves: SignalWave[] = [];
+  let cards: ContentCard[] = [];
+  const nodeFlashTime: number[] = new Array(6).fill(-99);
+  const lineFlash:     number[] = new Array(6).fill(0);
+  let lastWaveTime = 0;
+  let mouse: { x: number; y: number } | null = null;
+  let hovCard = -1, hovNode = -1, hovTx = false;
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+  function rrect(x: number, y: number, w: number, h: number, r: number) {
+    ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+  }
+
+  function drawCardTooltip(card: ContentCard) {
+    const [r,g,b] = PLATFORMS[card.platformIdx].color;
+    const TW = 278, TH = 88, pad = 12;
+    let tx = card.x - TW/2, ty = card.y - TH - 16;
+    tx = Math.max(8, Math.min(W - TW - 8, tx));
+    if (ty < 8) ty = card.y + 16;
+    ctx.save();
+    ctx.shadowColor = `rgba(${r},${g},${b},0.35)`; ctx.shadowBlur = 18;
+    rrect(tx,ty,TW,TH,8); ctx.fillStyle = 'rgba(6,7,18,0.88)'; ctx.fill();
+    ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+    rrect(tx,ty,TW,TH,8); ctx.fillStyle = `rgba(${r},${g},${b},0.10)`; ctx.fill();
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.4)`; ctx.lineWidth = 1; ctx.stroke();
+    ctx.globalAlpha = 0.65; rrect(tx,ty,TW,3,3); ctx.fillStyle = `rgb(${r},${g},${b})`; ctx.fill(); ctx.globalAlpha = 1;
+    ctx.textAlign = 'left';
+    ctx.font = 'bold 9px "SF Mono","Fira Code",monospace';
+    ctx.fillStyle = `rgba(${r},${g},${b},0.85)`;
+    ctx.fillText(`${PLATFORMS[card.platformIdx].name.toUpperCase()} · ${card.contentType.toUpperCase()}`, tx+pad, ty+16);
+    ctx.font = '500 11px -apple-system,system-ui,sans-serif'; ctx.fillStyle = '#ffffff';
+    ctx.save(); ctx.beginPath(); ctx.rect(tx+pad, ty+22, TW-pad*2, 26); ctx.clip();
+    ctx.fillText(card.topic, tx+pad, ty+36); ctx.restore();
+    ctx.font = 'bold 9px "SF Mono","Fira Code",monospace'; ctx.fillStyle = 'rgba(74,222,128,0.85)';
+    ctx.fillText(`● ${card.engagement}`, tx+pad, ty+TH-10);
+    ctx.restore();
+  }
+
+  // ─── Resize ───────────────────────────────────────────────────────────────
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    W = Math.round(rect.width); H = Math.round(rect.height);
+    canvas.width = W*dpr; canvas.height = H*dpr;
+    canvas.style.width = `${W}px`; canvas.style.height = `${H}px`;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    transmitter = { x: W*0.38, y: H*0.5 };
+    const mxDist = Math.min(W*0.32, 340);
+    nodes = NODE_ANGLES_DEG.map((deg, i) => {
+      const rad = deg * Math.PI / 180;
+      const dist = mxDist * NODE_DIST_MULTS[i];
+      return {
+        x:    Math.max(48, Math.min(W-48, transmitter.x + Math.cos(rad)*dist)),
+        y:    Math.max(40, Math.min(H-40, transmitter.y + Math.sin(rad)*dist)),
+        dist,
+      };
+    });
+    maxNodeDist = Math.max(...nodes.map(n => n.dist));
+    cards = [];
+    waves = [];
+    lastWaveTime = performance.now()*0.001 - 1.4;
+  }
+
+  // ─── Spawn card ───────────────────────────────────────────────────────────
+  function spawnCard(nodeIdx: number) {
+    const node = nodes[nodeIdx];
+    const outAngle = Math.atan2(node.y - transmitter.y, node.x - transmitter.x);
+    const spread   = outAngle + (Math.random() - 0.5) * 1.2;
+    const platformCards = cards.filter(c => c.platformIdx === nodeIdx);
+    if (platformCards.length >= 15) {
+      const oldest = platformCards.reduce((a, b) => a.birthTime < b.birthTime ? a : b);
+      cards.splice(cards.indexOf(oldest), 1);
+    }
+    cards.push({
+      x: node.x + (Math.random()-0.5)*18,
+      y: node.y + (Math.random()-0.5)*18,
+      vx: Math.cos(spread)*0.1,
+      vy: Math.sin(spread)*0.1,
+      platformIdx: nodeIdx,
+      birthTime: performance.now()*0.001,
+      contentType: pick(CONTENT_TYPES),
+      topic: genTopic(),
+      engagement: pick(ENGAGEMENTS),
+    });
+  }
+
+  // ─── Frame ────────────────────────────────────────────────────────────────
+  const WAVE_SPEED = 100;
+
+  function frame() {
+    requestAnimationFrame(frame);
+    const now = performance.now() * 0.001;
+    ctx.clearRect(0, 0, W, H);
+
+    // Spawn new wave every 2s
+    if (now - lastWaveTime > 2) {
+      waves.push({ birthTime: now, radius: 0, triggered: new Set() });
+      lastWaveTime = now;
+    }
+
+    // Update waves + check node collisions
+    for (let i = waves.length - 1; i >= 0; i--) {
+      const w = waves[i];
+      w.radius = (now - w.birthTime) * WAVE_SPEED;
+      for (let n = 0; n < 6; n++) {
+        if (!w.triggered.has(n) && w.radius >= nodes[n].dist) {
+          w.triggered.add(n);
+          nodeFlashTime[n] = now;
+          lineFlash[n] = 1;
+          if (Math.random() < SPAWN_PROBS[n]) spawnCard(n);
+        }
+      }
+      if (w.radius > maxNodeDist + 120) waves.splice(i, 1);
+    }
+
+    // Decay line flash
+    for (let n = 0; n < 6; n++) {
+      lineFlash[n] = Math.max(0, 1 - (now - nodeFlashTime[n]) / 0.8);
+    }
+
+    // Age out cards
+    for (let i = cards.length - 1; i >= 0; i--) {
+      const c = cards[i];
+      c.x += c.vx; c.y += c.vy;
+      if (now - c.birthTime > 5) cards.splice(i, 1);
+    }
+
+    // Update hover
+    if (mouse) {
+      const tdx = mouse.x - transmitter.x, tdy = mouse.y - transmitter.y;
+      hovTx = Math.sqrt(tdx*tdx + tdy*tdy) < 24;
+      hovNode = -1;
+      if (!hovTx) {
+        for (let n = 0; n < 6; n++) {
+          const ndx = mouse.x - nodes[n].x, ndy = mouse.y - nodes[n].y;
+          if (Math.sqrt(ndx*ndx + ndy*ndy) < 24) { hovNode = n; break; }
+        }
+      }
+      hovCard = -1;
+      if (hovNode < 0 && !hovTx) {
+        let bestD = 28;
+        for (let i = 0; i < cards.length; i++) {
+          if (now - cards[i].birthTime < 0.5) continue;
+          const cdx = mouse.x - cards[i].x, cdy = mouse.y - cards[i].y;
+          const d = Math.sqrt(cdx*cdx + cdy*cdy);
+          if (d < bestD) { bestD = d; hovCard = i; }
+        }
+      }
+    } else { hovTx = false; hovNode = -1; hovCard = -1; }
+
+    // ── Connecting lines ──
+    for (let n = 0; n < 6; n++) {
+      const [r,g,b] = PLATFORMS[n].color;
+      let travelBoost = 0;
+      for (const w of waves) {
+        if (!w.triggered.has(n)) {
+          const prog = w.radius / nodes[n].dist;
+          if (prog < 1) travelBoost = Math.max(travelBoost, prog * 0.12);
+        }
+      }
+      const alpha = 0.03 + lineFlash[n]*0.25 + travelBoost + (hovNode === n ? 0.18 : 0);
+      ctx.beginPath();
+      ctx.moveTo(transmitter.x, transmitter.y);
+      ctx.lineTo(nodes[n].x, nodes[n].y);
+      ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
+      ctx.lineWidth = hovNode === n ? 1.5 : 0.8;
+      ctx.stroke();
+    }
+
+    // ── Signal waves ──
+    for (const w of waves) {
+      const age = now - w.birthTime;
+      const alpha = Math.max(0, 0.28 - age * 0.05);
+      if (alpha < 0.004) continue;
+      ctx.beginPath();
+      ctx.arc(transmitter.x, transmitter.y, w.radius, 0, Math.PI*2);
+      ctx.strokeStyle = `rgba(168,85,247,${alpha})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // ── Content cards ──
+    for (let i = 0; i < cards.length; i++) {
+      const card = cards[i];
+      const age = now - card.birthTime;
+      const fadeIn  = Math.min(1, age / 0.5);
+      const fadeOut = age > 4.5 ? Math.max(0, 1 - (age-4.5)/0.5) : 1;
+      const [r,g,b] = PLATFORMS[card.platformIdx].color;
+      const isHov    = hovCard === i;
+      const isPlatHov = hovNode === card.platformIdx;
+      const dFromNode = Math.sqrt((card.x-nodes[card.platformIdx].x)**2 + (card.y-nodes[card.platformIdx].y)**2);
+      const distFade  = Math.max(0.25, 1 - dFromNode/170);
+      const baseAlpha = fadeIn * fadeOut * (isHov ? 1 : isPlatHov ? 0.9 : distFade*0.75);
+      ctx.save();
+      ctx.globalAlpha = baseAlpha;
+      if (isHov) {
+        ctx.strokeStyle = `rgb(${r},${g},${b})`; ctx.lineWidth = 1.5;
+        ctx.fillStyle   = `rgba(${r},${g},${b},0.22)`;
+        ctx.beginPath(); ctx.rect(card.x-10, card.y-7, 20, 14); ctx.fill(); ctx.stroke();
+      } else {
+        ctx.strokeStyle = `rgb(${r},${g},${b})`; ctx.lineWidth = isPlatHov ? 1 : 0.7;
+        ctx.fillStyle   = `rgba(${r},${g},${b},0.1)`;
+        ctx.beginPath(); ctx.rect(card.x-6, card.y-4, 12, 8); ctx.fill(); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // ── Platform nodes ──
+    for (let n = 0; n < 6; n++) {
+      const [r,g,b] = PLATFORMS[n].color;
+      const flashB = Math.max(0, 1 - (now - nodeFlashTime[n]) / 0.5) * 0.6;
+      const isHov  = hovNode === n;
+      const alpha  = Math.min(1, 0.35 + flashB + (isHov ? 0.45 : 0));
+      ctx.save();
+      ctx.shadowColor = `rgba(${r},${g},${b},${alpha*0.6})`; ctx.shadowBlur = isHov ? 20 : 10;
+      ctx.globalAlpha = alpha; ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.beginPath(); ctx.arc(nodes[n].x, nodes[n].y, isHov ? 10 : 7, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+      ctx.save();
+      ctx.globalAlpha = 0.3; ctx.fillStyle = '#ffffff';
+      ctx.font = '8px "SF Mono","Fira Code",monospace'; ctx.textAlign = 'center';
+      ctx.fillText(PLATFORMS[n].name, nodes[n].x, nodes[n].y + 20);
+      ctx.restore();
+      if (isHov) {
+        ctx.save();
+        ctx.globalAlpha = 0.9; ctx.fillStyle = `rgba(${r},${g},${b},0.9)`;
+        ctx.font = 'bold 9px "SF Mono","Fira Code",monospace'; ctx.textAlign = 'center';
+        ctx.fillText(`${MONTHLY_POSTS[n]} posts this month`, nodes[n].x, nodes[n].y - 18);
+        ctx.restore();
+      }
+    }
+
+    // ── Transmitter ──
+    for (let ri = 0; ri < 3; ri++) {
+      const phase = ((now * 0.5 + ri / 3) % 1);
+      const ringR = phase * 52;
+      const ringA = (1 - phase) * 0.13;
+      ctx.globalAlpha = ringA;
+      ctx.strokeStyle = 'rgba(168,85,247,1)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(transmitter.x, transmitter.y, ringR, 0, Math.PI*2); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    const pulse = 0.7 + Math.sin(now * 2.5) * 0.2;
+    ctx.save();
+    ctx.shadowColor = 'rgba(168,85,247,0.8)'; ctx.shadowBlur = 16;
+    ctx.fillStyle = '#a855f7'; ctx.globalAlpha = pulse;
+    ctx.beginPath(); ctx.arc(transmitter.x, transmitter.y, 6, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+    if (hovTx) {
+      ctx.save();
+      ctx.globalAlpha = 0.9; ctx.fillStyle = '#a855f7';
+      ctx.font = 'bold 10px "SF Mono","Fira Code",monospace'; ctx.textAlign = 'center';
+      ctx.fillText('YOUR BRAND VOICE', transmitter.x, transmitter.y - 22);
+      ctx.restore();
+    }
+
+    // ── Counter ──
+    ctx.save(); ctx.textAlign = 'right'; ctx.globalAlpha = 1;
+    ctx.fillStyle = 'rgba(168,85,247,0.6)'; ctx.font = '11px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${348 + cards.length} pieces · 6 platforms · 1 voice`, W - 16, 24);
+    ctx.restore();
+
+    // ── Tooltip ──
+    if (hovCard >= 0 && hovCard < cards.length) drawCardTooltip(cards[hovCard]);
+  }
+
+  // ─── Events ───────────────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', e => {
+    const rect = wrap.getBoundingClientRect();
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  });
+  wrap.addEventListener('mouseleave', () => { mouse = null; hovTx = false; hovNode = -1; hovCard = -1; });
+  wrap.addEventListener('touchstart', () => { mouse = null; hovTx = false; hovNode = -1; hovCard = -1; }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+  const gt = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gt) gt.style.display = 'none';
+
+  // ─── FinalCTA: ring waves + platform dots ─────────────────────────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const cc2 = document.createElement('canvas');
+      cc2.setAttribute('aria-hidden', 'true');
+      cc2.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.style.position = 'relative';
+      ctaCard.insertBefore(cc2, ctaCard.firstChild);
+      const cc = cc2.getContext('2d')!;
+      let ctaDpr = 1, cW = 0, cH = 0;
+      let ctaTx = { x: 0, y: 0 };
+      let ctaNodes: { x: number; y: number; color: [number,number,number] }[] = [];
+      let ctaWaves: { r: number; bt: number }[] = [];
+      let ctaLastWave = 0;
+
+      function resizeCta() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        cW = Math.round(rect.width); cH = Math.round(rect.height);
+        cc2.width = cW*ctaDpr; cc2.height = cH*ctaDpr;
+        cc2.style.width = `${cW}px`; cc2.style.height = `${cH}px`;
+        cc.setTransform(ctaDpr,0,0,ctaDpr,0,0);
+        ctaTx = { x: cW*0.38, y: cH*0.5 };
+        const md = Math.min(cW*0.32, 280);
+        ctaNodes = NODE_ANGLES_DEG.map((deg, i) => {
+          const rad = deg * Math.PI / 180;
+          const dist = md * NODE_DIST_MULTS[i];
+          return {
+            x: Math.max(20, Math.min(cW-20, ctaTx.x + Math.cos(rad)*dist)),
+            y: Math.max(20, Math.min(cH-20, ctaTx.y + Math.sin(rad)*dist)),
+            color: PLATFORMS[i].color,
+          };
+        });
+        ctaWaves = []; ctaLastWave = 0;
+      }
+
+      function frameCta() {
+        requestAnimationFrame(frameCta);
+        const t = performance.now() * 0.001;
+        cc.clearRect(0, 0, cW, cH);
+        if (t - ctaLastWave > 2) { ctaWaves.push({ r: 0, bt: t }); ctaLastWave = t; }
+        for (let i = ctaWaves.length-1; i >= 0; i--) {
+          ctaWaves[i].r = (t - ctaWaves[i].bt) * 100;
+          if (ctaWaves[i].r > 380) ctaWaves.splice(i, 1);
+        }
+        // Faint lines
+        for (let n = 0; n < 6; n++) {
+          const [r,g,b] = ctaNodes[n].color;
+          cc.beginPath(); cc.moveTo(ctaTx.x, ctaTx.y); cc.lineTo(ctaNodes[n].x, ctaNodes[n].y);
+          cc.strokeStyle = `rgba(${r},${g},${b},0.04)`; cc.lineWidth = 0.8; cc.stroke();
+        }
+        // Waves
+        for (const w of ctaWaves) {
+          const age = t - w.bt;
+          const alpha = Math.max(0, 0.20 - age*0.04);
+          if (alpha < 0.004) continue;
+          cc.beginPath(); cc.arc(ctaTx.x, ctaTx.y, w.r, 0, Math.PI*2);
+          cc.strokeStyle = `rgba(168,85,247,${alpha})`; cc.lineWidth = 1; cc.stroke();
+        }
+        // Transmitter dot
+        const p = 0.55 + Math.sin(t*2.5)*0.25;
+        cc.save(); cc.shadowColor = 'rgba(168,85,247,0.6)'; cc.shadowBlur = 12;
+        cc.fillStyle = '#a855f7'; cc.globalAlpha = p;
+        cc.beginPath(); cc.arc(ctaTx.x, ctaTx.y, 5, 0, Math.PI*2); cc.fill(); cc.restore();
+        // Platform nodes
+        for (let n = 0; n < 6; n++) {
+          const [r,g,b] = ctaNodes[n].color;
+          cc.save(); cc.globalAlpha = 0.35;
+          cc.fillStyle = `rgb(${r},${g},${b})`;
+          cc.beginPath(); cc.arc(ctaNodes[n].x, ctaNodes[n].y, 6, 0, Math.PI*2); cc.fill(); cc.restore();
+        }
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaCard); resizeCta();
+      requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { cc2.style.opacity = '1'; });
+      const ctaGt = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGt) ctaGt.style.display = 'none';
+    }
+  }
+
+  }); // end ric
+</script>
