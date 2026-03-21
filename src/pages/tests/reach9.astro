@@ -1,0 +1,508 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloReach — Network Mesh | Email Outreach at Scale" description="PelloReach delivers cold email outreach with 500+ warmed domains, AI-personalised sequences, and inbox placement technology that actually gets replies.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="reach-mesh-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99,102,241,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Data ──────────────────────────────────────────────────────────────────
+  const DOMAINS_L: string[] = [
+    "outreach-hub.io","connect-reach.co","mailflow-pro.com","sendgrid-alt.io","inbox-direct.co",
+    "pulse-mail.com","rapid-reach.io","smart-send.co","flow-mail.io","direct-reach.com",
+    "mail-engine.io","send-wave.co","reach-direct.com","outbox-pro.io","mail-boost.co",
+    "inbox-prime.io","flow-reach.com","send-smart.io","mail-direct.co","reach-prime.com",
+  ];
+  const COMPANIES_R: string[] = [
+    "Acme Corp","TechFlow","DataSync","CloudNine","Nexus Labs",
+    "Horizon AI","Vertex Systems","PulseMedia","Zenith Group","Atlas Digital",
+    "BrightPath","CoreStack","DeepBlue","EdgePoint","FrontLine",
+    "GrowthLab","HyperScale","InnoVate","JetStream","KineticIO",
+  ];
+
+  // ─── Types ─────────────────────────────────────────────────────────────────
+  interface LNode { x: number; y: number; domain: string; rep: number; sent: number; inboxRate: number; }
+  interface RNode { x: number; y: number; company: string; received: number; responseRate: number; bestDomain: string; }
+  interface Conn  { fromIdx: number; toIdx: number; t: number; speed: number; thick: number; done: boolean; }
+
+  // ─── State ─────────────────────────────────────────────────────────────────
+  const canvas  = document.querySelector<HTMLCanvasElement>('.reach-mesh-canvas')!;
+  const wrap    = document.getElementById('hero-wrap')!;
+  const ctx     = canvas.getContext('2d')!;
+  let leftNodes: LNode[]  = [];
+  let rightNodes: RNode[] = [];
+  let conns: Conn[]       = [];
+  let flashMap            = new Map<number, number>(); // idx → flash-start timestamp
+  let totalRoutes         = 247;
+  let lastSpawn           = 0;
+  let dpr                 = 1;
+  let mouse: { x: number; y: number } | null = null;
+  let hovL = -1, hovR = -1;
+
+  // ─── Bezier point ──────────────────────────────────────────────────────────
+  function bezPt(t: number, x0: number, y0: number, x1: number, y1: number, x2: number, y2: number, x3: number, y3: number): [number, number] {
+    const u = 1 - t;
+    return [
+      u*u*u*x0 + 3*u*u*t*x1 + 3*u*t*t*x2 + t*t*t*x3,
+      u*u*u*y0 + 3*u*u*t*y1 + 3*u*t*t*y2 + t*t*t*y3,
+    ];
+  }
+
+  // ─── Rounded rect ──────────────────────────────────────────────────────────
+  function rrect(x: number, y: number, w: number, h: number, r: number) {
+    ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+    ctx.closePath();
+  }
+
+  // ─── Build nodes ───────────────────────────────────────────────────────────
+  function buildNodes() {
+    leftNodes  = [];
+    rightNodes = [];
+    const W = canvas.width / dpr;
+    const H = canvas.height / dpr;
+    const lx = W * 0.12, rx = W * 0.88;
+    const top = H * 0.07, bot = H * 0.93;
+    const step = (bot - top) / 19;
+    for (let i = 0; i < 20; i++) {
+      const y = top + i * step;
+      leftNodes.push({
+        x: lx, y,
+        domain:    DOMAINS_L[i],
+        rep:       84 + (i * 7 + 13) % 16,
+        sent:      800 + (i * 137 + 50) % 700,
+        inboxRate: parseFloat((95 + ((i * 47 + 3) % 48) / 10).toFixed(1)),
+      });
+      rightNodes.push({
+        x: rx, y,
+        company:      COMPANIES_R[i],
+        received:     15 + (i * 11 + 7) % 36,
+        responseRate: parseFloat((8 + ((i * 13 + 5) % 180) / 10).toFixed(1)),
+        bestDomain:   DOMAINS_L[(i * 3 + 1) % 20],
+      });
+    }
+    conns = [];
+    for (let i = 0; i < 4; i++) spawnConn();
+  }
+
+  // ─── Spawn connection ──────────────────────────────────────────────────────
+  function spawnConn() {
+    if (conns.filter(c => !c.done).length >= 5) return;
+    let fi = 0, ti = 0, tries = 0;
+    do {
+      fi = Math.floor(Math.random() * 20);
+      ti = Math.floor(Math.random() * 20);
+      tries++;
+    } while (conns.some(c => c.fromIdx === fi && c.toIdx === ti) && tries < 10);
+    conns.push({ fromIdx: fi, toIdx: ti, t: 0, speed: 0.003 + Math.random() * 0.002, thick: Math.random() < 0.2 ? 2 : 0.7, done: false });
+  }
+
+  // ─── Tooltip ───────────────────────────────────────────────────────────────
+  function drawTooltip(isLeft: boolean, idx: number) {
+    const W  = canvas.width / dpr;
+    const node = isLeft ? leftNodes[idx] : rightNodes[idx];
+    const px = node.x, py = node.y;
+    const TW = 240, TH = 86;
+    let tx = isLeft ? px + 16 : px - TW - 16;
+    let ty = py - TH / 2;
+    tx = Math.max(8, Math.min(W - TW - 8, tx));
+    ty = Math.max(8, ty);
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(139,92,246,0.25)'; ctx.shadowBlur = 24;
+    rrect(tx, ty, TW, TH, 8);
+    ctx.fillStyle = 'rgba(6,7,18,0.85)'; ctx.fill();
+    ctx.shadowBlur = 0;
+    rrect(tx, ty, TW, TH, 8);
+    ctx.fillStyle = 'rgba(139,92,246,0.08)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(139,92,246,0.35)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.globalAlpha = 0.65;
+    rrect(tx, ty, TW, 3, 3); ctx.fillStyle = '#8b5cf6'; ctx.fill();
+    ctx.globalAlpha = 1;
+
+    ctx.textAlign = 'left';
+    ctx.font = 'bold 10px "SF Mono","Fira Code",monospace';
+    ctx.fillStyle = '#8b5cf6';
+    ctx.fillText(isLeft ? 'SENDING DOMAIN' : 'RECIPIENT COMPANY', tx+12, ty+17);
+
+    ctx.font = '500 13px -apple-system,system-ui,sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(isLeft ? (leftNodes[idx] as LNode).domain : (rightNodes[idx] as RNode).company, tx+12, ty+34);
+
+    ctx.font = '10px "SF Mono","Fira Code",monospace';
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    if (isLeft) {
+      const n = leftNodes[idx];
+      ctx.fillText(`Reputation: ${n.rep}/100  ·  Inbox: ${n.inboxRate}%`, tx+12, ty+52);
+      ctx.fillText(`Emails sent: ${n.sent.toLocaleString()}`, tx+12, ty+68);
+    } else {
+      const n = rightNodes[idx];
+      ctx.fillText(`Received: ${n.received}  ·  Reply rate: ${n.responseRate}%`, tx+12, ty+52);
+      ctx.fillText(`Best domain: ${n.bestDomain}`, tx+12, ty+68);
+    }
+    ctx.restore();
+  }
+
+  // ─── Resize ────────────────────────────────────────────────────────────────
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    const w = Math.round(rect.width), h = Math.round(rect.height);
+    canvas.width  = w * dpr; canvas.height = h * dpr;
+    canvas.style.width  = `${w}px`; canvas.style.height = `${h}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildNodes();
+  }
+
+  // ─── Frame ─────────────────────────────────────────────────────────────────
+  function frame() {
+    requestAnimationFrame(frame);
+    if (!leftNodes.length) return;
+
+    const W   = canvas.width / dpr;
+    const H   = canvas.height / dpr;
+    const now = performance.now() * 0.001;
+    ctx.clearRect(0, 0, W, H);
+
+    const mx = mouse ? mouse.x : -99999, my = mouse ? mouse.y : -99999;
+
+    // Hover detection
+    hovL = -1; hovR = -1;
+    for (let i = 0; i < 20; i++) {
+      if (Math.hypot(leftNodes[i].x - mx, leftNodes[i].y - my) < 20)  { hovL = i; break; }
+    }
+    if (hovL < 0) {
+      for (let i = 0; i < 20; i++) {
+        if (Math.hypot(rightNodes[i].x - mx, rightNodes[i].y - my) < 20) { hovR = i; break; }
+      }
+    }
+
+    const cp1x = W * 0.40, cp2x = W * 0.60;
+
+    // ── Ghost mesh (single batch) ────────────────────────────────────────────
+    ctx.beginPath();
+    for (const ln of leftNodes)
+      for (const rn of rightNodes) {
+        ctx.moveTo(ln.x, ln.y);
+        ctx.bezierCurveTo(cp1x, ln.y, cp2x, rn.y, rn.x, rn.y);
+      }
+    ctx.strokeStyle = 'rgba(139,92,246,0.03)'; ctx.lineWidth = 0.5; ctx.stroke();
+
+    // ── Hover highlight lines ────────────────────────────────────────────────
+    if (hovL >= 0) {
+      const ln = leftNodes[hovL];
+      ctx.beginPath();
+      for (const rn of rightNodes) { ctx.moveTo(ln.x, ln.y); ctx.bezierCurveTo(cp1x, ln.y, cp2x, rn.y, rn.x, rn.y); }
+      ctx.strokeStyle = 'rgba(139,92,246,0.38)'; ctx.lineWidth = 1; ctx.stroke();
+    } else if (hovR >= 0) {
+      const rn = rightNodes[hovR];
+      ctx.beginPath();
+      for (const ln of leftNodes) { ctx.moveTo(ln.x, ln.y); ctx.bezierCurveTo(cp1x, ln.y, cp2x, rn.y, rn.x, rn.y); }
+      ctx.strokeStyle = 'rgba(139,92,246,0.38)'; ctx.lineWidth = 1; ctx.stroke();
+    }
+
+    // ── Spawn new connections ────────────────────────────────────────────────
+    conns = conns.filter(c => !c.done || c.t <= 1);
+    if (now - lastSpawn > 0.8 && conns.filter(c => !c.done).length < 4) {
+      spawnConn(); lastSpawn = now;
+    }
+
+    // ── Active connections ───────────────────────────────────────────────────
+    for (const conn of conns) {
+      if (conn.done) continue;
+      const ln = leftNodes[conn.fromIdx], rn = rightNodes[conn.toIdx];
+      const x0 = ln.x, y0 = ln.y, x3 = rn.x, y3 = rn.y;
+      const x1 = cp1x, y1 = y0, x2 = cp2x, y2 = y3;
+
+      // Center-zone glow boost
+      const [midX, midY] = bezPt(0.5, x0, y0, x1, y1, x2, y2, x3, y3);
+      const glow = Math.max(0, 1 - Math.hypot(midX - mx, midY - my) / 100) * 0.28;
+
+      // Partial bezier path
+      const steps = Math.max(8, Math.ceil(conn.t * 40));
+      ctx.beginPath(); ctx.moveTo(x0, y0);
+      for (let s = 1; s <= steps; s++) {
+        const [px, py] = bezPt((s / steps) * conn.t, x0, y0, x1, y1, x2, y2, x3, y3);
+        ctx.lineTo(px, py);
+      }
+      ctx.strokeStyle = `rgba(139,92,246,${0.18 + glow})`; ctx.lineWidth = conn.thick; ctx.stroke();
+
+      // Dot trail (comet effect)
+      const offsets = [0, 0.015, 0.03, 0.048, 0.065];
+      const alphas  = [0.55, 0.28, 0.13, 0.06, 0.025];
+      const radii   = [1.5,  1.2,  0.9,  0.65, 0.4];
+      for (let ti = 0; ti < offsets.length; ti++) {
+        const tt = Math.max(0, conn.t - offsets[ti]);
+        if (tt <= 0 && ti > 0) continue;
+        const [dx, dy] = bezPt(tt, x0, y0, x1, y1, x2, y2, x3, y3);
+        ctx.globalAlpha = alphas[ti] + glow * 0.25;
+        ctx.fillStyle = '#a78bfa';
+        ctx.beginPath(); ctx.arc(dx, dy, radii[ti], 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      conn.t += conn.speed;
+      if (conn.t >= 1) {
+        conn.t = 1; conn.done = true;
+        flashMap.set(conn.toIdx, now);
+        totalRoutes++;
+      }
+    }
+
+    // ── Left nodes (violet) ──────────────────────────────────────────────────
+    for (let i = 0; i < 20; i++) {
+      const n = leftNodes[i], h2 = hovL === i;
+      ctx.globalAlpha = h2 ? 0.95 : 0.65;
+      ctx.fillStyle = h2 ? '#c4b5fd' : '#8b5cf6';
+      ctx.beginPath(); ctx.arc(n.x, n.y, h2 ? 5 : 3, 0, Math.PI * 2); ctx.fill();
+      if (W > 600) {
+        ctx.globalAlpha = h2 ? 0.85 : 0.35;
+        ctx.fillStyle = '#8b5cf6'; ctx.font = '7px "SF Mono",monospace';
+        ctx.textAlign = 'left'; ctx.fillText(n.domain, n.x + 7, n.y + 2.5);
+      }
+    }
+
+    // ── Right nodes (white / green flash) ────────────────────────────────────
+    for (let i = 0; i < 20; i++) {
+      const n = rightNodes[i], h2 = hovR === i;
+      const fs = flashMap.get(i), fa = fs !== undefined ? Math.max(0, 1 - (now - fs) / 1.3) : 0;
+      if (fa < 0.01) flashMap.delete(i);
+
+      const r2 = fa > 0.05 ? 3 + fa * 2.5 : (h2 ? 5 : 3);
+      ctx.globalAlpha = Math.max(0.5, fa > 0 ? 0.5 + fa * 0.5 : (h2 ? 0.95 : 0.5));
+      ctx.fillStyle   = fa > 0.05 ? `rgba(74,222,128,${0.5 + fa * 0.5})` : (h2 ? '#ffffff' : 'rgba(255,255,255,0.5)');
+      ctx.beginPath(); ctx.arc(n.x, n.y, r2, 0, Math.PI * 2); ctx.fill();
+
+      if (fa > 0.08) {
+        ctx.globalAlpha = fa * 0.18;
+        ctx.fillStyle = '#4ade80';
+        ctx.beginPath(); ctx.arc(n.x, n.y, 8 + fa * 5, 0, Math.PI * 2); ctx.fill();
+      }
+      if (W > 600) {
+        ctx.globalAlpha = h2 ? 0.8 : 0.26;
+        ctx.fillStyle = '#ffffff'; ctx.font = '7px "SF Mono",monospace';
+        ctx.textAlign = 'right'; ctx.fillText(n.company, n.x - 7, n.y + 2.5);
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    // ── Tooltip ──────────────────────────────────────────────────────────────
+    if (hovL >= 0) drawTooltip(true, hovL);
+    else if (hovR >= 0) drawTooltip(false, hovR);
+
+    // ── Counter ──────────────────────────────────────────────────────────────
+    ctx.save();
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(139,92,246,0.65)';
+    ctx.font = '11px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${totalRoutes.toLocaleString()} active routes`, W - 16, 24);
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '9px "SF Mono","Fira Code",monospace';
+    ctx.fillText('20 domains → 20 companies · 98.2% delivered', W - 16, 38);
+    ctx.restore();
+  }
+
+  // ─── Events ────────────────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', e => {
+    const r = wrap.getBoundingClientRect();
+    mouse = { x: e.clientX - r.left, y: e.clientY - r.top };
+  });
+  wrap.addEventListener('mouseleave', () => { mouse = null; hovL = -1; hovR = -1; });
+  wrap.addEventListener('touchstart', () => { mouse = null; }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+  const gt = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gt) gt.style.display = 'none';
+
+  // ─── FinalCTA: flowing mesh lines, no nodes ───────────────────────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const ctaCanvas = document.createElement('canvas');
+      ctaCanvas.setAttribute('aria-hidden', 'true');
+      ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+
+      const cc  = ctaCanvas.getContext('2d')!;
+      interface CtaFlow { fy: number; ty: number; t: number; spd: number; }
+      let ctaFlows: CtaFlow[] = [];
+      let ctaDpr = 1;
+
+      function buildCta() {
+        ctaFlows = [];
+        const H = ctaCanvas.height / ctaDpr;
+        for (let i = 0; i < 22; i++) {
+          const fy = (H * 0.04) + (i / 21) * (H * 0.92);
+          const ty = (H * 0.04) + (((i + 3) % 22) / 21) * (H * 0.92);
+          ctaFlows.push({ fy, ty, t: Math.random(), spd: 0.0008 + Math.random() * 0.0012 });
+        }
+      }
+
+      function resizeCta() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        const w = Math.round(rect.width), h = Math.round(rect.height);
+        ctaCanvas.width = w * ctaDpr; ctaCanvas.height = h * ctaDpr;
+        ctaCanvas.style.width = `${w}px`; ctaCanvas.style.height = `${h}px`;
+        cc.setTransform(ctaDpr, 0, 0, ctaDpr, 0, 0);
+        buildCta();
+      }
+
+      function frameCta() {
+        requestAnimationFrame(frameCta);
+        const W = ctaCanvas.width / ctaDpr, H = ctaCanvas.height / ctaDpr;
+        cc.clearRect(0, 0, W, H);
+        const lx = W * 0.04, rx = W * 0.96;
+        const c1x = W * 0.40, c2x = W * 0.60;
+
+        cc.beginPath();
+        for (const f of ctaFlows) { cc.moveTo(lx, f.fy); cc.bezierCurveTo(c1x, f.fy, c2x, f.ty, rx, f.ty); }
+        cc.strokeStyle = 'rgba(139,92,246,0.07)'; cc.lineWidth = 0.5; cc.stroke();
+
+        for (const f of ctaFlows) {
+          const [dx, dy] = bezPt(f.t, lx, f.fy, c1x, f.fy, c2x, f.ty, rx, f.ty);
+          cc.globalAlpha = 0.22; cc.fillStyle = '#8b5cf6';
+          cc.beginPath(); cc.arc(dx, dy, 1.5, 0, Math.PI * 2); cc.fill();
+          // trail
+          const t2 = Math.max(0, f.t - 0.02);
+          const [dx2, dy2] = bezPt(t2, lx, f.fy, c1x, f.fy, c2x, f.ty, rx, f.ty);
+          cc.globalAlpha = 0.08; cc.beginPath(); cc.arc(dx2, dy2, 1, 0, Math.PI * 2); cc.fill();
+          f.t = (f.t + f.spd) % 1;
+        }
+        cc.globalAlpha = 1;
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaCard);
+      resizeCta();
+      requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { ctaCanvas.style.opacity = '1'; });
+
+      const ctaGt = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGt) ctaGt.style.display = 'none';
+    }
+  }
+
+  }); // end ric
+</script>

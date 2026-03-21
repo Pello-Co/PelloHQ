@@ -1,0 +1,597 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloReach — Envelope Stream | Email Outreach at Scale" description="PelloReach delivers cold email outreach with 500+ warmed domains, AI-personalised sequences, and inbox placement technology that actually gets replies.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="reach-env-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99,102,241,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Data constants ────────────────────────────────────────────────────────
+  const FIRST_NAMES = ["Sarah","James","Emma","Michael","Sophie","Daniel","Rachel","Tom","Jessica","Alex","Chris","Lauren","David","Hannah","Ben","Kate","Ryan","Olivia","Mark","Lucy"];
+  const LAST_NAMES  = ["Chen","Williams","Patel","Thompson","Garcia","Anderson","Martinez","Johnson","Lee","Taylor","Brown","Wilson","Moore","Clark","Hall","Young","King","Wright","Scott","Green"];
+  const COMPANIES   = ["Acme Corp","TechFlow","DataSync","CloudNine","Nexus Labs","Horizon AI","Vertex Systems","PulseMedia","Zenith Group","Atlas Digital","BrightPath","CoreStack","DeepBlue","EdgePoint","FrontLine","GrowthLab","HyperScale","InnoVate","JetStream","KineticIO"];
+  const ROLES       = ["Head of Marketing","VP Growth","CMO","Marketing Director","Digital Lead","Growth Manager","Head of Demand Gen","Performance Lead","Brand Director","Acquisition Manager"];
+  const DOMAINS     = ["outreach-hub.io","connect-reach.co","mailflow-pro.com","sendgrid-alt.io","inbox-direct.co","pulse-mail.com","rapid-reach.io","smart-send.co","flow-mail.io","direct-reach.com"];
+  const SUBJECTS    = [
+    "Quick question about {company}'s growth strategy",
+    "{firstName}, saw your recent {company} launch",
+    "Idea for {company}'s outreach — 3 min read",
+    "{firstName} — {company} + Pello could be interesting",
+    "Re: scaling {company}'s pipeline",
+    "{firstName}, one thing about {company}'s email strategy",
+  ];
+  const BODY1 = [
+    "Hi {firstName}, I came across {company} and",
+    "I noticed {company} has been expanding —",
+    "Quick note: {company}'s outreach could be",
+    "{firstName}, we've helped teams like {company}",
+    "Saw your work at {company} — impressed by",
+    "Just wanted to reach out about {company}'s",
+  ];
+  const BODY2 = [
+    "thought this might be relevant for you.",
+    "our approach might save you 6+ hrs/wk.",
+    "3x better with AI personalisation.",
+    "triple their reply rates. Worth a chat?",
+    "your recent growth. Here's how we help.",
+    "pipeline — one idea that actually works.",
+  ];
+
+  function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function fillTemplate(tpl: string, firstName: string, company: string): string {
+    return tpl.replace(/\{firstName\}/g, firstName).replace(/\{company\}/g, company);
+  }
+
+  // ─── Lane config ───────────────────────────────────────────────────────────
+  const LANES = [
+    { yfrac: 0.25, speed: 0.8, scale: 0.7, alpha: 0.5 },
+    { yfrac: 0.50, speed: 0.5, scale: 1.0, alpha: 1.0 },
+    { yfrac: 0.75, speed: 0.3, scale: 0.8, alpha: 0.6 },
+  ];
+  const W_ENV = 60, H_ENV = 40; // base dimensions at scale 1
+
+  // ─── Types ─────────────────────────────────────────────────────────────────
+  type EType = 'outbound' | 'reply' | 'followup';
+  interface Env {
+    x: number; lane: number;
+    firstName: string; lastName: string; role: string; company: string;
+    fromName: string; fromDomain: string;
+    subject: string; body1: string; body2: string;
+    type: EType;
+    openState: number;   // 0=closed flap, 1=open flap
+    letterState: number; // 0=hidden letter, 1=visible
+    isPaused: boolean;
+  }
+
+  // ─── State ─────────────────────────────────────────────────────────────────
+  const canvas = document.querySelector<HTMLCanvasElement>('.reach-env-canvas')!;
+  const wrap   = document.getElementById('hero-wrap')!;
+  const ctx    = canvas.getContext('2d')!;
+  let envs: Env[]  = [];
+  let dpr          = 1;
+  let sentCount    = 4281;
+  let mouse: { x: number; y: number } | null = null;
+  let hoveredEnv: Env | null = null;
+
+  const AUTO: {
+    env: Env | null;
+    phase: 'idle' | 'opening' | 'open' | 'closing';
+    startTime: number;
+    nextTime: number;
+  } = { env: null, phase: 'idle', startTime: 0, nextTime: 3 };
+
+  // ─── Generate envelope data ────────────────────────────────────────────────
+  function makeEnv(lane: number, x: number): Env {
+    const firstName = pick(FIRST_NAMES);
+    const company   = pick(COMPANIES);
+    const r = Math.random();
+    const type: EType = r < 0.60 ? 'outbound' : r < 0.85 ? 'reply' : 'followup';
+    return {
+      x, lane, type,
+      firstName,
+      lastName:   pick(LAST_NAMES),
+      role:       pick(ROLES),
+      company,
+      fromName:   pick(FIRST_NAMES).toLowerCase(),
+      fromDomain: pick(DOMAINS),
+      subject:    fillTemplate(pick(SUBJECTS), firstName, company),
+      body1:      fillTemplate(pick(BODY1), firstName, company),
+      body2:      pick(BODY2),
+      openState:   0,
+      letterState: 0,
+      isPaused:    false,
+    };
+  }
+
+  // ─── Build all envelopes ───────────────────────────────────────────────────
+  function buildAll() {
+    envs = [];
+    const W = canvas.width / dpr;
+    const counts = [10, 8, 12];
+    for (let lane = 0; lane < 3; lane++) {
+      const cfg   = LANES[lane];
+      const w     = W_ENV * cfg.scale;
+      const gap   = Math.max(150, W / counts[lane]);
+      for (let i = 0; i < counts[lane]; i++) {
+        envs.push(makeEnv(lane, w / 2 + i * gap));
+      }
+    }
+  }
+
+  // ─── Resize ────────────────────────────────────────────────────────────────
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    const w = Math.round(rect.width), h = Math.round(rect.height);
+    canvas.width  = w * dpr; canvas.height = h * dpr;
+    canvas.style.width  = `${w}px`; canvas.style.height = `${h}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildAll();
+  }
+
+  // ─── Draw one envelope ─────────────────────────────────────────────────────
+  function drawEnv(env: Env, laneY: number, scale: number, alpha: number) {
+    const w = W_ENV * scale, h = H_ENV * scale;
+    const ex = env.x - w / 2, ey = laneY - h / 2;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    // Body fill
+    ctx.fillStyle = 'rgba(6,7,18,0.5)';
+    ctx.beginPath(); ctx.rect(ex, ey, w, h); ctx.fill();
+
+    // Body border (color by type)
+    const bc = env.type === 'outbound' ? 'rgba(139,92,246,0.28)'
+             : env.type === 'reply'    ? 'rgba(74,222,128,0.28)'
+             :                           'rgba(251,191,36,0.28)';
+    ctx.strokeStyle = bc; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.rect(ex, ey, w, h); ctx.stroke();
+
+    // Diagonal fold lines
+    ctx.globalAlpha = alpha * 0.12;
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(ex, ey + h); ctx.lineTo(ex + w / 2, ey + h * 0.6);
+    ctx.moveTo(ex + w, ey + h); ctx.lineTo(ex + w / 2, ey + h * 0.6);
+    ctx.stroke();
+
+    // Flap triangle (apex moves from y+flapDepth when closed to y-flapDepth when open)
+    ctx.globalAlpha = alpha;
+    const flapDepth = h * 0.4;
+    const apexY = ey + flapDepth * (1 - 2 * env.openState);
+    const fc = env.type === 'outbound' ? `rgba(139,92,246,${0.22 + env.openState * 0.1})`
+             : env.type === 'reply'    ? `rgba(74,222,128,${0.22 + env.openState * 0.1})`
+             :                           `rgba(251,191,36,${0.22 + env.openState * 0.1})`;
+    ctx.fillStyle = fc; ctx.strokeStyle = bc; ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(ex, ey); ctx.lineTo(ex + w, ey); ctx.lineTo(ex + w / 2, apexY);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+
+    // Text on face (larger envelopes only)
+    if (w >= 44) {
+      ctx.globalAlpha = alpha * 0.48;
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `${Math.max(6, Math.floor(6.5 + (w - 44) / 14))}px "SF Mono",monospace`;
+      ctx.textAlign = 'left';
+      ctx.fillText(`To: ${env.firstName}`, ex + 3, ey + h * 0.54);
+      ctx.globalAlpha = alpha * 0.26;
+      ctx.fillText(env.subject.slice(0, Math.floor(w / 4.5)), ex + 3, ey + h * 0.76);
+    }
+
+    // Letter rising from open envelope
+    if (env.openState > 0.35 && env.letterState > 0) {
+      const ls = env.letterState;
+      const lh = h * 0.5 * Math.min(1, ls * 1.4);
+      const ly = ey + h * 0.1 - ls * h * 0.35;
+
+      ctx.globalAlpha = alpha * ls * 0.8;
+      ctx.fillStyle = 'rgba(255,255,255,0.07)';
+      ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 0.5;
+      ctx.beginPath(); ctx.rect(ex + 3, ly, w - 6, lh); ctx.fill(); ctx.stroke();
+
+      if (w >= 50 && ls > 0.4) {
+        ctx.font = '7px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.textAlign = 'left';
+        ctx.globalAlpha = alpha * Math.min(1, (ls - 0.4) * 2.5);
+        ctx.fillText(env.body1.slice(0, 24), ex + 6, ly + 10);
+        if (ls > 0.65) {
+          ctx.globalAlpha = alpha * Math.min(1, (ls - 0.65) * 4);
+          ctx.fillText(env.body2.slice(0, 24), ex + 6, ly + 20);
+        }
+      }
+    }
+
+    ctx.restore();
+  }
+
+  // ─── Draw hover (big detail view) ─────────────────────────────────────────
+  function drawHoverEnv(env: Env, laneY: number) {
+    const W = canvas.width / dpr;
+    const BW = 210, BH = 148;
+    let bx = env.x - BW / 2, by = laneY - BH / 2;
+    bx = Math.max(10, Math.min(W - BW - 10, bx));
+    by = Math.max(10, by);
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(139,92,246,0.35)'; ctx.shadowBlur = 28;
+    ctx.fillStyle = 'rgba(6,7,18,0.92)';
+    ctx.beginPath(); ctx.rect(bx, by + BH * 0.22, BW, BH * 0.78); ctx.fill();
+    ctx.shadowBlur = 0;
+
+    const bc = env.type === 'outbound' ? 'rgba(139,92,246,0.5)'
+             : env.type === 'reply'    ? 'rgba(74,222,128,0.5)'
+             :                           'rgba(251,191,36,0.5)';
+    ctx.strokeStyle = bc; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.rect(bx, by + BH * 0.22, BW, BH * 0.78); ctx.stroke();
+
+    // Open flap
+    const fc = env.type === 'outbound' ? 'rgba(139,92,246,0.32)'
+             : env.type === 'reply'    ? 'rgba(74,222,128,0.32)'
+             :                           'rgba(251,191,36,0.32)';
+    ctx.fillStyle = fc; ctx.strokeStyle = bc; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(bx, by + BH * 0.22);
+    ctx.lineTo(bx + BW, by + BH * 0.22);
+    ctx.lineTo(bx + BW / 2, by);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+
+    // Email content
+    const pad = 12, cy = by + BH * 0.24 + 10;
+    ctx.textAlign = 'left';
+    ctx.font = '9px "SF Mono","Fira Code",monospace';
+    ctx.fillStyle = '#a78bfa'; ctx.globalAlpha = 0.9;
+    ctx.fillText(`FROM: ${env.fromName}@${env.fromDomain}`, bx + pad, cy);
+    ctx.font = 'bold 12px -apple-system,sans-serif';
+    ctx.fillStyle = '#ffffff'; ctx.globalAlpha = 1;
+    ctx.fillText(`${env.firstName} ${env.lastName}`, bx + pad, cy + 16);
+    ctx.font = '9px "SF Mono",monospace';
+    ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.globalAlpha = 1;
+    ctx.fillText(`${env.role} at ${env.company}`, bx + pad, cy + 29);
+    ctx.font = '10px -apple-system,sans-serif';
+    ctx.fillStyle = '#ffffff'; ctx.globalAlpha = 0.9;
+    ctx.fillText(env.subject.slice(0, 26) + (env.subject.length > 26 ? '…' : ''), bx + pad, cy + 44);
+    ctx.font = '9px -apple-system,sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.72)';
+    ctx.fillText(env.body1.slice(0, 29), bx + pad, cy + 58);
+    ctx.fillText(env.body2.slice(0, 29), bx + pad, cy + 70);
+
+    ctx.restore();
+  }
+
+  // ─── Frame ─────────────────────────────────────────────────────────────────
+  function frame() {
+    requestAnimationFrame(frame);
+    if (!envs.length) return;
+
+    const W   = canvas.width / dpr;
+    const H   = canvas.height / dpr;
+    const now = performance.now() * 0.001;
+    ctx.clearRect(0, 0, W, H);
+
+    const mx = mouse ? mouse.x : -99999, my = mouse ? mouse.y : -99999;
+
+    // Hover detection (middle lane only)
+    hoveredEnv = null;
+    const midLaneY = H * LANES[1].yfrac;
+    for (const env of envs) {
+      if (env.lane !== 1) continue;
+      const cfg = LANES[1];
+      const hw = W_ENV * cfg.scale * 0.65, hh = H_ENV * cfg.scale * 0.8;
+      if (Math.abs(env.x - mx) < hw && Math.abs(midLaneY - my) < hh) { hoveredEnv = env; break; }
+    }
+
+    // Auto-open state machine
+    const ANIM = 0.5, OPEN_DUR = 3.0;
+    if (AUTO.phase === 'idle' && now >= AUTO.nextTime) {
+      const candidates = envs.filter(e => e.lane === 1 && e.x > 120 && e.x < W - 120 && e !== hoveredEnv);
+      if (candidates.length > 0) {
+        AUTO.env = candidates[Math.floor(Math.random() * candidates.length)];
+        AUTO.phase = 'opening'; AUTO.startTime = now;
+      } else {
+        AUTO.nextTime = now + 1;
+      }
+    } else if (AUTO.phase === 'opening') {
+      const p = Math.min(1, (now - AUTO.startTime) / ANIM);
+      if (AUTO.env) AUTO.env.openState = p;
+      if (p >= 1) { AUTO.phase = 'open'; AUTO.startTime = now; }
+    } else if (AUTO.phase === 'open') {
+      if (AUTO.env) AUTO.env.letterState = Math.min(1, (now - AUTO.startTime) / 0.3);
+      if (now - AUTO.startTime >= OPEN_DUR) { AUTO.phase = 'closing'; AUTO.startTime = now; }
+    } else if (AUTO.phase === 'closing') {
+      const p = Math.min(1, (now - AUTO.startTime) / ANIM);
+      if (AUTO.env) { AUTO.env.openState = 1 - p; AUTO.env.letterState = 1 - p; }
+      if (p >= 1) {
+        if (AUTO.env) { AUTO.env.openState = 0; AUTO.env.letterState = 0; }
+        AUTO.env = null; AUTO.phase = 'idle'; AUTO.nextTime = now + 3;
+      }
+    }
+
+    sentCount += 0.05; // ~3/sec at 60fps
+
+    // Draw lanes (back to front: 0, 2, 1)
+    const drawOrder = [0, 2, 1];
+    let hovBigEnv: Env | null = null;
+    let hovBigLaneY = 0;
+
+    for (const laneIdx of drawOrder) {
+      const cfg   = LANES[laneIdx];
+      const laneY = H * cfg.yfrac;
+
+      for (const env of envs) {
+        if (env.lane !== laneIdx) continue;
+
+        // Hover override for middle lane
+        if (env === hoveredEnv && laneIdx === 1) {
+          hovBigEnv = env; hovBigLaneY = laneY;
+          continue; // draw big version after
+        }
+
+        drawEnv(env, laneY, cfg.scale, cfg.alpha);
+
+        // Advance position (skip if paused by hover)
+        if (!env.isPaused) {
+          env.x -= cfg.speed;
+          if (env.x + (W_ENV * cfg.scale) / 2 < 0) {
+            // Respawn at right
+            const newEnv = makeEnv(env.lane, W + (W_ENV * cfg.scale) / 2 + Math.random() * 200);
+            // Copy position into existing object
+            Object.assign(env, newEnv);
+            sentCount += 1;
+          }
+        }
+      }
+    }
+
+    // Draw hovered envelope big view last (on top)
+    if (hovBigEnv) {
+      drawHoverEnv(hovBigEnv, hovBigLaneY);
+    }
+
+    // ── Counter (top-right) ──────────────────────────────────────────────────
+    const sent = Math.floor(sentCount).toLocaleString();
+    ctx.save();
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(139,92,246,0.65)';
+    ctx.font = '11px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${sent} emails sent`, W - 16, 24);
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '9px "SF Mono","Fira Code",monospace';
+    ctx.fillText('AI-written · avg 3.2s per email · 0 duplicates', W - 16, 38);
+
+    // Stacked envelope decoration near counter
+    ctx.globalAlpha = 1;
+    for (let s = 3; s >= 0; s--) {
+      const sx = W - 16 - s * 2 - 120, sy = 8 + s * 2;
+      const sw = 18, sh = 12;
+      ctx.globalAlpha = 0.12 - s * 0.02;
+      ctx.fillStyle = 'rgba(139,92,246,1)';
+      ctx.strokeStyle = 'rgba(139,92,246,0.3)'; ctx.lineWidth = 0.5;
+      ctx.beginPath(); ctx.rect(sx, sy, sw, sh); ctx.fill(); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  // ─── Events ────────────────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', e => {
+    const r = wrap.getBoundingClientRect();
+    mouse = { x: e.clientX - r.left, y: e.clientY - r.top };
+  });
+  wrap.addEventListener('mouseleave', () => { mouse = null; hoveredEnv = null; });
+  wrap.addEventListener('touchstart', () => { mouse = null; }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+  const gt = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gt) gt.style.display = 'none';
+
+  // ─── FinalCTA: simplified flowing rectangles ──────────────────────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const ctaCanvas = document.createElement('canvas');
+      ctaCanvas.setAttribute('aria-hidden', 'true');
+      ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+
+      const cc = ctaCanvas.getContext('2d')!;
+      type CType = 'outbound' | 'reply' | 'followup';
+      interface CtaRect { x: number; lane: number; type: CType; }
+      let rects: CtaRect[] = [];
+      let ctaDpr = 1;
+      const CTA_LANES = [
+        { yfrac: 0.25, speed: 0.7, scale: 0.65, alpha: 0.35 },
+        { yfrac: 0.55, speed: 0.45, scale: 0.9, alpha: 0.45 },
+        { yfrac: 0.80, speed: 0.28, scale: 0.75, alpha: 0.38 },
+      ];
+      const CTYPES: CType[] = ['outbound','outbound','outbound','reply','reply','followup'];
+
+      function buildCtaRects() {
+        rects = [];
+        const W = ctaCanvas.width / ctaDpr;
+        for (let lane = 0; lane < 3; lane++) {
+          const cnt = lane === 1 ? 7 : 9;
+          const gap = Math.max(120, W / cnt);
+          for (let i = 0; i < cnt; i++) {
+            rects.push({ x: i * gap, lane, type: CTYPES[Math.floor(Math.random() * CTYPES.length)] });
+          }
+        }
+      }
+
+      function resizeCta() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        const w = Math.round(rect.width), h = Math.round(rect.height);
+        ctaCanvas.width = w * ctaDpr; ctaCanvas.height = h * ctaDpr;
+        ctaCanvas.style.width = `${w}px`; ctaCanvas.style.height = `${h}px`;
+        cc.setTransform(ctaDpr, 0, 0, ctaDpr, 0, 0);
+        buildCtaRects();
+      }
+
+      function frameCta() {
+        requestAnimationFrame(frameCta);
+        const W = ctaCanvas.width / ctaDpr, H = ctaCanvas.height / ctaDpr;
+        cc.clearRect(0, 0, W, H);
+
+        for (const rect of rects) {
+          const cfg   = CTA_LANES[rect.lane];
+          const laneY = H * cfg.yfrac;
+          const rw = W_ENV * cfg.scale, rh = H_ENV * cfg.scale;
+          const rx = rect.x - rw / 2, ry = laneY - rh / 2;
+
+          const bc = rect.type === 'outbound' ? 'rgba(139,92,246,0.22)'
+                   : rect.type === 'reply'    ? 'rgba(74,222,128,0.22)'
+                   :                            'rgba(251,191,36,0.22)';
+          cc.globalAlpha = cfg.alpha;
+          cc.fillStyle = 'rgba(6,7,18,0.35)';
+          cc.beginPath(); cc.rect(rx, ry, rw, rh); cc.fill();
+          cc.strokeStyle = bc; cc.lineWidth = 0.8;
+          cc.beginPath(); cc.rect(rx, ry, rw, rh); cc.stroke();
+
+          // Simple flap hint
+          cc.globalAlpha = cfg.alpha * 0.5;
+          cc.fillStyle = bc;
+          cc.beginPath();
+          cc.moveTo(rx, ry); cc.lineTo(rx + rw, ry); cc.lineTo(rx + rw / 2, ry + rh * 0.35);
+          cc.closePath(); cc.fill();
+
+          rect.x -= cfg.speed;
+          if (rect.x + rw / 2 < 0) {
+            rect.x = W + rw / 2 + Math.random() * 150;
+            rect.type = CTYPES[Math.floor(Math.random() * CTYPES.length)];
+          }
+        }
+        cc.globalAlpha = 1;
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaCard);
+      resizeCta();
+      requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { ctaCanvas.style.opacity = '1'; });
+
+      const ctaGt = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGt) ctaGt.style.display = 'none';
+    }
+  }
+
+  }); // end ric
+</script>
