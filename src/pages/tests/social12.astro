@@ -284,35 +284,78 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
     }
   }
 
-  function drawGlobeDots(beamY: number) {
+  // Data activity pulses — random city flashes
+  interface ActivityPulse { sx: number; sy: number; born: number; duration: number; color: [number,number,number]; }
+  let activityPulses: ActivityPulse[] = [];
+  let lastPulseSpawn = 0;
+
+  function drawGlobeDots(beamY: number, t: number) {
+    // Pass 1: ocean dots (very subtle grid texture)
     for (const dot of globeDots) {
+      if (dot.isLand) continue;
       const [rx, ry, rz] = applyRotations(dot.x, dot.y, dot.z);
       if (rz < -0.05) continue;
       const sx = GLOBE_CX + rx * GLOBE_R;
       const sy = GLOBE_CY - ry * GLOBE_R;
       const depth = Math.max(0, rz);
       const nearBeam = Math.abs(sy - beamY) < 8;
-      if (dot.isLand) {
-        ctx.globalAlpha = nearBeam ? 0.9 : (0.15 + depth * 0.35);
-        ctx.fillStyle = 'rgb(0,242,234)';
-        ctx.beginPath(); ctx.arc(sx, sy, 1.0 + depth * 0.8, 0, Math.PI * 2); ctx.fill();
-      } else {
-        ctx.globalAlpha = nearBeam ? 0.08 : (0.02 + depth * 0.03);
-        ctx.fillStyle = 'rgb(20,80,80)';
-        ctx.beginPath(); ctx.arc(sx, sy, 0.6, 0, Math.PI * 2); ctx.fill();
-      }
+      ctx.globalAlpha = nearBeam ? 0.10 : (0.015 + depth * 0.025);
+      ctx.fillStyle = 'rgb(0,80,78)';
+      ctx.beginPath(); ctx.arc(sx, sy, 0.5, 0, Math.PI * 2); ctx.fill();
     }
+
+    // Pass 2: land dots with glow built in (single pass for performance)
     ctx.save();
-    ctx.shadowColor = 'rgba(0,242,234,0.9)'; ctx.shadowBlur = 4;
+    ctx.shadowColor = 'rgba(0,242,234,0.6)';
+    ctx.shadowBlur = 5;
     for (const dot of globeDots) {
       if (!dot.isLand) continue;
       const [rx, ry, rz] = applyRotations(dot.x, dot.y, dot.z);
-      if (rz < 0) continue;
-      ctx.globalAlpha = rz * 0.08;
-      ctx.fillStyle = 'rgb(0,242,234)';
-      ctx.beginPath(); ctx.arc(GLOBE_CX + rx * GLOBE_R, GLOBE_CY - ry * GLOBE_R, 2, 0, Math.PI * 2); ctx.fill();
+      if (rz < -0.05) continue;
+      const sx = GLOBE_CX + rx * GLOBE_R;
+      const sy = GLOBE_CY - ry * GLOBE_R;
+      const depth = Math.max(0, rz);
+      const nearBeam = Math.abs(sy - beamY) < 10;
+
+      // Enhanced: land dots flicker subtly like a hologram
+      const flicker = 0.92 + Math.sin(t * 8 + dot.x * 20 + dot.y * 30) * 0.08;
+      const baseAlpha = (0.18 + depth * 0.40) * flicker;
+      ctx.globalAlpha = nearBeam ? Math.min(1, baseAlpha + 0.5) : baseAlpha;
+      ctx.fillStyle = nearBeam ? 'rgb(150,255,252)' : 'rgb(0,242,234)';
+      const rad = (1.0 + depth * 0.9) * (nearBeam ? 1.4 : 1);
+      ctx.beginPath(); ctx.arc(sx, sy, rad, 0, Math.PI * 2); ctx.fill();
     }
     ctx.restore();
+
+    // Pass 3: Activity pulses (random city flashes showing data activity)
+    if (t - lastPulseSpawn > 0.4) {
+      lastPulseSpawn = t;
+      // Pick a random visible land dot
+      const candidates: {sx:number;sy:number}[] = [];
+      for (let i = 0; i < phones.length; i++) {
+        const p = project(phones[i].x3d, phones[i].y3d, phones[i].z3d);
+        if (p.visible) candidates.push({sx:p.sx, sy:p.sy});
+      }
+      if (candidates.length > 0) {
+        const c = candidates[Math.floor(Math.random() * candidates.length)];
+        const acct = phones[Math.floor(Math.random() * phones.length)].accounts[0];
+        activityPulses.push({ sx: c.sx + (Math.random()-0.5)*15, sy: c.sy + (Math.random()-0.5)*15, born: t, duration: 1.2, color: acct.color });
+      }
+    }
+    // Draw and clean up pulses
+    for (let i = activityPulses.length - 1; i >= 0; i--) {
+      const pulse = activityPulses[i];
+      const age = t - pulse.born;
+      if (age > pulse.duration) { activityPulses.splice(i, 1); continue; }
+      const progress = age / pulse.duration;
+      const radius = 3 + progress * 18;
+      const alpha = (1 - progress) * 0.25;
+      const [pr,pg,pb] = pulse.color;
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = `rgb(${pr},${pg},${pb})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(pulse.sx, pulse.sy, radius, 0, Math.PI * 2); ctx.stroke();
+    }
     ctx.globalAlpha = 1;
   }
 
@@ -328,13 +371,30 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
       ctx.beginPath(); ctx.moveTo(GLOBE_CX-cr,y); ctx.lineTo(GLOBE_CX+cr,y); ctx.stroke();
     }
     ctx.globalAlpha = 1;
-    // Scan beam glow line
+    // Scan beam glow line — enhanced with trail
     if (beamY > GLOBE_CY-GLOBE_R && beamY < GLOBE_CY+GLOBE_R) {
       const dy = beamY-GLOBE_CY;
       const cr = Math.sqrt(Math.max(0, GLOBE_R*GLOBE_R - dy*dy));
+
+      // Soft glow trail above the beam
+      for (let offset = -12; offset <= 0; offset += 2) {
+        const trailY = beamY + offset;
+        const tdy = trailY - GLOBE_CY;
+        const tcr = Math.sqrt(Math.max(0, GLOBE_R*GLOBE_R - tdy*tdy));
+        if (tcr < 2) continue;
+        const trailAlpha = 0.03 * (1 + offset / 12);
+        ctx.globalAlpha = trailAlpha;
+        ctx.strokeStyle = '#00f2ea';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(GLOBE_CX-tcr, trailY); ctx.lineTo(GLOBE_CX+tcr, trailY); ctx.stroke();
+      }
+
+      // Main beam line
       const grad = ctx.createLinearGradient(GLOBE_CX-cr,0,GLOBE_CX+cr,0);
-      grad.addColorStop(0,'rgba(0,242,234,0)'); grad.addColorStop(0.5,'rgba(0,242,234,0.18)'); grad.addColorStop(1,'rgba(0,242,234,0)');
-      ctx.globalAlpha=1; ctx.lineWidth=1.5; ctx.strokeStyle=grad;
+      grad.addColorStop(0,'rgba(0,242,234,0)'); grad.addColorStop(0.3,'rgba(0,242,234,0.25)');
+      grad.addColorStop(0.5,'rgba(0,242,234,0.35)'); grad.addColorStop(0.7,'rgba(0,242,234,0.25)');
+      grad.addColorStop(1,'rgba(0,242,234,0)');
+      ctx.globalAlpha=1; ctx.lineWidth=2; ctx.strokeStyle=grad;
       ctx.beginPath(); ctx.moveTo(GLOBE_CX-cr,beamY); ctx.lineTo(GLOBE_CX+cr,beamY); ctx.stroke();
     }
   }
@@ -475,19 +535,48 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
     ctx.restore();
 
     drawScanLines(beamY);
-    drawGlobeDots(beamY);
+    drawGlobeDots(beamY, t);
 
     drawCityLabels();
 
-    // "SCANNING..." flicker
+    // Holographic data readouts around the globe
+    ctx.save();
+    ctx.font='6px "SF Mono","Fira Code",monospace'; ctx.textAlign='left';
+
+    // Top readout
     const cycle = t%2.3;
     if (cycle < 0.7) {
-      const fa = 0.2*(1-cycle/0.7);
-      ctx.save(); ctx.globalAlpha=fa; ctx.fillStyle='#00f2ea';
-      ctx.font='7px "SF Mono","Fira Code",monospace'; ctx.textAlign='center';
-      ctx.fillText('SCANNING...', GLOBE_CX, GLOBE_CY-GLOBE_R-12);
-      ctx.restore();
+      const fa = 0.22*(1-cycle/0.7);
+      ctx.globalAlpha=fa; ctx.fillStyle='#00f2ea'; ctx.textAlign='center';
+      ctx.fillText('SCANNING...', GLOBE_CX, GLOBE_CY-GLOBE_R-16);
     }
+
+    // Left side data
+    ctx.textAlign='right';
+    ctx.globalAlpha = 0.12 + Math.sin(t*1.3)*0.03;
+    ctx.fillStyle='#00f2ea';
+    const leftX = GLOBE_CX - GLOBE_R - 14;
+    ctx.fillText('PHONES: ' + phones.length, leftX, GLOBE_CY - 30);
+    ctx.fillText('CITIES: 12', leftX, GLOBE_CY - 18);
+    ctx.fillText('UPTIME: 99.7%', leftX, GLOBE_CY - 6);
+    ctx.globalAlpha = 0.08 + Math.sin(t*0.9+1)*0.03;
+    ctx.fillText('LATENCY: 12ms', leftX, GLOBE_CY + 10);
+    ctx.fillText('BANDWIDTH: OK', leftX, GLOBE_CY + 22);
+
+    // Right side data
+    ctx.textAlign='left';
+    const rightX = GLOBE_CX + GLOBE_R + 14;
+    ctx.globalAlpha = 0.12 + Math.sin(t*1.1+2)*0.03;
+    const totalAccts = phones.reduce((s,p)=>s+p.accounts.length,0);
+    const totalPosts = phones.reduce((s,p)=>s+p.postsToday,0);
+    ctx.fillText('ACCOUNTS: ' + totalAccts, rightX, GLOBE_CY - 30);
+    ctx.fillText('POSTS/DAY: ' + totalPosts, rightX, GLOBE_CY - 18);
+    ctx.fillText('PLATFORMS: 6', rightX, GLOBE_CY - 6);
+    ctx.globalAlpha = 0.08 + Math.sin(t*0.7+3)*0.03;
+    ctx.fillText('AI STATUS: ACTIVE', rightX, GLOBE_CY + 10);
+    ctx.fillText('SYNC: REAL-TIME', rightX, GLOBE_CY + 22);
+
+    ctx.restore();
 
     hoveredPhone = findHovered();
 
