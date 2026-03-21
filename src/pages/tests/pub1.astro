@@ -1,0 +1,704 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloPublish — Content Calendar | Pello" description="PelloPublish automates content creation across every format and platform. Watch your content calendar fill up with AI-generated posts, blogs, reels, and more — automatically scheduled and published.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="pub-cal-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99,102,241,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Data ──────────────────────────────────────────────────────────────────
+  const PLATFORMS: { name: string; icon: string; color: [number,number,number] }[] = [
+    { name: "Instagram", icon: "IG", color: [225, 48, 108] },
+    { name: "LinkedIn",  icon: "LI", color: [10, 102, 194] },
+    { name: "Twitter/X", icon: "X",  color: [139, 92, 246] },
+    { name: "TikTok",    icon: "TT", color: [0, 242, 234]  },
+    { name: "Blog",      icon: "BL", color: [168, 85, 247] },
+    { name: "YouTube",   icon: "YT", color: [255, 0, 0]    },
+  ];
+
+  const CONTENT_TYPES = ["Carousel","Reel","Story","Blog Post","Thread","Short","Article","UGC Clip","Infographic","Poll"];
+  const TOPICS_TMPL   = [
+    "5 Ways AI is Changing {industry}",
+    "Behind the Scenes: How We {action}",
+    "Why {topic} Matters More Than Ever",
+    "{number} Tips for Better {goal}",
+    "The Future of {industry} in 2026",
+    "How {company} Grew 3x with {strategy}",
+    "Stop Doing {mistake} — Do This Instead",
+    "A Day in the Life of a {role}",
+    "{topicA} vs {topicB}: Which Wins?",
+    "We Tested {strategy} for 30 Days — Here's What Happened",
+  ];
+  const INDUSTRIES = ["SaaS","E-commerce","Healthcare","Finance","Education","Real Estate"];
+  const ACTIONS    = ["Build Products","Scale Revenue","Hire Remotely","Automate Marketing","Close Deals"];
+  const TOPIC_WORDS= ["Content Marketing","SEO","Brand Building","Lead Gen","Social Proof","Customer Retention"];
+  const GOALS      = ["Engagement","Conversions","Brand Awareness","Lead Quality","Content ROI"];
+  const STRATEGIES = ["Content Repurposing","AI Writing","Video-First","Community Building","Influencer Marketing"];
+  const MISTAKES   = ["Posting Without Strategy","Ignoring Analytics","One-Size-Fits-All Content","Manual Scheduling"];
+  const COMPANIES  = ["Acme","TechFlow","DataSync","CloudNine","Nexus","Horizon","Vertex","Pulse"];
+  const ROLES      = ["Founder","CMO","Growth Hacker","Content Creator","SEO Manager"];
+  const TIMES      = ["9:00 AM","10:30 AM","12:00 PM","1:15 PM","3:00 PM","4:30 PM","6:00 PM","7:45 PM","8:30 PM"];
+  const DAY_HEADERS= ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const ENGAGEMENTS= ["1.2k likes","847 likes","2.3k views","412 shares","156 comments","3.1k reach","967 saves"];
+
+  function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function generateTopic(): string {
+    const tmpl = pick(TOPICS_TMPL);
+    return tmpl
+      .replace('{industry}',  pick(INDUSTRIES))
+      .replace('{action}',    pick(ACTIONS))
+      .replace('{topicA}',    pick(TOPIC_WORDS))
+      .replace('{topicB}',    pick(TOPIC_WORDS))
+      .replace('{topic}',     pick(TOPIC_WORDS))
+      .replace('{number}',    String(3 + Math.floor(Math.random() * 7)))
+      .replace('{goal}',      pick(GOALS))
+      .replace('{company}',   pick(COMPANIES))
+      .replace('{strategy}',  pick(STRATEGIES))
+      .replace('{mistake}',   pick(MISTAKES))
+      .replace('{role}',      pick(ROLES));
+  }
+
+  // ─── Types ─────────────────────────────────────────────────────────────────
+  interface Particle { dx: number; dy: number; life: number; maxLife: number; }
+
+  interface Marker {
+    platformIdx: number;
+    contentType: string;
+    topic: string;
+    time: string;
+    day: string;
+    status: 0 | 1 | 2; // 0=Published 1=Scheduled 2=Draft
+    engagement: string;
+    slotCol: number; slotRow: number; // 0-3 col, 0-1 row within cell
+    ax: number; ay: number;          // absolute canvas position
+    flashStart: number;
+    particles: Particle[];
+  }
+
+  interface CalendarCell {
+    gridCol: number; gridRow: number; dayNum: number;
+    markers: Marker[];
+  }
+
+  // ─── Canvas setup ──────────────────────────────────────────────────────────
+  const canvas  = document.querySelector<HTMLCanvasElement>('.pub-cal-canvas')!;
+  const wrap    = document.getElementById('hero-wrap')!;
+  const ctx     = canvas.getContext('2d')!;
+
+  const CAL_COLS   = 7;
+  const CAL_ROWS   = 5;
+  const SIDE_PAD   = 20;
+  const CAL_TOP    = 76;  // space above calendar (header row sits above)
+  const HEADER_H   = 22;  // height of Mon-Sun labels row
+  const MARKER_H_SPACING = 14;
+  const MARKER_V_SPACING = 14;
+  const MARKER_SIZE = 6;
+
+  let cells: CalendarCell[][] = [];
+  let allMarkers: { cell: CalendarCell; marker: Marker }[] = [];
+  let mouse: { x: number; y: number } | null = null;
+  let hoveredMarker: Marker | null = null;
+  let publishedCount = 0;
+  let lastPublishTime = 0;
+  let lastDraftTime   = 0;
+  let dpr = 1;
+
+  // ─── Rounded rect helper ───────────────────────────────────────────────────
+  function rrect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+    c.beginPath();
+    c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.quadraticCurveTo(x+w,y,x+w,y+r);
+    c.lineTo(x+w,y+h-r); c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    c.lineTo(x+r,y+h); c.quadraticCurveTo(x,y+h,x,y+h-r);
+    c.lineTo(x,y+r); c.quadraticCurveTo(x,y,x+r,y);
+    c.closePath();
+  }
+
+  // ─── Marker factory ────────────────────────────────────────────────────────
+  function makeMarker(cell: CalendarCell, slotIdx: number, status: 0 | 1 | 2): Marker {
+    const slotCol = slotIdx % 4;
+    const slotRow = Math.floor(slotIdx / 4);
+    return {
+      platformIdx: Math.floor(Math.random() * PLATFORMS.length),
+      contentType: pick(CONTENT_TYPES),
+      topic: generateTopic(),
+      time: pick(TIMES),
+      day: DAY_HEADERS[cell.gridCol],
+      status,
+      engagement: pick(ENGAGEMENTS),
+      slotCol, slotRow,
+      ax: 0, ay: 0,
+      flashStart: -99,
+      particles: [],
+    };
+  }
+
+  // ─── Build calendar ────────────────────────────────────────────────────────
+  function buildCalendar() {
+    cells = [];
+    allMarkers = [];
+    publishedCount = 0;
+    const now = performance.now() * 0.001;
+    lastPublishTime = now;
+    lastDraftTime   = now;
+
+    for (let r = 0; r < CAL_ROWS; r++) {
+      cells[r] = [];
+      for (let c = 0; c < CAL_COLS; c++) {
+        const dayNum = r * CAL_COLS + c + 1;
+        const cell: CalendarCell = { gridCol: c, gridRow: r, dayNum, markers: [] };
+        const count = 3 + Math.floor(Math.random() * 6); // 3–8
+        for (let i = 0; i < count; i++) {
+          const sr = Math.random();
+          const status: 0 | 1 | 2 = sr < 0.30 ? 0 : sr < 0.75 ? 1 : 2;
+          const m = makeMarker(cell, i, status);
+          if (status === 0) publishedCount++;
+          cell.markers.push(m);
+          allMarkers.push({ cell, marker: m });
+        }
+        cells[r][c] = cell;
+      }
+    }
+    updatePositions();
+  }
+
+  // ─── Update absolute marker positions ─────────────────────────────────────
+  function updatePositions() {
+    const W = canvas.width / dpr;
+    const H = canvas.height / dpr;
+    const availW = W - SIDE_PAD * 2;
+    const availH = H - CAL_TOP - HEADER_H - 16;
+    const cellW = availW / CAL_COLS;
+    const cellH = availH / CAL_ROWS;
+
+    for (let r = 0; r < CAL_ROWS; r++) {
+      for (let c = 0; c < CAL_COLS; c++) {
+        if (!cells[r] || !cells[r][c]) continue;
+        const cell = cells[r][c];
+        const cellLeft = SIDE_PAD + c * cellW;
+        const cellTop  = CAL_TOP + HEADER_H + r * cellH;
+        for (const m of cell.markers) {
+          m.ax = cellLeft + 8 + m.slotCol * MARKER_H_SPACING;
+          m.ay = cellTop  + 20 + m.slotRow * MARKER_V_SPACING;
+        }
+      }
+    }
+  }
+
+  // ─── Resize ────────────────────────────────────────────────────────────────
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    const w = Math.round(rect.width);
+    const h = Math.round(rect.height);
+    canvas.width  = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width  = `${w}px`;
+    canvas.style.height = `${h}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildCalendar();
+  }
+
+  // ─── Cell layout helper ────────────────────────────────────────────────────
+  function getCellBounds(gridCol: number, gridRow: number) {
+    const W = canvas.width / dpr;
+    const H = canvas.height / dpr;
+    const cellW = (W - SIDE_PAD * 2) / CAL_COLS;
+    const cellH = (H - CAL_TOP - HEADER_H - 16) / CAL_ROWS;
+    return {
+      x: SIDE_PAD + gridCol * cellW,
+      y: CAL_TOP + HEADER_H + gridRow * cellH,
+      w: cellW,
+      h: cellH,
+    };
+  }
+
+  // ─── Tooltip ───────────────────────────────────────────────────────────────
+  function drawTooltip(m: Marker) {
+    const W = canvas.width / dpr;
+    const px = m.ax, py = m.ay;
+    const plat = PLATFORMS[m.platformIdx];
+    const [r, g, b] = plat.color;
+
+    const platText   = `${plat.icon}  ${plat.name}`;
+    const typeText   = m.contentType.toUpperCase();
+    const topicText  = m.topic;
+    const timeText   = `${m.day} · ${m.time}`;
+    const isPublished = m.status === 0;
+    const isScheduled = m.status === 1;
+    const statusSym   = isPublished ? '●' : isScheduled ? '◐' : '○';
+    const statusLabel = isPublished ? ' Published' : isScheduled ? ' Scheduled' : ' Draft';
+    const statusColor = isPublished ? 'rgba(74,222,128,0.9)' : isScheduled ? `rgba(${r},${g},${b},0.85)` : 'rgba(148,163,184,0.6)';
+
+    const pad       = 14;
+    const platFont  = `bold 11px "SF Mono","Fira Code",monospace`;
+    const typeFont  = `10px "SF Mono","Fira Code",monospace`;
+    const topicFont = `500 14px -apple-system,system-ui,sans-serif`;
+    const metaFont  = `10px "SF Mono","Fira Code",monospace`;
+
+    ctx.font = topicFont;
+    const topicW = ctx.measureText(topicText).width;
+    const tooltipW = Math.max(260, Math.min(topicW + pad * 2, 400));
+    const tooltipH = isPublished ? 130 : 114;
+
+    let tx = px - tooltipW / 2;
+    let ty = py - tooltipH - 16;
+    tx = Math.max(8, Math.min(W - tooltipW - 8, tx));
+    if (ty < 8) ty = py + 14;
+
+    ctx.save();
+
+    // Connector line
+    ctx.globalAlpha = 0.18;
+    ctx.strokeStyle = `rgb(${r},${g},${b})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(px, py - 5);
+    ctx.lineTo(px, ty < py ? ty + tooltipH : ty);
+    ctx.stroke();
+
+    // Background
+    ctx.globalAlpha = 1;
+    ctx.shadowColor = `rgba(${r},${g},${b},0.22)`;
+    ctx.shadowBlur  = 28;
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 10);
+    ctx.fillStyle = 'rgba(6,7,18,0.88)';
+    ctx.fill();
+    ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 10);
+    ctx.fillStyle = `rgba(${r},${g},${b},0.07)`;
+    ctx.fill();
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.28)`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Top accent
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    rrect(ctx, tx, ty, tooltipW, 3, 3);
+    ctx.fill();
+
+    // Platform name
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.font = platFont;
+    ctx.textAlign = 'left';
+    ctx.fillText(platText, tx + pad, ty + pad + 11);
+
+    // Content type (right-aligned on same line)
+    ctx.globalAlpha = 0.45;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = typeFont;
+    ctx.textAlign = 'right';
+    ctx.fillText(typeText, tx + tooltipW - pad, ty + pad + 11);
+
+    // Topic
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = topicFont;
+    ctx.textAlign = 'left';
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(tx + pad, ty + pad + 14, tooltipW - pad * 2, 22);
+    ctx.clip();
+    ctx.fillText(topicText, tx + pad, ty + pad + 30);
+    ctx.restore();
+
+    // Time
+    ctx.globalAlpha = 0.45;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = metaFont;
+    ctx.fillText(timeText, tx + pad, ty + pad + 52);
+
+    // Status
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = statusColor;
+    ctx.fillText(statusSym + statusLabel, tx + pad + 100, ty + pad + 52);
+
+    // Engagement
+    if (isPublished) {
+      ctx.globalAlpha = 0.8;
+      ctx.fillStyle = 'rgba(74,222,128,0.9)';
+      ctx.fillText(m.engagement, tx + pad, ty + pad + 70);
+    }
+
+    ctx.restore();
+  }
+
+  // ─── Main frame ────────────────────────────────────────────────────────────
+  function frame() {
+    requestAnimationFrame(frame);
+
+    const W = canvas.width / dpr;
+    const H = canvas.height / dpr;
+    const t = performance.now() * 0.001;
+
+    ctx.clearRect(0, 0, W, H);
+
+    const availW = W - SIDE_PAD * 2;
+    const availH = H - CAL_TOP - HEADER_H - 16;
+    const cellW  = availW / CAL_COLS;
+    const cellH  = availH / CAL_ROWS;
+
+    // ── Timed: publish a scheduled marker ──────────────────────────────────
+    if (t - lastPublishTime > 1.5) {
+      const candidates = allMarkers.filter(({ marker: m }) => m.status === 1);
+      if (candidates.length > 0) {
+        const { marker: m } = candidates[Math.floor(Math.random() * candidates.length)];
+        m.status = 0;
+        m.flashStart = t;
+        m.particles = Array.from({ length: 3 }, () => ({
+          dx: (Math.random() - 0.5) * 2,
+          dy: (Math.random() - 0.5) * 2,
+          life: 0.45,
+          maxLife: 0.45,
+        }));
+        publishedCount++;
+        lastPublishTime = t;
+      }
+    }
+
+    // ── Timed: add a new draft ──────────────────────────────────────────────
+    if (t - lastDraftTime > 5) {
+      const cellList = cells.flat();
+      const withRoom = cellList.filter(cell => cell.markers.length < 8);
+      if (withRoom.length > 0) {
+        const cell = withRoom[Math.floor(Math.random() * withRoom.length)];
+        const slotIdx = cell.markers.length;
+        const m = makeMarker(cell, slotIdx, 2);
+        cell.markers.push(m);
+        allMarkers.push({ cell, marker: m });
+        updatePositions();
+        lastDraftTime = t;
+      }
+    }
+
+    // ── Grid lines ────────────────────────────────────────────────────────
+    ctx.save();
+    ctx.strokeStyle = 'rgba(168,85,247,0.06)';
+    ctx.lineWidth = 0.5;
+    for (let r = 0; r <= CAL_ROWS; r++) {
+      const y = CAL_TOP + HEADER_H + r * cellH;
+      ctx.beginPath(); ctx.moveTo(SIDE_PAD, y); ctx.lineTo(W - SIDE_PAD, y); ctx.stroke();
+    }
+    for (let c = 0; c <= CAL_COLS; c++) {
+      const x = SIDE_PAD + c * cellW;
+      ctx.beginPath(); ctx.moveTo(x, CAL_TOP + HEADER_H); ctx.lineTo(x, CAL_TOP + HEADER_H + CAL_ROWS * cellH); ctx.stroke();
+    }
+    ctx.restore();
+
+    // ── Day-of-week headers ────────────────────────────────────────────────
+    ctx.save();
+    ctx.font = '9px "SF Mono","Fira Code",monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(168,85,247,1)';
+    ctx.globalAlpha = 0.28;
+    for (let c = 0; c < CAL_COLS; c++) {
+      ctx.fillText(DAY_HEADERS[c], SIDE_PAD + c * cellW + cellW / 2, CAL_TOP + 14);
+    }
+    ctx.restore();
+
+    // ── Determine hovered cell & nearest marker ────────────────────────────
+    let hovCellCol = -1, hovCellRow = -1;
+    hoveredMarker = null;
+
+    if (mouse) {
+      // Cell hover
+      const relX = mouse.x - SIDE_PAD;
+      const relY = mouse.y - (CAL_TOP + HEADER_H);
+      if (relX >= 0 && relY >= 0) {
+        hovCellCol = Math.floor(relX / cellW);
+        hovCellRow = Math.floor(relY / cellH);
+        if (hovCellCol >= CAL_COLS || hovCellRow >= CAL_ROWS) { hovCellCol = -1; hovCellRow = -1; }
+      }
+
+      // Nearest marker (within 12px)
+      let bestDist = 12;
+      for (const { marker: m } of allMarkers) {
+        const dx = m.ax - mouse.x, dy = m.ay - mouse.y;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        if (d < bestDist) { bestDist = d; hoveredMarker = m; }
+      }
+    }
+
+    // ── Day numbers ────────────────────────────────────────────────────────
+    ctx.save();
+    ctx.font = '10px "SF Mono","Fira Code",monospace';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#ffffff';
+    for (let r = 0; r < CAL_ROWS; r++) {
+      for (let c = 0; c < CAL_COLS; c++) {
+        if (!cells[r] || !cells[r][c]) continue;
+        const isHov = c === hovCellCol && r === hovCellRow;
+        ctx.globalAlpha = isHov ? 0.4 : 0.14;
+        ctx.fillText(String(cells[r][c].dayNum), SIDE_PAD + c * cellW + 6, CAL_TOP + HEADER_H + r * cellH + 13);
+      }
+    }
+    ctx.restore();
+
+    // ── Draw markers ──────────────────────────────────────────────────────
+    for (const { cell, marker: m } of allMarkers) {
+      const [r, g, b] = PLATFORMS[m.platformIdx].color;
+      const cellHov = cell.gridCol === hovCellCol && cell.gridRow === hovCellRow;
+      const isHovMark = hoveredMarker === m;
+
+      // Base alpha by status
+      let alpha = m.status === 0 ? 0.5 : m.status === 1 ? 0.3 : 0.15;
+
+      // Flash animation
+      const flashAge = t - m.flashStart;
+      if (flashAge >= 0 && flashAge < 0.6) {
+        alpha = Math.max(alpha, 0.9 * Math.sin((flashAge / 0.6) * Math.PI));
+      }
+
+      // Cell hover brightens all in cell
+      if (cellHov && !isHovMark) alpha = Math.min(0.85, alpha * 1.7 + 0.12);
+
+      // Hovered marker itself
+      let size = MARKER_SIZE;
+      if (isHovMark) { alpha = 0.9; size = 10; }
+
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      rrect(ctx, m.ax - size / 2, m.ay - size / 2, size, size, 2);
+      ctx.fill();
+
+      // Particles
+      for (let pi = m.particles.length - 1; pi >= 0; pi--) {
+        const p = m.particles[pi];
+        p.life -= 0.016;
+        if (p.life <= 0) { m.particles.splice(pi, 1); continue; }
+        const age = (p.maxLife - p.life) / p.maxLife;
+        ctx.globalAlpha = (p.life / p.maxLife) * 0.8;
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.beginPath();
+        ctx.arc(m.ax + p.dx * 10 * age, m.ay + p.dy * 10 * age, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    ctx.globalAlpha = 1;
+
+    // ── Tooltip ────────────────────────────────────────────────────────────
+    if (hoveredMarker) drawTooltip(hoveredMarker);
+
+    // ── Counter (top-right) ────────────────────────────────────────────────
+    const cx = W - 16;
+    ctx.save();
+    ctx.textAlign = 'right';
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = 'rgba(168,85,247,0.6)';
+    ctx.font = '11px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${publishedCount} pieces this month · 6 platforms · 10 formats`, cx, 24);
+    ctx.restore();
+  }
+
+  // ─── Mouse tracking ────────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  });
+  wrap.addEventListener('mouseleave', () => { mouse = null; hoveredMarker = null; });
+  wrap.addEventListener('touchstart', () => { mouse = null; hoveredMarker = null; }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── FinalCTA: coloured calendar squares, gentle pulse ────────────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const ctaCanvas = document.createElement('canvas');
+      ctaCanvas.setAttribute('aria-hidden', 'true');
+      ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.style.position = 'relative';
+      ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+
+      const cc = ctaCanvas.getContext('2d')!;
+      interface CtaCell { x: number; y: number; platIdx: number; phase: number; }
+      let ctaCells: CtaCell[] = [];
+      let ctaDpr = 1;
+      const CTA_COLS = 9, CTA_ROWS = 4;
+
+      function buildCta() {
+        ctaCells = [];
+        const W = ctaCanvas.width / ctaDpr;
+        const H = ctaCanvas.height / ctaDpr;
+        const cw = W / CTA_COLS, ch = H / CTA_ROWS;
+        for (let r = 0; r < CTA_ROWS; r++) {
+          for (let c = 0; c < CTA_COLS; c++) {
+            const count = 2 + Math.floor(Math.random() * 4);
+            for (let i = 0; i < count; i++) {
+              ctaCells.push({
+                x: c * cw + 6 + (i % 3) * 12,
+                y: r * ch + 12 + Math.floor(i / 3) * 12,
+                platIdx: Math.floor(Math.random() * PLATFORMS.length),
+                phase: Math.random() * Math.PI * 2,
+              });
+            }
+          }
+        }
+      }
+
+      function resizeCta() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        const w = Math.round(rect.width), h = Math.round(rect.height);
+        ctaCanvas.width  = w * ctaDpr;
+        ctaCanvas.height = h * ctaDpr;
+        ctaCanvas.style.width  = `${w}px`;
+        ctaCanvas.style.height = `${h}px`;
+        cc.setTransform(ctaDpr, 0, 0, ctaDpr, 0, 0);
+        buildCta();
+      }
+
+      function frameCta() {
+        requestAnimationFrame(frameCta);
+        const W = ctaCanvas.width / ctaDpr;
+        const H = ctaCanvas.height / ctaDpr;
+        const t = performance.now() * 0.001;
+        cc.clearRect(0, 0, W, H);
+        for (const cell of ctaCells) {
+          const [r, g, b] = PLATFORMS[cell.platIdx].color;
+          const alpha = 0.12 + Math.sin(t * 0.7 + cell.phase) * 0.05;
+          cc.globalAlpha = alpha;
+          cc.fillStyle = `rgb(${r},${g},${b})`;
+          rrect(cc, cell.x - 3, cell.y - 3, 6, 6, 1.5);
+          cc.fill();
+        }
+        cc.globalAlpha = 1;
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaCard);
+      resizeCta();
+      requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { ctaCanvas.style.opacity = '1'; });
+
+      const ctaGrid = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGrid) ctaGrid.style.display = 'none';
+    }
+  }
+
+  }); // end requestIdleCallback
+</script>
