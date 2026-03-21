@@ -1,0 +1,308 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+import HeroPello from '../components/sections/HeroPello.astro';
+import HowItWorks from '../components/sections/HowItWorks.astro';
+import ProductSection from '../components/sections/ProductSection.astro';
+import UseCases from '../components/sections/UseCases.astro';
+import Stats from '../components/sections/Stats.astro';
+import FAQ from '../components/sections/FAQ.astro';
+import FinalCTA from '../components/sections/FinalCTA.astro';
+---
+
+<Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="bg-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99,102,241,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  const ric = (window as any).requestIdleCallback
+    ? (window as any).requestIdleCallback
+    : (cb: () => void) => setTimeout(cb, 1);
+
+  ric(() => {
+
+  function valueNoise(x: number): number {
+    const i = Math.floor(x);
+    const f = x - i;
+    const u = f * f * (3 - 2 * f);
+    const a = Math.sin(i * 127.1) * 43758.5453;
+    const b = Math.sin((i + 1) * 127.1) * 43758.5453;
+    return (a - Math.floor(a)) * (1 - u) + (b - Math.floor(b)) * u;
+  }
+
+  const PRODUCTS = [
+    { name: 'PELLOSEO',     color: '#6366f1' },
+    { name: 'PELLOREACH',   color: '#8b5cf6' },
+    { name: 'PELLOPUBLISH', color: '#a855f7' },
+    { name: 'PELLOSOCIAL',  color: '#c026d3' },
+    { name: 'PELLOPITCH',   color: '#7c3aed' },
+    { name: 'PELLOADS',     color: '#4f46e5' },
+    { name: 'PELLOFLOW',    color: '#9333ea' },
+    { name: 'PELLOBUILD',   color: '#6d28d9' },
+  ];
+
+  interface SpectrumWave {
+    yFrac: number;
+    freq: number;
+    baseAmp: number;
+    phase: number;
+    phaseSpeed: number;
+    noiseOffset: number;
+    noisePeriod: number;
+    color: string;
+    name: string;
+  }
+
+  const WAVES: SpectrumWave[] = PRODUCTS.map((p, i) => ({
+    yFrac: 0.1 + (i / 7) * 0.8,
+    freq: 0.01 + i * 0.002,
+    baseAmp: 14 + Math.sin(i * 1.8) * 4,
+    phase: i * 0.9,
+    phaseSpeed: 0.007 + i * 0.001,
+    noiseOffset: i * 91.4,
+    noisePeriod: 3 + i * 0.3,
+    color: p.color,
+    name: p.name,
+  }));
+
+  let mouseX: number | null = null;
+  let mouseY: number | null = null;
+
+  function setupCanvas(canvas: HTMLCanvasElement, wrap: HTMLElement, waves: SpectrumWave[], isSimple: boolean): () => void {
+    const ctx = canvas.getContext('2d')!;
+    let W = 0, H = 0;
+    let dpr = window.devicePixelRatio || 1;
+
+    function resize() {
+      dpr = window.devicePixelRatio || 1;
+      const rect = wrap.getBoundingClientRect();
+      W = Math.round(rect.width);
+      H = Math.round(rect.height);
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    const ro = new ResizeObserver(() => resize());
+    ro.observe(wrap);
+    resize();
+
+    const mobile = () => W < 768;
+
+    // Row height = H / waves.length, each wave uses its row
+    // Bars: 2px wide, 1px gap = 3px per bar
+
+    function draw() {
+      requestAnimationFrame(draw);
+      if (W === 0 || H === 0) return;
+      ctx.clearRect(0, 0, W, H);
+
+      const now = performance.now() * 0.001;
+      const BARS = mobile() ? 40 : 80;
+      const barW = 2;
+      const rowH = H / waves.length;
+
+      // Find nearest wave to mouseY
+      let nearestIdx = -1;
+      let nearestDist = Infinity;
+      if (!isSimple && mouseY !== null) {
+        for (let i = 0; i < waves.length; i++) {
+          const rowCenterY = waves[i].yFrac * H;
+          const d = Math.abs(mouseY - rowCenterY);
+          if (d < nearestDist) { nearestDist = d; nearestIdx = i; }
+        }
+        if (nearestDist > rowH * 0.6) nearestIdx = -1;
+      }
+
+      for (let wi = 0; wi < waves.length; wi++) {
+        const w = waves[wi];
+        const baseY = w.yFrac * H;
+        const noiseVal = valueNoise(now / w.noisePeriod + w.noiseOffset);
+        const ampMod = 0.6 + noiseVal * 0.8;
+        const isNear = wi === nearestIdx;
+
+        // Baseline indicator line
+        ctx.strokeStyle = w.color;
+        ctx.globalAlpha = 0.08;
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(0, baseY);
+        ctx.lineTo(W, baseY);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+
+        for (let b = 0; b < BARS; b++) {
+          const x = (b / BARS) * W;
+          const waveVal = Math.sin(x * w.freq + w.phase);
+          let barH = Math.abs(waveVal) * w.baseAmp * ampMod;
+
+          // Mouse proximity: bars near cursor X spike
+          if (!isSimple && mouseX !== null && isNear) {
+            const dx = x - mouseX;
+            const proximity = Math.exp(-(dx * dx) / (2 * 60 * 60));
+            barH = barH + proximity * w.baseAmp * 2;
+          }
+
+          // Mirrored bars: up and down from baseline
+          const brightness = Math.min(1, barH / (w.baseAmp * 1.5));
+          ctx.fillStyle = w.color;
+          ctx.globalAlpha = (isNear ? 0.7 : 0.4) * (0.3 + brightness * 0.7);
+          ctx.fillRect(x, baseY - barH, barW, barH);
+          ctx.globalAlpha = (isNear ? 0.5 : 0.25) * (0.3 + brightness * 0.7);
+          ctx.fillRect(x, baseY, barW, barH);
+          ctx.globalAlpha = 1;
+        }
+
+        // Product name above row when nearest
+        if (!isSimple && isNear) {
+          ctx.font = '11px sans-serif';
+          ctx.fillStyle = w.color;
+          ctx.globalAlpha = 0.9;
+          ctx.textAlign = 'center';
+          ctx.fillText(w.name, W / 2, baseY - w.baseAmp * 1.5 - 6);
+          ctx.globalAlpha = 1;
+          ctx.textAlign = 'left';
+        }
+      }
+
+      for (const w of waves) w.phase += w.phaseSpeed;
+    }
+
+    requestAnimationFrame(draw);
+    requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+    return () => ro.disconnect();
+  }
+
+  const heroWrap = document.getElementById('hero-wrap')!;
+  const heroCanvas = heroWrap.querySelector<HTMLCanvasElement>('.bg-canvas')!;
+  setupCanvas(heroCanvas, heroWrap, WAVES, false);
+
+  heroWrap.addEventListener('mousemove', (e: MouseEvent) => {
+    const rect = heroWrap.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+  });
+  heroWrap.addEventListener('mouseleave', () => { mouseX = null; mouseY = null; });
+
+  const gridTex = heroWrap.querySelector<HTMLElement>('.grid-texture');
+  if (gridTex) gridTex.style.display = 'none';
+
+  const ctaCard = document.querySelector<HTMLElement>('.final-cta');
+  if (ctaCard) {
+    const ctaCanvas = document.createElement('canvas');
+    ctaCanvas.setAttribute('aria-hidden', 'true');
+    ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+    ctaCard.style.position = 'relative';
+    ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+    const ctaWaves: SpectrumWave[] = [
+      { yFrac: 0.3, freq: 0.012, baseAmp: 12, phase: 0, phaseSpeed: 0.008, noiseOffset: 200, noisePeriod: 4, color: '#6366f1', name: 'PELLOSEO' },
+      { yFrac: 0.5, freq: 0.016, baseAmp: 14, phase: 1.5, phaseSpeed: 0.01, noiseOffset: 350, noisePeriod: 3.5, color: '#a855f7', name: 'PELLOPUBLISH' },
+      { yFrac: 0.7, freq: 0.01, baseAmp: 11, phase: 3.0, phaseSpeed: 0.007, noiseOffset: 500, noisePeriod: 5, color: '#9333ea', name: 'PELLOFLOW' },
+    ];
+    setupCanvas(ctaCanvas, ctaCard, ctaWaves, true);
+    const gt = ctaCard.querySelector<HTMLElement>('.grid-texture');
+    if (gt) gt.style.display = 'none';
+  }
+
+  }); // end ric
+</script>
