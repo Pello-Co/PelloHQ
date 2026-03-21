@@ -1,0 +1,365 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="bg-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99,102,241,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  // Polyfill requestIdleCallback for Safari
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  const isMobile = window.innerWidth < 768;
+
+  // ─── Particle type ───────────────────────────────────────────────────────────
+  interface Particle {
+    angle: number;
+    orbRadius: number;
+    angVel: number;      // rad/ms — Keplerian: K / r^1.5
+    ecc: number;         // eccentricity 0.05–0.20
+    diskTilt: number;    // y-compression factor for inclined disk appearance 0.25–0.38
+    planeY: number;      // fixed height offset for disk thickness (px, compressed in render)
+    colTier: number;     // 0=inner blue-white, 1=mid indigo, 2=outer violet
+    baseAlpha: number;
+    trail: Array<[number, number]>;
+  }
+
+  // ─── Accretion disk factory ──────────────────────────────────────────────────
+  function createAccretionDisk(
+    canvas: HTMLCanvasElement,
+    container: HTMLElement,
+    numParticles: number
+  ) {
+    const dpr = window.devicePixelRatio || 1;
+    const ctx = canvas.getContext('2d')!;
+    let W = 0, H = 0;
+    // Singularity position (smoothly follows mouse)
+    let singX = 0, singY = 0;
+    let targetSingX = 0, targetSingY = 0;
+    let particles: Particle[] = [];
+    let lastTs = 0;
+    let rafId = 0;
+
+    // Keplerian constant: angVel = K_ORB / r^1.5 (rad/ms)
+    // At r=30: period ≈ 2s; at r=250: period ≈ 55s
+    const K_ORB = 0.52;
+    const MIN_R = 30;
+
+    function resize() {
+      const rect = container.getBoundingClientRect();
+      W = Math.round(rect.width);
+      H = Math.round(rect.height);
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width = `${W}px`;
+      canvas.style.height = `${H}px`;
+      singX = W / 2;
+      singY = H / 2;
+      targetSingX = W / 2;
+      targetSingY = H / 2;
+      initParticles();
+    }
+
+    function initParticles() {
+      particles = [];
+      const maxR = Math.min(W, H) * 0.44;
+      for (let i = 0; i < numParticles; i++) {
+        // Bias toward inner disk (denser near event horizon)
+        const t = Math.pow(Math.random(), 0.55);
+        const r = MIN_R + t * (maxR - MIN_R);
+        const ecc = 0.05 + Math.random() * 0.15;
+        const diskTilt = 0.26 + Math.random() * 0.12; // 0.26–0.38 for inclined disk look
+
+        let colTier: number;
+        let baseAlpha: number;
+        if (r < 65) {
+          colTier = 0; // hot inner: blue-white
+          baseAlpha = 0.55 + Math.random() * 0.35;
+        } else if (r < 155) {
+          colTier = 1; // mid: indigo
+          baseAlpha = 0.28 + Math.random() * 0.22;
+        } else {
+          colTier = 2; // outer: cool violet
+          baseAlpha = 0.06 + Math.random() * 0.10;
+        }
+
+        particles.push({
+          angle: Math.random() * Math.PI * 2,
+          orbRadius: r,
+          angVel: K_ORB / Math.pow(r, 1.5),
+          ecc,
+          diskTilt,
+          planeY: (Math.random() - 0.5) * 28, // ±14px height spread before disk compression
+          colTier,
+          baseAlpha,
+          trail: [],
+        });
+      }
+    }
+
+    // Color temperature per tier [r, g, b]
+    const COLORS: Array<[number, number, number]> = [
+      [180, 200, 255], // inner: hot blue-white
+      [99,  102, 241], // mid: indigo
+      [80,   40, 160], // outer: cool violet
+    ];
+
+    function frame(ts: number) {
+      rafId = requestAnimationFrame(frame);
+      const dt = lastTs === 0 ? 16 : Math.min(ts - lastTs, 50);
+      lastTs = ts;
+
+      // Smooth singularity position toward mouse/center target
+      singX += (targetSingX - singX) * 0.04;
+      singY += (targetSingY - singY) * 0.04;
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+
+      // Additive blending: overlapping particles create hot cores
+      ctx.globalCompositeOperation = 'lighter';
+
+      for (const p of particles) {
+        p.angle += p.angVel * dt;
+
+        // Semi-major axis (full orbital radius), semi-minor axis (eccentricity + disk tilt)
+        const a = p.orbRadius;
+        const b = p.orbRadius * (1 - p.ecc) * p.diskTilt;
+
+        const px = singX + a * Math.cos(p.angle);
+        const py = singY + b * Math.sin(p.angle) + p.planeY * p.diskTilt;
+
+        // Store trail for visible particles
+        if (p.baseAlpha > 0.14) {
+          p.trail.push([px, py]);
+          if (p.trail.length > 4) p.trail.shift();
+        }
+
+        // Doppler beaming:
+        // In CCW orbit, sin(angle) > 0 → particle moves left (approaching viewer) → brighter
+        // sin(angle) < 0 → moving right (receding) → dimmer
+        const dopplerFactor = 1 + Math.sin(p.angle) * 0.4; // 0.6–1.4
+        const finalAlpha = Math.min(0.95, p.baseAlpha * dopplerFactor);
+        if (finalAlpha < 0.006) continue;
+
+        const [r, g, b_c] = COLORS[p.colTier]!;
+
+        // Draw motion-blur trail
+        if (p.trail.length >= 2) {
+          for (let i = 0; i < p.trail.length - 1; i++) {
+            const t0 = p.trail[i]!;
+            const t1 = p.trail[i + 1]!;
+            const trailAlpha = ((i + 1) / p.trail.length) * finalAlpha * 0.38;
+            if (trailAlpha < 0.005) continue;
+            ctx.strokeStyle = `rgba(${r},${g},${b_c},${Math.min(0.7, trailAlpha)})`;
+            ctx.lineWidth = 0.6;
+            ctx.beginPath();
+            ctx.moveTo(t0[0], t0[1]);
+            ctx.lineTo(t1[0], t1[1]);
+            ctx.stroke();
+          }
+        }
+
+        // Tidal stretching for inner particles: elongate along velocity direction
+        const stretchAmount = Math.max(0, (80 - p.orbRadius) / 80) * 2.0;
+        if (stretchAmount > 0.3) {
+          // Velocity direction: tangent to ellipse = (-a*sin, b*cos), normalized to screen
+          const vx = -Math.sin(p.angle);
+          const vy = Math.cos(p.angle) * p.diskTilt;
+          const vlen = Math.sqrt(vx * vx + vy * vy) || 1;
+          ctx.strokeStyle = `rgba(${r},${g},${b_c},${finalAlpha})`;
+          ctx.lineWidth = 1.0;
+          ctx.beginPath();
+          ctx.moveTo(px - (vx / vlen) * stretchAmount, py - (vy / vlen) * stretchAmount);
+          ctx.lineTo(px + (vx / vlen) * stretchAmount, py + (vy / vlen) * stretchAmount);
+          ctx.stroke();
+        } else {
+          // Standard dot — inner slightly larger
+          const dotR = p.orbRadius < 70 ? 1.3 : 1.0;
+          ctx.fillStyle = `rgba(${r},${g},${b_c},${finalAlpha})`;
+          ctx.beginPath();
+          ctx.arc(px, py, dotR, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Back to normal composite for event horizon overlay
+      ctx.globalCompositeOperation = 'source-over';
+
+      // Photon sphere: faint bright ring just outside event horizon
+      ctx.strokeStyle = 'rgba(200,220,255,0.15)';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.arc(singX, singY, 26, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Event horizon: dark disk that swallows particles
+      const ehGrad = ctx.createRadialGradient(singX, singY, 0, singX, singY, 28);
+      ehGrad.addColorStop(0,    'rgba(0,0,0,1)');
+      ehGrad.addColorStop(0.72, 'rgba(0,0,0,1)');
+      ehGrad.addColorStop(1,    'rgba(0,0,0,0)');
+      ctx.fillStyle = ehGrad;
+      ctx.beginPath();
+      ctx.arc(singX, singY, 30, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    container.addEventListener('mousemove', (e: MouseEvent) => {
+      const rect = container.getBoundingClientRect();
+      targetSingX = e.clientX - rect.left;
+      targetSingY = e.clientY - rect.top;
+    });
+    container.addEventListener('mouseleave', () => {
+      targetSingX = W / 2;
+      targetSingY = H / 2;
+    });
+
+    const ro = new ResizeObserver(() => {
+      resize();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    });
+    ro.observe(container);
+    resize();
+    rafId = requestAnimationFrame(frame);
+    requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+    return { stop: () => cancelAnimationFrame(rafId) };
+  }
+
+  // ─── Hero instantiation ──────────────────────────────────────────────────────
+  const heroCanvas = document.querySelector<HTMLCanvasElement>('#hero-wrap .bg-canvas')!;
+  const heroWrap   = document.getElementById('hero-wrap')!;
+  if (heroCanvas && heroWrap) {
+    createAccretionDisk(heroCanvas, heroWrap, isMobile ? 1000 : 3000);
+  }
+
+  const gridTex = heroWrap?.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── FinalCTA instantiation ──────────────────────────────────────────────────
+  const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+  if (ctaCard) {
+    const ctaCanvas = document.createElement('canvas');
+    ctaCanvas.setAttribute('aria-hidden', 'true');
+    ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+    ctaCard.style.position = 'relative';
+    ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+    createAccretionDisk(ctaCanvas, ctaCard, isMobile ? 300 : 600);
+
+    const gridTexCta = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+    if (gridTexCta) gridTexCta.style.display = 'none';
+  }
+
+  }); // end ric
+</script>
