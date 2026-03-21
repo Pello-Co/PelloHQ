@@ -1,0 +1,70 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+import HeroPello from '../components/sections/HeroPello.astro';
+import HowItWorks from '../components/sections/HowItWorks.astro';
+import ProductSection from '../components/sections/ProductSection.astro';
+import UseCases from '../components/sections/UseCases.astro';
+import Stats from '../components/sections/Stats.astro';
+import FAQ from '../components/sections/FAQ.astro';
+import FinalCTA from '../components/sections/FinalCTA.astro';
+---
+
+<Layout>
+  <Header />
+  <main id="main-content">
+    <!-- Section 1: Hero -->
+    <HeroPello />
+
+    <!-- Section 2: How It Works -->
+    <HowItWorks />
+
+    <!-- Sections 3–10: Individual product showcases (alternating layout) -->
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <!-- Section 11: Use Cases -->
+    <UseCases />
+
+    <!-- Section 12: Stats -->
+    <Stats />
+
+    <!-- Section 13: FAQ -->
+    <FAQ />
+
+    <!-- Section 14: Final CTA -->
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<!-- Skip to main content link (accessibility) -->
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus {
+    top: 0;
+  }
+</style>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>

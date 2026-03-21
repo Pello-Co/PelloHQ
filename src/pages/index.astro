@@ -11,11 +11,15 @@ import FAQ from '../components/sections/FAQ.astro';
 import FinalCTA from '../components/sections/FinalCTA.astro';
 ---
 
-<Layout>
+<Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
   <Header />
   <main id="main-content">
-    <!-- Section 1: Hero -->
-    <HeroPello />
+    <!-- Section 1: Hero with Aurora + Dot Grid Background -->
+    <div id="dot-grid-wrap" class="relative">
+      <canvas class="aurora-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+      <canvas class="dot-grid-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+      <HeroPello />
+    </div>
 
     <!-- Section 2: How It Works -->
     <HowItWorks />
@@ -41,7 +45,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     <!-- Section 13: FAQ -->
     <FAQ />
 
-    <!-- Section 14: Final CTA -->
+    <!-- Section 14: Final CTA with Aurora + Dot Grid -->
     <FinalCTA />
   </main>
   <Footer />
@@ -68,3 +72,637 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
 </style>
 
 <a id="skip-link" href="#main-content">Skip to main content</a>
+
+<!-- Glassmorphism overrides — makes hero components translucent so aurora shows through -->
+<style is:global>
+  /* ── URL input bar — frosted glass ────────────────────────────── */
+  #dot-grid-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255, 255, 255, 0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  /* ── Hero panel (Growth Engine) — glass body ──────────────────── */
+  #dot-grid-wrap .hero-panel {
+    background: rgba(6, 7, 18, 0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  }
+
+  /* ── Inner components — more transparent glass with visible borders ── */
+  #dot-grid-wrap .panel-source-row {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+  #dot-grid-wrap .core-inner {
+    background: rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #dot-grid-wrap .panel-core-section {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+  #dot-grid-wrap .channel-node {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #dot-grid-wrap .panel-header-bar {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+  #dot-grid-wrap .panel-ready-bar {
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+  #dot-grid-wrap .node-stat-text {
+    color: #a78bfa !important;
+  }
+
+  /* ── Mobile panel (product list) — glass card ────────────────── */
+  #dot-grid-wrap .hero-panel-mobile {
+    background: rgba(10, 10, 20, 0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  /* ── FinalCTA card — glass treatment ─────────────────────────── */
+  .final-cta {
+    background: rgba(20, 15, 40, 0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99, 102, 241, 0.15) !important;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+  }
+
+  /* ── CTA card clips aurora inside the rounded box ─────────────── */
+  .final-cta {
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Hide CTA opaque backgrounds so aurora shows through */
+  .final-cta > .absolute.inset-0.pointer-events-none {
+    display: none !important;
+  }
+
+  /* Hide the opaque backgrounds that would block the aurora */
+  #dot-grid-wrap .grid-texture,
+  #dot-grid-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] {
+    display: none !important;
+  }
+
+  /* Make hero section bg transparent so aurora shows through */
+  #hero {
+    background: transparent !important;
+  }
+</style>
+
+<script>
+  // Polyfill requestIdleCallback for Safari
+  const ric = window.requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+  // Defer all canvas animations until after first paint to reduce TBT
+  ric(() => {
+
+  // ─── Aurora Waves (behind dot grid) ─────────────────────────────────────────
+  // Perlin noise for aurora (scope-isolated from dot grid noise)
+  {
+    const AP = new Uint8Array(512);
+    { const p = new Uint8Array(256); for (let i = 0; i < 256; i++) p[i] = i;
+      for (let i = 255; i > 0; i--) { const j = ((i * 2654435761) >>> 0) % (i + 1); const t = p[i]; p[i] = p[j]; p[j] = t; }
+      for (let i = 0; i < 512; i++) AP[i] = p[i & 255]; }
+    const AG: [number,number][] = [[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+    function af(t: number) { return t*t*t*(t*(t*6-15)+10); }
+    function al(a: number, b: number, t: number) { return a+t*(b-a); }
+    function ag(h: number, x: number, y: number) { const [a,b]=AG[h&7]; return a*x+b*y; }
+    function an(x: number, y: number): number {
+      const X=Math.floor(x)&255, Y=Math.floor(y)&255, xf=x-Math.floor(x), yf=y-Math.floor(y);
+      const u=af(xf), v=af(yf);
+      return al(al(ag(AP[AP[X]+Y],xf,yf), ag(AP[AP[X+1]+Y],xf-1,yf), u),
+               al(ag(AP[AP[X]+Y+1],xf,yf-1), ag(AP[AP[X+1]+Y+1],xf-1,yf-1), u), v);
+    }
+    // Fractional Brownian Motion — stacks noise octaves for organic, nebula-like structure
+    function fbm(x: number, y: number, oct: number): number {
+      let v = 0, amp = 0.5, freq = 1.0;
+      for (let i = 0; i < oct; i++) { v += amp * an(x * freq, y * freq); amp *= 0.5; freq *= 2.0; }
+      return v;
+    }
+
+    const auroraCanvas = document.querySelector<HTMLCanvasElement>('.aurora-canvas')!;
+    const auroraWrap = document.getElementById('dot-grid-wrap')!;
+    const actx = auroraCanvas.getContext('2d')!;
+    let aW = 0, aH = 0, aDpr = 1;
+
+    // Offscreen buffer at 1/3 resolution — renders crisp detail, upscales with bilinear
+    // smoothing which acts as a free soft blur (no CSS filter needed)
+    const offscreen = document.createElement('canvas');
+    const octx = offscreen.getContext('2d')!;
+
+    function resizeAurora() {
+      aDpr = window.devicePixelRatio || 1;
+      const rect = auroraWrap.getBoundingClientRect();
+      aW = Math.round(rect.width);
+      aH = Math.round(rect.height);
+      auroraCanvas.width = aW * aDpr;
+      auroraCanvas.height = aH * aDpr;
+      auroraCanvas.style.width = `${aW}px`;
+      auroraCanvas.style.height = `${aH}px`;
+      offscreen.width  = Math.round(aW / 3);
+      offscreen.height = Math.round(aH / 3);
+    }
+
+    // Draw one gradient-filled ellipse onto the offscreen context.
+    // rx = major radius; ry < rx creates a flat band.
+    // Steeper falloff (0→bright, 0.28→medium, 0.62→dim, 1→0) gives a hotter, more saturated core.
+    function blob(cx: number, cy: number, rx: number, ry: number, angle: number,
+                  r: number, g: number, b: number, alpha: number) {
+      if (alpha < 0.004 || rx < 0.5) return;
+      octx.save();
+      octx.translate(cx, cy);
+      octx.rotate(angle);
+      octx.scale(1.0, ry / Math.max(rx, 0.5));
+      const gr = octx.createRadialGradient(0, 0, 0, 0, 0, rx);
+      gr.addColorStop(0,    `rgba(${r},${g},${b},${alpha.toFixed(3)})`);
+      gr.addColorStop(0.28, `rgba(${r},${g},${b},${(alpha * 0.68).toFixed(3)})`);
+      gr.addColorStop(0.62, `rgba(${r},${g},${b},${(alpha * 0.22).toFixed(3)})`);
+      gr.addColorStop(1,    `rgba(${r},${g},${b},0)`);
+      octx.fillStyle = gr;
+      octx.beginPath();
+      octx.arc(0, 0, rx, 0, Math.PI * 2);
+      octx.fill();
+      octx.restore();
+    }
+
+    // Draw a nebula strand: a domain-warped central blob plus n satellite blobs
+    // distributed along the major axis with per-blob noise displacement.
+    // The combination of off-axis noise and density variation creates wisp/tendril structure.
+    function strand(t: number, cx: number, cy: number, rx: number, ry: number, angle: number,
+                    r: number, g: number, b: number, alpha: number, n: number, wa: number) {
+      // Domain-warp the whole strand's anchor point for large-scale organic drift
+      const wx = fbm(cx * 0.012 + t * 0.15, cy * 0.012, 3) * wa;
+      const wy = fbm(cx * 0.012 + 57, cy * 0.012 + t * 0.13, 3) * wa;
+      const px = cx + wx, py = cy + wy;
+
+      // Central blob — slightly modulated brightness
+      const ca = alpha * (0.78 + an(t * 0.25, cx * 0.02) * 0.22);
+      blob(px, py, rx, ry, angle, r, g, b, Math.max(0, ca));
+      if (n < 2) return;
+
+      // Satellite blobs strung along the major axis
+      const cosA = Math.cos(angle), sinA = Math.sin(angle);
+      for (let i = 0; i < n; i++) {
+        const u   = (i / (n - 1)) * 2 - 1;          // −1 … +1 along axis
+        const bx0 = px + cosA * u * rx * 0.82;
+        const by0 = py + sinA * u * rx * 0.82;
+        // Off-axis noise displacement — creates wisps extending perpendicular to the band
+        const bwx = an(bx0 * 0.015 + t * 0.18 + i * 1.4, by0 * 0.015 + 30) * wa * 0.40;
+        const bwy = an(bx0 * 0.015 + 80 + i,               by0 * 0.015 + t * 0.16) * wa * 0.40;
+        // Density variation: brighter near centre, further modulated by noise
+        const dn      = (an(i * 1.7 + t * 0.2, 200) + 1) * 0.5;
+        const density = (1 - u * u) * (0.42 + dn * 0.30);
+        blob(bx0 + bwx, by0 + bwy,
+             rx * (0.20 + (an(i * 2.3, t * 0.04) + 1) * 0.13),
+             ry * (0.48 + density * 0.52),
+             angle, r, g, b, Math.max(0, alpha * 0.52 * density));
+      }
+    }
+
+    // Layer table — row format:
+    //   [cxF, cyF, rxF, ryF, angle,  R,   G,   B,  alpha, spd,   ph,  n,  waF]
+    //   cxF/cyF : base centre as fraction of canvas (animated around this)
+    //   rxF     : major radius as fraction of offscreen width
+    //   ryF     : minor radius as fraction of offscreen height  (ryF << rxF = flat band)
+    //   n       : satellite blob count (0 = simple wash, no satellites)
+    //   waF     : domain-warp amplitude as fraction of offscreen width
+    const AL = [
+      // ── Atmospheric washes — spread wide across the viewport ──
+      [0.35, 0.48, 0.62, 0.26, -0.06,  52, 14, 185, 0.16, 0.055, 0.0,  0, 0.14],
+      [0.65, 0.55, 0.72, 0.22,  0.04,  38, 10, 165, 0.12, 0.045, 2.6,  0, 0.12],
+      [0.40, 0.62, 0.78, 0.24, -0.03,  28,  7, 148, 0.10, 0.038, 5.1,  0, 0.13],
+      // ── Mid nebula bands — offset from centre ─────────────────
+      [0.35, 0.48, 0.44, 0.12, -0.13, 100, 35, 230, 0.32, 0.140, 0.4,  7, 0.09],
+      [0.65, 0.44, 0.50, 0.10,  0.09, 125, 45, 235, 0.28, 0.170, 1.9,  6, 0.08],
+      [0.30, 0.58, 0.40, 0.13, -0.07,  75, 28, 215, 0.26, 0.110, 3.4,  6, 0.10],
+      [0.70, 0.46, 0.48, 0.09,  0.16, 145, 40, 240, 0.24, 0.190, 5.2,  5, 0.07],
+      [0.25, 0.54, 0.38, 0.12, -0.19,  55, 45, 205, 0.22, 0.130, 2.7,  5, 0.09],
+      [0.72, 0.52, 0.43, 0.11,  0.11, 108, 28, 220, 0.24, 0.150, 4.2,  6, 0.08],
+      // ── Bright accent tendrils — spread to edges ────
+      [0.28, 0.42, 0.33, 0.07, -0.11, 162, 52, 250, 0.38, 0.250, 1.3,  5, 0.06],
+      [0.72, 0.56, 0.35, 0.06,  0.13, 188, 56, 235, 0.32, 0.280, 3.9,  4, 0.05],
+      [0.38, 0.60, 0.30, 0.08, -0.08, 138, 44, 245, 0.30, 0.220, 6.4,  5, 0.07],
+      [0.62, 0.40, 0.27, 0.07,  0.09, 172, 60, 240, 0.28, 0.300, 0.8,  4, 0.05],
+      // ── Hot bright cores — offset left and right of centre ──
+      [0.42, 0.48, 0.18, 0.11,  0.00, 178, 88, 255, 0.44, 0.100, 0.0,  3, 0.04],
+      [0.58, 0.52, 0.14, 0.09, -0.04, 198, 98, 255, 0.40, 0.120, 1.6,  0, 0.03],
+      [0.45, 0.55, 0.21, 0.10,  0.05, 158, 70, 250, 0.38, 0.090, 3.1,  3, 0.04],
+    ];
+
+    function frameAurora() {
+      requestAnimationFrame(frameAurora);
+      const ow = offscreen.width, oh = offscreen.height;
+      const t = performance.now() * 0.001;
+
+      octx.clearRect(0, 0, ow, oh);
+      octx.globalCompositeOperation = 'lighter';
+
+      for (const row of AL) {
+        const [cxF, cyF, rxF, ryF, ang, r, g, b, alpha, spd, ph, n, waF] = row;
+        // Lissajous drift — x and y on slightly different frequencies avoids back-and-forth
+        const cx    = ow * (cxF + Math.sin(t * spd * 3        + ph      ) * 0.15);
+        const cy    = oh * (cyF + Math.sin(t * spd * 2.1  + ph + 1.1) * 0.12);
+        // Radii breathe out of phase
+        const rx    = ow * rxF * (1 + Math.sin(t * spd * 4 + ph * 1.8) * 0.15);
+        const ry    = oh * ryF * (1 + Math.sin(t * spd * 2.5 + ph * 1.3) * 0.18);
+        // Angle wobble
+        const angle = ang + Math.sin(t * spd * 2.5 + ph) * 0.2;
+        // Warp amplitude in offscreen pixels
+        const wa    = ow * waF;
+
+        if (n === 0) {
+          // Wash: single domain-warped gradient blob, no internal structure
+          const wx = fbm(cx * 0.010 + t * 0.036, cy * 0.010,         2) * wa;
+          const wy = fbm(cx * 0.010 + 63,         cy * 0.010 + t * 0.030, 2) * wa;
+          blob(cx + wx, cy + wy, rx, ry, angle, r, g, b, alpha);
+        } else {
+          strand(t, cx, cy, rx, ry, angle, r, g, b, alpha, n, wa);
+        }
+      }
+
+      octx.globalCompositeOperation = 'source-over';
+
+      // Upscale offscreen to full canvas — bilinear smoothing acts as a free soft blur
+      actx.setTransform(1, 0, 0, 1, 0, 0);
+      actx.clearRect(0, 0, auroraCanvas.width, auroraCanvas.height);
+      actx.drawImage(offscreen, 0, 0, auroraCanvas.width, auroraCanvas.height);
+      actx.setTransform(aDpr, 0, 0, aDpr, 0, 0);
+    }
+
+    const roAurora = new ResizeObserver(() => resizeAurora());
+    roAurora.observe(auroraWrap);
+    resizeAurora();
+    requestAnimationFrame(frameAurora);
+
+    // Fade in aurora canvas
+    requestAnimationFrame(() => {
+      auroraCanvas.style.opacity = '1';
+    });
+  }
+
+  // ─── Dot Grid Background (behind hero) ────────────────────────────────────
+  // Perlin noise permutation table
+  const PERM = new Uint8Array(512);
+  {
+    const p = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) p[i] = i;
+    for (let i = 255; i > 0; i--) {
+      const j = ((i * 2654435761) >>> 0) % (i + 1);
+      const tmp = p[i]; p[i] = p[j]; p[j] = tmp;
+    }
+    for (let i = 0; i < 512; i++) PERM[i] = p[i & 255];
+  }
+  const GRADS: [number, number][] = [[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+  function fade(t: number) { return t * t * t * (t * (t * 6 - 15) + 10); }
+  function nlerp(a: number, b: number, t: number) { return a + t * (b - a); }
+  function grad(h: number, x: number, y: number) { const [gx, gy] = GRADS[h & 7]; return gx * x + gy * y; }
+  function noise2(x: number, y: number): number {
+    const X = Math.floor(x) & 255, Y = Math.floor(y) & 255;
+    const xf = x - Math.floor(x), yf = y - Math.floor(y);
+    const u = fade(xf), v = fade(yf);
+    const aa = PERM[PERM[X]+Y], ab = PERM[PERM[X]+Y+1], ba = PERM[PERM[X+1]+Y], bb = PERM[PERM[X+1]+Y+1];
+    return nlerp(nlerp(grad(aa,xf,yf), grad(ba,xf-1,yf), u), nlerp(grad(ab,xf,yf-1), grad(bb,xf-1,yf-1), u), v);
+  }
+
+  const GRID = 16;
+  const INFLUENCE_RADIUS = 575;
+  const PUSH_STRENGTH = 28;
+  const LERP_SPEED = 0.035;
+  const NOISE_SCALE = 0.04;
+  const NOISE_SPEED = 0.0008;
+  const NOISE_STRENGTH = 6;
+
+  const ACCENT1: [number, number, number] = [60, 130, 255];   // bright blue
+  const ACCENT2: [number, number, number] = [100, 180, 255];  // sky blue
+  const BASE_RGB: [number, number, number] = [90, 90, 105];
+
+  interface Dot { gx: number; gy: number; x: number; y: number; }
+
+  const canvas = document.querySelector<HTMLCanvasElement>('.dot-grid-canvas')!;
+  const wrap = document.getElementById('dot-grid-wrap')!;
+  const ctx = canvas.getContext('2d')!;
+  let dots: Dot[] = [];
+  let mouse: { x: number; y: number } | null = null;
+  let dpr = 1;
+  let rafId = 0;
+
+  function buildGrid() {
+    dots = [];
+    const W = canvas.width / dpr;
+    const H = canvas.height / dpr;
+    const cols = Math.ceil(W / GRID) + 2;
+    const rows = Math.ceil(H / GRID) + 2;
+    for (let r = 0; r < rows; r++)
+      for (let c = 0; c < cols; c++) {
+        const gx = c * GRID, gy = r * GRID;
+        dots.push({ gx, gy, x: gx, y: gy });
+      }
+  }
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    const w = Math.round(rect.width), h = Math.round(rect.height);
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    canvas.style.width = `${w}px`; canvas.style.height = `${h}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildGrid();
+  }
+
+  function lerpRGB(a: [number,number,number], b: [number,number,number], t: number): [number,number,number] {
+    return [Math.round(a[0]+(b[0]-a[0])*t), Math.round(a[1]+(b[1]-a[1])*t), Math.round(a[2]+(b[2]-a[2])*t)];
+  }
+  function rgbStr(c: [number,number,number]) { return `rgb(${c[0]},${c[1]},${c[2]})`; }
+
+  function frame() {
+    rafId = requestAnimationFrame(frame);
+    const W = canvas.width / dpr, H = canvas.height / dpr;
+    const t = performance.now() * NOISE_SPEED;
+    ctx.clearRect(0, 0, W, H);
+    const fadeZone = H * 0.75;
+
+    for (const dot of dots) {
+      let targetX = dot.gx, targetY = dot.gy, influence = 0, angleToMouse = 0;
+      if (mouse) {
+        const dx = dot.gx - mouse.x, dy = dot.gy - mouse.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < INFLUENCE_RADIUS) {
+          const raw = 1 - dist / INFLUENCE_RADIUS;
+          const s = raw * raw * (3 - 2 * raw);
+          influence = s * s * (3 - 2 * s);
+          const pushMag = Math.pow(influence, 3) * PUSH_STRENGTH;
+          const len = dist || 1;
+          targetX += (dx / len) * pushMag;
+          targetY += (dy / len) * pushMag;
+          const noiseX = noise2(dot.gx * NOISE_SCALE, dot.gy * NOISE_SCALE + t);
+          const noiseY = noise2(dot.gx * NOISE_SCALE + 100, dot.gy * NOISE_SCALE + t);
+          const noiseMag = influence * influence * NOISE_STRENGTH;
+          targetX += noiseX * noiseMag;
+          targetY += noiseY * noiseMag;
+          angleToMouse = Math.atan2(dy, dx);
+        }
+      }
+      dot.x += (targetX - dot.x) * LERP_SPEED;
+      dot.y += (targetY - dot.y) * LERP_SPEED;
+
+      let opacity = 1;
+      if (dot.gy > fadeZone) {
+        opacity *= 1 - Math.min(1, (dot.gy - fadeZone) / (H - fadeZone));
+      }
+      if (opacity < 0.01) continue;
+
+      let color = rgbStr(BASE_RGB);
+      if (influence > 0) {
+        const inf3 = influence * influence * influence;
+        const blendFactor = (Math.sin(angleToMouse * 2 + t * 3) + 1) * 0.5;
+        const accent = lerpRGB(ACCENT1, ACCENT2, blendFactor);
+        color = rgbStr(lerpRGB(BASE_RGB, accent, inf3));
+        // Fade to black near cursor centre — strong dim at core, gentle at edges
+        opacity *= 1 - influence * influence * 0.85;
+      }
+      ctx.globalAlpha = opacity;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      const dotRadius = 1 + influence * 0.5; // 1px base → 1.5px max near cursor
+      ctx.arc(dot.x, dot.y, dotRadius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  window.addEventListener('mousemove', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  });
+  window.addEventListener('mouseleave', () => { mouse = null; });
+  window.addEventListener('touchstart', () => { mouse = null; }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  rafId = requestAnimationFrame(frame);
+
+  // Fade in dot grid canvas
+  requestAnimationFrame(() => {
+    canvas.style.opacity = '1';
+  });
+
+  // Hide the default grid-texture so dot grid canvas replaces it
+  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── Aurora for CTA section ─────────────────────────────────────────────────
+  {
+    // Inject aurora canvas inside .final-cta card so it clips to the rounded box
+    const ctaCardAurora = document.querySelector('.final-cta') as HTMLElement;
+    const aCanvasCta = document.createElement('canvas');
+    aCanvasCta.className = 'aurora-canvas-cta';
+    aCanvasCta.setAttribute('aria-hidden', 'true');
+    aCanvasCta.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+    ctaCardAurora.insertBefore(aCanvasCta, ctaCardAurora.firstChild);
+    const aWrapCta = ctaCardAurora;
+    if (aCanvasCta && aWrapCta) {
+      const actxC = aCanvasCta.getContext('2d')!;
+      const offC = document.createElement('canvas');
+      const octxC = offC.getContext('2d')!;
+      let aCW = 0, aCH = 0;
+
+      function resizeAuroraCta() {
+        const dp = window.devicePixelRatio || 1;
+        const rect = aWrapCta!.getBoundingClientRect();
+        aCW = Math.round(rect.width);
+        aCH = Math.round(rect.height);
+        aCanvasCta!.width = aCW * dp;
+        aCanvasCta!.height = aCH * dp;
+        aCanvasCta!.style.width = `${aCW}px`;
+        aCanvasCta!.style.height = `${aCH}px`;
+        offC.width = Math.round(aCW / 4);
+        offC.height = Math.round(aCH / 4);
+      }
+
+      function frameAuroraCta() {
+        requestAnimationFrame(frameAuroraCta);
+        const ow = offC.width, oh = offC.height;
+        const t = performance.now() * 0.001;
+        octxC.clearRect(0, 0, ow, oh);
+        octxC.globalCompositeOperation = 'lighter';
+
+        // Reuse the same AL layer table from the hero aurora
+        // Draw a subset (first 10 layers) for performance in the smaller section
+        const ctaLayers = [
+          [0.50, 0.50, 0.55, 0.30, -0.06,  52, 14, 185, 0.18, 0.08, 0.0],
+          [0.50, 0.50, 0.65, 0.25,  0.04,  38, 10, 165, 0.14, 0.06, 2.6],
+          [0.50, 0.50, 0.45, 0.15, -0.13, 100, 35, 230, 0.35, 0.18, 0.4],
+          [0.50, 0.50, 0.50, 0.12,  0.09, 125, 45, 235, 0.30, 0.22, 1.9],
+          [0.50, 0.50, 0.40, 0.16, -0.07,  75, 28, 215, 0.28, 0.14, 3.4],
+          [0.50, 0.50, 0.48, 0.11,  0.16, 145, 40, 240, 0.26, 0.24, 5.2],
+          [0.50, 0.50, 0.33, 0.09, -0.11, 162, 52, 250, 0.40, 0.30, 1.3],
+          [0.50, 0.50, 0.35, 0.08,  0.13, 188, 56, 235, 0.34, 0.35, 3.9],
+          [0.50, 0.50, 0.18, 0.14,  0.00, 178, 88, 255, 0.45, 0.12, 0.0],
+          [0.50, 0.50, 0.14, 0.11, -0.04, 198, 98, 255, 0.42, 0.15, 1.6],
+        ];
+
+        for (const row of ctaLayers) {
+          const [cxF, cyF, rxF, ryF, ang, r, g, b, alpha, spd, ph] = row;
+          const cx = ow * (cxF + Math.sin(t * spd * 3 + ph) * 0.18);
+          const cy = oh * (cyF + Math.sin(t * spd * 2.1 + ph + 1.1) * 0.15);
+          const rx = ow * rxF * (1 + Math.sin(t * spd * 4 + ph * 1.8) * 0.15);
+          const ry = oh * ryF * (1 + Math.sin(t * spd * 2.5 + ph * 1.3) * 0.18);
+          const angle = ang + Math.sin(t * spd * 2.5 + ph) * 0.2;
+
+          octxC.save();
+          octxC.translate(cx, cy);
+          octxC.rotate(angle);
+          const grad = octxC.createRadialGradient(0, 0, 0, 0, 0, Math.max(rx, 1));
+          grad.addColorStop(0, `rgba(${r},${g},${b},${alpha})`);
+          grad.addColorStop(0.25, `rgba(${r},${g},${b},${alpha * 0.7})`);
+          grad.addColorStop(0.55, `rgba(${r},${g},${b},${alpha * 0.3})`);
+          grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+          octxC.fillStyle = grad;
+          octxC.scale(1, ry / (rx || 1));
+          octxC.beginPath();
+          octxC.arc(0, 0, rx, 0, Math.PI * 2);
+          octxC.fill();
+          octxC.restore();
+        }
+
+        octxC.globalCompositeOperation = 'source-over';
+        const dp = window.devicePixelRatio || 1;
+        actxC.setTransform(1, 0, 0, 1, 0, 0);
+        actxC.clearRect(0, 0, aCanvasCta!.width, aCanvasCta!.height);
+        actxC.drawImage(offC, 0, 0, aCanvasCta!.width, aCanvasCta!.height);
+        actxC.setTransform(dp, 0, 0, dp, 0, 0);
+      }
+
+      const roCta2 = new ResizeObserver(() => resizeAuroraCta());
+      roCta2.observe(aWrapCta);
+      resizeAuroraCta();
+      requestAnimationFrame(frameAuroraCta);
+      requestAnimationFrame(() => { aCanvasCta.style.opacity = '1'; });
+    }
+  }
+
+  // ─── Second Dot Grid instance for CTA section ─────────────────────────────
+  // Inject canvas inside the .final-cta rounded card so it's clipped to the card bounds
+  const ctaCard = document.querySelector('.final-cta') as HTMLElement;
+  const canvasCta = document.createElement('canvas');
+  canvasCta.className = 'dot-grid-canvas-cta';
+  canvasCta.setAttribute('aria-hidden', 'true');
+  canvasCta.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+  ctaCard.style.position = 'relative';
+  ctaCard.insertBefore(canvasCta, ctaCard.firstChild);
+  const wrapCta = ctaCard;
+  const ctxCta = canvasCta.getContext('2d')!;
+  let dotsCta: Dot[] = [];
+  let mouseCta: { x: number; y: number } | null = null;
+  let dprCta = 1;
+
+  function buildGridCta() {
+    dotsCta = [];
+    const W = canvasCta.width / dprCta, H = canvasCta.height / dprCta;
+    const cols = Math.ceil(W / GRID) + 2, rows = Math.ceil(H / GRID) + 2;
+    for (let r = 0; r < rows; r++)
+      for (let c = 0; c < cols; c++) {
+        const gx = c * GRID, gy = r * GRID;
+        dotsCta.push({ gx, gy, x: gx, y: gy });
+      }
+  }
+
+  function resizeCta() {
+    dprCta = window.devicePixelRatio || 1;
+    const rect = wrapCta.getBoundingClientRect();
+    const w = Math.round(rect.width), h = Math.round(rect.height);
+    canvasCta.width = w * dprCta; canvasCta.height = h * dprCta;
+    canvasCta.style.width = `${w}px`; canvasCta.style.height = `${h}px`;
+    ctxCta.setTransform(dprCta, 0, 0, dprCta, 0, 0);
+    buildGridCta();
+  }
+
+  function frameCta() {
+    requestAnimationFrame(frameCta);
+    const W = canvasCta.width / dprCta, H = canvasCta.height / dprCta;
+    const t = performance.now() * NOISE_SPEED;
+    ctxCta.clearRect(0, 0, W, H);
+
+    for (const dot of dotsCta) {
+      let targetX = dot.gx, targetY = dot.gy, influence = 0, angleToMouse = 0;
+      if (mouseCta) {
+        const dx = dot.gx - mouseCta.x, dy = dot.gy - mouseCta.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < INFLUENCE_RADIUS) {
+          const raw = 1 - dist / INFLUENCE_RADIUS;
+          const s = raw * raw * (3 - 2 * raw);
+          influence = s * s * (3 - 2 * s);
+          const pushMag = Math.pow(influence, 3) * PUSH_STRENGTH;
+          const len = dist || 1;
+          targetX += (dx / len) * pushMag;
+          targetY += (dy / len) * pushMag;
+          const noiseX = noise2(dot.gx * NOISE_SCALE, dot.gy * NOISE_SCALE + t);
+          const noiseY = noise2(dot.gx * NOISE_SCALE + 100, dot.gy * NOISE_SCALE + t);
+          const noiseMag = influence * influence * NOISE_STRENGTH;
+          targetX += noiseX * noiseMag;
+          targetY += noiseY * noiseMag;
+          angleToMouse = Math.atan2(dy, dx);
+        }
+      }
+      dot.x += (targetX - dot.x) * LERP_SPEED;
+      dot.y += (targetY - dot.y) * LERP_SPEED;
+
+      let opacity = 1;
+      if (opacity < 0.01) continue;
+
+      let color = rgbStr(BASE_RGB);
+      if (influence > 0) {
+        const inf3 = influence * influence * influence;
+        const blendFactor = (Math.sin(angleToMouse * 2 + t * 3) + 1) * 0.5;
+        const accent = lerpRGB(ACCENT1, ACCENT2, blendFactor);
+        color = rgbStr(lerpRGB(BASE_RGB, accent, inf3));
+        opacity *= 1 - influence * influence * 0.85;
+      }
+      ctxCta.globalAlpha = opacity;
+      ctxCta.fillStyle = color;
+      ctxCta.beginPath();
+      const dotRadiusCta = 1 + influence * 0.5;
+      ctxCta.arc(dot.x, dot.y, dotRadiusCta, 0, Math.PI * 2);
+      ctxCta.fill();
+    }
+    ctxCta.globalAlpha = 1;
+  }
+
+  window.addEventListener('mousemove', (e) => {
+    const rect = wrapCta.getBoundingClientRect();
+    const x = e.clientX - rect.left, y = e.clientY - rect.top;
+    if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
+      mouseCta = { x, y };
+    } else {
+      mouseCta = null;
+    }
+  });
+
+  const roCta = new ResizeObserver(() => resizeCta());
+  roCta.observe(wrapCta);
+  resizeCta();
+  requestAnimationFrame(frameCta);
+  requestAnimationFrame(() => { canvasCta.style.opacity = '1'; });
+
+  // Hide the CTA grid-texture so dot grid replaces it
+  const gridTexCta = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTexCta) gridTexCta.style.display = 'none';
+
+  }); // end requestIdleCallback
+</script>
