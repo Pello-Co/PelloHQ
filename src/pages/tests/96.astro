@@ -231,6 +231,28 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
     let mouseActive = false;
     let lissTime = 0;
 
+    // ── Giant companion star ──────────────────────────────────────────────
+    const giantStar = {
+      x: W * 0.65, y: H * 0.4,
+      baseX: W * 0.65, baseY: H * 0.4,
+      radius: 18, // visual radius
+      coreR: 255, coreG: 200, coreB: 140, // warm orange-white
+      orbitRadius: W * 0.25,
+      orbitSpeed: 0.15,
+      orbitPhase: 0,
+      energy: 1.0, // 1.0 = full, depletes when lens is close
+    };
+
+    // Stripped energy particles
+    interface EnergyParticle {
+      x: number; y: number;
+      vx: number; vy: number;
+      life: number; maxLife: number;
+      size: number;
+    }
+    const energyParticles: EnergyParticle[] = [];
+    const MAX_ENERGY_PARTICLES = 120;
+
     let lastTime = 0;
     let rafId = 0;
 
@@ -329,6 +351,117 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
           }
         }
       }
+      // ── Giant companion star ────────────────────────────────────────────
+      // Orbit around its base position
+      giantStar.orbitPhase += dt * giantStar.orbitSpeed;
+      giantStar.x = giantStar.baseX + Math.cos(giantStar.orbitPhase) * giantStar.orbitRadius * 0.3;
+      giantStar.y = giantStar.baseY + Math.sin(giantStar.orbitPhase * 0.7) * giantStar.orbitRadius * 0.2;
+
+      const dxGiant = giantStar.x - lensX;
+      const dyGiant = giantStar.y - lensY;
+      const distGiantToLens = Math.sqrt(dxGiant * dxGiant + dyGiant * dyGiant);
+      const feedingRange = 280; // px — distance at which stripping begins
+
+      // Energy stripping — closer lens = faster drain
+      if (distGiantToLens < feedingRange && giantStar.energy > 0.05) {
+        const stripRate = (1 - distGiantToLens / feedingRange) * 0.3 * dt;
+        giantStar.energy = Math.max(0.05, giantStar.energy - stripRate);
+
+        // Spawn stripped particles streaming toward the lens
+        const spawnRate = (1 - distGiantToLens / feedingRange) * 8; // particles per frame
+        for (let i = 0; i < spawnRate && energyParticles.length < MAX_ENERGY_PARTICLES; i++) {
+          const angle = Math.atan2(lensY - giantStar.y, lensX - giantStar.x);
+          const spread = (Math.random() - 0.5) * 1.2;
+          const speed = 80 + Math.random() * 120;
+          energyParticles.push({
+            x: giantStar.x + (Math.random() - 0.5) * giantStar.radius * giantStar.energy,
+            y: giantStar.y + (Math.random() - 0.5) * giantStar.radius * giantStar.energy,
+            vx: Math.cos(angle + spread) * speed,
+            vy: Math.sin(angle + spread) * speed,
+            life: 1.0,
+            maxLife: 1.5 + Math.random() * 1.0,
+            size: 0.8 + Math.random() * 1.5,
+          });
+        }
+      } else if (giantStar.energy < 1.0) {
+        // Slowly regenerate when lens is far
+        giantStar.energy = Math.min(1.0, giantStar.energy + dt * 0.05);
+      }
+
+      // Update and draw energy particles
+      for (let i = energyParticles.length - 1; i >= 0; i--) {
+        const ep = energyParticles[i]!;
+        // Accelerate toward lens (gravitational pull)
+        const epDx = lensX - ep.x;
+        const epDy = lensY - ep.y;
+        const epDist = Math.sqrt(epDx * epDx + epDy * epDy);
+        if (epDist > 5) {
+          const accel = 300 / (epDist + 30);
+          ep.vx += (epDx / epDist) * accel * dt;
+          ep.vy += (epDy / epDist) * accel * dt;
+        }
+        ep.x += ep.vx * dt;
+        ep.y += ep.vy * dt;
+        ep.life -= dt / ep.maxLife;
+
+        // Remove if dead or consumed by lens
+        if (ep.life <= 0 || epDist < 15) {
+          energyParticles.splice(i, 1);
+          continue;
+        }
+
+        // Draw — colour shifts from warm orange to hot blue as it approaches lens
+        const heatT = Math.min(1, (1 - epDist / 300));
+        const pr = Math.round(255 - heatT * 100);
+        const pg = Math.round(180 - heatT * 80);
+        const pb = Math.round(100 + heatT * 155);
+        const pa = ep.life * 0.7;
+        ctx.save();
+        ctx.shadowColor = `rgba(${pr},${pg},${pb},${pa * 0.6})`;
+        ctx.shadowBlur = ep.size * 3;
+        ctx.beginPath();
+        ctx.arc(ep.x, ep.y, ep.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${pr},${pg},${pb},${pa})`;
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Draw the giant star itself
+      const starEnergy = giantStar.energy;
+      const starR = giantStar.radius * (0.6 + starEnergy * 0.4);
+
+      // Outer glow
+      const glow = ctx.createRadialGradient(giantStar.x, giantStar.y, 0, giantStar.x, giantStar.y, starR * 3);
+      glow.addColorStop(0, `rgba(255,200,140,${0.15 * starEnergy})`);
+      glow.addColorStop(0.3, `rgba(255,160,100,${0.08 * starEnergy})`);
+      glow.addColorStop(1, `rgba(255,120,60,0)`);
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(giantStar.x, giantStar.y, starR * 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Core
+      const core = ctx.createRadialGradient(giantStar.x, giantStar.y, 0, giantStar.x, giantStar.y, starR);
+      core.addColorStop(0, `rgba(255,240,220,${0.8 * starEnergy})`);
+      core.addColorStop(0.5, `rgba(255,190,130,${0.5 * starEnergy})`);
+      core.addColorStop(1, `rgba(255,140,80,0)`);
+      ctx.fillStyle = core;
+      ctx.beginPath();
+      ctx.arc(giantStar.x, giantStar.y, starR, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Accretion glow around lens when feeding
+      if (distGiantToLens < feedingRange && energyParticles.length > 5) {
+        const feedIntensity = (1 - distGiantToLens / feedingRange) * (1 - starEnergy + 0.2);
+        const accGlow = ctx.createRadialGradient(lensX, lensY, 8, lensX, lensY, 40);
+        accGlow.addColorStop(0, `rgba(180,160,255,${feedIntensity * 0.3})`);
+        accGlow.addColorStop(0.5, `rgba(140,100,255,${feedIntensity * 0.15})`);
+        accGlow.addColorStop(1, `rgba(100,60,255,0)`);
+        ctx.fillStyle = accGlow;
+        ctx.beginPath();
+        ctx.arc(lensX, lensY, 40, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
 
     // Mouse tracking — move lens to mouse position
@@ -349,6 +482,9 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
       lensY = H / 2;
       targetLensX = W / 2;
       targetLensY = H / 2;
+      giantStar.baseX = W * 0.65;
+      giantStar.baseY = H * 0.4;
+      giantStar.orbitRadius = W * 0.25;
       initStars();
     });
     ro.observe(container);
