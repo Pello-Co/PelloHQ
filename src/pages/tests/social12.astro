@@ -290,7 +290,32 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
   let lastPulseSpawn = 0;
 
   function drawGlobeDots(beamY: number, t: number) {
-    // Pass 1: ocean dots (very subtle grid texture)
+    // Pass 1: BACK hemisphere land dots (behind the globe — faded/transparent)
+    for (const dot of globeDots) {
+      if (!dot.isLand) continue;
+      const [rx, ry, rz] = applyRotations(dot.x, dot.y, dot.z);
+      if (rz >= -0.05) continue; // skip front hemisphere — drawn later
+      const sx = GLOBE_CX + rx * GLOBE_R;
+      const sy = GLOBE_CY - ry * GLOBE_R;
+      const backDepth = Math.max(0, -rz - 0.05); // 0 at edge, ~1 at back center
+      ctx.globalAlpha = 0.03 + backDepth * 0.04; // very faint, max ~0.07
+      ctx.fillStyle = 'rgb(0,150,145)'; // dimmer cyan
+      ctx.beginPath(); ctx.arc(sx, sy, 0.6 + backDepth * 0.3, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Pass 2: BACK hemisphere ocean dots
+    for (const dot of globeDots) {
+      if (dot.isLand) continue;
+      const [rx, ry, rz] = applyRotations(dot.x, dot.y, dot.z);
+      if (rz >= -0.05) continue;
+      const sx = GLOBE_CX + rx * GLOBE_R;
+      const sy = GLOBE_CY - ry * GLOBE_R;
+      ctx.globalAlpha = 0.008;
+      ctx.fillStyle = 'rgb(0,60,58)';
+      ctx.beginPath(); ctx.arc(sx, sy, 0.4, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Pass 3: FRONT hemisphere ocean dots
     for (const dot of globeDots) {
       if (dot.isLand) continue;
       const [rx, ry, rz] = applyRotations(dot.x, dot.y, dot.z);
@@ -304,7 +329,7 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
       ctx.beginPath(); ctx.arc(sx, sy, 0.5, 0, Math.PI * 2); ctx.fill();
     }
 
-    // Pass 2: land dots with glow built in (single pass for performance)
+    // Pass 4: FRONT hemisphere land dots with glow
     ctx.save();
     ctx.shadowColor = 'rgba(0,242,234,0.35)';
     ctx.shadowBlur = 3;
@@ -317,7 +342,6 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
       const depth = Math.max(0, rz);
       const nearBeam = Math.abs(sy - beamY) < 10;
 
-      // Enhanced: land dots flicker subtly like a hologram
       const flicker = 0.92 + Math.sin(t * 8 + dot.x * 20 + dot.y * 30) * 0.08;
       const baseAlpha = (0.18 + depth * 0.40) * flicker;
       ctx.globalAlpha = nearBeam ? Math.min(1, baseAlpha + 0.5) : baseAlpha;
