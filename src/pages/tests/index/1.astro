@@ -256,6 +256,13 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     -webkit-backdrop-filter: blur(8px) saturate(1.1);
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
   }
+  /* Prevent GSAP opacity animation from breaking backdrop-filter on product cards */
+  .product-card .ps-visual,
+  .product-card .ps-info,
+  .product-card .ps-section {
+    opacity: 1 !important;
+    transform: none !important;
+  }
 
   /* Panel header bar */
   .product-card .product-visual-panel > div:first-child {
