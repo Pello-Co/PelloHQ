@@ -288,6 +288,17 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
         ctx.lineTo(br.sx, br.sy); ctx.lineTo(bl.sx, bl.sy); ctx.closePath();
         if (isHov) {
           ctx.fillStyle = 'rgba(139,92,246,0.20)';
+        } else if (hoveredLegend && cell.status !== hoveredLegend) {
+          // Dim non-matching cells when a legend item is hovered
+          ctx.fillStyle = 'rgba(6,7,18,0.02)';
+        } else if (hoveredLegend && cell.status === hoveredLegend) {
+          // Brighten matching cells when a legend item is hovered
+          const a = (cell.status === 'replied' ? 0.25 : cell.status === 'opened' ? 0.18 : 0.10) * (0.5 + depth * 0.5) + pBoost;
+          ctx.fillStyle = cell.status === 'replied'
+            ? `rgba(74,222,128,${a})`
+            : cell.status === 'opened'
+            ? `rgba(168,85,247,${a})`
+            : `rgba(139,92,246,${a})`;
         } else {
           const base = cell.status === 'replied' ? 0.10 : cell.status === 'opened' ? 0.055 : 0.025;
           const a    = base * (0.25 + depth * 0.75) + pBoost;
@@ -339,6 +350,9 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
       drawTooltip(getCell(hovCellC, hovCellR), (tl.sx + br.sx) / 2, (tl.sy + br.sy) / 2 - 8);
     }
 
+    // Legend / Key
+    drawLegend();
+
     // Counter
     ctx.save(); ctx.textAlign = 'right';
     ctx.fillStyle = 'rgba(139,92,246,0.6)'; ctx.font = '11px "SF Mono","Fira Code",monospace';
@@ -347,15 +361,80 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
   }
 
   // ─── Events ───────────────────────────────────────────────────────────────
+  // ─── Legend / Key ──────────────────────────────────────────────────────────
+  interface LegendItem {
+    label: string; status: string;
+    color: string; dotColor: string;
+    x: number; y: number; w: number; h: number;
+  }
+  let legendItems: LegendItem[] = [];
+  let hoveredLegend: string | null = null;
+
+  function buildLegend() {
+    const items = [
+      { label: 'Delivered', status: 'delivered', color: 'rgba(139,92,246,0.5)', dotColor: 'rgba(139,92,246,0.25)' },
+      { label: 'Opened', status: 'opened', color: 'rgba(168,85,247,0.6)', dotColor: 'rgba(168,85,247,0.35)' },
+      { label: 'Replied', status: 'replied', color: 'rgba(74,222,128,0.7)', dotColor: 'rgba(74,222,128,0.45)' },
+    ];
+    const legendX = 16;
+    const legendY = 16;
+    const itemH = 22;
+    const itemW = 100;
+    legendItems = items.map((it, i) => ({
+      ...it,
+      x: legendX,
+      y: legendY + i * itemH,
+      w: itemW,
+      h: itemH,
+    }));
+  }
+  buildLegend();
+
+  function drawLegend() {
+    for (const item of legendItems) {
+      const isHovered = hoveredLegend === item.status;
+      const alpha = isHovered ? 1.0 : 0.5;
+
+      // Background highlight on hover
+      if (isHovered) {
+        ctx.fillStyle = 'rgba(139,92,246,0.06)';
+        rrect(ctx, item.x - 4, item.y - 2, item.w + 8, item.h, 4);
+        ctx.fill();
+      }
+
+      // Colour dot
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = item.color;
+      ctx.beginPath();
+      ctx.arc(item.x + 6, item.y + item.h / 2, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Label
+      ctx.fillStyle = isHovered ? '#ffffff' : 'rgba(255,255,255,0.5)';
+      ctx.font = `${isHovered ? 'bold ' : ''}10px "SF Mono","Fira Code",monospace`;
+      ctx.textAlign = 'left';
+      ctx.fillText(item.label, item.x + 16, item.y + item.h / 2 + 3);
+      ctx.globalAlpha = 1;
+    }
+  }
   wrap.addEventListener('mousemove', e => {
     const rect = wrap.getBoundingClientRect();
     const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    // Check legend hover first
+    hoveredLegend = null;
+    for (const item of legendItems) {
+      if (mx >= item.x - 4 && mx <= item.x + item.w + 4 && my >= item.y - 2 && my <= item.y + item.h) {
+        hoveredLegend = item.status;
+        hovCellC = -1; hovCellR = -1;
+        return;
+      }
+    }
     if (my < VP_Y) { hovCellC = -1; hovCellR = -1; return; }
     const [gc, gr] = screenToGrid(mx, my);
     hovCellC = Math.floor(gc); hovCellR = Math.floor(gr);
   });
-  wrap.addEventListener('mouseleave', () => { hovCellC = -1; hovCellR = -1; });
-  wrap.addEventListener('touchstart', () => { hovCellC = -1; hovCellR = -1; }, { passive: true });
+  wrap.addEventListener('mouseleave', () => { hovCellC = -1; hovCellR = -1; hoveredLegend = null; });
+  wrap.addEventListener('touchstart', () => { hovCellC = -1; hovCellR = -1; hoveredLegend = null; }, { passive: true });
 
   const ro = new ResizeObserver(() => resize());
   ro.observe(wrap);
