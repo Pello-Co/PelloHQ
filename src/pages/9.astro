@@ -46,10 +46,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     <FAQ />
 
     <!-- Section 14: Final CTA with Aurora + Dot Grid -->
-    <div id="cta-aurora-wrap" class="relative">
-      <canvas class="aurora-canvas-cta" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;border-radius:1.5rem;overflow:hidden;"></canvas>
-      <FinalCTA />
-    </div>
+    <FinalCTA />
   </main>
   <Footer />
 </Layout>
@@ -119,13 +116,14 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
   }
 
-  /* ── CTA aurora wrap — clip aurora to the section ────────────── */
-  #cta-aurora-wrap {
+  /* ── CTA card clips aurora inside the rounded box ─────────────── */
+  .final-cta {
     overflow: hidden;
+    position: relative;
   }
 
-  /* ── CTA section URL input — frosted glass ──────────────────── */
-  #cta-aurora-wrap .url-input-wrap {
+  /* ── CTA URL input — frosted glass ─────────────────────────── */
+  .final-cta .url-input-wrap {
     background: rgba(255, 255, 255, 0.06) !important;
     backdrop-filter: blur(24px) saturate(1.4);
     -webkit-backdrop-filter: blur(24px) saturate(1.4);
@@ -483,8 +481,14 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
 
   // ─── Aurora for CTA section ─────────────────────────────────────────────────
   {
-    const aCanvasCta = document.querySelector<HTMLCanvasElement>('.aurora-canvas-cta');
-    const aWrapCta = document.getElementById('cta-aurora-wrap');
+    // Inject aurora canvas inside .final-cta card so it clips to the rounded box
+    const ctaCardAurora = document.querySelector('.final-cta') as HTMLElement;
+    const aCanvasCta = document.createElement('canvas');
+    aCanvasCta.className = 'aurora-canvas-cta';
+    aCanvasCta.setAttribute('aria-hidden', 'true');
+    aCanvasCta.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;border-radius:inherit;';
+    ctaCardAurora.insertBefore(aCanvasCta, ctaCardAurora.firstChild);
+    const aWrapCta = ctaCardAurora;
     if (aCanvasCta && aWrapCta) {
       const actxC = aCanvasCta.getContext('2d')!;
       const offC = document.createElement('canvas');
