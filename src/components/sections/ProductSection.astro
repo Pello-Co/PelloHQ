@@ -31,15 +31,17 @@ const visualContent: Record<
 > = {
   seo: {
     rows: [
-      { label: 'Best {Service} in {City}', value: '2,847 pages', status: 'ready' },
-      { label: '{Product} for {Industry}', value: '1,203 pages', status: 'ready' },
-      { label: 'How to {Action} with {Tool}', value: '892 pages', status: 'generating' },
-      { label: '{Competitor} alternative', value: '445 pages', status: 'queued' },
+      { label: 'Best {Service} in {City}', value: '4,218 pages', status: 'ready' },
+      { label: '{Product} for {Industry}', value: '3,847 pages', status: 'ready' },
+      { label: 'How to {Action} with {Tool}', value: '2,956 pages', status: 'ready' },
+      { label: '{Competitor} alternative', value: '2,431 pages', status: 'generating' },
+      { label: 'Top {N} {Category} in {Year}', value: '1,892 pages', status: 'generating' },
+      { label: '{Service} near {Location}', value: '1,943 pages', status: 'queued' },
     ],
     metric: [
-      { value: '5,387', label: 'total pages' },
+      { value: '17,287', label: 'total pages' },
       { value: '12', label: 'languages' },
-      { value: '+340%', label: 'est. traffic' },
+      { value: '+2,386%', label: 'est. traffic' },
     ],
   },
   reach: {
@@ -302,14 +304,15 @@ const statusBg: Record<string, string> = {
           <div class="p-5">
             <!-- Data rows -->
             <p class="text-xs text-zinc-600 uppercase tracking-wider font-medium mb-3">
-              Active workflows
+              {product.icon === 'seo' ? 'SEO Page Templates' : 'Active workflows'}
             </p>
-            <div class="flex flex-col gap-2 mb-5">
+            <div class={`flex flex-col gap-2 mb-5 ${product.icon === 'seo' ? 'seo-rows-scroll' : ''}`} style={product.icon === 'seo' ? 'max-height: 180px; overflow: hidden; position: relative;' : ''}>
               {
-                visual.rows.map((row) => (
+                visual.rows.map((row, idx) => (
                   <div
-                    class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs"
+                    class={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs ${product.icon === 'seo' ? 'seo-scroll-row' : ''}`}
                     style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.055);"
+                    data-row-idx={idx}
                   >
                     <span class="font-mono text-zinc-300 truncate mr-3">{row.label}</span>
                     <div class="flex items-center gap-2 flex-shrink-0">
@@ -377,5 +380,32 @@ const statusBg: Record<string, string> = {
         });
       });
     }
+  });
+
+  // SEO rows scrolling animation — cycle through rows every 3 seconds
+  document.querySelectorAll<HTMLElement>('.seo-rows-scroll').forEach((container) => {
+    const rows = container.querySelectorAll<HTMLElement>('.seo-scroll-row');
+    if (rows.length <= 4) return;
+    const rowHeight = rows[0].offsetHeight + 8; // height + gap
+    let offset = 0;
+
+    setInterval(() => {
+      offset += rowHeight;
+      // Scroll up smoothly
+      gsap.to(container, {
+        scrollTop: offset,
+        duration: 0.6,
+        ease: 'power2.inOut',
+        onComplete: () => {
+          // When we've scrolled past the first row, move it to the end
+          const firstRow = container.firstElementChild as HTMLElement;
+          if (firstRow && container.scrollTop >= rowHeight) {
+            container.appendChild(firstRow);
+            container.scrollTop -= rowHeight;
+            offset -= rowHeight;
+          }
+        }
+      });
+    }, 3000);
   });
 </script>
