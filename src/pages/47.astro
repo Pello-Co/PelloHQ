@@ -1,0 +1,393 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+import HeroPello from '../components/sections/HeroPello.astro';
+import HowItWorks from '../components/sections/HowItWorks.astro';
+import ProductSection from '../components/sections/ProductSection.astro';
+import UseCases from '../components/sections/UseCases.astro';
+import Stats from '../components/sections/Stats.astro';
+import FAQ from '../components/sections/FAQ.astro';
+import FinalCTA from '../components/sections/FinalCTA.astro';
+---
+
+<Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <!-- Parallax Strata: three canvas layers at different geological depths -->
+      <canvas class="bg-canvas strata-back"  aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+      <canvas class="bg-canvas strata-mid"   aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+      <canvas class="bg-canvas strata-front" aria-hidden="true" style="position:absolute;inset:0;z-index:2;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99,102,241,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── 2D Perlin Noise (inline) ─────────────────────────────────────────────
+  const PERM = new Uint8Array(512);
+  {
+    const p = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) p[i] = i;
+    for (let i = 255; i > 0; i--) {
+      const j = ((i * 1664525 + 1013904223) >>> 0) % (i + 1);
+      const tmp = p[i]!; p[i] = p[j]!; p[j] = tmp;
+    }
+    for (let i = 0; i < 512; i++) PERM[i] = p[i & 255]!;
+  }
+  const GRADS2: [number, number][] = [[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+
+  function fade(t: number): number { return t * t * t * (t * (t * 6 - 15) + 10); }
+  function lerp(a: number, b: number, t: number): number { return a + t * (b - a); }
+  function grad2(h: number, x: number, y: number): number {
+    const g = GRADS2[h & 7]!;
+    return g[0] * x + g[1] * y;
+  }
+  function noise2(x: number, y: number): number {
+    const X = Math.floor(x) & 255;
+    const Y = Math.floor(y) & 255;
+    const xf = x - Math.floor(x);
+    const yf = y - Math.floor(y);
+    const u = fade(xf), v = fade(yf);
+    const aa = PERM[PERM[X]!     + Y]!;
+    const ab = PERM[PERM[X]!     + Y + 1]!;
+    const ba = PERM[PERM[X + 1]! + Y]!;
+    const bb = PERM[PERM[X + 1]! + Y + 1]!;
+    return lerp(
+      lerp(grad2(aa, xf,     yf),     grad2(ba, xf - 1, yf),     u),
+      lerp(grad2(ab, xf,     yf - 1), grad2(bb, xf - 1, yf - 1), u),
+      v
+    );
+  }
+
+  // ─── Marching Squares ─────────────────────────────────────────────────────
+  function edgeMidpoint(
+    edge: number, x0: number, y0: number, step: number,
+    vbl: number, vbr: number, vtr: number, vtl: number, iso: number
+  ): [number, number] {
+    switch (edge) {
+      case 0: { const t = (iso - vbl) / (vbr - vbl + 1e-12); return [x0 + t * step, y0]; }
+      case 1: { const t = (iso - vbr) / (vtr - vbr + 1e-12); return [x0 + step, y0 + t * step]; }
+      case 2: { const t = (iso - vtl) / (vtr - vtl + 1e-12); return [x0 + t * step, y0 + step]; }
+      case 3: { const t = (iso - vbl) / (vtl - vbl + 1e-12); return [x0, y0 + t * step]; }
+    }
+    return [x0, y0];
+  }
+
+  const MS_TABLE: number[][] = [
+    [], [3,0], [0,1], [3,1], [1,2], [3,0,1,2], [0,2], [3,2],
+    [2,3], [0,2], [0,3,2,1], [1,2], [1,3], [0,1], [3,0], [],
+  ];
+
+  // ─── Layer definitions ─────────────────────────────────────────────────────
+  // Three geological strata at different noise scales, speeds, and visual depths.
+  // parallaxFactor controls how far this layer translates on mouse move.
+  interface LayerDef {
+    scale: number;       // absolute noise scale (smaller = larger features)
+    speed: number;       // t-multiplier for animation
+    alphaMin: number;
+    alphaMax: number;
+    lineWidth: number;
+    r: number; g: number; b: number;
+    parallaxFactor: number; // 1.0 = full shift, 0.2 = subtle
+    numLevels: number;
+  }
+
+  // Max pixel shift per axis at the farthest mouse position (factor=1)
+  const MAX_SHIFT_PX = 32;
+
+  const LAYERS: LayerDef[] = [
+    // Layer 1 — back: large features, slow, deep violet
+    { scale: 0.0045 * 0.5, speed: 0.3,  alphaMin: 0.04, alphaMax: 0.06, lineWidth: 1.0,  r: 59,  g:  7, b: 100, parallaxFactor: 0.2, numLevels:  8 },
+    // Layer 2 — mid: standard features, standard speed, indigo
+    { scale: 0.0045 * 1.0, speed: 1.0,  alphaMin: 0.08, alphaMax: 0.12, lineWidth: 0.75, r: 99,  g: 102, b: 241, parallaxFactor: 0.5, numLevels: 10 },
+    // Layer 3 — front: fine features, fast, bright purple
+    { scale: 0.0045 * 2.5, speed: 2.0,  alphaMin: 0.12, alphaMax: 0.18, lineWidth: 0.5,  r: 167, g: 139, b: 250, parallaxFactor: 1.0, numLevels: 12 },
+  ];
+
+  // ─── Per-canvas stratum renderer ───────────────────────────────────────────
+  interface Stratum {
+    canvas: HTMLCanvasElement;
+    ctx: CanvasRenderingContext2D;
+    def: LayerDef;
+    t: number;
+  }
+
+  function renderStratum(s: Stratum, W: number, H: number, dpr: number) {
+    const { ctx, def } = s;
+    const STEP = W < 768 ? 6 : 4;
+    const cols = Math.ceil(W / STEP) + 1;
+    const rows = Math.ceil(H / STEP) + 1;
+    const layerT = s.t * def.speed;
+
+    // Build height field
+    const field = new Float32Array(cols * rows);
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const gx = c * STEP;
+        const gy = r * STEP;
+        const nx = gx * def.scale;
+        const ny = gy * def.scale;
+        let v = noise2(nx + layerT * 0.3, ny + layerT * 0.2) * 0.6
+              + noise2(nx * 2 + layerT * 0.5, ny * 2 + layerT * 0.4) * 0.3
+              + noise2(nx * 4 + layerT * 0.8, ny * 4 + layerT * 0.7) * 0.1;
+        field[r * cols + c] = Math.max(0, Math.min(1, (v + 1) * 0.5));
+      }
+    }
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+
+    const numLevels = W < 768 ? Math.min(6, def.numLevels) : def.numLevels;
+    for (let li = 0; li < numLevels; li++) {
+      const iso = (li + 0.5) / numLevels;
+      const alpha = def.alphaMin + (def.alphaMax - def.alphaMin) * iso;
+
+      ctx.beginPath();
+      ctx.strokeStyle = `rgba(${def.r},${def.g},${def.b},${alpha})`;
+      ctx.lineWidth = def.lineWidth;
+
+      for (let r = 0; r < rows - 1; r++) {
+        for (let c = 0; c < cols - 1; c++) {
+          const x0 = c * STEP, y0 = r * STEP;
+          const vbl = field[r       * cols + c] ?? 0;
+          const vbr = field[r       * cols + c + 1] ?? 0;
+          const vtr = field[(r + 1) * cols + c + 1] ?? 0;
+          const vtl = field[(r + 1) * cols + c] ?? 0;
+          const code =
+            ((vbl > iso) ? 1 : 0) | ((vbr > iso) ? 2 : 0) |
+            ((vtr > iso) ? 4 : 0) | ((vtl > iso) ? 8 : 0);
+          const edges = MS_TABLE[code] ?? [];
+          if (edges.length === 0) continue;
+          for (let e = 0; e < edges.length; e += 2) {
+            const [x1, y1] = edgeMidpoint(edges[e]!, x0, y0, STEP, vbl, vbr, vtr, vtl, iso);
+            const [x2, y2] = edgeMidpoint(edges[e + 1]!, x0, y0, STEP, vbl, vbr, vtr, vtl, iso);
+            ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+          }
+        }
+      }
+      ctx.stroke();
+    }
+  }
+
+  // ─── Setup: three canvases, shared mouse state ──────────────────────────────
+  function createParallaxStrata(
+    container: HTMLElement,
+    backCanvas: HTMLCanvasElement,
+    midCanvas: HTMLCanvasElement,
+    frontCanvas: HTMLCanvasElement
+  ) {
+    const dpr = window.devicePixelRatio || 1;
+    let W = 0, H = 0;
+    let rafId = 0;
+
+    const canvases = [backCanvas, midCanvas, frontCanvas];
+
+    function resize() {
+      const rect = container.getBoundingClientRect();
+      W = Math.round(rect.width);
+      H = Math.round(rect.height);
+      for (const cv of canvases) {
+        cv.width  = W * dpr;
+        cv.height = H * dpr;
+        cv.style.width  = `${W}px`;
+        cv.style.height = `${H}px`;
+      }
+    }
+    resize();
+
+    const strata: Stratum[] = canvases.map((cv, i) => ({
+      canvas: cv,
+      ctx: cv.getContext('2d')!,
+      def: LAYERS[i]!,
+      t: 0,
+    }));
+
+    // Mouse: normalised offset from centre (-1 to 1 per axis)
+    let normX = 0, normY = 0;
+    let targetNormX = 0, targetNormY = 0;
+
+    // Global time
+    let globalT = 0;
+
+    function frame() {
+      rafId = requestAnimationFrame(frame);
+      globalT += 0.001;
+
+      // Smooth mouse
+      normX += (targetNormX - normX) * 0.07;
+      normY += (targetNormY - normY) * 0.07;
+
+      for (const s of strata) {
+        s.t = globalT;
+
+        // Parallax: physically translate each canvas
+        const shiftX = normX * MAX_SHIFT_PX * s.def.parallaxFactor;
+        const shiftY = normY * MAX_SHIFT_PX * s.def.parallaxFactor;
+        s.canvas.style.transform = `translate(${shiftX.toFixed(2)}px, ${shiftY.toFixed(2)}px)`;
+
+        renderStratum(s, W, H, dpr);
+      }
+    }
+
+    container.addEventListener('mousemove', (e: MouseEvent) => {
+      const rect = container.getBoundingClientRect();
+      targetNormX = ((e.clientX - rect.left) / rect.width  - 0.5) * 2;
+      targetNormY = ((e.clientY - rect.top)  / rect.height - 0.5) * 2;
+    });
+    container.addEventListener('mouseleave', () => {
+      targetNormX = 0;
+      targetNormY = 0;
+    });
+
+    const ro = new ResizeObserver(() => {
+      resize();
+      for (const s of strata) s.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    });
+    ro.observe(container);
+
+    rafId = requestAnimationFrame(frame);
+    // Fade in
+    requestAnimationFrame(() => {
+      for (const cv of canvases) cv.style.opacity = '1';
+    });
+
+    return { stop: () => cancelAnimationFrame(rafId) };
+  }
+
+  // ─── Instantiate for hero wrap ─────────────────────────────────────────────
+  const heroWrap = document.getElementById('hero-wrap')!;
+  if (heroWrap) {
+    const backCv  = heroWrap.querySelector<HTMLCanvasElement>('.strata-back')!;
+    const midCv   = heroWrap.querySelector<HTMLCanvasElement>('.strata-mid')!;
+    const frontCv = heroWrap.querySelector<HTMLCanvasElement>('.strata-front')!;
+    if (backCv && midCv && frontCv) {
+      createParallaxStrata(heroWrap, backCv, midCv, frontCv);
+    }
+    const gridTex = heroWrap.querySelector('.grid-texture') as HTMLElement | null;
+    if (gridTex) gridTex.style.display = 'none';
+  }
+
+  // ─── Inject + instantiate for final-cta ───────────────────────────────────
+  const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+  if (ctaCard) {
+    ctaCard.style.position = 'relative';
+    const baseStyle = 'position:absolute;inset:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;will-change:transform;';
+    const ctaBack  = document.createElement('canvas');
+    const ctaMid   = document.createElement('canvas');
+    const ctaFront = document.createElement('canvas');
+    ctaBack.setAttribute('aria-hidden', 'true');
+    ctaMid.setAttribute('aria-hidden', 'true');
+    ctaFront.setAttribute('aria-hidden', 'true');
+    ctaBack.style.cssText  = baseStyle + 'z-index:0;';
+    ctaMid.style.cssText   = baseStyle + 'z-index:1;';
+    ctaFront.style.cssText = baseStyle + 'z-index:2;';
+    ctaCard.insertBefore(ctaFront, ctaCard.firstChild);
+    ctaCard.insertBefore(ctaMid,   ctaCard.firstChild);
+    ctaCard.insertBefore(ctaBack,  ctaCard.firstChild);
+    createParallaxStrata(ctaCard, ctaBack, ctaMid, ctaFront);
+
+    const gridTexCta = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+    if (gridTexCta) gridTexCta.style.display = 'none';
+  }
+
+  }); // end ric
+</script>
