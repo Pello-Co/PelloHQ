@@ -1,0 +1,762 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout
+  title="PelloReach — 23% Reply Rate · AI-Personalised Outreach at Scale"
+  description="PelloReach delivers AI-personalised email sequences with real reply rates. 500+ warmed sending domains, intelligent lead finding, and inbox placement technology that actually works."
+>
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas
+        class="reach8-canvas"
+        aria-hidden="true"
+        style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"
+      ></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #8b5cf6 !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,12,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(139,92,246,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  // Polyfill requestIdleCallback for Safari
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Data ──────────────────────────────────────────────────────────────────
+  const FIRST_NAMES = ["Sarah","James","Emma","Michael","Sophie","Daniel","Rachel","Tom","Jessica","Alex","Chris","Lauren","David","Hannah","Ben","Kate","Ryan","Olivia","Mark","Lucy"];
+  const LAST_NAMES  = ["Chen","Williams","Patel","Thompson","Garcia","Anderson","Martinez","Johnson","Lee","Taylor","Brown","Wilson","Moore","Clark","Hall","Young","King","Wright","Scott","Green"];
+  const COMPANIES   = ["Acme Corp","TechFlow","DataSync","CloudNine","Nexus Labs","Horizon AI","Vertex Systems","PulseMedia","Zenith Group","Atlas Digital","BrightPath","CoreStack","DeepBlue","EdgePoint","FrontLine","GrowthLab","HyperScale","InnoVate","JetStream","KineticIO"];
+  const TITLES      = ["VP Growth","Head of Marketing","Co-Founder","Director of Sales","CMO","Growth Lead","Head of Revenue","VP Marketing","CEO","Partnerships Lead","Head of BD","Marketing Director"];
+  const SUBJECTS    = [
+    "Quick question about {company}'s outreach strategy",
+    "Partnership opportunity for {company}",
+    "How {company} can 3x their reply rates",
+    "Re: {company}'s growth plans this quarter",
+    "Personalised growth plan for {company}",
+    "Saw {company} is hiring — thought this might help",
+    "One idea for {company}'s pipeline",
+    "Following up on {company}'s expansion",
+  ];
+  const REPLIES = [
+    "Great timing — let's schedule a call next week.",
+    "This is exactly what we've been looking for.",
+    "Interested. Can you send more details?",
+    "We've been struggling with this. Let's talk.",
+    "Perfect timing! I'm available Thursday.",
+    "Forwarded this to our team — expect a reply soon.",
+    "Can we jump on a call tomorrow at 2pm?",
+    "Yes, this aligns with our Q2 goals. Let's connect.",
+  ];
+
+  function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  // ─── Constants ─────────────────────────────────────────────────────────────
+  const NODE_TARGET     = 70;
+  const NODE_MIN_DIST   = 28;
+  const NODE_HOVER_R    = 15;   // hover detection radius
+  const OUTBOUND_INTERVAL  = 1.5;   // seconds between outbound ripples
+  const OUTBOUND_SPEED     = 180;   // px/s
+  const OUTBOUND_MAX_R     = 460;   // max radius before fading
+  const REPLY_DELAY        = 0.5;   // seconds after hit before reply emits
+  const REPLY_SPEED        = 150;
+  const REPLY_MAX_R        = 160;
+  const MOUSE_RIPPLE_INTERVAL = 0.18; // seconds between mouse ripples
+  const MOUSE_RIPPLE_MAX_R    = 55;
+  const HIT_THRESHOLD         = 8;   // px — how close ripple ring must be to node
+
+  // ─── Types ─────────────────────────────────────────────────────────────────
+  type NodeState = 'pending' | 'delivered' | 'opened' | 'replied';
+
+  interface Node {
+    x: number; y: number;
+    state: NodeState;
+    name: string;
+    company: string;
+    title: string;
+    subject: string;
+    replyText: string | undefined;
+    brightness: number;       // 0–1 transient flash
+  }
+
+  interface Ripple {
+    ox: number; oy: number;   // origin
+    radius: number;
+    maxRadius: number;
+    speed: number;
+    color: [number,number,number];
+    peakAlpha: number;
+    triggered: Set<number>;   // node indices already triggered
+    type: 'outbound' | 'reply' | 'mouse';
+  }
+
+  interface PendingReply {
+    nodeIdx: number;
+    emitAt: number;
+  }
+
+  // ─── State ─────────────────────────────────────────────────────────────────
+  const canvas  = document.querySelector<HTMLCanvasElement>('.reach8-canvas')!;
+  const wrap    = document.getElementById('hero-wrap')!;
+  const ctx     = canvas.getContext('2d')!;
+
+  let nodes:          Node[]         = [];
+  let ripples:        Ripple[]       = [];
+  let pendingReplies: PendingReply[] = [];
+  let mouse:         { x: number; y: number } | null = null;
+  let hoveredNode    = -1;
+  let dpr            = 1;
+  let engineX        = 0;
+  let engineY        = 0;
+  let lastOutboundT  = 0;
+  let lastMouseRipT  = 0;
+  let lastFrameT     = 0;
+  let startT         = 0;
+  let replyRateDisp  = 0;    // animated reply rate display 0–23
+
+  // ─── Build nodes ───────────────────────────────────────────────────────────
+  function buildNodes() {
+    nodes          = [];
+    ripples        = [];
+    pendingReplies = [];
+    const W        = canvas.width  / dpr;
+    const H        = canvas.height / dpr;
+    engineX        = W * 0.30;
+    engineY        = H * 0.50;
+
+    const minX = W * 0.38;
+    const maxX = W * 0.95;
+    const minY = H * 0.06;
+    const maxY = H * 0.94;
+    let attempts = 0;
+
+    while (nodes.length < NODE_TARGET && attempts < 6000) {
+      attempts++;
+      const x  = minX + Math.random() * (maxX - minX);
+      const y  = minY + Math.random() * (maxY - minY);
+      let ok = true;
+      for (const n of nodes) {
+        const dx = n.x - x, dy = n.y - y;
+        if (Math.sqrt(dx * dx + dy * dy) < NODE_MIN_DIST) { ok = false; break; }
+      }
+      if (!ok) continue;
+
+      const r     = Math.random();
+      const state: NodeState = r < 0.15 ? 'replied'
+                             : r < 0.48 ? 'opened'
+                             : r < 0.78 ? 'delivered'
+                             : 'pending';
+      const company = pick(COMPANIES);
+      nodes.push({
+        x, y, state, company,
+        name:      `${pick(FIRST_NAMES)} ${pick(LAST_NAMES)}`,
+        title:     pick(TITLES),
+        subject:   pick(SUBJECTS).replace('{company}', company),
+        replyText: state === 'replied' ? pick(REPLIES) : undefined,
+        brightness: 0,
+      });
+    }
+
+    startT        = performance.now() * 0.001;
+    lastOutboundT = startT;
+    replyRateDisp = 0;
+  }
+
+  // ─── Resize ────────────────────────────────────────────────────────────────
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    const w    = Math.round(rect.width);
+    const h    = Math.round(rect.height);
+    canvas.width         = w * dpr;
+    canvas.height        = h * dpr;
+    canvas.style.width   = `${w}px`;
+    canvas.style.height  = `${h}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildNodes();
+  }
+
+  // ─── Node colour by state ──────────────────────────────────────────────────
+  function nodeBaseColor(state: NodeState): [number,number,number,number] {
+    switch (state) {
+      case 'replied':   return [74,  222, 128, 0.45];
+      case 'opened':    return [139,  92, 246, 0.35];
+      case 'delivered': return [139,  92, 246, 0.25];
+      default:          return [255, 255, 255, 0.15];
+    }
+  }
+
+  // ─── Find hovered node ─────────────────────────────────────────────────────
+  function findHoveredNode(mx: number, my: number): number {
+    let best = -1, bestD = NODE_HOVER_R;
+    for (let i = 0; i < nodes.length; i++) {
+      const n  = nodes[i];
+      const dx = n.x - mx, dy = n.y - my;
+      const d  = Math.sqrt(dx * dx + dy * dy);
+      if (d < bestD) { bestD = d; best = i; }
+    }
+    return best;
+  }
+
+  // ─── Rounded rect helper ───────────────────────────────────────────────────
+  function rrect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r);
+    c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r);
+    c.lineTo(x, y + r);
+    c.quadraticCurveTo(x, y, x + r, y);
+    c.closePath();
+  }
+
+  // ─── Tooltip ───────────────────────────────────────────────────────────────
+  function drawTooltip(node: Node) {
+    const W = canvas.width / dpr;
+    const H = canvas.height / dpr;
+
+    const isReplied   = node.state === 'replied';
+    const statusLabel = isReplied   ? '★ Replied'
+                       : node.state === 'opened'    ? '● Opened'
+                       : node.state === 'delivered' ? '● Delivered'
+                       : '○ Pending';
+    const statusColor = isReplied   ? 'rgba(74,222,128,0.95)'
+                       : node.state === 'opened'    ? 'rgba(139,92,246,0.95)'
+                       : node.state === 'delivered' ? 'rgba(139,92,246,0.70)'
+                       : 'rgba(255,255,255,0.40)';
+
+    const pad      = 14;
+    const tooltipW = 290;
+    const tooltipH = isReplied ? 150 : 120;
+
+    let tx = node.x + 16;
+    let ty = node.y - tooltipH / 2;
+    if (tx + tooltipW > W - 8) tx = node.x - tooltipW - 16;
+    ty = Math.max(8, Math.min(H - tooltipH - 8, ty));
+
+    ctx.save();
+
+    ctx.shadowColor  = 'rgba(139,92,246,0.22)';
+    ctx.shadowBlur   = 28;
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 8);
+    ctx.fillStyle = 'rgba(6,7,18,0.72)';
+    ctx.fill();
+    ctx.shadowBlur   = 0;
+    ctx.shadowColor  = 'transparent';
+
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 8);
+    ctx.fillStyle = isReplied ? 'rgba(74,222,128,0.06)' : 'rgba(139,92,246,0.06)';
+    ctx.fill();
+
+    ctx.strokeStyle = isReplied ? 'rgba(74,222,128,0.30)' : 'rgba(139,92,246,0.28)';
+    ctx.lineWidth   = 1;
+    ctx.stroke();
+
+    ctx.globalAlpha = 0.65;
+    ctx.fillStyle   = isReplied ? 'rgb(74,222,128)' : 'rgb(139,92,246)';
+    rrect(ctx, tx, ty, tooltipW, 3, 3);
+    ctx.fill();
+
+    ctx.globalAlpha = 1;
+    const mono = '"SF Mono","Fira Code",monospace';
+
+    // To: name + title + company
+    ctx.fillStyle = 'rgba(255,255,255,0.90)';
+    ctx.font      = `bold 13px ${mono}`;
+    ctx.textAlign = 'left';
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(tx + pad, ty, tooltipW - pad * 2, tooltipH);
+    ctx.clip();
+    ctx.fillText(`TO: ${node.name}, ${node.title} at ${node.company}`, tx + pad, ty + pad + 14);
+    ctx.restore();
+
+    // Status
+    ctx.fillStyle = statusColor;
+    ctx.font      = `11px ${mono}`;
+    ctx.fillText(`STATUS: ${statusLabel}`, tx + pad, ty + pad + 32);
+
+    // Subject
+    ctx.fillStyle   = 'rgba(255,255,255,0.65)';
+    ctx.font        = `12px ${mono}`;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(tx + pad, ty + pad + 40, tooltipW - pad * 2, 18);
+    ctx.clip();
+    ctx.fillText(`SUBJ: ${node.subject}`, tx + pad, ty + pad + 52);
+    ctx.restore();
+
+    // Reply text
+    if (isReplied && node.replyText) {
+      ctx.fillStyle   = 'rgba(74,222,128,0.88)';
+      ctx.font        = `italic 11px ${mono}`;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(tx + pad, ty + pad + 70, tooltipW - pad * 2, 56);
+      ctx.clip();
+      // Wrap reply text across up to 2 lines at ~34 chars
+      const words    = (`"${node.replyText}"`).split(' ');
+      let line = '', lineY = ty + pad + 84;
+      for (const word of words) {
+        const test = line ? `${line} ${word}` : word;
+        ctx.font = `italic 11px ${mono}`;
+        if (ctx.measureText(test).width > tooltipW - pad * 2 && line) {
+          ctx.fillText(line, tx + pad, lineY);
+          line = word;
+          lineY += 16;
+        } else {
+          line = test;
+        }
+      }
+      if (line) ctx.fillText(line, tx + pad, lineY);
+      ctx.restore();
+    }
+
+    ctx.restore();
+  }
+
+  // ─── Frame loop ────────────────────────────────────────────────────────────
+  function frame(now: number) {
+    requestAnimationFrame(frame);
+
+    const W   = canvas.width  / dpr;
+    const H   = canvas.height / dpr;
+    const t   = now * 0.001;
+    const dt  = lastFrameT ? Math.min(t - lastFrameT, 0.05) : 0;
+    lastFrameT = t;
+    const elapsed = t - startT;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Animated reply rate display: 0 → 23 over first 10 seconds
+    replyRateDisp = Math.min(23, elapsed < 10 ? (elapsed / 10) * 23 : 23);
+
+    // Hover
+    hoveredNode = mouse ? findHoveredNode(mouse.x, mouse.y) : -1;
+
+    // Emit outbound ripple every OUTBOUND_INTERVAL seconds
+    if (t - lastOutboundT >= OUTBOUND_INTERVAL) {
+      lastOutboundT = t;
+      ripples.push({
+        ox: engineX, oy: engineY,
+        radius: 0,
+        maxRadius: OUTBOUND_MAX_R,
+        speed: OUTBOUND_SPEED,
+        color: [139, 92, 246],
+        peakAlpha: 0.28,
+        triggered: new Set(),
+        type: 'outbound',
+      });
+    }
+
+    // Emit mouse ripples
+    if (mouse && t - lastMouseRipT >= MOUSE_RIPPLE_INTERVAL) {
+      lastMouseRipT = t;
+      ripples.push({
+        ox: mouse.x, oy: mouse.y,
+        radius: 0,
+        maxRadius: MOUSE_RIPPLE_MAX_R,
+        speed: 120,
+        color: [139, 92, 246],
+        peakAlpha: 0.09,
+        triggered: new Set(),
+        type: 'mouse',
+      });
+    }
+
+    // Emit pending reply ripples
+    for (let i = pendingReplies.length - 1; i >= 0; i--) {
+      const pr = pendingReplies[i];
+      if (t >= pr.emitAt) {
+        const n = nodes[pr.nodeIdx];
+        ripples.push({
+          ox: n.x, oy: n.y,
+          radius: 0,
+          maxRadius: REPLY_MAX_R,
+          speed: REPLY_SPEED,
+          color: [74, 222, 128],
+          peakAlpha: 0.38,
+          triggered: new Set(),
+          type: 'reply',
+        });
+        pendingReplies.splice(i, 1);
+      }
+    }
+
+    // Update ripples, detect node hits
+    for (let ri = ripples.length - 1; ri >= 0; ri--) {
+      const rip = ripples[ri];
+      rip.radius += rip.speed * dt;
+
+      if (rip.type === 'outbound') {
+        // Check hits with nodes
+        for (let ni = 0; ni < nodes.length; ni++) {
+          if (rip.triggered.has(ni)) continue;
+          const n   = nodes[ni];
+          const dx  = n.x - rip.ox, dy = n.y - rip.oy;
+          const nd  = Math.sqrt(dx * dx + dy * dy);
+          if (Math.abs(rip.radius - nd) < HIT_THRESHOLD) {
+            rip.triggered.add(ni);
+            // Brighten node
+            nodes[ni].brightness = 1.0;
+            // Schedule reply for 'replied' nodes
+            if (n.state === 'replied') {
+              pendingReplies.push({ nodeIdx: ni, emitAt: t + REPLY_DELAY });
+            }
+          }
+        }
+      }
+
+      // Remove dead ripples
+      if (rip.radius > rip.maxRadius) ripples.splice(ri, 1);
+    }
+
+    // Decay node brightness
+    for (const n of nodes) {
+      if (n.brightness > 0) n.brightness = Math.max(0, n.brightness - 2.2 * dt);
+    }
+
+    // ── Draw engine glow (source-over) ──────────────────────────────────────
+    const engGrad = ctx.createRadialGradient(engineX, engineY, 0, engineX, engineY, 55);
+    engGrad.addColorStop(0, 'rgba(139,92,246,0.35)');
+    engGrad.addColorStop(0.4, 'rgba(139,92,246,0.10)');
+    engGrad.addColorStop(1, 'rgba(139,92,246,0)');
+    ctx.globalAlpha = 1;
+    ctx.fillStyle   = engGrad;
+    ctx.beginPath();
+    ctx.arc(engineX, engineY, 55, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Engine core dot
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle   = 'rgb(139,92,246)';
+    ctx.beginPath();
+    ctx.arc(engineX, engineY, 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Engine pulse ring
+    const engPulse = (Math.sin(t * 2.5) + 1) / 2;
+    ctx.globalAlpha = engPulse * 0.25;
+    ctx.strokeStyle = 'rgb(139,92,246)';
+    ctx.lineWidth   = 1;
+    ctx.beginPath();
+    ctx.arc(engineX, engineY, 10 + engPulse * 12, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.globalAlpha = 1;
+
+    // ── Draw ripples with lighter composite ─────────────────────────────────
+    ctx.globalCompositeOperation = 'lighter';
+
+    for (const rip of ripples) {
+      const prog   = rip.radius / rip.maxRadius;          // 0 → 1
+      // Alpha: rise to peak at 20%, decay to 0 at 100%
+      const alpha  = prog < 0.2
+                   ? (prog / 0.2) * rip.peakAlpha
+                   : (1 - (prog - 0.2) / 0.8) * rip.peakAlpha;
+      if (alpha <= 0.002) continue;
+
+      const [r, g, b] = rip.color;
+      const lineW     = rip.type === 'reply' ? 1.2
+                       : rip.type === 'mouse' ? 0.6
+                       : 1.0;
+
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = `rgb(${r},${g},${b})`;
+      ctx.lineWidth   = lineW;
+      ctx.beginPath();
+      ctx.arc(rip.ox, rip.oy, rip.radius, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+
+    // ── Draw nodes (on top of ripples) ──────────────────────────────────────
+    for (let ni = 0; ni < nodes.length; ni++) {
+      const n = nodes[ni];
+      const [r, g, b, baseA] = nodeBaseColor(n.state);
+      const bright = n.brightness;
+      const alpha  = Math.min(0.95, baseA + bright * 0.55);
+      const radius = ni === hoveredNode ? 6
+                   : 3 + bright * 2;
+
+      // Glow halo on brightness or hover
+      if (bright > 0.1 || ni === hoveredNode) {
+        const glowR  = ni === hoveredNode ? 16 : 10 + bright * 10;
+        const glowA  = ni === hoveredNode ? 0.18 : bright * 0.15;
+        const gGrad  = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, glowR);
+        gGrad.addColorStop(0, `rgba(${r},${g},${b},${glowA})`);
+        gGrad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle   = gGrad;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, glowR, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle   = `rgb(${r},${g},${b})`;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.globalAlpha = 1;
+
+    // ── Counter (top-right) ─────────────────────────────────────────────────
+    const mono   = '"SF Mono","Fira Code",monospace';
+    const ctrX   = W - 16;
+    const replyN = nodes.filter(n => n.state === 'replied').length;
+    const openN  = nodes.filter(n => n.state === 'opened' || n.state === 'replied').length;
+
+    ctx.save();
+    ctx.textAlign   = 'right';
+    ctx.fillStyle   = 'rgba(139,92,246,0.65)';
+    ctx.font        = `11px ${mono}`;
+    ctx.globalAlpha = 1;
+    ctx.fillText(`1,847 sent · ${openN * 6} opened · ${replyN * 5} replied`, ctrX, 24);
+    ctx.globalAlpha = 0.32;
+    ctx.fillStyle   = '#ffffff';
+    ctx.font        = `9px ${mono}`;
+    ctx.fillText(`${replyRateDisp.toFixed(1)}% reply rate · avg 4.2 hours to open`, ctrX, 38);
+    ctx.restore();
+
+    // ── Reply rate badge (left side, prominent) ─────────────────────────────
+    ctx.save();
+    const badgeX = 20, badgeY = 20;
+    ctx.globalAlpha = Math.min(1, elapsed * 0.4);
+    ctx.fillStyle   = 'rgba(6,7,18,0.55)';
+    rrect(ctx, badgeX, badgeY, 130, 42, 6);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(74,222,128,0.30)';
+    ctx.lineWidth   = 1;
+    rrect(ctx, badgeX, badgeY, 130, 42, 6);
+    ctx.stroke();
+    ctx.globalAlpha = Math.min(1, elapsed * 0.4);
+    ctx.fillStyle   = 'rgba(74,222,128,0.90)';
+    ctx.font        = `bold 22px ${mono}`;
+    ctx.textAlign   = 'left';
+    ctx.fillText(`${replyRateDisp.toFixed(1)}%`, badgeX + 10, badgeY + 28);
+    ctx.fillStyle   = 'rgba(255,255,255,0.40)';
+    ctx.font        = `9px ${mono}`;
+    ctx.fillText('reply rate', badgeX + 72, badgeY + 28);
+    ctx.restore();
+
+    // Tooltip
+    if (hoveredNode >= 0) drawTooltip(nodes[hoveredNode]);
+  }
+
+  // ─── Events ────────────────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  });
+  wrap.addEventListener('mouseleave', () => { mouse = null; hoveredNode = -1; });
+  wrap.addEventListener('touchstart', () => { mouse = null; hoveredNode = -1; }, { passive: true });
+
+  // ─── Init ──────────────────────────────────────────────────────────────────
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── FinalCTA: peaceful concentric rings from centre ──────────────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const ctaCanvas = document.createElement('canvas');
+      ctaCanvas.setAttribute('aria-hidden', 'true');
+      ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.style.position  = 'relative';
+      ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+
+      const cc = ctaCanvas.getContext('2d')!;
+      let ctaDpr = 1;
+      let ctaCx  = 0, ctaCy = 0;
+
+      // Ring pool — offset spawn times so they stagger nicely
+      const RING_COUNT    = 6;
+      const RING_INTERVAL = 1.8;   // seconds between spawns
+      const RING_SPEED    = 55;    // px/s
+      const RING_MAX_R    = 280;
+
+      interface CtaRing { spawnOffset: number; }  // each ring spawns at t = spawnOffset, repeating every RING_COUNT*RING_INTERVAL
+      const ctaRings: CtaRing[] = Array.from({ length: RING_COUNT }, (_, i) => ({ spawnOffset: i * RING_INTERVAL }));
+
+      function resizeCta() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        const w = Math.round(rect.width), h = Math.round(rect.height);
+        ctaCanvas.width  = w * ctaDpr;
+        ctaCanvas.height = h * ctaDpr;
+        ctaCanvas.style.width  = `${w}px`;
+        ctaCanvas.style.height = `${h}px`;
+        cc.setTransform(ctaDpr, 0, 0, ctaDpr, 0, 0);
+        ctaCx = w / 2;
+        ctaCy = h / 2;
+      }
+
+      function frameCta() {
+        requestAnimationFrame(frameCta);
+        const W = ctaCanvas.width  / ctaDpr;
+        const H = ctaCanvas.height / ctaDpr;
+        const t = performance.now() * 0.001;
+        cc.clearRect(0, 0, W, H);
+
+        const totalPeriod = RING_COUNT * RING_INTERVAL;
+
+        for (const ring of ctaRings) {
+          // Time since this ring last spawned (within repeating period)
+          const phase  = (t - ring.spawnOffset % totalPeriod) % totalPeriod;
+          const radius = phase * RING_SPEED;
+          if (radius <= 0 || radius > RING_MAX_R) continue;
+
+          const prog  = radius / RING_MAX_R;
+          const alpha = (1 - prog) * 0.20;
+
+          cc.globalAlpha = Math.max(0, alpha);
+          cc.strokeStyle = 'rgb(139,92,246)';
+          cc.lineWidth   = 1;
+          cc.beginPath();
+          cc.arc(ctaCx, ctaCy, radius, 0, Math.PI * 2);
+          cc.stroke();
+        }
+
+        // Soft centre glow
+        const cGrad = cc.createRadialGradient(ctaCx, ctaCy, 0, ctaCx, ctaCy, 40);
+        cGrad.addColorStop(0, 'rgba(139,92,246,0.12)');
+        cGrad.addColorStop(1, 'rgba(139,92,246,0)');
+        cc.globalAlpha = 1;
+        cc.fillStyle   = cGrad;
+        cc.beginPath();
+        cc.arc(ctaCx, ctaCy, 40, 0, Math.PI * 2);
+        cc.fill();
+
+        cc.globalAlpha = 1;
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaCard);
+      resizeCta();
+      requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { ctaCanvas.style.opacity = '1'; });
+
+      const ctaGridTex = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGridTex) ctaGridTex.style.display = 'none';
+    }
+  }
+
+  }); // end requestIdleCallback
+</script>

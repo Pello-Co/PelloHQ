@@ -1,0 +1,669 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout
+  title="PelloReach — 500+ Warmed Domains · Land in the Inbox"
+  description="PelloReach solves cold outreach deliverability with 500+ warmed sending domains, intelligent lead finding, and AI-personalised sequences that get replies. No blacklists. No spam folders."
+>
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas
+        class="reach7-canvas"
+        aria-hidden="true"
+        style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"
+      ></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #8b5cf6 !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,12,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(139,92,246,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  // Polyfill requestIdleCallback for Safari
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Data ──────────────────────────────────────────────────────────────────
+  const DOMAIN_PREFIXES = ["outreach","connect","mail","send","inbox","pulse","rapid","smart","flow","direct","auto","reach","engine","boost","relay","stream","surge","forge","prime","swift"];
+  const DOMAIN_TLDS = [".io",".co",".com","-pro.io","-hub.co","-mail.io","-send.co"];
+
+  function genDomains(n: number): string[] {
+    const out: string[] = [];
+    let pi = 0, ti = 0, si = 1;
+    while (out.length < n) {
+      out.push(DOMAIN_PREFIXES[pi] + (si > 1 ? String(si) : '') + DOMAIN_TLDS[ti]);
+      ti++;
+      if (ti >= DOMAIN_TLDS.length) { ti = 0; pi++; }
+      if (pi >= DOMAIN_PREFIXES.length) { pi = 0; si++; }
+    }
+    return out;
+  }
+  const ALL_DOMAINS = genDomains(120);
+
+  // ─── Constants ─────────────────────────────────────────────────────────────
+  const TILE_W      = 60;
+  const TILE_H      = 30;
+  const GAP         = 6;
+  const STEP_X      = TILE_W + GAP;
+  const STEP_Y      = TILE_H + GAP;
+  const COLS        = 12;
+  const ROWS        = 10;
+  const WARMTH_RATE = 0.5;  // % per second
+  const TILE_R      = 4;    // corner radius
+
+  // Warmth → colour stops: [threshold, [r,g,b]]
+  const WARM_STOPS: Array<[number, [number,number,number]]> = [
+    [  0, [ 30,  40, 120]],
+    [ 25, [ 60,  60, 180]],
+    [ 50, [139,  92, 246]],
+    [ 75, [160, 120, 255]],
+    [100, [ 74, 222, 128]],
+  ];
+
+  function warmthColor(w: number): [number,number,number] {
+    for (let i = 1; i < WARM_STOPS.length; i++) {
+      const [p0, c0] = WARM_STOPS[i - 1];
+      const [p1, c1] = WARM_STOPS[i];
+      if (w <= p1) {
+        const t = (w - p0) / (p1 - p0);
+        return [
+          Math.round(c0[0] + (c1[0] - c0[0]) * t),
+          Math.round(c0[1] + (c1[1] - c0[1]) * t),
+          Math.round(c0[2] + (c1[2] - c0[2]) * t),
+        ];
+      }
+    }
+    return WARM_STOPS[WARM_STOPS.length - 1][1];
+  }
+
+  function warmthAlpha(w: number): number {
+    return 0.25 + (w / 100) * 0.20;
+  }
+
+  // ─── Types ─────────────────────────────────────────────────────────────────
+  interface Tile {
+    col: number; row: number;
+    cx: number;  cy: number;   // canvas top-left corner
+    domain: string;
+    warmth: number;            // 0–100
+    emailsSent: number;
+    reputation: number;
+    age: number;               // days
+    inboxRate: number;
+    phase: number;             // random phase offset for pulsing
+    burstFlash: number;        // 0–1, decays after burst
+  }
+
+  interface Particle {
+    x: number; y: number;
+    vx: number; vy: number;
+    alpha: number;
+    color: [number,number,number];
+  }
+
+  // ─── State ─────────────────────────────────────────────────────────────────
+  const canvas  = document.querySelector<HTMLCanvasElement>('.reach7-canvas')!;
+  const wrap    = document.getElementById('hero-wrap')!;
+  const ctx     = canvas.getContext('2d')!;
+  let tiles:     Tile[]     = [];
+  let particles: Particle[] = [];
+  let mouse:    { x: number; y: number } | null = null;
+  let hoveredIdx   = -1;
+  let dpr          = 1;
+  let offsetX      = 0;
+  let offsetY      = 0;
+  let lastFrameT   = 0;
+  let lastBurstT   = 0;
+
+  // ─── Rounded rect ──────────────────────────────────────────────────────────
+  function rrect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r);
+    c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r);
+    c.lineTo(x, y + r);
+    c.quadraticCurveTo(x, y, x + r, y);
+    c.closePath();
+  }
+
+  // ─── Build tiles ───────────────────────────────────────────────────────────
+  function buildTiles() {
+    tiles     = [];
+    particles = [];
+    const W      = canvas.width  / dpr;
+    const H      = canvas.height / dpr;
+    const totalW = COLS * STEP_X - GAP;
+    const totalH = ROWS * STEP_Y - GAP;
+    offsetX = (W - totalW) / 2;
+    offsetY = (H - totalH) / 2;
+
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        const idx    = row * COLS + col;
+        const domain = ALL_DOMAINS[idx % ALL_DOMAINS.length];
+        // Bias toward 60-100%
+        const r     = Math.random();
+        const warmth = r < 0.20 ? Math.random() * 40
+                     : r < 0.45 ? 20 + Math.random() * 60
+                     : 60 + Math.random() * 40;
+        const w = Math.min(100, warmth);
+        tiles.push({
+          col, row,
+          cx: offsetX + col * STEP_X,
+          cy: offsetY + row * STEP_Y,
+          domain,
+          warmth: w,
+          emailsSent: Math.floor(w / 2 + Math.random() * 10),
+          reputation: Math.min(100, Math.round(w * 0.88 + Math.random() * 12)),
+          age: Math.floor(w * 0.35 + Math.random() * 8),
+          inboxRate: Math.min(99.9, 84 + (w / 100) * 15 + Math.random()),
+          phase: Math.random() * Math.PI * 2,
+          burstFlash: 0,
+        });
+      }
+    }
+    lastBurstT = performance.now() * 0.001;
+  }
+
+  // ─── Resize ────────────────────────────────────────────────────────────────
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    const w    = Math.round(rect.width);
+    const h    = Math.round(rect.height);
+    canvas.width         = w * dpr;
+    canvas.height        = h * dpr;
+    canvas.style.width   = `${w}px`;
+    canvas.style.height  = `${h}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildTiles();
+  }
+
+  // ─── Hover detection ───────────────────────────────────────────────────────
+  function findHovered(mx: number, my: number): number {
+    for (let i = 0; i < tiles.length; i++) {
+      const t = tiles[i];
+      if (mx >= t.cx && mx <= t.cx + TILE_W && my >= t.cy && my <= t.cy + TILE_H) return i;
+    }
+    return -1;
+  }
+
+  // ─── Tooltip ───────────────────────────────────────────────────────────────
+  function drawTooltip(tile: Tile) {
+    const W   = canvas.width / dpr;
+    const px  = tile.cx + TILE_W / 2;
+    const isNew      = tile.warmth < 20;
+    const isWarming  = tile.warmth >= 20 && tile.warmth < 80;
+    const isReady    = tile.warmth >= 80;
+    const statusStr  = isReady    ? 'Ready'
+                     : isWarming  ? `Warming (${Math.round(tile.warmth)}%)`
+                     : `New (${Math.round(tile.warmth)}%)`;
+    const statusDot  = isReady ? '●' : isWarming ? '◐' : '○';
+    const statusCol  = isReady ? 'rgba(74,222,128,0.95)'
+                     : isWarming ? 'rgba(139,92,246,0.95)'
+                     : 'rgba(147,197,253,0.85)';
+
+    const pad      = 14;
+    const tooltipW = 250;
+    const tooltipH = 138;
+
+    let tx = px - tooltipW / 2;
+    let ty = tile.cy - tooltipH - 14;
+    tx = Math.max(8, Math.min(W - tooltipW - 8, tx));
+    if (ty < 8) ty = tile.cy + TILE_H + 8;
+
+    ctx.save();
+
+    // Connector line
+    ctx.globalAlpha = 0.18;
+    ctx.strokeStyle = 'rgba(139,92,246,1)';
+    ctx.lineWidth   = 1;
+    ctx.beginPath();
+    ctx.moveTo(px, ty < tile.cy ? tile.cy : tile.cy + TILE_H);
+    ctx.lineTo(px, ty < tile.cy ? ty + tooltipH : ty);
+    ctx.stroke();
+
+    ctx.globalAlpha = 1;
+
+    // Shadow + background
+    ctx.shadowColor  = 'rgba(139,92,246,0.22)';
+    ctx.shadowBlur   = 28;
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 8);
+    ctx.fillStyle = 'rgba(6,7,18,0.72)';
+    ctx.fill();
+    ctx.shadowBlur   = 0;
+    ctx.shadowColor  = 'transparent';
+
+    // Tint
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 8);
+    ctx.fillStyle = 'rgba(139,92,246,0.07)';
+    ctx.fill();
+
+    // Border
+    ctx.strokeStyle = 'rgba(139,92,246,0.32)';
+    ctx.lineWidth   = 1;
+    ctx.stroke();
+
+    // Accent top bar
+    ctx.globalAlpha = 0.65;
+    ctx.fillStyle   = 'rgb(139,92,246)';
+    rrect(ctx, tx, ty, tooltipW, 3, 3);
+    ctx.fill();
+
+    ctx.globalAlpha = 1;
+    const mono = '"SF Mono","Fira Code",monospace';
+
+    // Domain
+    ctx.fillStyle = statusCol;
+    ctx.font      = `bold 12px ${mono}`;
+    ctx.textAlign = 'left';
+    ctx.fillText(`DOMAIN: ${tile.domain}`, tx + pad, ty + pad + 14);
+
+    // Status
+    ctx.font      = `11px ${mono}`;
+    ctx.fillText(`STATUS: ${statusDot} ${statusStr}`, tx + pad, ty + pad + 32);
+
+    // Reputation
+    ctx.fillStyle   = 'rgba(255,255,255,0.50)';
+    ctx.font        = `10px ${mono}`;
+    ctx.fillText(`REPUTATION: ${tile.reputation}/100`, tx + pad, ty + pad + 50);
+    const barX = tx + pad, barY = ty + pad + 55, barW = tooltipW - pad * 2;
+    ctx.fillStyle   = 'rgba(255,255,255,0.10)';
+    ctx.fillRect(barX, barY, barW, 3);
+    const grad = ctx.createLinearGradient(barX, barY, barX + barW, barY);
+    grad.addColorStop(0, 'rgb(60,60,180)');
+    grad.addColorStop(1, 'rgb(74,222,128)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(barX, barY, barW * (tile.reputation / 100), 3);
+
+    // Sent today
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.font      = `12px ${mono}`;
+    ctx.fillText(`SENT TODAY: ${tile.emailsSent} emails`, tx + pad, ty + pad + 82);
+
+    // Inbox rate
+    ctx.fillStyle = 'rgba(74,222,128,0.90)';
+    ctx.fillText(`INBOX RATE: ${tile.inboxRate.toFixed(1)}%`, tx + pad, ty + pad + 98);
+
+    // Age
+    ctx.fillStyle   = 'rgba(255,255,255,0.35)';
+    ctx.font        = `10px ${mono}`;
+    ctx.fillText(`AGE: ${tile.age} days`, tx + pad, ty + pad + 116);
+
+    ctx.restore();
+  }
+
+  // ─── Frame loop ────────────────────────────────────────────────────────────
+  function frame(now: number) {
+    requestAnimationFrame(frame);
+
+    const W  = canvas.width  / dpr;
+    const H  = canvas.height / dpr;
+    const t  = now * 0.001;
+    const dt = lastFrameT ? Math.min(t - lastFrameT, 0.05) : 0;
+    lastFrameT = t;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Hover
+    hoveredIdx = mouse ? findHovered(mouse.x, mouse.y) : -1;
+
+    // Send burst every 4 seconds — 3-5 ready tiles flash + particles
+    if (t - lastBurstT > 4 && tiles.length > 0) {
+      lastBurstT = t;
+      const ready = tiles.filter(ti => ti.warmth >= 80);
+      if (ready.length > 0) {
+        const count = Math.min(ready.length, 3 + Math.floor(Math.random() * 3));
+        // Fisher-Yates shuffle (partial)
+        for (let i = ready.length - 1; i > ready.length - count - 1; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          const tmp = ready[i]; ready[i] = ready[j]; ready[j] = tmp;
+        }
+        for (let i = 0; i < count; i++) {
+          ready[i].burstFlash = 1.0;
+          const [r2, g2, b2] = warmthColor(100);
+          const pcx = ready[i].cx + TILE_W / 2;
+          const pcy = ready[i].cy + TILE_H * 0.3;
+          for (let p = 0; p < 3; p++) {
+            particles.push({
+              x: pcx + (Math.random() - 0.5) * 18,
+              y: pcy,
+              vx: (Math.random() - 0.5) * 18,
+              vy: -(18 + Math.random() * 22),
+              alpha: 0.85,
+              color: [r2, g2, b2],
+            });
+          }
+        }
+      }
+    }
+
+    // Update tiles
+    let readyCount = 0, warmingCount = 0, newCount = 0;
+    for (const tile of tiles) {
+      if (tile.warmth < 100) tile.warmth = Math.min(100, tile.warmth + WARMTH_RATE * dt);
+      if (tile.burstFlash > 0) tile.burstFlash = Math.max(0, tile.burstFlash - 2.5 * dt);
+      if (tile.warmth >= 80) readyCount++;
+      else if (tile.warmth >= 20) warmingCount++;
+      else newCount++;
+    }
+
+    // Update particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.alpha -= 2.2 * dt;
+      if (p.alpha <= 0) particles.splice(i, 1);
+    }
+
+    // Draw tiles
+    for (let i = 0; i < tiles.length; i++) {
+      const tile     = tiles[i];
+      const [r, g, b] = warmthColor(tile.warmth);
+      let alpha       = warmthAlpha(tile.warmth);
+
+      // Pulse for ready tiles
+      if (tile.warmth >= 80) {
+        alpha += Math.sin(t * 1.5 + tile.phase) * 0.04;
+      }
+
+      // Burst flash
+      alpha += tile.burstFlash * 0.38;
+
+      const isHov = hoveredIdx === i;
+
+      let drawX = tile.cx, drawY = tile.cy, drawW = TILE_W, drawH = TILE_H;
+      if (isHov) {
+        const scale = 1.2;
+        drawW = TILE_W * scale;
+        drawH = TILE_H * scale;
+        drawX = tile.cx - (drawW - TILE_W) / 2;
+        drawY = tile.cy - (drawH - TILE_H) / 2;
+        alpha = Math.min(0.92, alpha + 0.32);
+      }
+
+      ctx.globalAlpha = Math.min(0.92, Math.max(0.01, alpha));
+      ctx.fillStyle   = `rgb(${r},${g},${b})`;
+      rrect(ctx, drawX, drawY, drawW, drawH, TILE_R);
+      ctx.fill();
+
+      // Bright border on hovered
+      if (isHov) {
+        ctx.globalAlpha = 0.85;
+        ctx.strokeStyle = `rgb(${r},${g},${b})`;
+        ctx.lineWidth   = 1.5;
+        rrect(ctx, drawX, drawY, drawW, drawH, TILE_R);
+        ctx.stroke();
+      }
+
+      // Burst flash ring
+      if (tile.burstFlash > 0.08) {
+        ctx.globalAlpha = tile.burstFlash * 0.65;
+        ctx.strokeStyle = 'rgb(74,222,128)';
+        ctx.lineWidth   = 1;
+        rrect(ctx, tile.cx - 2, tile.cy - 2, TILE_W + 4, TILE_H + 4, TILE_R + 2);
+        ctx.stroke();
+      }
+
+      // Domain text (clipped to tile interior)
+      const textAlpha = (0.55 + (tile.warmth / 100) * 0.35) * (isHov ? 1 : Math.min(1, alpha * 2.8));
+      ctx.globalAlpha = Math.min(1, textAlpha);
+      ctx.fillStyle   = isHov ? '#ffffff' : `rgb(${Math.min(255,r+70)},${Math.min(255,g+70)},${Math.min(255,b+70)})`;
+      ctx.font        = '7px "SF Mono","Fira Code",monospace';
+      ctx.textAlign   = 'center';
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(tile.cx + 2, tile.cy + 2, TILE_W - 4, TILE_H - 10);
+      ctx.clip();
+      ctx.fillText(tile.domain, tile.cx + TILE_W / 2, tile.cy + 13);
+      ctx.restore();
+
+      // Progress bar (2px at bottom)
+      const barFill = (TILE_W - 6) * (tile.warmth / 100);
+      ctx.globalAlpha = 0.45;
+      ctx.fillStyle   = 'rgba(255,255,255,0.08)';
+      ctx.fillRect(tile.cx + 3, tile.cy + TILE_H - 5, TILE_W - 6, 2);
+      const [br, bg, bb] = warmthColor(tile.warmth);
+      ctx.globalAlpha = 0.75;
+      ctx.fillStyle   = `rgb(${br},${bg},${bb})`;
+      ctx.fillRect(tile.cx + 3, tile.cy + TILE_H - 5, barFill, 2);
+    }
+
+    ctx.globalAlpha = 1;
+
+    // Particles
+    for (const p of particles) {
+      ctx.globalAlpha = Math.max(0, p.alpha);
+      ctx.fillStyle   = `rgb(${p.color[0]},${p.color[1]},${p.color[2]})`;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // Counter top-right
+    const mono  = '"SF Mono","Fira Code",monospace';
+    const ctrX  = W - 16;
+    ctx.save();
+    ctx.textAlign   = 'right';
+    ctx.fillStyle   = 'rgba(139,92,246,0.65)';
+    ctx.font        = `11px ${mono}`;
+    ctx.globalAlpha = 1;
+    ctx.fillText(`${tiles.length} domains · ${readyCount} ready · ${warmingCount} warming`, ctrX, 24);
+    ctx.globalAlpha = 0.32;
+    ctx.fillStyle   = '#ffffff';
+    ctx.font        = `9px ${mono}`;
+    ctx.fillText('avg 34 days to warm · 98.2% inbox rate', ctrX, 38);
+    ctx.restore();
+
+    // Tooltip
+    if (hoveredIdx >= 0) drawTooltip(tiles[hoveredIdx]);
+  }
+
+  // ─── Events ────────────────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  });
+  wrap.addEventListener('mouseleave', () => { mouse = null; hoveredIdx = -1; });
+  wrap.addEventListener('touchstart', () => { mouse = null; hoveredIdx = -1; }, { passive: true });
+
+  // ─── Init ──────────────────────────────────────────────────────────────────
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── FinalCTA: small warming blocks, no text ───────────────────────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const ctaCanvas = document.createElement('canvas');
+      ctaCanvas.setAttribute('aria-hidden', 'true');
+      ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.style.position  = 'relative';
+      ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+
+      const cc = ctaCanvas.getContext('2d')!;
+
+      const CTA_TW = 28, CTA_TH = 14, CTA_GAP = 4;
+      const CTA_SX = CTA_TW + CTA_GAP, CTA_SY = CTA_TH + CTA_GAP;
+
+      interface CtaTile { gx: number; gy: number; warmth: number; phase: number; }
+      let ctaTiles: CtaTile[] = [];
+      let ctaDpr = 1;
+
+      function buildCtaTiles() {
+        ctaTiles = [];
+        const W = ctaCanvas.width / ctaDpr;
+        const H = ctaCanvas.height / ctaDpr;
+        const cols = Math.ceil(W / CTA_SX) + 1;
+        const rows = Math.ceil(H / CTA_SY) + 1;
+        for (let r = 0; r < rows; r++)
+          for (let c = 0; c < cols; c++)
+            ctaTiles.push({
+              gx: c * CTA_SX,
+              gy: r * CTA_SY,
+              warmth: 40 + Math.random() * 60,
+              phase: Math.random() * Math.PI * 2,
+            });
+      }
+
+      function resizeCta() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        const w = Math.round(rect.width), h = Math.round(rect.height);
+        ctaCanvas.width  = w * ctaDpr;
+        ctaCanvas.height = h * ctaDpr;
+        ctaCanvas.style.width  = `${w}px`;
+        ctaCanvas.style.height = `${h}px`;
+        cc.setTransform(ctaDpr, 0, 0, ctaDpr, 0, 0);
+        buildCtaTiles();
+      }
+
+      function frameCta() {
+        requestAnimationFrame(frameCta);
+        const W = ctaCanvas.width / ctaDpr;
+        const H = ctaCanvas.height / ctaDpr;
+        const t = performance.now() * 0.001;
+        cc.clearRect(0, 0, W, H);
+        for (const tile of ctaTiles) {
+          const [r, g, b] = warmthColor(tile.warmth);
+          const base  = warmthAlpha(tile.warmth);
+          const alpha = base * (0.8 + Math.sin(t * 0.9 + tile.phase) * 0.15);
+          // slow warmth increase
+          tile.warmth = Math.min(100, tile.warmth + 0.05);
+          cc.globalAlpha = Math.min(0.65, Math.max(0.01, alpha));
+          cc.fillStyle   = `rgb(${r},${g},${b})`;
+          rrect(cc, tile.gx, tile.gy, CTA_TW, CTA_TH, 2);
+          cc.fill();
+        }
+        cc.globalAlpha = 1;
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaCard);
+      resizeCta();
+      requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { ctaCanvas.style.opacity = '1'; });
+
+      const ctaGridTex = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGridTex) ctaGridTex.style.display = 'none';
+    }
+  }
+
+  }); // end requestIdleCallback
+</script>
