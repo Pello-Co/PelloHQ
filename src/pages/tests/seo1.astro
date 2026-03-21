@@ -294,15 +294,25 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
     const statusLabel = isPublished ? ' published' : isIndexed ? ' indexed' : ' generating';
     const statusColor = isPublished ? 'rgba(74,222,128,0.9)' : isIndexed ? 'rgba(99,202,241,0.8)' : 'rgba(251,191,36,0.8)';
 
-    const tooltipW = 248;
-    const tooltipH = 66;
-    const pad = 10;
+    const pad = 16;
+    const catFont = 'bold 12px "SF Mono", "Fira Code", monospace';
+    const titleFont = '500 19px -apple-system, system-ui, BlinkMacSystemFont, sans-serif';
+    const statusFont = '12px "SF Mono", "Fira Code", monospace';
+
+    // Measure title width to size tooltip dynamically
+    ctx.font = titleFont;
+    const titleMetrics = ctx.measureText(titleText);
+    ctx.font = catFont;
+    const catMetrics = ctx.measureText(catLabel);
+    const contentW = Math.max(titleMetrics.width, catMetrics.width) + pad * 2;
+    const tooltipW = Math.max(320, Math.min(contentW, 460));
+    const tooltipH = 96;
 
     // Position above dot, clamped to canvas
     let tx = px - tooltipW / 2;
-    let ty = py - tooltipH - 16;
+    let ty = py - tooltipH - 20;
     tx = Math.max(8, Math.min(W - tooltipW - 8, tx));
-    if (ty < 8) ty = py + 16;
+    if (ty < 8) ty = py + 20;
 
     ctx.save();
 
@@ -315,39 +325,59 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
     ctx.lineTo(px, ty < py ? ty + tooltipH : ty);
     ctx.stroke();
 
-    // Background
+    // Background — frosted tinted glass (10% transparency)
     ctx.globalAlpha = 1;
-    rrect(ctx, tx, ty, tooltipW, tooltipH, 7);
-    ctx.fillStyle = 'rgba(6,7,18,0.93)';
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 10);
+    // Tinted glass: product colour at very low alpha + dark base
+    ctx.fillStyle = `rgba(${r},${g},${b},0.06)`;
     ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.11)';
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 10);
+    ctx.fillStyle = 'rgba(6,7,18,0.10)';
+    ctx.fill();
+    // Glass border
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.25)`;
     ctx.lineWidth = 1;
     ctx.stroke();
 
+    // Shadow/glow behind tooltip
+    ctx.shadowColor = `rgba(${r},${g},${b},0.15)`;
+    ctx.shadowBlur = 20;
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 10);
+    ctx.fillStyle = 'rgba(6,7,18,0.0)';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.shadowColor = 'transparent';
+
     // Accent top border
-    ctx.globalAlpha = 0.5;
+    ctx.globalAlpha = 0.6;
     ctx.fillStyle = `rgb(${r},${g},${b})`;
-    rrect(ctx, tx, ty, tooltipW, 2, 2);
+    rrect(ctx, tx, ty, tooltipW, 3, 3);
     ctx.fill();
 
     // Category label
-    ctx.globalAlpha = 0.7;
+    ctx.globalAlpha = 0.8;
     ctx.fillStyle = `rgb(${r},${g},${b})`;
-    ctx.font = 'bold 8px "SF Mono", "Fira Code", monospace';
+    ctx.font = catFont;
     ctx.textAlign = 'left';
-    ctx.fillText(catLabel, tx + pad, ty + pad + 8);
+    ctx.fillText(catLabel, tx + pad, ty + pad + 12);
 
-    // Generated title
+    // Generated title — clip to prevent overflow
     ctx.globalAlpha = 1;
     ctx.fillStyle = '#ffffff';
-    ctx.font = '500 13px -apple-system, system-ui, BlinkMacSystemFont, sans-serif';
-    ctx.fillText(titleText, tx + pad, ty + pad + 26);
+    ctx.font = titleFont;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(tx + pad, ty + pad + 16, tooltipW - pad * 2, 28);
+    ctx.clip();
+    ctx.fillText(titleText, tx + pad, ty + pad + 38);
+    ctx.restore();
 
     // Status indicator
     ctx.globalAlpha = 0.9;
     ctx.fillStyle = statusColor;
-    ctx.font = '9px "SF Mono", "Fira Code", monospace';
-    ctx.fillText(statusDot + statusLabel, tx + pad, ty + pad + 44);
+    ctx.font = statusFont;
+    ctx.textAlign = 'left';
+    ctx.fillText(statusDot + statusLabel, tx + pad, ty + pad + 62);
 
     ctx.restore();
   }
@@ -436,7 +466,7 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
         alpha  = 0.9;
         radius = 6;
       } else if (hoveredTmpl >= 0) {
-        alpha  = dot.templateIdx === hoveredTmpl ? 0.4 : 0.08;
+        alpha  = alpha; // keep normal alpha — no template highlighting
       }
 
       // Proximity magnification lens (skip for the hovered dot itself)
