@@ -331,21 +331,21 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     const ctaWaves: WaveLabel[] = [
       {
         yFrac: 0.3, baseAmp: 8,
-        freq: WAVES[0].freq, phase: WAVES[0].phase, phaseSpeed: WAVES[0].phaseSpeed,
-        noiseOffset: WAVES[0].noiseOffset, noisePeriod: WAVES[0].noisePeriod,
-        color: WAVES[0].color, name: WAVES[0].name, stat: WAVES[0].stat,
+        freq: WAVES[0]!.freq, phase: WAVES[0]!.phase, phaseSpeed: WAVES[0]!.phaseSpeed,
+        noiseOffset: WAVES[0]!.noiseOffset, noisePeriod: WAVES[0]!.noisePeriod,
+        color: WAVES[0]!.color, name: WAVES[0]!.name, stat: WAVES[0]!.stat,
       },
       {
         yFrac: 0.5, baseAmp: 10,
-        freq: WAVES[3].freq, phase: WAVES[3].phase, phaseSpeed: WAVES[3].phaseSpeed,
-        noiseOffset: WAVES[3].noiseOffset, noisePeriod: WAVES[3].noisePeriod,
-        color: WAVES[3].color, name: WAVES[3].name, stat: WAVES[3].stat,
+        freq: WAVES[3]!.freq, phase: WAVES[3]!.phase, phaseSpeed: WAVES[3]!.phaseSpeed,
+        noiseOffset: WAVES[3]!.noiseOffset, noisePeriod: WAVES[3]!.noisePeriod,
+        color: WAVES[3]!.color, name: WAVES[3]!.name, stat: WAVES[3]!.stat,
       },
       {
         yFrac: 0.7, baseAmp: 8,
-        freq: WAVES[6].freq, phase: WAVES[6].phase, phaseSpeed: WAVES[6].phaseSpeed,
-        noiseOffset: WAVES[6].noiseOffset, noisePeriod: WAVES[6].noisePeriod,
-        color: WAVES[6].color, name: WAVES[6].name, stat: WAVES[6].stat,
+        freq: WAVES[6]!.freq, phase: WAVES[6]!.phase, phaseSpeed: WAVES[6]!.phaseSpeed,
+        noiseOffset: WAVES[6]!.noiseOffset, noisePeriod: WAVES[6]!.noisePeriod,
+        color: WAVES[6]!.color, name: WAVES[6]!.name, stat: WAVES[6]!.stat,
       },
     ];
     setupCanvas(ctaCanvas, ctaCard, ctaWaves, true);

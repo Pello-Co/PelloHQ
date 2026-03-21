@@ -113,11 +113,31 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
 </style>
 
 <script>
+  // ─── requestIdleCallback polyfill ────────────────────────────────────────────
   const ric = (window as any).requestIdleCallback
     ? (window as any).requestIdleCallback
     : (cb: () => void) => setTimeout(cb, 1);
 
   ric(() => {
+
+  // ─── Oscilloscope / CRT aesthetic ────────────────────────────────────────────
+
+  interface Wave {
+    yFrac: number;
+    freq: number;
+    amp: number;
+    baseAmp: number;
+    phase: number;
+    phaseSpeed: number;
+    noiseOffset: number;
+    noisePeriod: number;
+    color: string;
+  }
+
+  const PRODUCT_COLORS: string[] = [
+    '#6366f1','#8b5cf6','#a855f7','#c026d3',
+    '#7c3aed','#4f46e5','#9333ea','#6d28d9',
+  ];
 
   function valueNoise(x: number): number {
     const i = Math.floor(x);
@@ -128,41 +148,26 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     return (a - Math.floor(a)) * (1 - u) + (b - Math.floor(b)) * u;
   }
 
-  // Neon phosphor variants of product colors
-  const COLORS: string[] = [
-    '#818cf8','#a78bfa','#c084fc','#e879f9',
-    '#a855f7','#6366f1','#c026d3','#7c3aed',
-  ];
-  const NAMES: string[] = ['PELLOSEO','PELLOREACH','PELLOPUBLISH','PELLOSOCIAL','PELLOPITCH','PELLOADS','PELLOFLOW','PELLOBUILD'];
-
-  interface OscWave {
-    yFrac: number;
-    freq: number;
-    baseAmp: number;
-    phase: number;
-    phaseSpeed: number;
-    noiseOffset: number;
-    noisePeriod: number;
-    color: string;
-    name: string;
-  }
-
-  const WAVES: OscWave[] = COLORS.map((color, i) => ({
+  const WAVES: Wave[] = PRODUCT_COLORS.map((color, i) => ({
     yFrac: 0.1 + (i / 7) * 0.8,
-    freq: 0.009 + i * 0.002,
-    baseAmp: 10 + Math.sin(i * 1.5) * 4,
-    phase: i * 0.7,
-    phaseSpeed: 0.007 + i * 0.001,
-    noiseOffset: i * 83.1,
-    noisePeriod: 3 + i * 0.3,
+    freq: 0.012 + i * 0.002,
+    amp: 12 + i * 1.5,
+    baseAmp: 12 + i * 1.5,
+    phase: i * 0.8,
+    phaseSpeed: 0.006 + i * 0.0008,
+    noiseOffset: i * 100.7,
+    noisePeriod: 3 + i * 0.4,
     color,
-    name: NAMES[i],
   }));
 
-  let mouseX: number | null = null;
-  let mouseY: number | null = null;
+  let mouse: { x: number; y: number } | null = null;
 
-  function setupCanvas(canvas: HTMLCanvasElement, wrap: HTMLElement, waves: OscWave[], isSimple: boolean): () => void {
+  function setupCanvas(
+    canvas: HTMLCanvasElement,
+    wrap: HTMLElement,
+    waves: Wave[],
+    isSimple: boolean
+  ): () => void {
     const ctx = canvas.getContext('2d')!;
     let W = 0, H = 0;
     let dpr = window.devicePixelRatio || 1;
@@ -183,167 +188,173 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     ro.observe(wrap);
     resize();
 
-    const mobile = () => W < 768;
-    let triggerX = 0; // sweep position
+    function drawWavePath(wave: Wave, finalAmp: number) {
+      const SAMPLES = isSimple ? 120 : 250;
+      const baseY = wave.yFrac * H;
+      ctx.beginPath();
+      for (let s = 0; s <= SAMPLES; s++) {
+        const x = (s / SAMPLES) * W;
+        let y = baseY + Math.sin(x * wave.freq + wave.phase) * finalAmp;
+        // add slight harmonic
+        y += Math.sin(x * wave.freq * 2.1 + wave.phase * 1.3) * finalAmp * 0.15;
+        if (s === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+    }
 
-    function draw() {
-      requestAnimationFrame(draw);
+    function drawFrame() {
+      requestAnimationFrame(drawFrame);
       if (W === 0 || H === 0) return;
       ctx.clearRect(0, 0, W, H);
 
-      const now = performance.now() * 0.001;
-      const SAMPLES = mobile() ? 100 : 200;
+      const tSec = performance.now() * 0.001;
 
-      // CRT grid
+      // --- CRT grid overlay ---
       if (!isSimple) {
-        ctx.strokeStyle = 'rgba(100,120,160,0.04)';
-        ctx.lineWidth = 1;
-        const gridStep = 50;
-        for (let gx = 0; gx < W; gx += gridStep) {
+        ctx.strokeStyle = 'rgba(100,220,100,0.04)';
+        ctx.lineWidth = 0.5;
+        const gridSpacing = 50;
+        for (let gx = 0; gx <= W; gx += gridSpacing) {
           ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke();
         }
-        for (let gy = 0; gy < H; gy += gridStep) {
+        for (let gy = 0; gy <= H; gy += gridSpacing) {
           ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
         }
-
-        // Time axis labels
-        ctx.font = '8px monospace';
-        ctx.fillStyle = 'rgba(150,180,220,0.25)';
-        ctx.textAlign = 'center';
-        for (let t2 = 0; t2 <= 5; t2++) {
-          ctx.fillText(t2 * 100 + 'ms', (t2 / 5) * W, H - 4);
-        }
-        ctx.textAlign = 'left';
-
-        // Trigger sweep line (every 3s)
-        const triggerPeriod = 3;
-        triggerX = ((now % triggerPeriod) / triggerPeriod) * W;
-        ctx.beginPath();
-        ctx.moveTo(triggerX, 0);
-        ctx.lineTo(triggerX, H);
-        ctx.strokeStyle = 'rgba(200,200,255,0.25)';
-        ctx.lineWidth = 1;
-        ctx.stroke();
       }
 
-      // Find nearest wave for readout
-      let nearestWaveIdx = -1;
-      let nearestDist = Infinity;
-      if (!isSimple && mouseY !== null) {
-        for (let i = 0; i < waves.length; i++) {
-          const d = Math.abs(mouseY - waves[i].yFrac * H);
-          if (d < nearestDist) { nearestDist = d; nearestWaveIdx = i; }
-        }
-        if (nearestDist > H * 0.15) nearestWaveIdx = -1;
-      }
-
-      // Draw waves with phosphor glow
+      // --- Waves with phosphor glow (3-pass) ---
       for (let wi = 0; wi < waves.length; wi++) {
-        const w = waves[wi];
-        const baseY = w.yFrac * H;
-        const noiseVal = valueNoise(now / w.noisePeriod + w.noiseOffset);
-        const amp = w.baseAmp * (0.6 + noiseVal * 0.8);
+        const wave = waves[wi];
+        if (!wave) continue;
+        const baseY = wave.yFrac * H;
 
-        const pts: {x: number, y: number}[] = [];
-        for (let s = 0; s <= SAMPLES; s++) {
-          const x = (s / SAMPLES) * W;
-          const y = baseY + Math.sin(x * w.freq + w.phase) * amp;
-          pts.push({x, y});
+        const noiseT = tSec / wave.noisePeriod + wave.noiseOffset;
+        const noiseVal = valueNoise(noiseT);
+        const noiseAmp = wave.baseAmp * (0.5 + noiseVal * 0.9);
+
+        let proximity = 0;
+        if (!isSimple && mouse !== null) {
+          const dy = mouse.y - baseY;
+          proximity = Math.max(0, 1 - Math.abs(dy) / (H * 0.12));
+          proximity = proximity * proximity;
+        }
+        const finalAmp = noiseAmp * (1 + proximity * 1.8);
+
+        if (!isSimple) {
+          // Pass 1: outer bloom 6px at 0.04
+          ctx.globalAlpha = 0.04;
+          ctx.lineWidth = 6;
+          ctx.strokeStyle = wave.color;
+          drawWavePath(wave, finalAmp);
+          ctx.stroke();
+
+          // Pass 2: mid glow 3px at 0.1
+          ctx.globalAlpha = 0.1;
+          ctx.lineWidth = 3;
+          drawWavePath(wave, finalAmp);
+          ctx.stroke();
+
+          // Pass 3: crisp center 1px at 0.7 + proximity
+          ctx.globalAlpha = Math.min(1, 0.65 + proximity * 0.25);
+          ctx.lineWidth = 1;
+          drawWavePath(wave, finalAmp);
+          ctx.stroke();
+        } else {
+          ctx.globalAlpha = 0.45;
+          ctx.lineWidth = 1;
+          ctx.strokeStyle = wave.color;
+          drawWavePath(wave, finalAmp);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+
+        // Mouse crosshair + readout (nearest wave)
+        if (!isSimple && mouse !== null && proximity > 0.5) {
+          // Draw crosshair
+          ctx.globalAlpha = 0.08;
+          ctx.strokeStyle = 'rgba(200,255,200,1)';
+          ctx.lineWidth = 0.5;
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath(); ctx.moveTo(mouse.x, 0); ctx.lineTo(mouse.x, H); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(0, mouse.y); ctx.lineTo(W, mouse.y); ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.globalAlpha = 1;
+
+          // Readout text
+          const hzVal = (wave.freq * 1000).toFixed(1);
+          const ampVal = finalAmp.toFixed(0);
+          ctx.globalAlpha = 0.7;
+          ctx.fillStyle = wave.color;
+          ctx.font = '10px monospace';
+          const txt = `f: ${hzVal}Hz  A: ${ampVal}px`;
+          const tx = Math.min(mouse.x + 8, W - 120);
+          const ty = Math.max(baseY - 8, 12);
+          ctx.fillText(txt, tx, ty);
+          ctx.globalAlpha = 1;
         }
 
-        const isNear = wi === nearestWaveIdx;
-        const scanY = ((now % 8) / 8) * H;
-        const scanBright = Math.max(0, 1 - Math.abs(baseY - scanY) / 40);
-
-        // Wide outer bloom
-        ctx.beginPath();
-        pts.forEach((p, idx) => idx === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
-        ctx.strokeStyle = w.color;
-        ctx.globalAlpha = isNear ? 0.12 : 0.04;
-        ctx.lineWidth = 6;
-        ctx.stroke();
-
-        // Mid glow
-        ctx.beginPath();
-        pts.forEach((p, idx) => idx === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
-        ctx.globalAlpha = isNear ? 0.25 : (0.08 + scanBright * 0.1);
-        ctx.lineWidth = 3;
-        ctx.stroke();
-
-        // Crisp center
-        ctx.beginPath();
-        pts.forEach((p, idx) => idx === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
-        ctx.globalAlpha = isNear ? 0.9 : (0.6 + scanBright * 0.2);
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        ctx.globalAlpha = 1;
+        wave.phase += wave.phaseSpeed;
       }
 
-      // Crosshair + readout near mouse
-      if (!isSimple && mouseX !== null && mouseY !== null && nearestWaveIdx >= 0) {
-        const w = waves[nearestWaveIdx];
-        // Crosshair
-        ctx.setLineDash([4, 4]);
-        ctx.strokeStyle = 'rgba(200,200,255,0.2)';
-        ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(mouseX, 0); ctx.lineTo(mouseX, H); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(0, mouseY); ctx.lineTo(W, mouseY); ctx.stroke();
-        ctx.setLineDash([]);
-
-        // Readout
-        const freq = (w.freq * 100).toFixed(1);
-        const noiseVal = valueNoise(performance.now() * 0.001 / w.noisePeriod + w.noiseOffset);
-        const amp = (w.baseAmp * (0.6 + noiseVal * 0.8)).toFixed(0);
-        const readout = 'f: ' + freq + 'Hz  A: ' + amp + 'px';
-        ctx.font = '10px monospace';
-        ctx.fillStyle = w.color;
-        ctx.globalAlpha = 0.8;
-        ctx.fillText(readout, Math.min(mouseX + 8, W - 140), mouseY - 6);
-        ctx.globalAlpha = 1;
-      }
-
-      // Scan line phosphor band
       if (!isSimple) {
-        const scanY = ((now % 8) / 8) * H;
-        const sg = ctx.createLinearGradient(0, scanY - 15, 0, scanY + 15);
-        sg.addColorStop(0, 'rgba(120,180,255,0)');
-        sg.addColorStop(0.5, 'rgba(120,180,255,0.04)');
-        sg.addColorStop(1, 'rgba(120,180,255,0)');
-        ctx.fillStyle = sg;
-        ctx.fillRect(0, scanY - 15, W, 30);
-      }
+        // Time axis labels along bottom
+        ctx.globalAlpha = 0.06;
+        ctx.fillStyle = 'rgba(180,255,180,1)';
+        ctx.font = '8px monospace';
+        for (let tick = 0; tick <= 10; tick++) {
+          const tx = (tick / 10) * W;
+          ctx.fillText(`${tick * 100}ms`, tx + 2, H - 4);
+        }
+        ctx.globalAlpha = 1;
 
-      // CRT vignette
-      if (!isSimple) {
-        const vg = ctx.createRadialGradient(W/2, H/2, H*0.3, W/2, H/2, H*0.8);
-        vg.addColorStop(0, 'rgba(0,0,0,0)');
-        vg.addColorStop(1, 'rgba(0,0,0,0.35)');
-        ctx.fillStyle = vg;
+        // Vertical trigger sweep line every 3s
+        const triggerPeriod = 3;
+        const tmod = tSec % triggerPeriod;
+        const tx2 = (tmod / triggerPeriod) * W;
+        const grad = ctx.createLinearGradient(tx2 - 20, 0, tx2, 0);
+        grad.addColorStop(0, 'rgba(100,255,100,0)');
+        grad.addColorStop(1, 'rgba(100,255,100,0.08)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(tx2 - 20, 0, 20, H);
+        ctx.strokeStyle = 'rgba(100,255,100,0.12)';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(tx2, 0); ctx.lineTo(tx2, H); ctx.stroke();
+
+        // CRT vignette corners
+        const vign = ctx.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.9);
+        vign.addColorStop(0, 'rgba(0,0,0,0)');
+        vign.addColorStop(1, 'rgba(0,0,0,0.45)');
+        ctx.fillStyle = vign;
         ctx.fillRect(0, 0, W, H);
       }
-
-      for (const w of waves) w.phase += w.phaseSpeed;
     }
 
-    requestAnimationFrame(draw);
+    requestAnimationFrame(drawFrame);
     requestAnimationFrame(() => { canvas.style.opacity = '1'; });
     return () => ro.disconnect();
   }
 
+  // Hero canvas
   const heroWrap = document.getElementById('hero-wrap')!;
   const heroCanvas = heroWrap.querySelector<HTMLCanvasElement>('.bg-canvas')!;
   setupCanvas(heroCanvas, heroWrap, WAVES, false);
 
   heroWrap.addEventListener('mousemove', (e: MouseEvent) => {
     const rect = heroWrap.getBoundingClientRect();
-    mouseX = e.clientX - rect.left;
-    mouseY = e.clientY - rect.top;
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
   });
-  heroWrap.addEventListener('mouseleave', () => { mouseX = null; mouseY = null; });
+  heroWrap.addEventListener('mouseleave', () => { mouse = null; });
+
+  const urlInput = document.querySelector<HTMLInputElement>('.url-input');
+  if (urlInput) {
+    urlInput.addEventListener('focus', () => {
+      // no spikes for oscilloscope, but increase amplitude briefly via mouse simulation
+    });
+  }
 
   const gridTex = heroWrap.querySelector<HTMLElement>('.grid-texture');
   if (gridTex) gridTex.style.display = 'none';
 
+  // Final CTA canvas
   const ctaCard = document.querySelector<HTMLElement>('.final-cta');
   if (ctaCard) {
     const ctaCanvas = document.createElement('canvas');
@@ -351,14 +362,14 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
     ctaCard.style.position = 'relative';
     ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
-    const ctaWaves: OscWave[] = [
-      { yFrac: 0.3, freq: 0.012, baseAmp: 9, phase: 0, phaseSpeed: 0.008, noiseOffset: 200, noisePeriod: 4, color: '#818cf8', name: 'PELLOSEO' },
-      { yFrac: 0.5, freq: 0.016, baseAmp: 11, phase: 1.5, phaseSpeed: 0.01, noiseOffset: 350, noisePeriod: 3.5, color: '#c084fc', name: 'PELLOPUBLISH' },
-      { yFrac: 0.7, freq: 0.01, baseAmp: 8, phase: 3.0, phaseSpeed: 0.007, noiseOffset: 500, noisePeriod: 5, color: '#a855f7', name: 'PELLOFLOW' },
+    const ctaWaves: Wave[] = [
+      { yFrac: 0.3, freq: 0.015, amp: 10, baseAmp: 10, phase: 0,   phaseSpeed: 0.010, noiseOffset: 200, noisePeriod: 4,   color: '#6366f1' },
+      { yFrac: 0.5, freq: 0.018, amp: 12, baseAmp: 12, phase: 1.5, phaseSpeed: 0.012, noiseOffset: 350, noisePeriod: 3.5, color: '#a855f7' },
+      { yFrac: 0.7, freq: 0.012, amp: 9,  baseAmp: 9,  phase: 3.0, phaseSpeed: 0.009, noiseOffset: 500, noisePeriod: 5,   color: '#4f46e5' },
     ];
     setupCanvas(ctaCanvas, ctaCard, ctaWaves, true);
-    const gt = ctaCard.querySelector<HTMLElement>('.grid-texture');
-    if (gt) gt.style.display = 'none';
+    const gridTexCta = ctaCard.querySelector<HTMLElement>('.grid-texture');
+    if (gridTexCta) gridTexCta.style.display = 'none';
   }
 
   }); // end ric
