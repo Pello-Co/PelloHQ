@@ -73,9 +73,8 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
 
 <a id="skip-link" href="#main-content">Skip to main content</a>
 
-<!-- Glassmorphism overrides — makes hero components translucent so aurora shows through -->
+<!-- Glassmorphism overrides -->
 <style is:global>
-  /* ── URL input bar — frosted glass ────────────────────────────── */
   #dot-grid-wrap .url-input-wrap,
   .final-cta .url-input-wrap {
     background: rgba(255, 255, 255, 0.06) !important;
@@ -84,16 +83,12 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     border: 1px solid rgba(255, 255, 255, 0.12) !important;
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
-
-  /* ── Hero panel (Growth Engine) — glass body ──────────────────── */
   #dot-grid-wrap .hero-panel {
     background: rgba(6, 7, 18, 0.55) !important;
     backdrop-filter: blur(20px) saturate(1.3);
     -webkit-backdrop-filter: blur(20px) saturate(1.3);
     border: 1px solid rgba(255, 255, 255, 0.12) !important;
   }
-
-  /* ── Inner components — more transparent glass with visible borders ── */
   #dot-grid-wrap .panel-source-row {
     border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
   }
@@ -121,8 +116,6 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
   #dot-grid-wrap .node-stat-text {
     color: #a78bfa !important;
   }
-
-  /* ── Mobile panel (product list) — glass card ────────────────── */
   #dot-grid-wrap .hero-panel-mobile {
     background: rgba(10, 10, 20, 0.3);
     backdrop-filter: blur(20px) saturate(1.3);
@@ -132,8 +125,6 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     padding: 1rem;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   }
-
-  /* ── FinalCTA card — glass treatment ─────────────────────────── */
   .final-cta {
     background: rgba(20, 15, 40, 0.35) !important;
     backdrop-filter: blur(24px) saturate(1.4) !important;
@@ -141,26 +132,37 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     border-color: rgba(99, 102, 241, 0.15) !important;
     box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
   }
-
-  /* ── CTA card clips aurora inside the rounded box ─────────────── */
   .final-cta {
     overflow: hidden;
     position: relative;
   }
-
-  /* Hide CTA opaque backgrounds so aurora shows through */
   .final-cta > .absolute.inset-0.pointer-events-none {
     display: none !important;
   }
-
-  /* Hide the opaque backgrounds that would block the aurora */
   #dot-grid-wrap .grid-texture,
   #dot-grid-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] {
     display: none !important;
   }
-
-  /* Make hero section bg transparent so aurora shows through */
   #hero {
+    background: transparent !important;
+  }
+</style>
+
+<!-- Product panel canvas styles -->
+<style is:global>
+  .pv-canvas {
+    position: absolute !important;
+    inset: 0 !important;
+    z-index: 0 !important;
+    pointer-events: none !important;
+    border-radius: inherit;
+  }
+  .product-visual-panel > *:not(.pv-canvas) {
+    position: relative;
+    z-index: 1;
+  }
+  /* Make panel body transparent so canvas shows through */
+  .product-visual-panel .p-5 {
     background: transparent !important;
   }
 </style>
@@ -168,11 +170,9 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
 <script>
   // Polyfill requestIdleCallback for Safari
   const ric = window.requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
-  // Defer all canvas animations until after first paint to reduce TBT
   ric(() => {
 
   // ─── Aurora Waves (behind dot grid) ─────────────────────────────────────────
-  // Perlin noise for aurora (scope-isolated from dot grid noise)
   {
     const AP = new Uint8Array(512);
     { const p = new Uint8Array(256); for (let i = 0; i < 256; i++) p[i] = i;
@@ -188,7 +188,6 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       return al(al(ag(AP[AP[X]+Y],xf,yf), ag(AP[AP[X+1]+Y],xf-1,yf), u),
                al(ag(AP[AP[X]+Y+1],xf,yf-1), ag(AP[AP[X+1]+Y+1],xf-1,yf-1), u), v);
     }
-    // Fractional Brownian Motion — stacks noise octaves for organic, nebula-like structure
     function fbm(x: number, y: number, oct: number): number {
       let v = 0, amp = 0.5, freq = 1.0;
       for (let i = 0; i < oct; i++) { v += amp * an(x * freq, y * freq); amp *= 0.5; freq *= 2.0; }
@@ -199,164 +198,103 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     const auroraWrap = document.getElementById('dot-grid-wrap')!;
     const actx = auroraCanvas.getContext('2d')!;
     let aW = 0, aH = 0, aDpr = 1;
-
-    // Offscreen buffer at 1/3 resolution — renders crisp detail, upscales with bilinear
-    // smoothing which acts as a free soft blur (no CSS filter needed)
     const offscreen = document.createElement('canvas');
     const octx = offscreen.getContext('2d')!;
 
     function resizeAurora() {
       aDpr = window.devicePixelRatio || 1;
       const rect = auroraWrap.getBoundingClientRect();
-      aW = Math.round(rect.width);
-      aH = Math.round(rect.height);
-      auroraCanvas.width = aW * aDpr;
-      auroraCanvas.height = aH * aDpr;
-      auroraCanvas.style.width = `${aW}px`;
-      auroraCanvas.style.height = `${aH}px`;
-      offscreen.width  = Math.round(aW / 3);
-      offscreen.height = Math.round(aH / 3);
+      aW = Math.round(rect.width); aH = Math.round(rect.height);
+      auroraCanvas.width = aW * aDpr; auroraCanvas.height = aH * aDpr;
+      auroraCanvas.style.width = `${aW}px`; auroraCanvas.style.height = `${aH}px`;
+      offscreen.width = Math.round(aW / 3); offscreen.height = Math.round(aH / 3);
     }
 
-    // Draw one gradient-filled ellipse onto the offscreen context.
-    // rx = major radius; ry < rx creates a flat band.
-    // Steeper falloff (0→bright, 0.28→medium, 0.62→dim, 1→0) gives a hotter, more saturated core.
     function blob(cx: number, cy: number, rx: number, ry: number, angle: number,
                   r: number, g: number, b: number, alpha: number) {
       if (alpha < 0.004 || rx < 0.5) return;
-      octx.save();
-      octx.translate(cx, cy);
-      octx.rotate(angle);
+      octx.save(); octx.translate(cx, cy); octx.rotate(angle);
       octx.scale(1.0, ry / Math.max(rx, 0.5));
       const gr = octx.createRadialGradient(0, 0, 0, 0, 0, rx);
-      gr.addColorStop(0,    `rgba(${r},${g},${b},${alpha.toFixed(3)})`);
-      gr.addColorStop(0.28, `rgba(${r},${g},${b},${(alpha * 0.68).toFixed(3)})`);
-      gr.addColorStop(0.62, `rgba(${r},${g},${b},${(alpha * 0.22).toFixed(3)})`);
-      gr.addColorStop(1,    `rgba(${r},${g},${b},0)`);
-      octx.fillStyle = gr;
-      octx.beginPath();
-      octx.arc(0, 0, rx, 0, Math.PI * 2);
-      octx.fill();
-      octx.restore();
+      gr.addColorStop(0, `rgba(${r},${g},${b},${alpha.toFixed(3)})`);
+      gr.addColorStop(0.28, `rgba(${r},${g},${b},${(alpha*0.68).toFixed(3)})`);
+      gr.addColorStop(0.62, `rgba(${r},${g},${b},${(alpha*0.22).toFixed(3)})`);
+      gr.addColorStop(1, `rgba(${r},${g},${b},0)`);
+      octx.fillStyle = gr; octx.beginPath(); octx.arc(0,0,rx,0,Math.PI*2); octx.fill(); octx.restore();
     }
 
-    // Draw a nebula strand: a domain-warped central blob plus n satellite blobs
-    // distributed along the major axis with per-blob noise displacement.
-    // The combination of off-axis noise and density variation creates wisp/tendril structure.
     function strand(t: number, cx: number, cy: number, rx: number, ry: number, angle: number,
                     r: number, g: number, b: number, alpha: number, n: number, wa: number) {
-      // Domain-warp the whole strand's anchor point for large-scale organic drift
-      const wx = fbm(cx * 0.012 + t * 0.15, cy * 0.012, 3) * wa;
-      const wy = fbm(cx * 0.012 + 57, cy * 0.012 + t * 0.13, 3) * wa;
-      const px = cx + wx, py = cy + wy;
-
-      // Central blob — slightly modulated brightness
-      const ca = alpha * (0.78 + an(t * 0.25, cx * 0.02) * 0.22);
-      blob(px, py, rx, ry, angle, r, g, b, Math.max(0, ca));
+      const wx = fbm(cx*0.012+t*0.15, cy*0.012, 3)*wa, wy = fbm(cx*0.012+57, cy*0.012+t*0.13, 3)*wa;
+      const px = cx+wx, py = cy+wy;
+      const ca = alpha*(0.78+an(t*0.25, cx*0.02)*0.22);
+      blob(px, py, rx, ry, angle, r, g, b, Math.max(0,ca));
       if (n < 2) return;
-
-      // Satellite blobs strung along the major axis
       const cosA = Math.cos(angle), sinA = Math.sin(angle);
       for (let i = 0; i < n; i++) {
-        const u   = (i / (n - 1)) * 2 - 1;          // −1 … +1 along axis
-        const bx0 = px + cosA * u * rx * 0.82;
-        const by0 = py + sinA * u * rx * 0.82;
-        // Off-axis noise displacement — creates wisps extending perpendicular to the band
-        const bwx = an(bx0 * 0.015 + t * 0.18 + i * 1.4, by0 * 0.015 + 30) * wa * 0.40;
-        const bwy = an(bx0 * 0.015 + 80 + i,               by0 * 0.015 + t * 0.16) * wa * 0.40;
-        // Density variation: brighter near centre, further modulated by noise
-        const dn      = (an(i * 1.7 + t * 0.2, 200) + 1) * 0.5;
-        const density = (1 - u * u) * (0.42 + dn * 0.30);
-        blob(bx0 + bwx, by0 + bwy,
-             rx * (0.20 + (an(i * 2.3, t * 0.04) + 1) * 0.13),
-             ry * (0.48 + density * 0.52),
-             angle, r, g, b, Math.max(0, alpha * 0.52 * density));
+        const u = (i/(n-1))*2-1;
+        const bx0 = px+cosA*u*rx*0.82, by0 = py+sinA*u*rx*0.82;
+        const bwx = an(bx0*0.015+t*0.18+i*1.4, by0*0.015+30)*wa*0.40;
+        const bwy = an(bx0*0.015+80+i, by0*0.015+t*0.16)*wa*0.40;
+        const dn = (an(i*1.7+t*0.2, 200)+1)*0.5;
+        const density = (1-u*u)*(0.42+dn*0.30);
+        blob(bx0+bwx, by0+bwy, rx*(0.20+(an(i*2.3,t*0.04)+1)*0.13),
+             ry*(0.48+density*0.52), angle, r, g, b, Math.max(0, alpha*0.52*density));
       }
     }
 
-    // Layer table — row format:
-    //   [cxF, cyF, rxF, ryF, angle,  R,   G,   B,  alpha, spd,   ph,  n,  waF]
-    //   cxF/cyF : base centre as fraction of canvas (animated around this)
-    //   rxF     : major radius as fraction of offscreen width
-    //   ryF     : minor radius as fraction of offscreen height  (ryF << rxF = flat band)
-    //   n       : satellite blob count (0 = simple wash, no satellites)
-    //   waF     : domain-warp amplitude as fraction of offscreen width
     const AL = [
-      // ── Atmospheric washes — spread wide across the viewport ──
-      [0.35, 0.48, 0.62, 0.26, -0.06,  52, 14, 185, 0.16, 0.055, 0.0,  0, 0.14],
-      [0.65, 0.55, 0.72, 0.22,  0.04,  38, 10, 165, 0.12, 0.045, 2.6,  0, 0.12],
-      [0.40, 0.62, 0.78, 0.24, -0.03,  28,  7, 148, 0.10, 0.038, 5.1,  0, 0.13],
-      // ── Mid nebula bands — offset from centre ─────────────────
-      [0.35, 0.48, 0.44, 0.12, -0.13, 100, 35, 230, 0.32, 0.140, 0.4,  7, 0.09],
-      [0.65, 0.44, 0.50, 0.10,  0.09, 125, 45, 235, 0.28, 0.170, 1.9,  6, 0.08],
-      [0.30, 0.58, 0.40, 0.13, -0.07,  75, 28, 215, 0.26, 0.110, 3.4,  6, 0.10],
-      [0.70, 0.46, 0.48, 0.09,  0.16, 145, 40, 240, 0.24, 0.190, 5.2,  5, 0.07],
-      [0.25, 0.54, 0.38, 0.12, -0.19,  55, 45, 205, 0.22, 0.130, 2.7,  5, 0.09],
-      [0.72, 0.52, 0.43, 0.11,  0.11, 108, 28, 220, 0.24, 0.150, 4.2,  6, 0.08],
-      // ── Bright accent tendrils — spread to edges ────
-      [0.28, 0.42, 0.33, 0.07, -0.11, 162, 52, 250, 0.38, 0.250, 1.3,  5, 0.06],
-      [0.72, 0.56, 0.35, 0.06,  0.13, 188, 56, 235, 0.32, 0.280, 3.9,  4, 0.05],
-      [0.38, 0.60, 0.30, 0.08, -0.08, 138, 44, 245, 0.30, 0.220, 6.4,  5, 0.07],
-      [0.62, 0.40, 0.27, 0.07,  0.09, 172, 60, 240, 0.28, 0.300, 0.8,  4, 0.05],
-      // ── Hot bright cores — offset left and right of centre ──
-      [0.42, 0.48, 0.18, 0.11,  0.00, 178, 88, 255, 0.44, 0.100, 0.0,  3, 0.04],
-      [0.58, 0.52, 0.14, 0.09, -0.04, 198, 98, 255, 0.40, 0.120, 1.6,  0, 0.03],
-      [0.45, 0.55, 0.21, 0.10,  0.05, 158, 70, 250, 0.38, 0.090, 3.1,  3, 0.04],
+      [0.35,0.48,0.62,0.26,-0.06, 52,14,185,0.16,0.055,0.0, 0,0.14],
+      [0.65,0.55,0.72,0.22, 0.04, 38,10,165,0.12,0.045,2.6, 0,0.12],
+      [0.40,0.62,0.78,0.24,-0.03, 28, 7,148,0.10,0.038,5.1, 0,0.13],
+      [0.35,0.48,0.44,0.12,-0.13,100,35,230,0.32,0.140,0.4, 7,0.09],
+      [0.65,0.44,0.50,0.10, 0.09,125,45,235,0.28,0.170,1.9, 6,0.08],
+      [0.30,0.58,0.40,0.13,-0.07, 75,28,215,0.26,0.110,3.4, 6,0.10],
+      [0.70,0.46,0.48,0.09, 0.16,145,40,240,0.24,0.190,5.2, 5,0.07],
+      [0.25,0.54,0.38,0.12,-0.19, 55,45,205,0.22,0.130,2.7, 5,0.09],
+      [0.72,0.52,0.43,0.11, 0.11,108,28,220,0.24,0.150,4.2, 6,0.08],
+      [0.28,0.42,0.33,0.07,-0.11,162,52,250,0.38,0.250,1.3, 5,0.06],
+      [0.72,0.56,0.35,0.06, 0.13,188,56,235,0.32,0.280,3.9, 4,0.05],
+      [0.38,0.60,0.30,0.08,-0.08,138,44,245,0.30,0.220,6.4, 5,0.07],
+      [0.62,0.40,0.27,0.07, 0.09,172,60,240,0.28,0.300,0.8, 4,0.05],
+      [0.42,0.48,0.18,0.11, 0.00,178,88,255,0.44,0.100,0.0, 3,0.04],
+      [0.58,0.52,0.14,0.09,-0.04,198,98,255,0.40,0.120,1.6, 0,0.03],
+      [0.45,0.55,0.21,0.10, 0.05,158,70,250,0.38,0.090,3.1, 3,0.04],
     ];
 
     function frameAurora() {
       requestAnimationFrame(frameAurora);
       const ow = offscreen.width, oh = offscreen.height;
       const t = performance.now() * 0.001;
-
       octx.clearRect(0, 0, ow, oh);
       octx.globalCompositeOperation = 'lighter';
-
       for (const row of AL) {
-        const [cxF, cyF, rxF, ryF, ang, r, g, b, alpha, spd, ph, n, waF] = row;
-        // Lissajous drift — x and y on slightly different frequencies avoids back-and-forth
-        const cx    = ow * (cxF + Math.sin(t * spd * 3        + ph      ) * 0.15);
-        const cy    = oh * (cyF + Math.sin(t * spd * 2.1  + ph + 1.1) * 0.12);
-        // Radii breathe out of phase
-        const rx    = ow * rxF * (1 + Math.sin(t * spd * 4 + ph * 1.8) * 0.15);
-        const ry    = oh * ryF * (1 + Math.sin(t * spd * 2.5 + ph * 1.3) * 0.18);
-        // Angle wobble
-        const angle = ang + Math.sin(t * spd * 2.5 + ph) * 0.2;
-        // Warp amplitude in offscreen pixels
-        const wa    = ow * waF;
-
+        const [cxF,cyF,rxF,ryF,ang,r,g,b,alpha,spd,ph,n,waF] = row;
+        const cx = ow*(cxF+Math.sin(t*spd*3+ph)*0.15);
+        const cy = oh*(cyF+Math.sin(t*spd*2.1+ph+1.1)*0.12);
+        const rx = ow*rxF*(1+Math.sin(t*spd*4+ph*1.8)*0.15);
+        const ry = oh*ryF*(1+Math.sin(t*spd*2.5+ph*1.3)*0.18);
+        const angle = ang+Math.sin(t*spd*2.5+ph)*0.2;
+        const wa = ow*waF;
         if (n === 0) {
-          // Wash: single domain-warped gradient blob, no internal structure
-          const wx = fbm(cx * 0.010 + t * 0.036, cy * 0.010,         2) * wa;
-          const wy = fbm(cx * 0.010 + 63,         cy * 0.010 + t * 0.030, 2) * wa;
-          blob(cx + wx, cy + wy, rx, ry, angle, r, g, b, alpha);
-        } else {
-          strand(t, cx, cy, rx, ry, angle, r, g, b, alpha, n, wa);
-        }
+          const wx=fbm(cx*0.010+t*0.036,cy*0.010,2)*wa, wy=fbm(cx*0.010+63,cy*0.010+t*0.030,2)*wa;
+          blob(cx+wx,cy+wy,rx,ry,angle,r,g,b,alpha);
+        } else { strand(t,cx,cy,rx,ry,angle,r,g,b,alpha,n,wa); }
       }
-
       octx.globalCompositeOperation = 'source-over';
-
-      // Upscale offscreen to full canvas — bilinear smoothing acts as a free soft blur
-      actx.setTransform(1, 0, 0, 1, 0, 0);
-      actx.clearRect(0, 0, auroraCanvas.width, auroraCanvas.height);
-      actx.drawImage(offscreen, 0, 0, auroraCanvas.width, auroraCanvas.height);
-      actx.setTransform(aDpr, 0, 0, aDpr, 0, 0);
+      actx.setTransform(1,0,0,1,0,0); actx.clearRect(0,0,auroraCanvas.width,auroraCanvas.height);
+      actx.drawImage(offscreen,0,0,auroraCanvas.width,auroraCanvas.height);
+      actx.setTransform(aDpr,0,0,aDpr,0,0);
     }
 
     const roAurora = new ResizeObserver(() => resizeAurora());
     roAurora.observe(auroraWrap);
     resizeAurora();
     requestAnimationFrame(frameAurora);
-
-    // Fade in aurora canvas
-    requestAnimationFrame(() => {
-      auroraCanvas.style.opacity = '1';
-    });
+    requestAnimationFrame(() => { auroraCanvas.style.opacity = '1'; });
   }
 
   // ─── Dot Grid Background (behind hero) ────────────────────────────────────
-  // Perlin noise permutation table
   const PERM = new Uint8Array(512);
   {
     const p = new Uint8Array(256);
@@ -367,16 +305,16 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     }
     for (let i = 0; i < 512; i++) PERM[i] = p[i & 255];
   }
-  const GRADS: [number, number][] = [[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
-  function fade(t: number) { return t * t * t * (t * (t * 6 - 15) + 10); }
-  function nlerp(a: number, b: number, t: number) { return a + t * (b - a); }
-  function grad(h: number, x: number, y: number) { const [gx, gy] = GRADS[h & 7]; return gx * x + gy * y; }
+  const GRADS: [number,number][] = [[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+  function fade(t: number) { return t*t*t*(t*(t*6-15)+10); }
+  function nlerp(a: number, b: number, t: number) { return a+t*(b-a); }
+  function grad(h: number, x: number, y: number) { const [gx,gy]=GRADS[h&7]; return gx*x+gy*y; }
   function noise2(x: number, y: number): number {
-    const X = Math.floor(x) & 255, Y = Math.floor(y) & 255;
-    const xf = x - Math.floor(x), yf = y - Math.floor(y);
-    const u = fade(xf), v = fade(yf);
-    const aa = PERM[PERM[X]+Y], ab = PERM[PERM[X]+Y+1], ba = PERM[PERM[X+1]+Y], bb = PERM[PERM[X+1]+Y+1];
-    return nlerp(nlerp(grad(aa,xf,yf), grad(ba,xf-1,yf), u), nlerp(grad(ab,xf,yf-1), grad(bb,xf-1,yf-1), u), v);
+    const X=Math.floor(x)&255, Y=Math.floor(y)&255;
+    const xf=x-Math.floor(x), yf=y-Math.floor(y);
+    const u=fade(xf), v=fade(yf);
+    const aa=PERM[PERM[X]+Y], ab=PERM[PERM[X]+Y+1], ba=PERM[PERM[X+1]+Y], bb=PERM[PERM[X+1]+Y+1];
+    return nlerp(nlerp(grad(aa,xf,yf),grad(ba,xf-1,yf),u),nlerp(grad(ab,xf,yf-1),grad(bb,xf-1,yf-1),u),v);
   }
 
   const GRID = 16;
@@ -386,10 +324,9 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
   const NOISE_SCALE = 0.04;
   const NOISE_SPEED = 0.0008;
   const NOISE_STRENGTH = 6;
-
-  const ACCENT1: [number, number, number] = [60, 130, 255];   // bright blue
-  const ACCENT2: [number, number, number] = [100, 180, 255];  // sky blue
-  const BASE_RGB: [number, number, number] = [90, 90, 105];
+  const ACCENT1: [number,number,number] = [60,130,255];
+  const ACCENT2: [number,number,number] = [100,180,255];
+  const BASE_RGB: [number,number,number] = [90,90,105];
 
   interface Dot { gx: number; gy: number; x: number; y: number; }
 
@@ -399,310 +336,656 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
   let dots: Dot[] = [];
   let mouse: { x: number; y: number } | null = null;
   let dpr = 1;
-  let rafId = 0;
 
   function buildGrid() {
     dots = [];
-    const W = canvas.width / dpr;
-    const H = canvas.height / dpr;
-    const cols = Math.ceil(W / GRID) + 2;
-    const rows = Math.ceil(H / GRID) + 2;
+    const W = canvas.width/dpr, H = canvas.height/dpr;
+    const cols = Math.ceil(W/GRID)+2, rows = Math.ceil(H/GRID)+2;
     for (let r = 0; r < rows; r++)
       for (let c = 0; c < cols; c++) {
-        const gx = c * GRID, gy = r * GRID;
+        const gx=c*GRID, gy=r*GRID;
         dots.push({ gx, gy, x: gx, y: gy });
       }
   }
 
   function resize() {
-    dpr = window.devicePixelRatio || 1;
+    dpr = window.devicePixelRatio||1;
     const rect = wrap.getBoundingClientRect();
-    const w = Math.round(rect.width), h = Math.round(rect.height);
-    canvas.width = w * dpr; canvas.height = h * dpr;
-    canvas.style.width = `${w}px`; canvas.style.height = `${h}px`;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const w=Math.round(rect.width), h=Math.round(rect.height);
+    canvas.width=w*dpr; canvas.height=h*dpr;
+    canvas.style.width=`${w}px`; canvas.style.height=`${h}px`;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
     buildGrid();
   }
 
   function lerpRGB(a: [number,number,number], b: [number,number,number], t: number): [number,number,number] {
-    return [Math.round(a[0]+(b[0]-a[0])*t), Math.round(a[1]+(b[1]-a[1])*t), Math.round(a[2]+(b[2]-a[2])*t)];
+    return [Math.round(a[0]+(b[0]-a[0])*t),Math.round(a[1]+(b[1]-a[1])*t),Math.round(a[2]+(b[2]-a[2])*t)];
   }
   function rgbStr(c: [number,number,number]) { return `rgb(${c[0]},${c[1]},${c[2]})`; }
 
   function frame() {
-    rafId = requestAnimationFrame(frame);
-    const W = canvas.width / dpr, H = canvas.height / dpr;
-    const t = performance.now() * NOISE_SPEED;
-    ctx.clearRect(0, 0, W, H);
-    const fadeZone = H * 0.75;
-
+    requestAnimationFrame(frame);
+    const W=canvas.width/dpr, H=canvas.height/dpr;
+    const t=performance.now()*NOISE_SPEED;
+    ctx.clearRect(0,0,W,H);
+    const fadeZone=H*0.75;
     for (const dot of dots) {
-      let targetX = dot.gx, targetY = dot.gy, influence = 0, angleToMouse = 0;
+      let targetX=dot.gx, targetY=dot.gy, influence=0, angleToMouse=0;
       if (mouse) {
-        const dx = dot.gx - mouse.x, dy = dot.gy - mouse.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
+        const dx=dot.gx-mouse.x, dy=dot.gy-mouse.y;
+        const dist=Math.sqrt(dx*dx+dy*dy);
         if (dist < INFLUENCE_RADIUS) {
-          const raw = 1 - dist / INFLUENCE_RADIUS;
-          const s = raw * raw * (3 - 2 * raw);
-          influence = s * s * (3 - 2 * s);
-          const pushMag = Math.pow(influence, 3) * PUSH_STRENGTH;
-          const len = dist || 1;
-          targetX += (dx / len) * pushMag;
-          targetY += (dy / len) * pushMag;
-          const noiseX = noise2(dot.gx * NOISE_SCALE, dot.gy * NOISE_SCALE + t);
-          const noiseY = noise2(dot.gx * NOISE_SCALE + 100, dot.gy * NOISE_SCALE + t);
-          const noiseMag = influence * influence * NOISE_STRENGTH;
-          targetX += noiseX * noiseMag;
-          targetY += noiseY * noiseMag;
-          angleToMouse = Math.atan2(dy, dx);
+          const raw=1-dist/INFLUENCE_RADIUS;
+          const s=raw*raw*(3-2*raw);
+          influence=s*s*(3-2*s);
+          const pushMag=Math.pow(influence,3)*PUSH_STRENGTH;
+          const len=dist||1;
+          targetX+=(dx/len)*pushMag; targetY+=(dy/len)*pushMag;
+          const noiseX=noise2(dot.gx*NOISE_SCALE, dot.gy*NOISE_SCALE+t);
+          const noiseY=noise2(dot.gx*NOISE_SCALE+100, dot.gy*NOISE_SCALE+t);
+          const noiseMag=influence*influence*NOISE_STRENGTH;
+          targetX+=noiseX*noiseMag; targetY+=noiseY*noiseMag;
+          angleToMouse=Math.atan2(dy,dx);
         }
       }
-      dot.x += (targetX - dot.x) * LERP_SPEED;
-      dot.y += (targetY - dot.y) * LERP_SPEED;
-
-      let opacity = 1;
-      if (dot.gy > fadeZone) {
-        opacity *= 1 - Math.min(1, (dot.gy - fadeZone) / (H - fadeZone));
-      }
+      dot.x+=(targetX-dot.x)*LERP_SPEED;
+      dot.y+=(targetY-dot.y)*LERP_SPEED;
+      let opacity=1;
+      if (dot.gy > fadeZone) opacity*=1-Math.min(1,(dot.gy-fadeZone)/(H-fadeZone));
       if (opacity < 0.01) continue;
-
-      let color = rgbStr(BASE_RGB);
+      let color=rgbStr(BASE_RGB);
       if (influence > 0) {
-        const inf3 = influence * influence * influence;
-        const blendFactor = (Math.sin(angleToMouse * 2 + t * 3) + 1) * 0.5;
-        const accent = lerpRGB(ACCENT1, ACCENT2, blendFactor);
-        color = rgbStr(lerpRGB(BASE_RGB, accent, inf3));
-        // Fade to black near cursor centre — strong dim at core, gentle at edges
-        opacity *= 1 - influence * influence * 0.85;
+        const inf3=influence*influence*influence;
+        const blendFactor=(Math.sin(angleToMouse*2+t*3)+1)*0.5;
+        const accent=lerpRGB(ACCENT1,ACCENT2,blendFactor);
+        color=rgbStr(lerpRGB(BASE_RGB,accent,inf3));
+        opacity*=1-influence*influence*0.85;
       }
-      ctx.globalAlpha = opacity;
-      ctx.fillStyle = color;
+      ctx.globalAlpha=opacity; ctx.fillStyle=color;
       ctx.beginPath();
-      const dotRadius = 1 + influence * 0.5; // 1px base → 1.5px max near cursor
-      ctx.arc(dot.x, dot.y, dotRadius, 0, Math.PI * 2);
+      ctx.arc(dot.x, dot.y, 1+influence*0.5, 0, Math.PI*2);
       ctx.fill();
     }
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha=1;
   }
 
   window.addEventListener('mousemove', (e) => {
-    const rect = wrap.getBoundingClientRect();
-    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    const rect=wrap.getBoundingClientRect();
+    mouse={ x: e.clientX-rect.left, y: e.clientY-rect.top };
   });
-  window.addEventListener('mouseleave', () => { mouse = null; });
-  window.addEventListener('touchstart', () => { mouse = null; }, { passive: true });
+  window.addEventListener('mouseleave', () => { mouse=null; });
+  window.addEventListener('touchstart', () => { mouse=null; }, { passive: true });
 
   const ro = new ResizeObserver(() => resize());
   ro.observe(wrap);
   resize();
-  rafId = requestAnimationFrame(frame);
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity='1'; });
 
-  // Fade in dot grid canvas
-  requestAnimationFrame(() => {
-    canvas.style.opacity = '1';
-  });
+  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement|null;
+  if (gridTex) gridTex.style.display='none';
 
-  // Hide the default grid-texture so dot grid canvas replaces it
-  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
-  if (gridTex) gridTex.style.display = 'none';
-
-  // ─── Aurora for CTA section ─────────────────────────────────────────────────
+  // ─── Aurora for CTA section ──────────────────────────────────────────────
   {
-    // Inject aurora canvas inside .final-cta card so it clips to the rounded box
     const ctaCardAurora = document.querySelector('.final-cta') as HTMLElement;
     const aCanvasCta = document.createElement('canvas');
     aCanvasCta.className = 'aurora-canvas-cta';
-    aCanvasCta.setAttribute('aria-hidden', 'true');
-    aCanvasCta.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+    aCanvasCta.setAttribute('aria-hidden','true');
+    aCanvasCta.style.cssText='position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
     ctaCardAurora.insertBefore(aCanvasCta, ctaCardAurora.firstChild);
-    const aWrapCta = ctaCardAurora;
-    if (aCanvasCta && aWrapCta) {
-      const actxC = aCanvasCta.getContext('2d')!;
-      const offC = document.createElement('canvas');
-      const octxC = offC.getContext('2d')!;
-      let aCW = 0, aCH = 0;
+    const actxC=aCanvasCta.getContext('2d')!;
+    const offC=document.createElement('canvas');
+    const octxC=offC.getContext('2d')!;
+    let aCW=0, aCH=0;
 
-      function resizeAuroraCta() {
-        const dp = window.devicePixelRatio || 1;
-        const rect = aWrapCta!.getBoundingClientRect();
-        aCW = Math.round(rect.width);
-        aCH = Math.round(rect.height);
-        aCanvasCta!.width = aCW * dp;
-        aCanvasCta!.height = aCH * dp;
-        aCanvasCta!.style.width = `${aCW}px`;
-        aCanvasCta!.style.height = `${aCH}px`;
-        offC.width = Math.round(aCW / 4);
-        offC.height = Math.round(aCH / 4);
-      }
+    function resizeAuroraCta() {
+      const dp=window.devicePixelRatio||1;
+      const rect=ctaCardAurora.getBoundingClientRect();
+      aCW=Math.round(rect.width); aCH=Math.round(rect.height);
+      aCanvasCta.width=aCW*dp; aCanvasCta.height=aCH*dp;
+      aCanvasCta.style.width=`${aCW}px`; aCanvasCta.style.height=`${aCH}px`;
+      offC.width=Math.round(aCW/4); offC.height=Math.round(aCH/4);
+    }
 
-      function frameAuroraCta() {
-        requestAnimationFrame(frameAuroraCta);
-        const ow = offC.width, oh = offC.height;
-        const t = performance.now() * 0.001;
-        octxC.clearRect(0, 0, ow, oh);
-        octxC.globalCompositeOperation = 'lighter';
-
-        // Reuse the same AL layer table from the hero aurora
-        // Draw a subset (first 10 layers) for performance in the smaller section
-        const ctaLayers = [
-          [0.50, 0.50, 0.55, 0.30, -0.06,  52, 14, 185, 0.18, 0.08, 0.0],
-          [0.50, 0.50, 0.65, 0.25,  0.04,  38, 10, 165, 0.14, 0.06, 2.6],
-          [0.50, 0.50, 0.45, 0.15, -0.13, 100, 35, 230, 0.35, 0.18, 0.4],
-          [0.50, 0.50, 0.50, 0.12,  0.09, 125, 45, 235, 0.30, 0.22, 1.9],
-          [0.50, 0.50, 0.40, 0.16, -0.07,  75, 28, 215, 0.28, 0.14, 3.4],
-          [0.50, 0.50, 0.48, 0.11,  0.16, 145, 40, 240, 0.26, 0.24, 5.2],
-          [0.50, 0.50, 0.33, 0.09, -0.11, 162, 52, 250, 0.40, 0.30, 1.3],
-          [0.50, 0.50, 0.35, 0.08,  0.13, 188, 56, 235, 0.34, 0.35, 3.9],
-          [0.50, 0.50, 0.18, 0.14,  0.00, 178, 88, 255, 0.45, 0.12, 0.0],
-          [0.50, 0.50, 0.14, 0.11, -0.04, 198, 98, 255, 0.42, 0.15, 1.6],
-        ];
-
-        for (const row of ctaLayers) {
-          const [cxF, cyF, rxF, ryF, ang, r, g, b, alpha, spd, ph] = row;
-          const cx = ow * (cxF + Math.sin(t * spd * 3 + ph) * 0.18);
-          const cy = oh * (cyF + Math.sin(t * spd * 2.1 + ph + 1.1) * 0.15);
-          const rx = ow * rxF * (1 + Math.sin(t * spd * 4 + ph * 1.8) * 0.15);
-          const ry = oh * ryF * (1 + Math.sin(t * spd * 2.5 + ph * 1.3) * 0.18);
-          const angle = ang + Math.sin(t * spd * 2.5 + ph) * 0.2;
-
-          octxC.save();
-          octxC.translate(cx, cy);
-          octxC.rotate(angle);
-          const grad = octxC.createRadialGradient(0, 0, 0, 0, 0, Math.max(rx, 1));
-          grad.addColorStop(0, `rgba(${r},${g},${b},${alpha})`);
-          grad.addColorStop(0.25, `rgba(${r},${g},${b},${alpha * 0.7})`);
-          grad.addColorStop(0.55, `rgba(${r},${g},${b},${alpha * 0.3})`);
-          grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
-          octxC.fillStyle = grad;
-          octxC.scale(1, ry / (rx || 1));
-          octxC.beginPath();
-          octxC.arc(0, 0, rx, 0, Math.PI * 2);
-          octxC.fill();
-          octxC.restore();
-        }
-
-        octxC.globalCompositeOperation = 'source-over';
-        const dp = window.devicePixelRatio || 1;
-        actxC.setTransform(1, 0, 0, 1, 0, 0);
-        actxC.clearRect(0, 0, aCanvasCta!.width, aCanvasCta!.height);
-        actxC.drawImage(offC, 0, 0, aCanvasCta!.width, aCanvasCta!.height);
-        actxC.setTransform(dp, 0, 0, dp, 0, 0);
-      }
-
-      const roCta2 = new ResizeObserver(() => resizeAuroraCta());
-      roCta2.observe(aWrapCta);
-      resizeAuroraCta();
+    function frameAuroraCta() {
       requestAnimationFrame(frameAuroraCta);
-      requestAnimationFrame(() => { aCanvasCta.style.opacity = '1'; });
+      const ow=offC.width, oh=offC.height;
+      const t=performance.now()*0.001;
+      octxC.clearRect(0,0,ow,oh);
+      octxC.globalCompositeOperation='lighter';
+      const ctaLayers = [
+        [0.50,0.50,0.55,0.30,-0.06, 52,14,185,0.18,0.08,0.0],
+        [0.50,0.50,0.65,0.25, 0.04, 38,10,165,0.14,0.06,2.6],
+        [0.50,0.50,0.45,0.15,-0.13,100,35,230,0.35,0.18,0.4],
+        [0.50,0.50,0.50,0.12, 0.09,125,45,235,0.30,0.22,1.9],
+        [0.50,0.50,0.40,0.16,-0.07, 75,28,215,0.28,0.14,3.4],
+        [0.50,0.50,0.48,0.11, 0.16,145,40,240,0.26,0.24,5.2],
+        [0.50,0.50,0.33,0.09,-0.11,162,52,250,0.40,0.30,1.3],
+        [0.50,0.50,0.35,0.08, 0.13,188,56,235,0.34,0.35,3.9],
+        [0.50,0.50,0.18,0.14, 0.00,178,88,255,0.45,0.12,0.0],
+        [0.50,0.50,0.14,0.11,-0.04,198,98,255,0.42,0.15,1.6],
+      ];
+      for (const row of ctaLayers) {
+        const [cxF,cyF,rxF,ryF,ang,r,g,b,alpha,spd,ph]=row;
+        const cx=ow*(cxF+Math.sin(t*spd*3+ph)*0.18);
+        const cy=oh*(cyF+Math.sin(t*spd*2.1+ph+1.1)*0.15);
+        const rx=ow*rxF*(1+Math.sin(t*spd*4+ph*1.8)*0.15);
+        const ry=oh*ryF*(1+Math.sin(t*spd*2.5+ph*1.3)*0.18);
+        const angle=ang+Math.sin(t*spd*2.5+ph)*0.2;
+        octxC.save(); octxC.translate(cx,cy); octxC.rotate(angle);
+        const gr=octxC.createRadialGradient(0,0,0,0,0,Math.max(rx,1));
+        gr.addColorStop(0,`rgba(${r},${g},${b},${alpha})`);
+        gr.addColorStop(0.25,`rgba(${r},${g},${b},${alpha*0.7})`);
+        gr.addColorStop(0.55,`rgba(${r},${g},${b},${alpha*0.3})`);
+        gr.addColorStop(1,`rgba(${r},${g},${b},0)`);
+        octxC.fillStyle=gr; octxC.scale(1,ry/(rx||1));
+        octxC.beginPath(); octxC.arc(0,0,rx,0,Math.PI*2); octxC.fill(); octxC.restore();
+      }
+      octxC.globalCompositeOperation='source-over';
+      const dp=window.devicePixelRatio||1;
+      actxC.setTransform(1,0,0,1,0,0); actxC.clearRect(0,0,aCanvasCta.width,aCanvasCta.height);
+      actxC.drawImage(offC,0,0,aCanvasCta.width,aCanvasCta.height);
+      actxC.setTransform(dp,0,0,dp,0,0);
+    }
+
+    const roCta2=new ResizeObserver(()=>resizeAuroraCta());
+    roCta2.observe(ctaCardAurora);
+    resizeAuroraCta();
+    requestAnimationFrame(frameAuroraCta);
+    requestAnimationFrame(()=>{ aCanvasCta.style.opacity='1'; });
+  }
+
+  // ─── CTA Dot Grid ────────────────────────────────────────────────────────
+  const ctaCard = document.querySelector('.final-cta') as HTMLElement;
+  const canvasCta = document.createElement('canvas');
+  canvasCta.className='dot-grid-canvas-cta';
+  canvasCta.setAttribute('aria-hidden','true');
+  canvasCta.style.cssText='position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+  ctaCard.style.position='relative';
+  ctaCard.insertBefore(canvasCta, ctaCard.firstChild);
+  const ctxCta=canvasCta.getContext('2d')!;
+  let dotsCta: Dot[]=[];
+  let mouseCta: { x: number; y: number }|null=null;
+  let dprCta=1;
+
+  function buildGridCta() {
+    dotsCta=[];
+    const W=canvasCta.width/dprCta, H=canvasCta.height/dprCta;
+    const cols=Math.ceil(W/GRID)+2, rows=Math.ceil(H/GRID)+2;
+    for (let r=0;r<rows;r++) for (let c=0;c<cols;c++) {
+      const gx=c*GRID, gy=r*GRID;
+      dotsCta.push({gx,gy,x:gx,y:gy});
     }
   }
 
-  // ─── Second Dot Grid instance for CTA section ─────────────────────────────
-  // Inject canvas inside the .final-cta rounded card so it's clipped to the card bounds
-  const ctaCard = document.querySelector('.final-cta') as HTMLElement;
-  const canvasCta = document.createElement('canvas');
-  canvasCta.className = 'dot-grid-canvas-cta';
-  canvasCta.setAttribute('aria-hidden', 'true');
-  canvasCta.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
-  ctaCard.style.position = 'relative';
-  ctaCard.insertBefore(canvasCta, ctaCard.firstChild);
-  const wrapCta = ctaCard;
-  const ctxCta = canvasCta.getContext('2d')!;
-  let dotsCta: Dot[] = [];
-  let mouseCta: { x: number; y: number } | null = null;
-  let dprCta = 1;
-
-  function buildGridCta() {
-    dotsCta = [];
-    const W = canvasCta.width / dprCta, H = canvasCta.height / dprCta;
-    const cols = Math.ceil(W / GRID) + 2, rows = Math.ceil(H / GRID) + 2;
-    for (let r = 0; r < rows; r++)
-      for (let c = 0; c < cols; c++) {
-        const gx = c * GRID, gy = r * GRID;
-        dotsCta.push({ gx, gy, x: gx, y: gy });
-      }
-  }
-
   function resizeCta() {
-    dprCta = window.devicePixelRatio || 1;
-    const rect = wrapCta.getBoundingClientRect();
-    const w = Math.round(rect.width), h = Math.round(rect.height);
-    canvasCta.width = w * dprCta; canvasCta.height = h * dprCta;
-    canvasCta.style.width = `${w}px`; canvasCta.style.height = `${h}px`;
-    ctxCta.setTransform(dprCta, 0, 0, dprCta, 0, 0);
+    dprCta=window.devicePixelRatio||1;
+    const rect=ctaCard.getBoundingClientRect();
+    const w=Math.round(rect.width), h=Math.round(rect.height);
+    canvasCta.width=w*dprCta; canvasCta.height=h*dprCta;
+    canvasCta.style.width=`${w}px`; canvasCta.style.height=`${h}px`;
+    ctxCta.setTransform(dprCta,0,0,dprCta,0,0);
     buildGridCta();
   }
 
   function frameCta() {
     requestAnimationFrame(frameCta);
-    const W = canvasCta.width / dprCta, H = canvasCta.height / dprCta;
-    const t = performance.now() * NOISE_SPEED;
-    ctxCta.clearRect(0, 0, W, H);
-
+    const W=canvasCta.width/dprCta, H=canvasCta.height/dprCta;
+    const t=performance.now()*NOISE_SPEED;
+    ctxCta.clearRect(0,0,W,H);
     for (const dot of dotsCta) {
-      let targetX = dot.gx, targetY = dot.gy, influence = 0, angleToMouse = 0;
+      let targetX=dot.gx, targetY=dot.gy, influence=0, angleToMouse=0;
       if (mouseCta) {
-        const dx = dot.gx - mouseCta.x, dy = dot.gy - mouseCta.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
+        const dx=dot.gx-mouseCta.x, dy=dot.gy-mouseCta.y;
+        const dist=Math.sqrt(dx*dx+dy*dy);
         if (dist < INFLUENCE_RADIUS) {
-          const raw = 1 - dist / INFLUENCE_RADIUS;
-          const s = raw * raw * (3 - 2 * raw);
-          influence = s * s * (3 - 2 * s);
-          const pushMag = Math.pow(influence, 3) * PUSH_STRENGTH;
-          const len = dist || 1;
-          targetX += (dx / len) * pushMag;
-          targetY += (dy / len) * pushMag;
-          const noiseX = noise2(dot.gx * NOISE_SCALE, dot.gy * NOISE_SCALE + t);
-          const noiseY = noise2(dot.gx * NOISE_SCALE + 100, dot.gy * NOISE_SCALE + t);
-          const noiseMag = influence * influence * NOISE_STRENGTH;
-          targetX += noiseX * noiseMag;
-          targetY += noiseY * noiseMag;
-          angleToMouse = Math.atan2(dy, dx);
+          const raw=1-dist/INFLUENCE_RADIUS;
+          const s=raw*raw*(3-2*raw);
+          influence=s*s*(3-2*s);
+          const pushMag=Math.pow(influence,3)*PUSH_STRENGTH;
+          const len=dist||1;
+          targetX+=(dx/len)*pushMag; targetY+=(dy/len)*pushMag;
+          const noiseX=noise2(dot.gx*NOISE_SCALE, dot.gy*NOISE_SCALE+t);
+          const noiseY=noise2(dot.gx*NOISE_SCALE+100, dot.gy*NOISE_SCALE+t);
+          const noiseMag=influence*influence*NOISE_STRENGTH;
+          targetX+=noiseX*noiseMag; targetY+=noiseY*noiseMag;
+          angleToMouse=Math.atan2(dy,dx);
         }
       }
-      dot.x += (targetX - dot.x) * LERP_SPEED;
-      dot.y += (targetY - dot.y) * LERP_SPEED;
-
-      let opacity = 1;
+      dot.x+=(targetX-dot.x)*LERP_SPEED;
+      dot.y+=(targetY-dot.y)*LERP_SPEED;
+      let opacity=1;
       if (opacity < 0.01) continue;
-
-      let color = rgbStr(BASE_RGB);
+      let color=rgbStr(BASE_RGB);
       if (influence > 0) {
-        const inf3 = influence * influence * influence;
-        const blendFactor = (Math.sin(angleToMouse * 2 + t * 3) + 1) * 0.5;
-        const accent = lerpRGB(ACCENT1, ACCENT2, blendFactor);
-        color = rgbStr(lerpRGB(BASE_RGB, accent, inf3));
-        opacity *= 1 - influence * influence * 0.85;
+        const inf3=influence*influence*influence;
+        const blendFactor=(Math.sin(angleToMouse*2+t*3)+1)*0.5;
+        const accent=lerpRGB(ACCENT1,ACCENT2,blendFactor);
+        color=rgbStr(lerpRGB(BASE_RGB,accent,inf3));
+        opacity*=1-influence*influence*0.85;
       }
-      ctxCta.globalAlpha = opacity;
-      ctxCta.fillStyle = color;
+      ctxCta.globalAlpha=opacity; ctxCta.fillStyle=color;
       ctxCta.beginPath();
-      const dotRadiusCta = 1 + influence * 0.5;
-      ctxCta.arc(dot.x, dot.y, dotRadiusCta, 0, Math.PI * 2);
+      ctxCta.arc(dot.x, dot.y, 1+influence*0.5, 0, Math.PI*2);
       ctxCta.fill();
     }
-    ctxCta.globalAlpha = 1;
+    ctxCta.globalAlpha=1;
   }
 
   window.addEventListener('mousemove', (e) => {
-    const rect = wrapCta.getBoundingClientRect();
-    const x = e.clientX - rect.left, y = e.clientY - rect.top;
-    if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
-      mouseCta = { x, y };
-    } else {
-      mouseCta = null;
-    }
+    const rect=ctaCard.getBoundingClientRect();
+    const x=e.clientX-rect.left, y=e.clientY-rect.top;
+    if (x>=0&&x<=rect.width&&y>=0&&y<=rect.height) mouseCta={x,y};
+    else mouseCta=null;
   });
 
-  const roCta = new ResizeObserver(() => resizeCta());
-  roCta.observe(wrapCta);
+  const roCta=new ResizeObserver(()=>resizeCta());
+  roCta.observe(ctaCard);
   resizeCta();
   requestAnimationFrame(frameCta);
-  requestAnimationFrame(() => { canvasCta.style.opacity = '1'; });
+  requestAnimationFrame(()=>{ canvasCta.style.opacity='1'; });
 
-  // Hide the CTA grid-texture so dot grid replaces it
-  const gridTexCta = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
-  if (gridTexCta) gridTexCta.style.display = 'none';
+  const gridTexCta=ctaCard.querySelector('.grid-texture') as HTMLElement|null;
+  if (gridTexCta) gridTexCta.style.display='none';
+
+  // ─── Product Canvas Animations (single rAF loop) ─────────────────────────
+  // Uses shared noise2 from dot grid section above.
+  // Architecture: one rAF, IntersectionObserver skip, 0.5x DPR, per-product render fns.
+
+  // Global mouse in client coords
+  let gMx = -9999, gMy = -9999;
+  window.addEventListener('mousemove', (e) => { gMx=e.clientX; gMy=e.clientY; });
+  window.addEventListener('mouseleave', () => { gMx=-9999; gMy=-9999; });
+
+  // Per-product accent RGB (spec colors)
+  const PV_RGB: [number,number,number][] = [
+    [99,102,241],  // 0 SEO
+    [139,92,246],  // 1 Reach
+    [168,85,247],  // 2 Publish
+    [192,38,211],  // 3 Social
+    [124,58,237],  // 4 Pitch
+    [79,70,229],   // 5 Ads
+    [147,51,234],  // 6 Flow
+    [109,40,217],  // 7 Build
+  ];
+
+  interface PanelState {
+    canvas: HTMLCanvasElement;
+    ctx: CanvasRenderingContext2D;
+    w: number; h: number; dpr: number;
+    visible: boolean;
+    state: Record<string, unknown>;
+  }
+
+  // ── Product 0: SEO Dot Grid ───────────────────────────────────────────────
+  interface SeoDot { gx:number; gy:number; x:number; y:number; }
+  function initSEO(w: number, h: number) {
+    const G=12, cols=Math.ceil(w/G)+2, rows=Math.ceil(h/G)+2;
+    const dots: SeoDot[]=[];
+    for (let r=0;r<rows;r++) for (let c=0;c<cols;c++) {
+      const gx=c*G, gy=r*G;
+      dots.push({gx,gy,x:gx,y:gy});
+    }
+    return { dots };
+  }
+  function drawSEO(ctx: CanvasRenderingContext2D, w: number, h: number, _t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
+    const dots = state.dots as SeoDot[];
+    const [r,g,b]=PV_RGB[0];
+    const R=120, PUSH=12, LERP=0.04;
+    for (const dot of dots) {
+      let tx=dot.gx, ty=dot.gy, inf=0;
+      if (hasMouse) {
+        const dx=dot.gx-mx, dy=dot.gy-my;
+        const d=Math.sqrt(dx*dx+dy*dy);
+        if (d < R) {
+          const s=1-d/R; inf=s*s;
+          const mag=inf*PUSH, l=d||1;
+          tx+=(dx/l)*mag; ty+=(dy/l)*mag;
+        }
+      }
+      dot.x+=(tx-dot.x)*LERP;
+      dot.y+=(ty-dot.y)*LERP;
+      const alpha=inf>0 ? 0.15+inf*0.3 : 0.15;
+      ctx.globalAlpha=alpha;
+      ctx.fillStyle=`rgb(${r},${g},${b})`;
+      ctx.beginPath(); ctx.arc(dot.x,dot.y,1,0,Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+  }
+
+  // ── Product 1: Reach Pulse Waves ─────────────────────────────────────────
+  function drawWaves(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, _state: Record<string, unknown>) {
+    const [r,g,b]=PV_RGB[1];
+    const numWaves=5;
+    const phase=t*1.2; // 0.02/frame * 60fps
+    ctx.lineWidth=0.5;
+    for (let wi=0;wi<numWaves;wi++) {
+      const yPos=(h/(numWaves+1))*(wi+1);
+      const phaseOff=wi*(Math.PI*2/numWaves);
+      let amp=8;
+      if (hasMouse) {
+        const dy=Math.abs(my-yPos);
+        if (dy < h/numWaves) amp*=1+(1-dy/(h/numWaves));
+      }
+      ctx.strokeStyle=`rgba(${r},${g},${b},0.12)`;
+      ctx.beginPath();
+      for (let x=0;x<=w;x+=2) {
+        const y=yPos+Math.sin(x*0.03+phase+phaseOff)*amp;
+        if (x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+    }
+  }
+
+  // ── Product 2: Publish Content Rain ──────────────────────────────────────
+  interface RainDash { y:number; alpha:number; speed:number; }
+  interface RainColumn { x:number; dashes:RainDash[]; }
+  function initRain(w: number, h: number) {
+    const numCols=40, colW=w/numCols;
+    const columns: RainColumn[]=[];
+    for (let c=0;c<numCols;c++) {
+      const dashes: RainDash[]=[];
+      for (let d=0;d<10;d++) dashes.push({
+        y: Math.random()*h,
+        alpha: 0.08+Math.random()*0.07,
+        speed: 0.3+Math.random()*0.5,
+      });
+      columns.push({ x: c*colW+colW/2, dashes });
+    }
+    return { columns };
+  }
+  function drawRain(ctx: CanvasRenderingContext2D, w: number, h: number, _t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
+    const { columns } = state as { columns: RainColumn[] };
+    const [r,g,b]=PV_RGB[2];
+    for (const col of columns) {
+      const near=hasMouse && Math.abs(mx-col.x) < w/40;
+      const speedMult=near ? 0.3 : 1;
+      const alphaMult=near ? 1.8 : 1;
+      for (const dash of col.dashes) {
+        dash.y+=dash.speed*speedMult;
+        if (dash.y > h+5) { dash.y=-5; dash.speed=0.3+Math.random()*0.5; dash.alpha=0.08+Math.random()*0.07; }
+        const a=Math.min(0.25, dash.alpha*alphaMult);
+        ctx.strokeStyle=`rgba(${r},${g},${b},${a})`;
+        ctx.lineWidth=2;
+        ctx.beginPath(); ctx.moveTo(col.x-1.5, dash.y); ctx.lineTo(col.x+1.5, dash.y); ctx.stroke();
+      }
+    }
+  }
+
+  // ── Product 3: Social Network Nodes ──────────────────────────────────────
+  interface SNode { x:number; y:number; vx:number; vy:number; }
+  function initNodes(w: number, h: number) {
+    const nodes: SNode[]=[];
+    for (let i=0;i<14;i++) nodes.push({
+      x: Math.random()*w, y: Math.random()*h,
+      vx: (Math.random()-0.5)*0.3, vy: (Math.random()-0.5)*0.3,
+    });
+    return { nodes };
+  }
+  function drawNodes(ctx: CanvasRenderingContext2D, w: number, h: number, _t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
+    const { nodes } = state as { nodes: SNode[] };
+    const [r,g,b]=PV_RGB[3];
+    for (const n of nodes) {
+      n.vx+=(Math.random()-0.5)*0.05; n.vy+=(Math.random()-0.5)*0.05;
+      n.vx*=0.98; n.vy*=0.98;
+      if (hasMouse) {
+        const dx=mx-n.x, dy=my-n.y, d=Math.sqrt(dx*dx+dy*dy);
+        if (d<150&&d>0) { n.vx+=(dx/d)*0.04; n.vy+=(dy/d)*0.04; }
+      }
+      n.x+=n.vx; n.y+=n.vy;
+      if (n.x<0) n.x+=w; if (n.x>w) n.x-=w;
+      if (n.y<0) n.y+=h; if (n.y>h) n.y-=h;
+    }
+    for (let i=0;i<nodes.length;i++) for (let j=i+1;j<nodes.length;j++) {
+      const dx=nodes[i].x-nodes[j].x, dy=nodes[i].y-nodes[j].y;
+      const d=Math.sqrt(dx*dx+dy*dy);
+      if (d<80) {
+        ctx.strokeStyle=`rgba(${r},${g},${b},${0.08*(1-d/80)})`;
+        ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(nodes[i].x,nodes[i].y); ctx.lineTo(nodes[j].x,nodes[j].y); ctx.stroke();
+      }
+    }
+    for (const n of nodes) {
+      ctx.fillStyle=`rgba(${r},${g},${b},0.2)`;
+      ctx.beginPath(); ctx.arc(n.x,n.y,2.5,0,Math.PI*2); ctx.fill();
+    }
+  }
+
+  // ── Product 4: Pitch Topo Contours ───────────────────────────────────────
+  function drawTopo(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, _state: Record<string, unknown>) {
+    const [r,g,b]=PV_RGB[4];
+    const step=6;
+    const cols=Math.ceil(w/step)+1, rows=Math.ceil(h/step)+1;
+    const grid: number[][]=[];
+    for (let row=0;row<rows;row++) {
+      grid[row]=[];
+      for (let col=0;col<cols;col++) {
+        const x=col*step, y=row*step;
+        let v=noise2(x*0.025+t*0.2, y*0.025+t*0.15);
+        if (hasMouse) {
+          const dx=x-mx, dy=y-my, d2=dx*dx+dy*dy;
+          v+=Math.exp(-d2/5000)*0.4;
+        }
+        grid[row][col]=v;
+      }
+    }
+    const levels=[-0.5,-0.3,-0.1,0.1,0.3,0.5];
+    const alphas=[0.06,0.08,0.09,0.11,0.13,0.14];
+    for (let li=0;li<levels.length;li++) {
+      const level=levels[li];
+      ctx.strokeStyle=`rgba(${r},${g},${b},${alphas[li]})`;
+      ctx.lineWidth=1;
+      ctx.beginPath();
+      for (let row=0;row<rows-1;row++) for (let col=0;col<cols-1;col++) {
+        const tl=grid[row][col], tr=grid[row][col+1];
+        const bl=grid[row+1][col], br=grid[row+1][col+1];
+        const x0=col*step, y0=row*step;
+        const cr: [number,number][]=[];
+        if ((tl<level)!==(tr<level)) { const tt=(level-tl)/(tr-tl); cr.push([x0+tt*step, y0]); }
+        if ((tr<level)!==(br<level)) { const tt=(level-tr)/(br-tr); cr.push([x0+step, y0+tt*step]); }
+        if ((bl<level)!==(br<level)) { const tt=(level-bl)/(br-bl); cr.push([x0+tt*step, y0+step]); }
+        if ((tl<level)!==(bl<level)) { const tt=(level-tl)/(bl-tl); cr.push([x0, y0+tt*step]); }
+        if (cr.length===2) {
+          ctx.moveTo(cr[0][0],cr[0][1]); ctx.lineTo(cr[1][0],cr[1][1]);
+        } else if (cr.length===4) {
+          ctx.moveTo(cr[0][0],cr[0][1]); ctx.lineTo(cr[3][0],cr[3][1]);
+          ctx.moveTo(cr[1][0],cr[1][1]); ctx.lineTo(cr[2][0],cr[2][1]);
+        }
+      }
+      ctx.stroke();
+    }
+  }
+
+  // ── Product 5: Ads Equalizer Bars ────────────────────────────────────────
+  function drawBars(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, _state: Record<string, unknown>) {
+    const [r,g,b]=PV_RGB[5];
+    const numBars=35, barW=3, barGap=2, totalW=barW+barGap;
+    const startX=(w-numBars*totalW)/2;
+    const centerY=h*0.62;
+    for (let i=0;i<numBars;i++) {
+      const x=startX+i*totalW;
+      const bCx=x+barW/2;
+      const n=(noise2(i*0.15+t*0.4, t*0.6+i*0.05)+1)*0.5;
+      let barH=4+n*26;
+      if (hasMouse) {
+        const dx=Math.abs(mx-bCx);
+        if (dx<40) barH=Math.max(barH, Math.pow(1-dx/40,2)*30);
+      }
+      const alpha=0.06+(barH/30)*0.14;
+      ctx.fillStyle=`rgba(${r},${g},${b},${alpha})`;
+      ctx.fillRect(x, centerY-barH, barW, barH);
+    }
+  }
+
+  // ── Product 6: Flow Particles ─────────────────────────────────────────────
+  interface FParticle { x:number; y:number; trail:{x:number;y:number}[]; }
+  function initParticles(w: number, h: number) {
+    const particles: FParticle[]=[];
+    for (let i=0;i<60;i++) particles.push({ x:Math.random()*w, y:Math.random()*h, trail:[] });
+    return { particles };
+  }
+  function drawParticles(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
+    const { particles } = state as { particles: FParticle[] };
+    const [r,g,b]=PV_RGB[6];
+    const s=0.018;
+    for (const p of particles) {
+      // Curl noise velocity (finite differences)
+      const n_py=noise2(p.x*s, (p.y+1)*s+t*0.1);
+      const n_ny=noise2(p.x*s, (p.y-1)*s+t*0.1);
+      const n_px=noise2((p.x+1)*s, p.y*s+t*0.1);
+      const n_nx=noise2((p.x-1)*s, p.y*s+t*0.1);
+      let vx=(n_py-n_ny)/2;
+      let vy=-(n_px-n_nx)/2;
+      const vmag=Math.sqrt(vx*vx+vy*vy)||0.001;
+      vx=(vx/vmag)*0.5; vy=(vy/vmag)*0.5;
+      // Mouse vortex
+      if (hasMouse) {
+        const dx=p.x-mx, dy=p.y-my, d=Math.sqrt(dx*dx+dy*dy);
+        if (d<100&&d>0) { const str=(1-d/100)*1.5; vx+=(-dy/d)*str; vy+=(dx/d)*str; }
+      }
+      p.trail.push({x:p.x,y:p.y});
+      if (p.trail.length>5) p.trail.shift();
+      p.x+=vx; p.y+=vy;
+      if (p.x<0) p.x+=w; if (p.x>w) p.x-=w;
+      if (p.y<0) p.y+=h; if (p.y>h) p.y-=h;
+      // Draw trail
+      for (let ti=1;ti<p.trail.length;ti++) {
+        ctx.strokeStyle=`rgba(${r},${g},${b},${(ti/p.trail.length)*0.15})`;
+        ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(p.trail[ti-1].x,p.trail[ti-1].y); ctx.lineTo(p.trail[ti].x,p.trail[ti].y); ctx.stroke();
+      }
+      ctx.fillStyle=`rgba(${r},${g},${b},0.15)`;
+      ctx.beginPath(); ctx.arc(p.x,p.y,1,0,Math.PI*2); ctx.fill();
+    }
+  }
+
+  // ── Product 7: Build Blueprint Mesh ─────────────────────────────────────
+  interface BuildAnim { x:number; y:number; dir:'h'|'v'; len:number; startTime:number; }
+  function initBlueprint() { return { builds:[] as BuildAnim[], lastBuildTime:0 }; }
+  function drawBlueprint(ctx: CanvasRenderingContext2D, w: number, h: number, _t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
+    const [r,g,b]=PV_RGB[7];
+    const st = state as { builds: BuildAnim[]; lastBuildTime: number };
+    const BG=20, now=performance.now();
+    // Spawn builds
+    if (now-st.lastBuildTime>800+Math.random()*1500 && st.builds.length<3) {
+      const col=Math.floor(Math.random()*Math.floor(w/BG));
+      const row=Math.floor(Math.random()*Math.floor(h/BG));
+      const dir: 'h'|'v'=Math.random()>0.5?'h':'v';
+      const maxLen=dir==='h'?(Math.floor(w/BG)-col)*BG:(Math.floor(h/BG)-row)*BG;
+      const len=Math.min(BG*(2+Math.floor(Math.random()*4)), maxLen||BG);
+      st.builds.push({ x:col*BG, y:row*BG, dir, len, startTime:now });
+      st.lastBuildTime=now;
+    }
+    st.builds=st.builds.filter((bld:BuildAnim)=>(now-bld.startTime)<1500);
+    // Base grid
+    for (let y=0;y<=h;y+=BG) {
+      const alpha=hasMouse&&Math.abs(my-y)<BG ? 0.08 : 0.03;
+      ctx.strokeStyle=`rgba(${r},${g},${b},${alpha})`; ctx.lineWidth=0.5;
+      ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke();
+    }
+    for (let x=0;x<=w;x+=BG) {
+      const alpha=hasMouse&&Math.abs(mx-x)<BG ? 0.08 : 0.03;
+      ctx.strokeStyle=`rgba(${r},${g},${b},${alpha})`; ctx.lineWidth=0.5;
+      ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke();
+    }
+    // Active build animations
+    for (const bld of st.builds) {
+      const elapsed=(now-bld.startTime)/1000;
+      const alpha=elapsed<0.5 ? 0.15 : 0.15*(1-(elapsed-0.5)/1.0);
+      if (alpha<0.005) continue;
+      const progress=Math.min(1,elapsed/0.5);
+      ctx.strokeStyle=`rgba(${r},${g},${b},${alpha})`; ctx.lineWidth=2;
+      ctx.beginPath();
+      if (bld.dir==='h') { ctx.moveTo(bld.x,bld.y); ctx.lineTo(bld.x+bld.len*progress,bld.y); }
+      else { ctx.moveTo(bld.x,bld.y); ctx.lineTo(bld.x,bld.y+bld.len*progress); }
+      ctx.stroke();
+    }
+  }
+
+  // ── Panel system: inject, observe, loop ──────────────────────────────────
+  function initProdState(idx: number, w: number, h: number): Record<string, unknown> {
+    switch(idx) {
+      case 0: return initSEO(w,h);
+      case 2: return initRain(w,h);
+      case 3: return initNodes(w,h);
+      case 6: return initParticles(w,h);
+      case 7: return initBlueprint();
+      default: return {};
+    }
+  }
+
+  function renderProd(idx: number, ps: PanelState, t: number) {
+    const { ctx, w, h, canvas, state } = ps;
+    const rect=canvas.getBoundingClientRect();
+    const lx=gMx-rect.left, ly=gMy-rect.top;
+    const hasMouse=lx>=0&&lx<=w&&ly>=0&&ly<=h;
+    ctx.clearRect(0,0,w,h);
+    switch(idx) {
+      case 0: drawSEO(ctx,w,h,t,lx,ly,hasMouse,state); break;
+      case 1: drawWaves(ctx,w,h,t,lx,ly,hasMouse,state); break;
+      case 2: drawRain(ctx,w,h,t,lx,ly,hasMouse,state); break;
+      case 3: drawNodes(ctx,w,h,t,lx,ly,hasMouse,state); break;
+      case 4: drawTopo(ctx,w,h,t,lx,ly,hasMouse,state); break;
+      case 5: drawBars(ctx,w,h,t,lx,ly,hasMouse,state); break;
+      case 6: drawParticles(ctx,w,h,t,lx,ly,hasMouse,state); break;
+      case 7: drawBlueprint(ctx,w,h,t,lx,ly,hasMouse,state); break;
+    }
+  }
+
+  const pvPanels: PanelState[]=[];
+  const pvElems=document.querySelectorAll<HTMLElement>('.product-visual-panel');
+  const pvVisible=new Set<number>();
+
+  pvElems.forEach((el, i) => {
+    if (i>=8) return;
+    const pvCanvas=document.createElement('canvas');
+    pvCanvas.className='pv-canvas';
+    pvCanvas.setAttribute('aria-hidden','true');
+    el.prepend(pvCanvas);
+    const pvCtx=pvCanvas.getContext('2d')!;
+    const halfDpr=Math.max(0.5,(window.devicePixelRatio||1)*0.5);
+    const rect=el.getBoundingClientRect();
+    const pw=Math.round(rect.width)||400, ph=Math.round(rect.height)||300;
+    pvCanvas.width=Math.round(pw*halfDpr); pvCanvas.height=Math.round(ph*halfDpr);
+    pvCanvas.style.width=`${pw}px`; pvCanvas.style.height=`${ph}px`;
+    pvCtx.setTransform(halfDpr,0,0,halfDpr,0,0);
+    const pState=initProdState(i,pw,ph);
+    pvPanels.push({ canvas:pvCanvas, ctx:pvCtx, w:pw, h:ph, dpr:halfDpr, visible:false, state:pState });
+    // Handle resize
+    new ResizeObserver(()=>{
+      const nRect=el.getBoundingClientRect();
+      const nw=Math.round(nRect.width)||pw, nh=Math.round(nRect.height)||ph;
+      const ps=pvPanels[i];
+      ps.w=nw; ps.h=nh;
+      pvCanvas.width=Math.round(nw*halfDpr); pvCanvas.height=Math.round(nh*halfDpr);
+      pvCanvas.style.width=`${nw}px`; pvCanvas.style.height=`${nh}px`;
+      pvCtx.setTransform(halfDpr,0,0,halfDpr,0,0);
+      ps.state=initProdState(i,nw,nh);
+    }).observe(el);
+  });
+
+  // IntersectionObserver — only render visible panels
+  const pvIO = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      const el=entry.target as HTMLElement;
+      let idx=-1;
+      pvElems.forEach((pv,i)=>{ if (pv===el) idx=i; });
+      if (idx<0||idx>=8) return;
+      if (entry.isIntersecting) pvVisible.add(idx);
+      else pvVisible.delete(idx);
+    }
+  }, { rootMargin:'200px' });
+  pvElems.forEach((el,i)=>{ if (i<8) pvIO.observe(el); });
+
+  // Single rAF drives ALL product canvases
+  function pvLoop() {
+    requestAnimationFrame(pvLoop);
+    const t=performance.now()*0.001;
+    for (const idx of pvVisible) {
+      if (idx<pvPanels.length) renderProd(idx,pvPanels[idx],t);
+    }
+  }
+  requestAnimationFrame(pvLoop);
 
   }); // end requestIdleCallback
 </script>
