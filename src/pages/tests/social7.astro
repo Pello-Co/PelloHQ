@@ -227,10 +227,10 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
   let lastSurgePIdx = -1;
 
   function buildScene() {
-    const numPhones = Math.min(10, Math.max(6, Math.floor(H / 70)));
+    const numPhones = Math.min(25, Math.max(12, Math.floor(H / 32)));
     const numPlats  = PLATFORMS_SOCIAL.length;
-    const phoneX    = W * 0.12;
-    const platX     = W * 0.88;
+    const phoneX    = W * 0.08;
+    const platX     = W * 0.90;
 
     phones = [];
     platNodes = [];
@@ -489,40 +489,125 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
       ctx.globalAlpha = 1;
     }
 
-    // ── Draw platform nodes ────────────────────────────────────────────────────
+    // ── Draw platform logo icons ──────────────────────────────────────────────
+    function drawPlatformLogo(cx: number, cy: number, size: number, platformName: string, r: number, g: number, b: number, alpha: number) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.strokeStyle = `rgb(${r},${g},${b})`;
+      ctx.lineWidth = 1.5;
+      const s = size;
+      if (platformName === 'Instagram') {
+        // Rounded square + circle + dot
+        rrect(ctx, cx - s, cy - s, s * 2, s * 2, s * 0.35);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx, cy, s * 0.45, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx + s * 0.55, cy - s * 0.55, s * 0.1, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (platformName === 'TikTok') {
+        // Musical note shape
+        ctx.beginPath();
+        ctx.moveTo(cx + s * 0.3, cy - s * 0.8);
+        ctx.lineTo(cx + s * 0.3, cy + s * 0.4);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx, cy + s * 0.4, s * 0.3, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx + s * 0.6, cy - s * 0.6, s * 0.25, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (platformName === 'Twitter/X') {
+        // X shape
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(cx - s * 0.5, cy - s * 0.5);
+        ctx.lineTo(cx + s * 0.5, cy + s * 0.5);
+        ctx.moveTo(cx + s * 0.5, cy - s * 0.5);
+        ctx.lineTo(cx - s * 0.5, cy + s * 0.5);
+        ctx.stroke();
+      } else if (platformName === 'YouTube') {
+        // Rounded rect + play triangle
+        rrect(ctx, cx - s, cy - s * 0.65, s * 2, s * 1.3, s * 0.3);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(cx - s * 0.3, cy - s * 0.4);
+        ctx.lineTo(cx + s * 0.45, cy);
+        ctx.lineTo(cx - s * 0.3, cy + s * 0.4);
+        ctx.closePath();
+        ctx.fill();
+      } else if (platformName === 'Facebook') {
+        // Circle + f
+        ctx.beginPath();
+        ctx.arc(cx, cy, s, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.font = `bold ${s * 1.2}px -apple-system,system-ui,sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('f', cx + s * 0.05, cy + s * 0.05);
+      } else if (platformName === 'Reddit') {
+        // Circle + antenna
+        ctx.beginPath();
+        ctx.arc(cx, cy, s * 0.8, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx - s * 0.3, cy - s * 0.15, s * 0.15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(cx + s * 0.3, cy - s * 0.15, s * 0.15, 0, Math.PI * 2);
+        ctx.fill();
+        // Antenna
+        ctx.beginPath();
+        ctx.moveTo(cx + s * 0.2, cy - s * 0.7);
+        ctx.lineTo(cx + s * 0.6, cy - s * 1.0);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx + s * 0.6, cy - s * 1.0, s * 0.12, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
     for (let i = 0; i < platNodes.length; i++) {
       const pn = platNodes[i];
       const [r, g, b] = pn.platform.color;
       const glowing = t < pn.glowUntil;
       const hovered = hoveredPlat === i;
 
-      // Glow
+      // Glow background
       const glowAlpha = glowing ? 0.35 : (hovered ? 0.25 : 0.1);
       ctx.save();
       ctx.shadowColor = `rgba(${r},${g},${b},${glowAlpha})`;
-      ctx.shadowBlur  = glowing ? 20 : (hovered ? 15 : 8);
-      ctx.fillStyle   = `rgba(${r},${g},${b},${hovered ? 0.9 : 0.7})`;
+      ctx.shadowBlur  = glowing ? 24 : (hovered ? 18 : 10);
+      ctx.fillStyle   = `rgba(${r},${g},${b},0.06)`;
       ctx.beginPath();
-      ctx.arc(pn.x, pn.y, hovered ? PLAT_R + 2 : PLAT_R, 0, Math.PI * 2);
+      ctx.arc(pn.x, pn.y, hovered ? PLAT_R + 4 : PLAT_R + 2, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
 
+      // Draw platform logo
+      const logoSize = hovered ? PLAT_R + 2 : PLAT_R;
+      const logoAlpha = hovered ? 0.9 : 0.55;
+      drawPlatformLogo(pn.x, pn.y, logoSize, pn.platform.name, r, g, b, logoAlpha);
+
       // Label
       ctx.save();
-      ctx.globalAlpha = hovered ? 0.6 : 0.2;
+      ctx.globalAlpha = hovered ? 0.7 : 0.25;
       ctx.fillStyle   = `rgb(${r},${g},${b})`;
-      ctx.font        = '8px "SF Mono","Fira Code",monospace';
+      ctx.font        = '9px "SF Mono","Fira Code",monospace';
       ctx.textAlign   = 'right';
-      ctx.fillText(pn.platform.name, pn.x - PLAT_R - 6, pn.y + 3);
+      ctx.fillText(pn.platform.name, pn.x - PLAT_R - 10, pn.y + 3);
       ctx.restore();
 
       // Post counter
       ctx.save();
-      ctx.globalAlpha = hovered ? 0.7 : 0.2;
+      ctx.globalAlpha = hovered ? 0.8 : 0.25;
       ctx.fillStyle   = `rgb(${r},${g},${b})`;
-      ctx.font        = '7px "SF Mono","Fira Code",monospace';
+      ctx.font        = '8px "SF Mono","Fira Code",monospace';
       ctx.textAlign   = 'right';
-      ctx.fillText(pn.postsReceived.toLocaleString(), pn.x - PLAT_R - 6, pn.y + 13);
+      ctx.fillText(pn.postsReceived.toLocaleString(), pn.x - PLAT_R - 10, pn.y + 15);
       ctx.restore();
     }
 
