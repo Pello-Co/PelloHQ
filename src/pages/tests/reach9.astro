@@ -182,37 +182,54 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
     rightNodes = [];
     const W = canvas.width / dpr;
     const H = canvas.height / dpr;
-    const lx = W * 0.12, rx = W * 0.88;
-    const top = H * 0.07, bot = H * 0.93;
-    const step = (bot - top) / 19;
-    for (let i = 0; i < 20; i++) {
-      const y = top + i * step;
+    const lx = W * 0.10, rx = W * 0.90;
+    const top = H * 0.05, bot = H * 0.95;
+
+    // LEFT: 200 mailbox domains — dense vertical stack
+    const numLeft = 200;
+    const leftStep = (bot - top) / (numLeft - 1);
+    for (let i = 0; i < numLeft; i++) {
+      const y = top + i * leftStep;
       leftNodes.push({
-        x: lx, y,
-        domain:    DOMAINS_L[i],
+        x: lx + (Math.random() - 0.5) * 8,
+        y,
+        domain:    DOMAINS_L[i % DOMAINS_L.length],
         rep:       84 + (i * 7 + 13) % 16,
         sent:      800 + (i * 137 + 50) % 700,
         inboxRate: parseFloat((95 + ((i * 47 + 3) % 48) / 10).toFixed(1)),
       });
+    }
+
+    // RIGHT: 500 recipients (representing 100k — we show a sample)
+    const numRight = 500;
+    const rightCols = 5;
+    const rightRows = Math.ceil(numRight / rightCols);
+    const rightColW = 20;
+    const rightRowH = (bot - top) / (rightRows - 1);
+    for (let i = 0; i < numRight; i++) {
+      const col = i % rightCols;
+      const row = Math.floor(i / rightCols);
       rightNodes.push({
-        x: rx, y,
-        company:      COMPANIES_R[i],
+        x: rx - (rightCols - 1) * rightColW / 2 + col * rightColW + (Math.random() - 0.5) * 6,
+        y: top + row * rightRowH + (Math.random() - 0.5) * 2,
+        company:      COMPANIES_R[i % COMPANIES_R.length],
         received:     15 + (i * 11 + 7) % 36,
         responseRate: parseFloat((8 + ((i * 13 + 5) % 180) / 10).toFixed(1)),
-        bestDomain:   DOMAINS_L[(i * 3 + 1) % 20],
+        bestDomain:   DOMAINS_L[(i * 3 + 1) % DOMAINS_L.length],
       });
     }
+
     conns = [];
-    for (let i = 0; i < 4; i++) spawnConn();
+    for (let i = 0; i < 8; i++) spawnConn();
   }
 
   // ─── Spawn connection ──────────────────────────────────────────────────────
   function spawnConn() {
-    if (conns.filter(c => !c.done).length >= 5) return;
+    if (conns.filter(c => !c.done).length >= 12) return;
     let fi = 0, ti = 0, tries = 0;
     do {
-      fi = Math.floor(Math.random() * 20);
-      ti = Math.floor(Math.random() * 20);
+      fi = Math.floor(Math.random() * leftNodes.length);
+      ti = Math.floor(Math.random() * rightNodes.length);
       tries++;
     } while (conns.some(c => c.fromIdx === fi && c.toIdx === ti) && tries < 10);
     conns.push({ fromIdx: fi, toIdx: ti, t: 0, speed: 0.003 + Math.random() * 0.002, thick: Math.random() < 0.2 ? 2 : 0.7, done: false });
@@ -289,12 +306,16 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
 
     // Hover detection
     hovL = -1; hovR = -1;
-    for (let i = 0; i < 20; i++) {
-      if (Math.hypot(leftNodes[i].x - mx, leftNodes[i].y - my) < 20)  { hovL = i; break; }
+    let bestLD = 10;
+    for (let i = 0; i < leftNodes.length; i++) {
+      const d = Math.hypot(leftNodes[i].x - mx, leftNodes[i].y - my);
+      if (d < bestLD) { bestLD = d; hovL = i; }
     }
     if (hovL < 0) {
-      for (let i = 0; i < 20; i++) {
-        if (Math.hypot(rightNodes[i].x - mx, rightNodes[i].y - my) < 20) { hovR = i; break; }
+      let bestRD = 10;
+      for (let i = 0; i < rightNodes.length; i++) {
+        const d = Math.hypot(rightNodes[i].x - mx, rightNodes[i].y - my);
+        if (d < bestRD) { bestRD = d; hovR = i; }
       }
     }
 
@@ -370,39 +391,29 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
       }
     }
 
-    // ── Left nodes (violet) ──────────────────────────────────────────────────
-    for (let i = 0; i < 20; i++) {
+    // ── Left nodes (violet) — 200 mailboxes ─────────────────────────────────
+    for (let i = 0; i < leftNodes.length; i++) {
       const n = leftNodes[i], h2 = hovL === i;
-      ctx.globalAlpha = h2 ? 0.95 : 0.65;
+      ctx.globalAlpha = h2 ? 0.95 : 0.35;
       ctx.fillStyle = h2 ? '#c4b5fd' : '#8b5cf6';
-      ctx.beginPath(); ctx.arc(n.x, n.y, h2 ? 5 : 3, 0, Math.PI * 2); ctx.fill();
-      if (W > 600) {
-        ctx.globalAlpha = h2 ? 0.85 : 0.35;
-        ctx.fillStyle = '#8b5cf6'; ctx.font = '7px "SF Mono",monospace';
-        ctx.textAlign = 'left'; ctx.fillText(n.domain, n.x + 7, n.y + 2.5);
-      }
+      ctx.beginPath(); ctx.arc(n.x, n.y, h2 ? 4 : 1.2, 0, Math.PI * 2); ctx.fill();
     }
 
-    // ── Right nodes (white / green flash) ────────────────────────────────────
-    for (let i = 0; i < 20; i++) {
+    // ── Right nodes (white / green flash) — 500 recipients ─────────────────
+    for (let i = 0; i < rightNodes.length; i++) {
       const n = rightNodes[i], h2 = hovR === i;
       const fs = flashMap.get(i), fa = fs !== undefined ? Math.max(0, 1 - (now - fs) / 1.3) : 0;
       if (fa < 0.01) flashMap.delete(i);
 
-      const r2 = fa > 0.05 ? 3 + fa * 2.5 : (h2 ? 5 : 3);
-      ctx.globalAlpha = Math.max(0.5, fa > 0 ? 0.5 + fa * 0.5 : (h2 ? 0.95 : 0.5));
-      ctx.fillStyle   = fa > 0.05 ? `rgba(74,222,128,${0.5 + fa * 0.5})` : (h2 ? '#ffffff' : 'rgba(255,255,255,0.5)');
+      const r2 = fa > 0.05 ? 1.5 + fa * 2 : (h2 ? 4 : 1);
+      ctx.globalAlpha = Math.max(0.2, fa > 0 ? 0.3 + fa * 0.5 : (h2 ? 0.95 : 0.2));
+      ctx.fillStyle   = fa > 0.05 ? `rgba(74,222,128,${0.3 + fa * 0.5})` : (h2 ? '#ffffff' : 'rgba(255,255,255,0.3)');
       ctx.beginPath(); ctx.arc(n.x, n.y, r2, 0, Math.PI * 2); ctx.fill();
 
       if (fa > 0.08) {
-        ctx.globalAlpha = fa * 0.18;
+        ctx.globalAlpha = fa * 0.12;
         ctx.fillStyle = '#4ade80';
-        ctx.beginPath(); ctx.arc(n.x, n.y, 8 + fa * 5, 0, Math.PI * 2); ctx.fill();
-      }
-      if (W > 600) {
-        ctx.globalAlpha = h2 ? 0.8 : 0.26;
-        ctx.fillStyle = '#ffffff'; ctx.font = '7px "SF Mono",monospace';
-        ctx.textAlign = 'right'; ctx.fillText(n.company, n.x - 7, n.y + 2.5);
+        ctx.beginPath(); ctx.arc(n.x, n.y, 5 + fa * 4, 0, Math.PI * 2); ctx.fill();
       }
     }
     ctx.globalAlpha = 1;
@@ -420,7 +431,7 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
     ctx.globalAlpha = 0.3;
     ctx.fillStyle = '#ffffff';
     ctx.font = '9px "SF Mono","Fira Code",monospace';
-    ctx.fillText('20 domains → 20 companies · 98.2% delivered', W - 16, 38);
+    ctx.fillText('200 mailboxes → 100k recipients · 98.2% delivered', W - 16, 38);
     ctx.restore();
   }
 
