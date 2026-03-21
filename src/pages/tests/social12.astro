@@ -408,16 +408,44 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
   // ── Hover ──────────────────────────────────────────────────────────────────
   let mouseX=-1, mouseY=-1, mouseOn=false;
   let hoveredPhone: PhoneNode|null=null;
+  let autoHoverIdx = 0;
+  let autoHoverTimer = 0;
+  const AUTO_HOVER_INTERVAL = 4; // seconds before rotating to next phone
+
   function findHovered() {
-    if (!mouseOn) return null;
-    let best: PhoneNode|null=null, bestD=20;
-    for (const p of phones) {
-      const proj=project(p.x3d,p.y3d,p.z3d);
-      if (!proj.visible) continue;
-      const d=Math.sqrt((proj.sx-mouseX)**2+(proj.sy-mouseY)**2);
-      if (d<bestD){bestD=d;best=p;}
+    if (mouseOn) {
+      // User mouse takes priority
+      let best: PhoneNode|null=null, bestD=20;
+      for (const p of phones) {
+        const proj=project(p.x3d,p.y3d,p.z3d);
+        if (!proj.visible) continue;
+        const d=Math.sqrt((proj.sx-mouseX)**2+(proj.sy-mouseY)**2);
+        if (d<bestD){bestD=d;best=p;}
+      }
+      if (best) return best;
     }
-    return best;
+    // Auto-hover: always show a tooltip for a visible phone
+    // Find the next visible phone in rotation
+    const t = performance.now() * 0.001;
+    if (t - autoHoverTimer > AUTO_HOVER_INTERVAL) {
+      autoHoverTimer = t;
+      // Find next visible phone
+      for (let tries = 0; tries < phones.length; tries++) {
+        autoHoverIdx = (autoHoverIdx + 1) % phones.length;
+        const proj = project(phones[autoHoverIdx].x3d, phones[autoHoverIdx].y3d, phones[autoHoverIdx].z3d);
+        if (proj.visible) break;
+      }
+    }
+    // If current auto-hover phone is not visible, find the nearest visible one
+    const autoPhone = phones[autoHoverIdx];
+    const autoProj = project(autoPhone.x3d, autoPhone.y3d, autoPhone.z3d);
+    if (autoProj.visible) return autoPhone;
+    // Fallback: find any visible phone
+    for (const p of phones) {
+      const proj = project(p.x3d, p.y3d, p.z3d);
+      if (proj.visible) return p;
+    }
+    return null;
   }
 
 
@@ -431,10 +459,20 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
     // Scanning beam Y (5s cycle)
     const beamY = GLOBE_CY - GLOBE_R + ((t%5)/5)*(GLOBE_R*2);
 
-    // Globe glow
-    const grd=ctx.createRadialGradient(GLOBE_CX,GLOBE_CY,0,GLOBE_CX,GLOBE_CY,GLOBE_R*1.4);
-    grd.addColorStop(0,'rgba(0,242,234,0.03)'); grd.addColorStop(1,'rgba(0,242,234,0)');
-    ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(GLOBE_CX,GLOBE_CY,GLOBE_R*1.4,0,Math.PI*2); ctx.fill();
+    // Globe glow — enhanced with breathing pulse
+    const breathe = 0.03 + Math.sin(t * 0.5) * 0.008;
+    const grd=ctx.createRadialGradient(GLOBE_CX,GLOBE_CY,0,GLOBE_CX,GLOBE_CY,GLOBE_R*1.5);
+    grd.addColorStop(0,`rgba(0,242,234,${breathe})`);
+    grd.addColorStop(0.5,`rgba(0,242,234,${breathe * 0.4})`);
+    grd.addColorStop(1,'rgba(0,242,234,0)');
+    ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(GLOBE_CX,GLOBE_CY,GLOBE_R*1.5,0,Math.PI*2); ctx.fill();
+
+    // Globe edge ring
+    ctx.save();
+    ctx.strokeStyle = `rgba(0,242,234,${0.06 + Math.sin(t * 0.3) * 0.02})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(GLOBE_CX, GLOBE_CY, GLOBE_R, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
 
     drawScanLines(beamY);
     drawGlobeDots(beamY);
