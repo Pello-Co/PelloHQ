@@ -1,0 +1,390 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+import HeroPello from '../components/sections/HeroPello.astro';
+import HowItWorks from '../components/sections/HowItWorks.astro';
+import ProductSection from '../components/sections/ProductSection.astro';
+import UseCases from '../components/sections/UseCases.astro';
+import Stats from '../components/sections/Stats.astro';
+import FAQ from '../components/sections/FAQ.astro';
+import FinalCTA from '../components/sections/FinalCTA.astro';
+---
+
+<Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="bg-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99,102,241,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  // ─── requestIdleCallback polyfill ────────────────────────────────────────────
+  const ric = (window as any).requestIdleCallback
+    ? (window as any).requestIdleCallback
+    : (cb: () => void) => setTimeout(cb, 1);
+
+  ric(() => {
+
+  // ─── Pole and particle type definitions ──────────────────────────────────────
+  interface Pole {
+    xFrac: number;
+    yFrac: number;
+    strength: number;
+    color: string;
+    driftFreqX: number;
+    driftFreqY: number;
+    driftPhaseX: number;
+    driftPhaseY: number;
+    driftAmp: number; // px
+  }
+
+  interface Particle {
+    x: number;
+    y: number;
+    xFrac: number; // normalized 0-1 for respawn on resize
+    yFrac: number;
+  }
+
+  // ─── 8 magnetic poles at normalized positions ────────────────────────────────
+  const POLE_DEFS: [number, number, string][] = [
+    [0.15, 0.30, '#6366f1'],
+    [0.25, 0.60, '#8b5cf6'],
+    [0.20, 0.85, '#a78bfa'],
+    [0.45, 0.20, '#06b6d4'],
+    [0.45, 0.75, '#3b82f6'],
+    [0.75, 0.25, '#f59e0b'],
+    [0.80, 0.55, '#10b981'],
+    [0.70, 0.80, '#ec4899'],
+  ];
+
+  function makePoles(): Pole[] {
+    return POLE_DEFS.map(([xFrac, yFrac, color], i) => ({
+      xFrac, yFrac, color,
+      strength: 1.0,
+      driftFreqX: 0.11 + i * 0.031,
+      driftFreqY: 0.13 + i * 0.027,
+      driftPhaseX: i * 1.3,
+      driftPhaseY: i * 0.9 + 0.5,
+      driftAmp: 5,
+    }));
+  }
+
+  // ─── Color blending ──────────────────────────────────────────────────────────
+  function hexToRgb(hex: string): [number, number, number] {
+    const n = parseInt(hex.slice(1), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+
+  function blendColors(colors: string[], weights: number[]): string {
+    let r = 0, g = 0, b = 0, total = 0;
+    for (let i = 0; i < colors.length; i++) {
+      const c = colors[i];
+      const w = weights[i];
+      if (!c || w === undefined) continue;
+      const [cr, cg, cb] = hexToRgb(c);
+      r += cr * w;
+      g += cg * w;
+      b += cb * w;
+      total += w;
+    }
+    if (total < 0.0001) return '#ffffff';
+    return `rgb(${Math.round(r/total)},${Math.round(g/total)},${Math.round(b/total)})`;
+  }
+
+  // ─── Field vector computation ─────────────────────────────────────────────────
+  function computeField(
+    px: number, py: number,
+    poles: Pole[],
+    W: number, H: number,
+    tSec: number,
+    extraPoles?: { x: number; y: number; strength: number }[]
+  ): { angle: number; strength: number; topColors: string[]; topWeights: number[] } {
+    let fx = 0, fy = 0;
+    const influences: number[] = [];
+
+    for (const pole of poles) {
+      const cx = pole.xFrac * W + Math.sin(tSec * pole.driftFreqX + pole.driftPhaseX) * pole.driftAmp;
+      const cy = pole.yFrac * H + Math.sin(tSec * pole.driftFreqY + pole.driftPhaseY) * pole.driftAmp;
+      const dx = px - cx;
+      const dy = py - cy;
+      const dist2 = Math.max(dx * dx + dy * dy, 400); // min dist cap = 20px
+      const inv = pole.strength / dist2;
+      fx += dx * inv;
+      fy += dy * inv;
+      influences.push(inv);
+    }
+
+    // Extra transient poles (e.g., input focus)
+    if (extraPoles) {
+      for (const ep of extraPoles) {
+        const dx = px - ep.x;
+        const dy = py - ep.y;
+        const dist2 = Math.max(dx * dx + dy * dy, 400);
+        const inv = ep.strength / dist2;
+        fx += dx * inv;
+        fy += dy * inv;
+      }
+    }
+
+    const mag = Math.sqrt(fx * fx + fy * fy);
+    const angle = Math.atan2(fy, fx);
+
+    // Top 2 dominant poles for color blending
+    const sorted = influences
+      .map((v, i) => ({ v, i }))
+      .sort((a, b) => b.v - a.v);
+    const top2 = sorted.slice(0, 2);
+    const topColors = top2.map(x => (POLE_DEFS[x.i]?.[2] ?? '#6366f1') as string);
+    const topWeights = top2.map(x => x.v);
+
+    return { angle, strength: mag, topColors, topWeights };
+  }
+
+  // ─── Canvas renderer ─────────────────────────────────────────────────────────
+  function setupMagneticCanvas(
+    canvas: HTMLCanvasElement,
+    wrap: HTMLElement,
+    particleCount: number,
+    polesInput: Pole[],
+    getExtraPoles?: () => { x: number; y: number; strength: number }[]
+  ) {
+    const ctx = canvas.getContext('2d')!;
+    let W = 0, H = 0;
+    const poles = polesInput;
+    let particles: Particle[] = [];
+
+    function buildParticles() {
+      particles = [];
+      for (let i = 0; i < particleCount; i++) {
+        const xFrac = Math.random();
+        const yFrac = Math.random();
+        particles.push({ x: xFrac * W, y: yFrac * H, xFrac, yFrac });
+      }
+    }
+
+    function resize() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = wrap.getBoundingClientRect();
+      W = Math.round(rect.width);
+      H = Math.round(rect.height);
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width = `${W}px`;
+      canvas.style.height = `${H}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // Reposition particles proportionally
+      for (const p of particles) {
+        p.x = p.xFrac * W;
+        p.y = p.yFrac * H;
+      }
+      if (particles.length === 0) buildParticles();
+    }
+
+    const ro = new ResizeObserver(() => resize());
+    ro.observe(wrap);
+    resize();
+    buildParticles();
+
+    const PARTICLE_HALF_LEN = 2; // half-length of each filing line
+
+    function drawFrame() {
+      requestAnimationFrame(drawFrame);
+      if (W === 0 || H === 0) return;
+      ctx.clearRect(0, 0, W, H);
+
+      const tSec = performance.now() * 0.001;
+      const extra = getExtraPoles ? getExtraPoles() : undefined;
+
+      for (const p of particles) {
+        const field = computeField(p.x, p.y, poles, W, H, tSec, extra);
+
+        // Opacity mapped from field strength — clamp to 0.3–0.7 range
+        const strengthLog = Math.log1p(field.strength * 1e5);
+        const opacity = Math.min(0.7, Math.max(0.3, strengthLog * 0.07));
+
+        const color = blendColors(field.topColors, field.topWeights);
+
+        const cos = Math.cos(field.angle);
+        const sin = Math.sin(field.angle);
+
+        ctx.beginPath();
+        ctx.moveTo(p.x - cos * PARTICLE_HALF_LEN, p.y - sin * PARTICLE_HALF_LEN);
+        ctx.lineTo(p.x + cos * PARTICLE_HALF_LEN, p.y + sin * PARTICLE_HALF_LEN);
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = opacity;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    requestAnimationFrame(drawFrame);
+    requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+  }
+
+  // ─── Mouse pole ───────────────────────────────────────────────────────────────
+  let mousePole: { x: number; y: number; strength: number } | null = null;
+
+  // ─── Transient focus poles ─────────────────────────────────────────────────
+  let focusPoles: { x: number; y: number; strength: number; expiry: number }[] = [];
+
+  function getExtraHeroPoles(): { x: number; y: number; strength: number }[] {
+    const now = performance.now();
+    // Remove expired
+    focusPoles = focusPoles.filter(p => p.expiry > now);
+
+    const out: { x: number; y: number; strength: number }[] = [];
+    if (mousePole) out.push(mousePole);
+    for (const p of focusPoles) out.push({ x: p.x, y: p.y, strength: p.strength });
+    return out;
+  }
+
+  // ─── Hero canvas setup ────────────────────────────────────────────────────────
+  const heroWrap = document.getElementById('hero-wrap')!;
+  const heroCanvas = heroWrap.querySelector<HTMLCanvasElement>('.bg-canvas')!;
+  const isMobile = window.innerWidth < 768;
+  const heroPoleCount = isMobile ? 1200 : 3000;
+
+  setupMagneticCanvas(heroCanvas, heroWrap, heroPoleCount, makePoles(), getExtraHeroPoles);
+
+  // Mouse tracking — mouse acts as a strong 9th pole
+  heroWrap.addEventListener('mousemove', (e: MouseEvent) => {
+    const rect = heroWrap.getBoundingClientRect();
+    mousePole = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+      strength: 2.0,
+    };
+  });
+  heroWrap.addEventListener('mouseleave', () => { mousePole = null; });
+
+  // URL input focus: add a transient 10th pole at input position, remove after 2s
+  const urlInput = document.querySelector<HTMLInputElement>('.url-input');
+  if (urlInput) {
+    urlInput.addEventListener('focus', () => {
+      const heroRect = heroWrap.getBoundingClientRect();
+      const inputRect = urlInput.getBoundingClientRect();
+      const px = inputRect.left + inputRect.width / 2 - heroRect.left;
+      const py = inputRect.top + inputRect.height / 2 - heroRect.top;
+      focusPoles.push({ x: px, y: py, strength: 2.5, expiry: performance.now() + 2000 });
+    });
+  }
+
+  // Hide grid texture
+  const gridTex = heroWrap.querySelector<HTMLElement>('.grid-texture');
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── Final CTA canvas ─────────────────────────────────────────────────────────
+  const ctaCard = document.querySelector<HTMLElement>('.final-cta');
+  if (ctaCard) {
+    const ctaCanvas = document.createElement('canvas');
+    ctaCanvas.setAttribute('aria-hidden', 'true');
+    ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+    ctaCard.style.position = 'relative';
+    ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+
+    setupMagneticCanvas(ctaCanvas, ctaCard, 800, makePoles());
+
+    const gridTexCta = ctaCard.querySelector<HTMLElement>('.grid-texture');
+    if (gridTexCta) gridTexCta.style.display = 'none';
+  }
+
+  }); // end ric
+</script>

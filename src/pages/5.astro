@@ -1,0 +1,366 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+import HeroPello from '../components/sections/HeroPello.astro';
+import HowItWorks from '../components/sections/HowItWorks.astro';
+import ProductSection from '../components/sections/ProductSection.astro';
+import UseCases from '../components/sections/UseCases.astro';
+import Stats from '../components/sections/Stats.astro';
+import FAQ from '../components/sections/FAQ.astro';
+import FinalCTA from '../components/sections/FinalCTA.astro';
+---
+
+<Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="bg-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99,102,241,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  // ─── requestIdleCallback polyfill ────────────────────────────────────────────
+  const ric = (window as any).requestIdleCallback
+    ? (window as any).requestIdleCallback
+    : (cb: () => void) => setTimeout(cb, 1);
+
+  ric(() => {
+
+  // ─── Shared value-noise helper ───────────────────────────────────────────────
+  // Simple 1D value noise: hash a seed, interpolate between two random values
+  function valueNoise(x: number): number {
+    const i = Math.floor(x);
+    const f = x - i;
+    const u = f * f * (3 - 2 * f); // smoothstep
+    const a = Math.sin(i * 127.1) * 43758.5453;
+    const b = Math.sin((i + 1) * 127.1) * 43758.5453;
+    return (a - Math.floor(a)) * (1 - u) + (b - Math.floor(b)) * u;
+  }
+
+  // ─── Product colors ──────────────────────────────────────────────────────────
+  const PRODUCT_COLORS: string[] = [
+    '#6366f1','#8b5cf6','#a78bfa','#06b6d4',
+    '#3b82f6','#f59e0b','#10b981','#ec4899',
+  ];
+
+  // ─── Wave definitions ────────────────────────────────────────────────────────
+  interface Wave {
+    yFrac: number;      // fractional vertical position (0.1–0.9)
+    freq: number;       // base spatial frequency
+    amp: number;        // current amplitude (px)
+    baseAmp: number;    // resting amplitude (px)
+    phase: number;      // current phase (radians)
+    phaseSpeed: number; // radians per frame
+    noiseOffset: number; // seed offset for value noise
+    noisePeriod: number; // noise oscillation period in seconds
+    color: string;
+  }
+
+  const WAVES: Wave[] = PRODUCT_COLORS.map((color, i) => ({
+    yFrac: 0.1 + (i / 7) * 0.8,
+    freq: 0.01 + Math.random() * 0.02,
+    amp: 8 + Math.random() * 7,
+    baseAmp: 8 + Math.random() * 7,
+    phase: Math.random() * Math.PI * 2,
+    phaseSpeed: 0.008 + i * 0.001,
+    noiseOffset: i * 100.7,
+    noisePeriod: 3 + Math.random() * 2,
+    color,
+  }));
+
+  // ─── Mouse state ─────────────────────────────────────────────────────────────
+  interface MouseState { x: number; y: number; }
+  let mouse: MouseState | null = null;
+
+  interface Spike {
+    x: number;
+    amp: number;
+    spread: number;
+    age: number; // frames
+  }
+  const spikes: Spike[] = [];
+
+  // ─── Scan line state ─────────────────────────────────────────────────────────
+  // Scans from top to bottom over ~8s
+  const SCAN_PERIOD = 8; // seconds
+
+  // ─── Canvas setup ────────────────────────────────────────────────────────────
+  function setupWaveformCanvas(
+    canvas: HTMLCanvasElement,
+    wrap: HTMLElement,
+    waveSubset: Wave[],
+    isSimple: boolean
+  ): () => void {
+    const ctx = canvas.getContext('2d')!;
+    let W = 0, H = 0;
+    let dpr = window.devicePixelRatio || 1;
+
+    function resize() {
+      dpr = window.devicePixelRatio || 1;
+      const rect = wrap.getBoundingClientRect();
+      W = Math.round(rect.width);
+      H = Math.round(rect.height);
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width = `${W}px`;
+      canvas.style.height = `${H}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    const ro = new ResizeObserver(() => resize());
+    ro.observe(wrap);
+    resize();
+
+    function drawFrame() {
+      requestAnimationFrame(drawFrame);
+      if (W === 0 || H === 0) return;
+      ctx.clearRect(0, 0, W, H);
+
+      const tSec = performance.now() * 0.001;
+      const SAMPLES = 200;
+
+      for (let wi = 0; wi < waveSubset.length; wi++) {
+        const wave = waveSubset[wi];
+        if (!wave) continue;
+        const baseY = wave.yFrac * H;
+
+        // Noise-modulated amplitude
+        const noiseT = tSec / wave.noisePeriod + wave.noiseOffset;
+        const noiseVal = valueNoise(noiseT); // 0–1
+        const noiseAmp = wave.baseAmp * (0.6 + noiseVal * 0.8);
+
+        // Mouse proximity — find closest wave and amplify
+        let proximity = 0;
+        if (!isSimple && mouse !== null) {
+          const dy = mouse.y - baseY;
+          proximity = Math.max(0, 1 - Math.abs(dy) / (H * 0.15));
+          proximity = proximity * proximity;
+        }
+        const finalAmp = noiseAmp * (1 + proximity * 1.5);
+        const lineWidth = isSimple ? 0.5 : 0.5 + proximity * 1.0;
+
+        // Build path with 200 sample points
+        ctx.beginPath();
+        for (let s = 0; s <= SAMPLES; s++) {
+          const x = (s / SAMPLES) * W;
+
+          // Base sine wave
+          let y = baseY + Math.sin(x * wave.freq + wave.phase) * finalAmp;
+
+          // Add Gaussian spikes
+          if (!isSimple) {
+            for (const spike of spikes) {
+              const dx = x - spike.x;
+              const g = Math.exp(-(dx * dx) / (2 * spike.spread * spike.spread));
+              y += g * spike.amp * Math.max(0, 1 - spike.age / 60);
+            }
+          }
+
+          // Mouse X spike
+          if (!isSimple && mouse !== null) {
+            const dx = x - mouse.x;
+            const spikeW = 80;
+            const g = Math.exp(-(dx * dx) / (2 * spikeW * spikeW));
+            y += g * proximity * finalAmp * 0.5;
+          }
+
+          if (s === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+
+        // Scan line brightening
+        const scanY = ((tSec % SCAN_PERIOD) / SCAN_PERIOD) * H;
+        const distToScan = Math.abs(baseY - scanY);
+        const scanBright = Math.max(0, 1 - distToScan / 40);
+
+        // Alpha: base 0.35, boosted by proximity and scan
+        const alpha = Math.min(1, 0.35 + proximity * 0.35 + scanBright * 0.25);
+
+        ctx.strokeStyle = wave.color;
+        ctx.globalAlpha = alpha;
+        ctx.lineWidth = lineWidth;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+
+      // Draw scan line band
+      if (!isSimple) {
+        const scanY = ((tSec % SCAN_PERIOD) / SCAN_PERIOD) * H;
+        const scanGrad = ctx.createLinearGradient(0, scanY - 12, 0, scanY + 12);
+        scanGrad.addColorStop(0, 'rgba(162,52,250,0)');
+        scanGrad.addColorStop(0.5, 'rgba(162,52,250,0.06)');
+        scanGrad.addColorStop(1, 'rgba(162,52,250,0)');
+        ctx.fillStyle = scanGrad;
+        ctx.fillRect(0, scanY - 12, W, 24);
+      }
+
+      // Advance wave phases
+      for (const wave of waveSubset) {
+        wave.phase += wave.phaseSpeed;
+      }
+
+      // Age and remove spikes
+      for (let i = spikes.length - 1; i >= 0; i--) {
+        const spike = spikes[i];
+        if (!spike) continue;
+        spike.age++;
+        spike.spread += 2;
+        if (spike.age > 60) spikes.splice(i, 1);
+      }
+    }
+
+    requestAnimationFrame(drawFrame);
+    requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+    return () => ro.disconnect();
+  }
+
+  // ─── Hero canvas ─────────────────────────────────────────────────────────────
+  const heroWrap = document.getElementById('hero-wrap')!;
+  const heroCanvas = heroWrap.querySelector<HTMLCanvasElement>('.bg-canvas')!;
+  setupWaveformCanvas(heroCanvas, heroWrap, WAVES, false);
+
+  // Mouse tracking
+  heroWrap.addEventListener('mousemove', (e: MouseEvent) => {
+    const rect = heroWrap.getBoundingClientRect();
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  });
+  heroWrap.addEventListener('mouseleave', () => { mouse = null; });
+
+  // URL input focus: spike all waves
+  const urlInput = document.querySelector<HTMLInputElement>('.url-input');
+  if (urlInput) {
+    urlInput.addEventListener('focus', () => {
+      const rect = heroWrap.getBoundingClientRect();
+      const inputRect = urlInput.getBoundingClientRect();
+      const cx = inputRect.left + inputRect.width / 2 - rect.left;
+      for (let i = 0; i < 5; i++) {
+        setTimeout(() => {
+          spikes.push({ x: cx + (Math.random() - 0.5) * 200, amp: 18 + Math.random() * 12, spread: 40, age: 0 });
+        }, i * 80);
+      }
+    });
+  }
+
+  // Hide grid texture
+  const gridTex = heroWrap.querySelector<HTMLElement>('.grid-texture');
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── Final CTA canvas ────────────────────────────────────────────────────────
+  const ctaCard = document.querySelector<HTMLElement>('.final-cta');
+  if (ctaCard) {
+    const ctaCanvas = document.createElement('canvas');
+    ctaCanvas.setAttribute('aria-hidden', 'true');
+    ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+    ctaCard.style.position = 'relative';
+    ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+
+    const ctaWaves: Wave[] = [
+      { yFrac: 0.3, freq: 0.015, amp: 10, baseAmp: 10, phase: 0, phaseSpeed: 0.010, noiseOffset: 200, noisePeriod: 4, color: '#6366f1' },
+      { yFrac: 0.5, freq: 0.018, amp: 12, baseAmp: 12, phase: 1.5, phaseSpeed: 0.012, noiseOffset: 350, noisePeriod: 3.5, color: '#a78bfa' },
+      { yFrac: 0.7, freq: 0.012, amp: 9,  baseAmp: 9,  phase: 3.0, phaseSpeed: 0.009, noiseOffset: 500, noisePeriod: 5, color: '#06b6d4' },
+    ];
+    setupWaveformCanvas(ctaCanvas, ctaCard, ctaWaves, true);
+
+    const gridTexCta = ctaCard.querySelector<HTMLElement>('.grid-texture');
+    if (gridTexCta) gridTexCta.style.display = 'none';
+  }
+
+  }); // end ric
+</script>

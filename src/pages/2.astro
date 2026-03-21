@@ -1,0 +1,640 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+import HeroPello from '../components/sections/HeroPello.astro';
+import HowItWorks from '../components/sections/HowItWorks.astro';
+import ProductSection from '../components/sections/ProductSection.astro';
+import UseCases from '../components/sections/UseCases.astro';
+import Stats from '../components/sections/Stats.astro';
+import FAQ from '../components/sections/FAQ.astro';
+import FinalCTA from '../components/sections/FinalCTA.astro';
+---
+
+<Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="bg-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99,102,241,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  // ─── Polyfill requestIdleCallback (Safari) ──────────────────────────────────
+  const ric: (cb: Function) => void =
+    (window as any).requestIdleCallback
+      ? (cb: Function) => (window as any).requestIdleCallback(cb)
+      : (cb: Function) => setTimeout(cb, 1);
+
+  ric(() => {
+
+  // ─── Types ───────────────────────────────────────────────────────────────────
+  interface OrbitalBody {
+    name: string;
+    color: string;
+    r: number;          // red channel for glow
+    g: number;          // green channel
+    b: number;          // blue channel
+    orbitA: number;     // semi-major axis (px)
+    orbitB: number;     // semi-minor axis (px)
+    angle: number;      // current angle (radians)
+    angularVel: number; // radians per frame
+    tiltAngle: number;  // orbit plane rotation
+    radius: number;     // orb body radius (px)
+    trailPoints: Array<{ x: number; y: number }>;
+    // gravitational displacement (mouse warp)
+    dispX: number;
+    dispY: number;
+    // For spiral animation
+    orbitAnim: number;  // 0 = collapsed, 1 = normal
+  }
+
+  interface StarDot {
+    x: number; y: number;
+    baseAlpha: number;
+    twinklePhase: number;
+    twinkleSpeed: number;
+    isTwinkling: boolean;
+  }
+
+  // ─── Canvas setup ────────────────────────────────────────────────────────────
+  const heroWrap = document.getElementById('hero-wrap')!;
+  const heroCanvas = heroWrap.querySelector<HTMLCanvasElement>('.bg-canvas')!;
+  const hCtx = heroCanvas.getContext('2d')!;
+  let hW = 0, hH = 0, hDpr = 1;
+
+  // Center of orbits: 60% from left, 50% height
+  let centerX = 0, centerY = 0;
+
+  // Mouse position in canvas space
+  let mouseX = -9999, mouseY = -9999;
+
+  // Spiral animation state
+  type AnimState = 'normal' | 'collapsing' | 'exploding';
+  let animState: AnimState = 'normal';
+  let animStartTime = 0;
+  const COLLAPSE_DUR = 1500; // ms
+  const EXPLODE_DUR  = 800;  // ms
+
+  // Expanding ring for explosion
+  let ringRadius = 0, ringAlpha = 0;
+
+  // ─── Product orbital data ────────────────────────────────────────────────────
+  // Orbits are distributed at increasing radii; outer orbits move slower (Kepler)
+  const ORBIT_DATA: Array<[string, string, number, number, number]> = [
+    // [name, hexColor, r, g, b]
+    ['SEO',     '#6366f1', 99,  102, 241],
+    ['Reach',   '#8b5cf6', 139, 92,  246],
+    ['Publish', '#a78bfa', 167, 139, 250],
+    ['Social',  '#06b6d4', 6,   182, 212],
+    ['Pitch',   '#3b82f6', 59,  130, 246],
+    ['Ads',     '#f59e0b', 245, 158, 11 ],
+    ['Flow',    '#10b981', 16,  185, 129],
+    ['Build',   '#ec4899', 236, 72,  153],
+  ];
+
+  const orbits: OrbitalBody[] = [];
+
+  function buildOrbits() {
+    const baseA = Math.min(hW, hH) * 0.10; // innermost orbit semi-major
+    for (let i = 0; i < ORBIT_DATA.length; i++) {
+      const [name, , r, g, b] = ORBIT_DATA[i];
+      const a = baseA + i * baseA * 0.72;             // spreading radii
+      const eccentricity = 0.70 + Math.random() * 0.20; // b/a ratio
+      const angVel = (0.0045 / Math.sqrt(a / baseA)); // Kepler-ish: outer = slower
+      // Re-use existing orbit object if possible (preserve angle continuity on resize)
+      if (orbits[i]) {
+        orbits[i].orbitA = a;
+        orbits[i].orbitB = a * eccentricity;
+        orbits[i].angularVel = angVel;
+        orbits[i].radius = 3.5 + i * 0.5;
+      } else {
+        orbits.push({
+          name,
+          color: ORBIT_DATA[i][1],
+          r, g, b,
+          orbitA: a,
+          orbitB: a * eccentricity,
+          angle: (i / ORBIT_DATA.length) * Math.PI * 2, // spread initial angles
+          angularVel: angVel,
+          tiltAngle: (i * 0.38) % (Math.PI * 2), // each orbit on a different plane
+          radius: 3.5 + i * 0.5,
+          trailPoints: [],
+          dispX: 0,
+          dispY: 0,
+          orbitAnim: 1,
+        });
+      }
+    }
+  }
+
+  // ─── Star field ──────────────────────────────────────────────────────────────
+  const stars: StarDot[] = [];
+
+  function buildStars() {
+    stars.length = 0;
+    for (let i = 0; i < 200; i++) {
+      stars.push({
+        x: Math.random() * hW,
+        y: Math.random() * hH,
+        baseAlpha: 0.04 + Math.random() * 0.18,
+        twinklePhase: Math.random() * Math.PI * 2,
+        twinkleSpeed: 0.015 + Math.random() * 0.04,
+        isTwinkling: i < 3,
+      });
+    }
+    // Pick 3 random stars to twinkle at any given time
+    // (they rotate which star twinkles every few seconds — handled in draw)
+  }
+
+  // Cycle which stars twinkle
+  let lastTwinkleCycle = 0;
+  function cycleTwinklers(t: number) {
+    if (t - lastTwinkleCycle > 3000) {
+      lastTwinkleCycle = t;
+      // Un-twinkle all
+      for (const s of stars) s.isTwinkling = false;
+      // Pick 3 new ones
+      const picks = new Set<number>();
+      while (picks.size < 3) picks.add(Math.floor(Math.random() * stars.length));
+      for (const idx of picks) stars[idx].isTwinkling = true;
+    }
+  }
+
+  // ─── Resize ───────────────────────────────────────────────────────────────────
+  function resize() {
+    hDpr = window.devicePixelRatio || 1;
+    const rect = heroWrap.getBoundingClientRect();
+    hW = Math.round(rect.width);
+    hH = Math.round(rect.height);
+    heroCanvas.width  = hW * hDpr;
+    heroCanvas.height = hH * hDpr;
+    heroCanvas.style.width  = `${hW}px`;
+    heroCanvas.style.height = `${hH}px`;
+    hCtx.setTransform(hDpr, 0, 0, hDpr, 0, 0);
+
+    centerX = hW * 0.60;
+    centerY = hH * 0.50;
+
+    buildOrbits();
+    buildStars();
+  }
+
+  // ─── Main draw loop ───────────────────────────────────────────────────────────
+  function drawFrame() {
+    requestAnimationFrame(drawFrame);
+    const now = performance.now();
+    const t = now * 0.001;
+
+    cycleTwinklers(now);
+
+    hCtx.clearRect(0, 0, hW, hH);
+
+    // — Draw stars —
+    for (const s of stars) {
+      let alpha = s.baseAlpha;
+      if (s.isTwinkling) {
+        s.twinklePhase += s.twinkleSpeed;
+        alpha = s.baseAlpha * (0.4 + 0.6 * (Math.sin(s.twinklePhase) * 0.5 + 0.5));
+      }
+      hCtx.globalAlpha = alpha;
+      hCtx.fillStyle = '#ffffff';
+      hCtx.beginPath();
+      hCtx.arc(s.x, s.y, 0.8, 0, Math.PI * 2);
+      hCtx.fill();
+    }
+
+    // — AI Core —
+    const coreRadius = 16 + Math.sin(t * 1.8) * 4; // breathing
+    const coreX = centerX, coreY = centerY;
+
+    // Outer glow rings
+    for (let ring = 3; ring >= 1; ring--) {
+      const gr = hCtx.createRadialGradient(coreX, coreY, 0, coreX, coreY, coreRadius * ring * 2.5);
+      gr.addColorStop(0,   `rgba(167,139,250,${0.08 / ring})`);
+      gr.addColorStop(0.5, `rgba(99,102,241,${0.04 / ring})`);
+      gr.addColorStop(1,   'rgba(99,102,241,0)');
+      hCtx.globalAlpha = 1;
+      hCtx.fillStyle = gr;
+      hCtx.beginPath();
+      hCtx.arc(coreX, coreY, coreRadius * ring * 2.5, 0, Math.PI * 2);
+      hCtx.fill();
+    }
+
+    // Core body
+    const coreGrad = hCtx.createRadialGradient(coreX, coreY, 0, coreX, coreY, coreRadius);
+    coreGrad.addColorStop(0,   'rgba(255,255,255,0.95)');
+    coreGrad.addColorStop(0.3, 'rgba(196,181,254,0.85)');
+    coreGrad.addColorStop(0.7, 'rgba(99,102,241,0.50)');
+    coreGrad.addColorStop(1,   'rgba(99,102,241,0)');
+    hCtx.globalAlpha = 1;
+    hCtx.fillStyle = coreGrad;
+    hCtx.beginPath();
+    hCtx.arc(coreX, coreY, coreRadius, 0, Math.PI * 2);
+    hCtx.fill();
+
+    // — Handle spiral animation state —
+    let scaleFactor = 1.0;
+    if (animState === 'collapsing') {
+      const elapsed = now - animStartTime;
+      const progress = Math.min(1, elapsed / COLLAPSE_DUR);
+      // Ease-in-out cubic
+      const ease = progress < 0.5
+        ? 4 * progress * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+      scaleFactor = 1 - ease * 0.92; // spiral down to 8% of original size
+      if (progress >= 1) {
+        animState = 'exploding';
+        animStartTime = now;
+        ringRadius = 0;
+        ringAlpha = 0.8;
+      }
+    } else if (animState === 'exploding') {
+      const elapsed = now - animStartTime;
+      const progress = Math.min(1, elapsed / EXPLODE_DUR);
+      scaleFactor = progress * 1.2; // expand outward past normal
+      // Decay back to normal
+      if (progress >= 1) {
+        animState = 'normal';
+        scaleFactor = 1;
+      }
+      // Expanding ring
+      ringRadius = progress * Math.max(hW, hH) * 0.8;
+      ringAlpha = (1 - progress) * 0.6;
+    }
+
+    // Draw expanding ring on explosion
+    if ((animState === 'exploding' || ringAlpha > 0.01) && ringRadius > 0) {
+      hCtx.globalAlpha = ringAlpha;
+      hCtx.strokeStyle = 'rgba(167,139,250,1)';
+      hCtx.lineWidth = 2;
+      hCtx.beginPath();
+      hCtx.arc(coreX, coreY, ringRadius, 0, Math.PI * 2);
+      hCtx.stroke();
+      if (animState !== 'exploding') ringAlpha *= 0.95;
+    }
+
+    // — Draw orbital bodies —
+    for (const orb of orbits) {
+      // Advance angle
+      orb.angle += orb.angularVel;
+
+      // Effective orbit size (scaled by animation)
+      const effA = orb.orbitA * scaleFactor;
+      const effB = orb.orbitB * scaleFactor;
+
+      // Elliptical position in orbit plane
+      const lx = Math.cos(orb.angle) * effA;
+      const ly = Math.sin(orb.angle) * effB;
+
+      // Rotate orbit plane by tiltAngle
+      const cosT = Math.cos(orb.tiltAngle);
+      const sinT = Math.sin(orb.tiltAngle);
+      const wx = lx * cosT - ly * sinT;
+      const wy = lx * sinT + ly * cosT;
+
+      // Gravitational mouse warp
+      const rawX = coreX + wx;
+      const rawY = coreY + wy;
+      const dxM = rawX - mouseX, dyM = rawY - mouseY;
+      const distM = Math.sqrt(dxM * dxM + dyM * dyM);
+      const GRAV_RADIUS = 200;
+      const MAX_DISP = 30;
+      if (distM < GRAV_RADIUS && distM > 1) {
+        const force = (1 - distM / GRAV_RADIUS) * MAX_DISP;
+        // Attract toward mouse
+        orb.dispX += (-dxM / distM * force - orb.dispX) * 0.08;
+        orb.dispY += (-dyM / distM * force - orb.dispY) * 0.08;
+      } else {
+        orb.dispX *= 0.92; // spring back
+        orb.dispY *= 0.92;
+      }
+
+      const fx = rawX + orb.dispX;
+      const fy = rawY + orb.dispY;
+
+      // Record trail
+      orb.trailPoints.push({ x: fx, y: fy });
+      if (orb.trailPoints.length > 60) orb.trailPoints.shift();
+
+      // Draw trail
+      if (orb.trailPoints.length > 1) {
+        for (let i = 1; i < orb.trailPoints.length; i++) {
+          const segAlpha = (i / orb.trailPoints.length) * 0.35;
+          hCtx.globalAlpha = segAlpha;
+          hCtx.strokeStyle = orb.color;
+          hCtx.lineWidth = 1.0;
+          hCtx.beginPath();
+          hCtx.moveTo(orb.trailPoints[i - 1].x, orb.trailPoints[i - 1].y);
+          hCtx.lineTo(orb.trailPoints[i].x, orb.trailPoints[i].y);
+          hCtx.stroke();
+        }
+      }
+
+      // Draw orb glow
+      const orbR = orb.radius * Math.max(0.1, scaleFactor);
+      const glowR = orbR * 4;
+      const orbGlow = hCtx.createRadialGradient(fx, fy, 0, fx, fy, glowR);
+      orbGlow.addColorStop(0,   `rgba(${orb.r},${orb.g},${orb.b},0.5)`);
+      orbGlow.addColorStop(0.4, `rgba(${orb.r},${orb.g},${orb.b},0.15)`);
+      orbGlow.addColorStop(1,   `rgba(${orb.r},${orb.g},${orb.b},0)`);
+      hCtx.globalAlpha = 1;
+      hCtx.fillStyle = orbGlow;
+      hCtx.beginPath();
+      hCtx.arc(fx, fy, glowR, 0, Math.PI * 2);
+      hCtx.fill();
+
+      // Draw orb body
+      const orbBody = hCtx.createRadialGradient(
+        fx - orbR * 0.3, fy - orbR * 0.3, 0,
+        fx, fy, orbR
+      );
+      orbBody.addColorStop(0,   `rgba(255,255,255,0.95)`);
+      orbBody.addColorStop(0.4, orb.color);
+      orbBody.addColorStop(1,   `rgba(${orb.r},${orb.g},${orb.b},0.6)`);
+      hCtx.globalAlpha = 1;
+      hCtx.fillStyle = orbBody;
+      hCtx.beginPath();
+      hCtx.arc(fx, fy, Math.max(0.5, orbR), 0, Math.PI * 2);
+      hCtx.fill();
+    }
+
+    hCtx.globalAlpha = 1;
+  }
+
+  // ─── Event Listeners ─────────────────────────────────────────────────────────
+  window.addEventListener('mousemove', (e) => {
+    const rect = heroWrap.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+  });
+  window.addEventListener('mouseleave', () => {
+    mouseX = -9999; mouseY = -9999;
+  });
+
+  // URL input focus → trigger collapse → explode animation
+  const urlInput = heroWrap.querySelector<HTMLInputElement>('.url-input');
+  if (urlInput) {
+    urlInput.addEventListener('focus', () => {
+      if (animState === 'normal') {
+        animState = 'collapsing';
+        animStartTime = performance.now();
+      }
+    });
+  }
+
+  // Form submit → also trigger if not already animating
+  const heroForm = heroWrap.querySelector('form');
+  if (heroForm) {
+    heroForm.addEventListener('submit', () => {
+      if (animState === 'normal') {
+        animState = 'collapsing';
+        animStartTime = performance.now();
+      }
+    });
+  }
+
+  // ─── Init hero canvas ─────────────────────────────────────────────────────────
+  const roHero = new ResizeObserver(() => resize());
+  roHero.observe(heroWrap);
+  resize();
+  requestAnimationFrame(drawFrame);
+  requestAnimationFrame(() => { heroCanvas.style.opacity = '1'; });
+
+  // Hide hero grid-texture
+  const heroGrid = heroWrap.querySelector<HTMLElement>('.grid-texture');
+  if (heroGrid) heroGrid.style.display = 'none';
+
+  // ─── CTA Section Orbital Canvas ───────────────────────────────────────────────
+  {
+    const ctaEl = document.querySelector<HTMLElement>('.final-cta');
+    if (ctaEl) {
+      const ctaCanvas = document.createElement('canvas');
+      ctaCanvas.setAttribute('aria-hidden', 'true');
+      ctaCanvas.style.cssText =
+        'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaEl.style.position = 'relative';
+      ctaEl.insertBefore(ctaCanvas, ctaEl.firstChild);
+
+      const cCtx = ctaCanvas.getContext('2d')!;
+      let cW = 0, cH = 0, cDpr = 1;
+
+      // Smaller set of 4 orbits for CTA
+      interface MiniOrb {
+        r: number; g: number; b: number; color: string;
+        orbitA: number; orbitB: number;
+        angle: number; angularVel: number; tiltAngle: number;
+        radius: number;
+        trailPoints: Array<{ x: number; y: number }>;
+      }
+
+      const CTA_ORBIT_DATA: Array<[number, number, number, string]> = [
+        [99,  102, 241, '#6366f1'],
+        [139, 92,  246, '#8b5cf6'],
+        [16,  185, 129, '#10b981'],
+        [236, 72,  153, '#ec4899'],
+      ];
+      const ctaOrbits: MiniOrb[] = [];
+      let ctaCX = 0, ctaCY = 0;
+
+      function resizeCta() {
+        cDpr = window.devicePixelRatio || 1;
+        const rect = ctaEl!.getBoundingClientRect();
+        cW = Math.round(rect.width);
+        cH = Math.round(rect.height);
+        ctaCanvas.width  = cW * cDpr;
+        ctaCanvas.height = cH * cDpr;
+        ctaCanvas.style.width  = `${cW}px`;
+        ctaCanvas.style.height = `${cH}px`;
+        cCtx.setTransform(cDpr, 0, 0, cDpr, 0, 0);
+        ctaCX = cW * 0.5;
+        ctaCY = cH * 0.5;
+
+        ctaOrbits.length = 0;
+        const base = Math.min(cW, cH) * 0.12;
+        for (let i = 0; i < CTA_ORBIT_DATA.length; i++) {
+          const [r, g, b, color] = CTA_ORBIT_DATA[i];
+          const a = base + i * base * 0.85;
+          ctaOrbits.push({
+            r, g, b, color,
+            orbitA: a,
+            orbitB: a * (0.65 + Math.random() * 0.25),
+            angle: (i / CTA_ORBIT_DATA.length) * Math.PI * 2,
+            angularVel: 0.006 / Math.sqrt(1 + i * 0.7),
+            tiltAngle: i * 0.5,
+            radius: 4,
+            trailPoints: [],
+          });
+        }
+      }
+
+      function frameCta() {
+        requestAnimationFrame(frameCta);
+        const t = performance.now() * 0.001;
+        cCtx.clearRect(0, 0, cW, cH);
+
+        // Mini core
+        const mCoreR = 8 + Math.sin(t * 2.0) * 2;
+        const mcg = cCtx.createRadialGradient(ctaCX, ctaCY, 0, ctaCX, ctaCY, mCoreR);
+        mcg.addColorStop(0, 'rgba(255,255,255,0.9)');
+        mcg.addColorStop(0.5, 'rgba(167,139,250,0.6)');
+        mcg.addColorStop(1, 'rgba(99,102,241,0)');
+        cCtx.globalAlpha = 1;
+        cCtx.fillStyle = mcg;
+        cCtx.beginPath();
+        cCtx.arc(ctaCX, ctaCY, mCoreR * 3, 0, Math.PI * 2);
+        cCtx.fill();
+
+        for (const orb of ctaOrbits) {
+          orb.angle += orb.angularVel;
+          const lx = Math.cos(orb.angle) * orb.orbitA;
+          const ly = Math.sin(orb.angle) * orb.orbitB;
+          const cosT = Math.cos(orb.tiltAngle), sinT = Math.sin(orb.tiltAngle);
+          const fx = ctaCX + lx * cosT - ly * sinT;
+          const fy = ctaCY + lx * sinT + ly * cosT;
+
+          orb.trailPoints.push({ x: fx, y: fy });
+          if (orb.trailPoints.length > 40) orb.trailPoints.shift();
+
+          // Trail
+          for (let i = 1; i < orb.trailPoints.length; i++) {
+            cCtx.globalAlpha = (i / orb.trailPoints.length) * 0.30;
+            cCtx.strokeStyle = orb.color;
+            cCtx.lineWidth = 0.8;
+            cCtx.beginPath();
+            cCtx.moveTo(orb.trailPoints[i-1].x, orb.trailPoints[i-1].y);
+            cCtx.lineTo(orb.trailPoints[i].x, orb.trailPoints[i].y);
+            cCtx.stroke();
+          }
+
+          // Glow + body
+          const gRad = orb.radius * 3.5;
+          const og = cCtx.createRadialGradient(fx, fy, 0, fx, fy, gRad);
+          og.addColorStop(0,   `rgba(${orb.r},${orb.g},${orb.b},0.45)`);
+          og.addColorStop(1,   `rgba(${orb.r},${orb.g},${orb.b},0)`);
+          cCtx.globalAlpha = 1;
+          cCtx.fillStyle = og;
+          cCtx.beginPath();
+          cCtx.arc(fx, fy, gRad, 0, Math.PI * 2);
+          cCtx.fill();
+
+          const ob = cCtx.createRadialGradient(fx - 1, fy - 1, 0, fx, fy, orb.radius);
+          ob.addColorStop(0, 'rgba(255,255,255,0.9)');
+          ob.addColorStop(1, orb.color);
+          cCtx.fillStyle = ob;
+          cCtx.beginPath();
+          cCtx.arc(fx, fy, orb.radius, 0, Math.PI * 2);
+          cCtx.fill();
+        }
+        cCtx.globalAlpha = 1;
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaEl);
+      resizeCta();
+      requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { ctaCanvas.style.opacity = '1'; });
+
+      // Hide grid-texture inside final-cta
+      const ctaGrid = ctaEl.querySelector<HTMLElement>('.grid-texture');
+      if (ctaGrid) ctaGrid.style.display = 'none';
+    }
+  }
+
+  }); // end ric
+</script>

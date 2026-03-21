@@ -1,0 +1,501 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+import HeroPello from '../components/sections/HeroPello.astro';
+import HowItWorks from '../components/sections/HowItWorks.astro';
+import ProductSection from '../components/sections/ProductSection.astro';
+import UseCases from '../components/sections/UseCases.astro';
+import Stats from '../components/sections/Stats.astro';
+import FAQ from '../components/sections/FAQ.astro';
+import FinalCTA from '../components/sections/FinalCTA.astro';
+---
+
+<Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="bg-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99,102,241,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  // ─── Polyfill requestIdleCallback (Safari) ──────────────────────────────────
+  const ric: (cb: Function) => void =
+    (window as any).requestIdleCallback
+      ? (cb: Function) => (window as any).requestIdleCallback(cb)
+      : (cb: Function) => setTimeout(cb, 1);
+
+  ric(() => {
+
+  // ─── Value Noise (inline, no imports) ───────────────────────────────────────
+  // 256-entry hash table for fast pseudo-random gradient lookup
+  const NP = new Uint8Array(512);
+  {
+    const p = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) p[i] = i;
+    for (let i = 255; i > 0; i--) {
+      const j = ((i * 1664525 + 1013904223) >>> 0) % (i + 1);
+      const t = p[i]; p[i] = p[j]; p[j] = t;
+    }
+    for (let i = 0; i < 512; i++) NP[i] = p[i & 255];
+  }
+  const NG: [number, number][] = [[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+  function nFade(t: number): number { return t * t * t * (t * (t * 6 - 15) + 10); }
+  function nLerp(a: number, b: number, t: number): number { return a + t * (b - a); }
+  function nGrad(h: number, x: number, y: number): number {
+    const [gx, gy] = NG[h & 7]; return gx * x + gy * y;
+  }
+  function noise2(x: number, y: number): number {
+    const X = Math.floor(x) & 255, Y = Math.floor(y) & 255;
+    const xf = x - Math.floor(x), yf = y - Math.floor(y);
+    const u = nFade(xf), v = nFade(yf);
+    return nLerp(
+      nLerp(nGrad(NP[NP[X]+Y], xf, yf),   nGrad(NP[NP[X+1]+Y], xf-1, yf),   u),
+      nLerp(nGrad(NP[NP[X]+Y+1], xf, yf-1), nGrad(NP[NP[X+1]+Y+1], xf-1, yf-1), u),
+      v
+    );
+  }
+  // Curl noise from noise gradient — gives divergence-free flow field
+  function curlNoise(x: number, y: number, t: number): [number, number] {
+    const eps = 0.01;
+    const n1 = noise2(x, y + eps + t * 0.3);
+    const n2 = noise2(x, y - eps + t * 0.3);
+    const n3 = noise2(x + eps, y + t * 0.3);
+    const n4 = noise2(x - eps, y + t * 0.3);
+    return [(n1 - n2) / (2 * eps), -(n3 - n4) / (2 * eps)];
+  }
+
+  // ─── Particle System ─────────────────────────────────────────────────────────
+  interface Particle {
+    x: number; y: number;
+    vx: number; vy: number;
+    life: number; maxLife: number;
+    color: number; // index into palette
+    size: number;
+  }
+
+  // Indigo / violet palette — RGBA channel values stored as [r,g,b]
+  const PALETTE: [number, number, number][] = [
+    [99,  102, 241], // indigo-500
+    [139, 92,  246], // violet-500
+    [167, 139, 250], // violet-400
+    [196, 181, 254], // violet-300
+    [129, 140, 248], // indigo-400
+    [109, 40,  217], // violet-700
+  ];
+
+  // ─── Hero canvas setup ──────────────────────────────────────────────────────
+  const heroWrap = document.getElementById('hero-wrap')!;
+  const heroCanvas = heroWrap.querySelector<HTMLCanvasElement>('.bg-canvas')!;
+  const hCtx = heroCanvas.getContext('2d')!;
+
+  const isMobile = window.innerWidth < 768;
+  const PARTICLE_COUNT = isMobile ? 600 : 1500;
+  let hW = 0, hH = 0, hDpr = 1;
+
+  const particles: Particle[] = [];
+  let mouse: { x: number; y: number } | null = null;
+
+  // State machine
+  type ScanState = 'idle' | 'scanning' | 'complete';
+  let state: ScanState = 'idle';
+  let stateTime = 0;
+
+  function randomParticle(p?: Particle): Particle {
+    const out = p ?? {} as Particle;
+    out.x = Math.random() * hW;
+    out.y = Math.random() * hH;
+    out.vx = (Math.random() - 0.5) * 0.3;
+    out.vy = (Math.random() - 0.5) * 0.3;
+    out.maxLife = 180 + Math.random() * 240;
+    out.life = Math.random() * out.maxLife; // stagger initial life
+    out.color = Math.floor(Math.random() * PALETTE.length);
+    out.size = 0.8 + Math.random() * 1.2;
+    return out;
+  }
+
+  function initParticles() {
+    particles.length = 0;
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push(randomParticle());
+    }
+  }
+
+  function resizeHero() {
+    hDpr = window.devicePixelRatio || 1;
+    const rect = heroWrap.getBoundingClientRect();
+    hW = Math.round(rect.width);
+    hH = Math.round(rect.height);
+    heroCanvas.width = hW * hDpr;
+    heroCanvas.height = hH * hDpr;
+    heroCanvas.style.width = `${hW}px`;
+    heroCanvas.style.height = `${hH}px`;
+    hCtx.setTransform(hDpr, 0, 0, hDpr, 0, 0);
+    initParticles();
+  }
+
+  // Persistent glow lines for 'complete' state
+  interface GlowLine {
+    x1: number; y1: number; x2: number; y2: number;
+    alpha: number; width: number;
+  }
+  const glowLines: GlowLine[] = [];
+
+  function spawnGlowLines() {
+    glowLines.length = 0;
+    // Fan from the input bar approximate position (center-bottom of hero)
+    const ox = hW * 0.5, oy = hH * 0.62;
+    for (let i = 0; i < 12; i++) {
+      const angle = -Math.PI * 0.6 + (i / 11) * Math.PI * 1.2;
+      const len = hW * (0.25 + Math.random() * 0.35);
+      glowLines.push({
+        x1: ox, y1: oy,
+        x2: ox + Math.cos(angle) * len,
+        y2: oy + Math.sin(angle) * len,
+        alpha: 0.12 + Math.random() * 0.18,
+        width: 0.5 + Math.random() * 1.2,
+      });
+    }
+  }
+
+  function drawFrame() {
+    requestAnimationFrame(drawFrame);
+    const t = performance.now() * 0.001;
+    hCtx.clearRect(0, 0, hW, hH);
+
+    const isScanning = state === 'scanning';
+    const isComplete = state === 'complete';
+
+    // Draw persistent glow lines for complete state
+    if (isComplete && glowLines.length > 0) {
+      for (const gl of glowLines) {
+        const grd = hCtx.createLinearGradient(gl.x1, gl.y1, gl.x2, gl.y2);
+        grd.addColorStop(0, `rgba(139,92,246,${gl.alpha})`);
+        grd.addColorStop(1, `rgba(99,102,241,0)`);
+        hCtx.strokeStyle = grd;
+        hCtx.lineWidth = gl.width;
+        hCtx.beginPath();
+        hCtx.moveTo(gl.x1, gl.y1);
+        hCtx.lineTo(gl.x2, gl.y2);
+        hCtx.stroke();
+      }
+    }
+
+    // Input bar approximate position used as a flow attractor
+    const inputX = hW * 0.5;
+    const inputY = hH * 0.62;
+
+    for (const p of particles) {
+      p.life += 1;
+      if (p.life >= p.maxLife) {
+        randomParticle(p);
+        continue;
+      }
+
+      // Noise field coordinates (scaled down for smooth field)
+      const nx = p.x * 0.0025;
+      const ny = p.y * 0.0025;
+      const [cx, cy] = curlNoise(nx, ny, t * 0.18);
+
+      if (isScanning) {
+        // Energized: flow field dominates + attraction toward input bar
+        const dx = inputX - p.x, dy = inputY - p.y;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        const attract = Math.min(1, 300 / dist) * 0.015;
+        p.vx = p.vx * 0.88 + cx * 0.6 + (dx / dist) * attract;
+        p.vy = p.vy * 0.88 + cy * 0.6 + (dy / dist) * attract;
+      } else if (isComplete) {
+        // Settled: gentle drift
+        p.vx = p.vx * 0.96 + cx * 0.15 + (Math.random() - 0.5) * 0.04;
+        p.vy = p.vy * 0.96 + cy * 0.15 + (Math.random() - 0.5) * 0.04;
+      } else {
+        // Idle: Brownian + very subtle curl
+        p.vx = p.vx * 0.94 + (Math.random() - 0.5) * 0.06 + cx * 0.08;
+        p.vy = p.vy * 0.94 + (Math.random() - 0.5) * 0.06 + cy * 0.08;
+      }
+
+      // Mouse disturbance
+      if (mouse) {
+        const mdx = p.x - mouse.x, mdy = p.y - mouse.y;
+        const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
+        const MOUSE_RADIUS = 120;
+        if (mdist < MOUSE_RADIUS && mdist > 0.1) {
+          const force = (1 - mdist / MOUSE_RADIUS) * 0.4;
+          p.vx += (mdx / mdist) * force;
+          p.vy += (mdy / mdist) * force;
+        }
+      }
+
+      // Cap velocity
+      const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+      const maxSpeed = isScanning ? 4.5 : 1.2;
+      if (speed > maxSpeed) {
+        p.vx = (p.vx / speed) * maxSpeed;
+        p.vy = (p.vy / speed) * maxSpeed;
+      }
+
+      p.x += p.vx;
+      p.y += p.vy;
+
+      // Wrap edges
+      if (p.x < 0) p.x += hW;
+      if (p.x > hW) p.x -= hW;
+      if (p.y < 0) p.y += hH;
+      if (p.y > hH) p.y -= hH;
+
+      // Life-based alpha with fade-in and fade-out
+      const lifeRatio = p.life / p.maxLife;
+      const fadeIn = Math.min(1, lifeRatio * 8);
+      const fadeOut = Math.min(1, (1 - lifeRatio) * 8);
+      const alpha = fadeIn * fadeOut * (isScanning ? 0.75 : 0.45);
+
+      const [r, g, b] = PALETTE[p.color];
+      hCtx.globalAlpha = alpha;
+      hCtx.fillStyle = `rgb(${r},${g},${b})`;
+      hCtx.beginPath();
+      hCtx.arc(p.x, p.y, p.size * (isScanning ? 1.4 : 1.0), 0, Math.PI * 2);
+      hCtx.fill();
+    }
+    hCtx.globalAlpha = 1;
+  }
+
+  // ─── Event Listeners ─────────────────────────────────────────────────────────
+  window.addEventListener('mousemove', (e) => {
+    const rect = heroWrap.getBoundingClientRect();
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  });
+  window.addEventListener('mouseleave', () => { mouse = null; });
+
+  // URL input state transitions
+  const urlInput = heroWrap.querySelector<HTMLInputElement>('.url-input');
+  if (urlInput) {
+    urlInput.addEventListener('focus', () => {
+      state = 'scanning';
+      stateTime = performance.now();
+    });
+    urlInput.addEventListener('input', () => {
+      state = 'scanning';
+      stateTime = performance.now();
+    });
+    urlInput.addEventListener('blur', () => {
+      if ((urlInput as HTMLInputElement).value.trim().length > 3) {
+        state = 'complete';
+        spawnGlowLines();
+      } else {
+        state = 'idle';
+      }
+    });
+  }
+
+  // Form submit → trigger complete
+  const heroForm = heroWrap.querySelector('form');
+  if (heroForm) {
+    heroForm.addEventListener('submit', () => {
+      state = 'complete';
+      spawnGlowLines();
+    });
+  }
+
+  // ─── Hero canvas resize and init ─────────────────────────────────────────────
+  const roHero = new ResizeObserver(() => resizeHero());
+  roHero.observe(heroWrap);
+  resizeHero();
+  requestAnimationFrame(drawFrame);
+  requestAnimationFrame(() => { heroCanvas.style.opacity = '1'; });
+
+  // ─── CTA Section Particle Canvas ─────────────────────────────────────────────
+  {
+    const ctaEl = document.querySelector<HTMLElement>('.final-cta');
+    if (ctaEl) {
+      const ctaCanvas = document.createElement('canvas');
+      ctaCanvas.setAttribute('aria-hidden', 'true');
+      ctaCanvas.style.cssText =
+        'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaEl.style.position = 'relative';
+      ctaEl.insertBefore(ctaCanvas, ctaEl.firstChild);
+
+      const cCtx = ctaCanvas.getContext('2d')!;
+      const CTA_COUNT = 300;
+      let cW = 0, cH = 0, cDpr = 1;
+      const cParticles: Particle[] = [];
+
+      function resizeCta() {
+        cDpr = window.devicePixelRatio || 1;
+        const rect = ctaEl!.getBoundingClientRect();
+        cW = Math.round(rect.width);
+        cH = Math.round(rect.height);
+        ctaCanvas.width = cW * cDpr;
+        ctaCanvas.height = cH * cDpr;
+        ctaCanvas.style.width = `${cW}px`;
+        ctaCanvas.style.height = `${cH}px`;
+        cCtx.setTransform(cDpr, 0, 0, cDpr, 0, 0);
+        cParticles.length = 0;
+        for (let i = 0; i < CTA_COUNT; i++) {
+          const p = {} as Particle;
+          p.x = Math.random() * cW;
+          p.y = Math.random() * cH;
+          p.vx = (Math.random() - 0.5) * 0.25;
+          p.vy = (Math.random() - 0.5) * 0.25;
+          p.maxLife = 200 + Math.random() * 200;
+          p.life = Math.random() * p.maxLife;
+          p.color = Math.floor(Math.random() * PALETTE.length);
+          p.size = 0.7 + Math.random() * 1.0;
+          cParticles.push(p);
+        }
+      }
+
+      function frameCta() {
+        requestAnimationFrame(frameCta);
+        const t = performance.now() * 0.001;
+        cCtx.clearRect(0, 0, cW, cH);
+
+        for (const p of cParticles) {
+          p.life += 1;
+          if (p.life >= p.maxLife) {
+            p.x = Math.random() * cW;
+            p.y = Math.random() * cH;
+            p.vx = (Math.random() - 0.5) * 0.25;
+            p.vy = (Math.random() - 0.5) * 0.25;
+            p.maxLife = 200 + Math.random() * 200;
+            p.life = 0;
+            continue;
+          }
+          const [cx, cy] = curlNoise(p.x * 0.003, p.y * 0.003, t * 0.12);
+          p.vx = p.vx * 0.95 + cx * 0.1 + (Math.random() - 0.5) * 0.04;
+          p.vy = p.vy * 0.95 + cy * 0.1 + (Math.random() - 0.5) * 0.04;
+
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0) p.x += cW;
+          if (p.x > cW) p.x -= cW;
+          if (p.y < 0) p.y += cH;
+          if (p.y > cH) p.y -= cH;
+
+          const lifeRatio = p.life / p.maxLife;
+          const fade = Math.min(1, lifeRatio * 8) * Math.min(1, (1 - lifeRatio) * 8);
+          const alpha = fade * 0.40;
+
+          const [r, g, b] = PALETTE[p.color];
+          cCtx.globalAlpha = alpha;
+          cCtx.fillStyle = `rgb(${r},${g},${b})`;
+          cCtx.beginPath();
+          cCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          cCtx.fill();
+        }
+        cCtx.globalAlpha = 1;
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaEl);
+      resizeCta();
+      requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { ctaCanvas.style.opacity = '1'; });
+
+      // Hide grid-texture inside final-cta
+      const ctaGrid = ctaEl.querySelector<HTMLElement>('.grid-texture');
+      if (ctaGrid) ctaGrid.style.display = 'none';
+    }
+  }
+
+  // Hide hero grid-texture
+  const heroGrid = heroWrap.querySelector<HTMLElement>('.grid-texture');
+  if (heroGrid) heroGrid.style.display = 'none';
+
+  }); // end ric
+</script>

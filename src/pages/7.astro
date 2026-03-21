@@ -1,0 +1,359 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+import HeroPello from '../components/sections/HeroPello.astro';
+import HowItWorks from '../components/sections/HowItWorks.astro';
+import ProductSection from '../components/sections/ProductSection.astro';
+import UseCases from '../components/sections/UseCases.astro';
+import Stats from '../components/sections/Stats.astro';
+import FAQ from '../components/sections/FAQ.astro';
+import FinalCTA from '../components/sections/FinalCTA.astro';
+---
+
+<Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="bg-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99,102,241,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  // ─── Data Rain Canvas — Matrix-style cascading marketing/growth terms ────────
+  // Polyfill requestIdleCallback for Safari
+  const ric = (window as any).requestIdleCallback
+    ? (window as any).requestIdleCallback
+    : (cb: () => void) => setTimeout(cb, 1);
+
+  ric(() => {
+
+  // ── Constants ────────────────────────────────────────────────────────────────
+  const TERMS: string[] = [
+    'CTR','ROAS','SEO','CPC','CPM','10k','340%','leads','rank','grow',
+    '.com','AI','SaaS','viral','reach','ads','flow','build','pitch','blog',
+    'links','#1','traffic','MRR','ARR','LTV','CAC','$12k','email','social',
+    'pages','1M','clicks','ROI','funnel','pitch','demo','scale'
+  ];
+  const COL_W      = 16;     // pixels per column
+  const STACK_MIN  = 8;      // min characters visible per column
+  const STACK_MAX  = 12;     // max characters visible per column
+  const SPEED_MIN  = 0.5;    // px per frame, slowest column
+  const SPEED_MAX  = 2.5;    // px per frame, fastest column
+  const MOUSE_R    = 100;    // mouse proximity radius (px)
+  const SCAN_DUR   = 6000;   // ms for scan line to traverse full height
+  const FONT_SIZE  = 11;
+  const FONT       = `${FONT_SIZE}px 'Courier New', monospace`;
+
+  // Colour stops for a column's trail (leading → trailing)
+  const LEAD_COLOR   = 'rgba(196,181,254,0.9)';   // bright light-purple
+  const MID1_COLOR   = 'rgba(99,102,241,0.5)';    // indigo 50%
+  const MID2_COLOR   = 'rgba(67,56,202,0.2)';     // indigo darker 20%
+  const TAIL_COLOR   = 'rgba(49,46,129,0.05)';    // deep indigo, nearly invisible
+
+  // ── Types ────────────────────────────────────────────────────────────────────
+  interface Column {
+    x: number;          // left edge in logical px
+    y: number;          // current y of the leading character (px, can be > height)
+    speed: number;      // px per frame at full velocity
+    stackLen: number;   // number of visible characters in this stream
+    termIdx: number;    // index into TERMS, cycles
+    charOffset: number; // offset within the current term string for variety
+  }
+
+  // ── Setup: hero canvas ───────────────────────────────────────────────────────
+  function initCanvas(
+    canvas: HTMLCanvasElement,
+    wrap: HTMLElement,
+    isCta: boolean
+  ) {
+    const ctx = canvas.getContext('2d')!;
+    let cols: Column[] = [];
+    let W = 0, H = 0;
+    let dpr = 1;
+    let mouse: { x: number; y: number } | null = null;
+    let scanY = 0;
+    let lastTime = 0;
+    let rafId = 0;
+
+    // Build column array to fill the canvas width
+    function buildColumns(width: number, height: number): Column[] {
+      const count = Math.ceil(width / COL_W) + 1;
+      return Array.from({ length: count }, (_, i) => ({
+        x: i * COL_W,
+        // Stagger initial y values so streams start at different heights
+        y: Math.random() * height * 1.5 - height * 0.5,
+        speed: SPEED_MIN + Math.random() * (SPEED_MAX - SPEED_MIN),
+        stackLen: STACK_MIN + Math.floor(Math.random() * (STACK_MAX - STACK_MIN + 1)),
+        termIdx: Math.floor(Math.random() * TERMS.length),
+        charOffset: Math.floor(Math.random() * 8),
+      }));
+    }
+
+    function resize() {
+      dpr = window.devicePixelRatio || 1;
+      const rect = wrap.getBoundingClientRect();
+      W = Math.round(rect.width);
+      H = Math.round(rect.height);
+      canvas.width  = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width  = `${W}px`;
+      canvas.style.height = `${H}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      cols = buildColumns(W, H);
+      scanY = 0;
+    }
+
+    // Return the character to display for a given column at a given stack position
+    function getChar(col: Column, stackPos: number): string {
+      const term = TERMS[(col.termIdx + stackPos) % TERMS.length];
+      const charIdx = (col.charOffset + stackPos) % term.length;
+      return term[charIdx];
+    }
+
+    function frame(now: number) {
+      rafId = requestAnimationFrame(frame);
+      const dt = Math.min(now - lastTime, 50); // cap at 50ms to avoid jump on tab re-focus
+      lastTime = now;
+
+      ctx.clearRect(0, 0, W, H);
+
+      // Advance scan line
+      const scanSpeed = H / (SCAN_DUR / (1000 / 60)); // px per frame at 60fps
+      scanY += (dt / (1000 / 60)) * scanSpeed;
+      if (scanY > H) scanY = 0;
+
+      // Draw scan line
+      ctx.fillStyle = 'rgba(162,52,250,0.04)';
+      ctx.fillRect(0, scanY, W, 4);
+
+      ctx.font = FONT;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+
+      for (const col of cols) {
+        // Check mouse proximity
+        let proximityFactor = 0;
+        if (mouse) {
+          const dx = col.x + COL_W * 0.5 - mouse.x;
+          const dy = col.y - mouse.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < MOUSE_R) {
+            proximityFactor = 1 - dist / MOUSE_R;
+          }
+        }
+
+        // Effective speed: decelerate near mouse to 20% of base speed
+        const effectiveSpeed = col.speed * (proximityFactor > 0
+          ? (0.2 + 0.8 * (1 - proximityFactor))
+          : 1.0);
+
+        // Advance position
+        col.y += effectiveSpeed * (dt / (1000 / 60));
+
+        // Wrap: when the tail of the stream has left the bottom, reset to top
+        const tailY = col.y - col.stackLen * (FONT_SIZE + 1);
+        if (tailY > H) {
+          col.y = -(col.stackLen * (FONT_SIZE + 1)) + Math.random() * 60;
+          col.termIdx = Math.floor(Math.random() * TERMS.length);
+          col.charOffset = Math.floor(Math.random() * 8);
+          col.speed = SPEED_MIN + Math.random() * (SPEED_MAX - SPEED_MIN);
+        }
+
+        // Draw stack — stackPos=0 is the leading (bottommost) character
+        for (let s = 0; s < col.stackLen; s++) {
+          const charY = col.y - s * (FONT_SIZE + 1);
+          if (charY < -FONT_SIZE || charY > H + FONT_SIZE) continue;
+
+          // Normalised position in stack: 0=lead, 1=tail
+          const t = s / (col.stackLen - 1);
+
+          // Pick colour by position in trail
+          let alpha: number;
+          let r: number, g: number, b: number;
+          if (s === 0) {
+            // Leading character: bright light-purple
+            r = 196; g = 181; b = 254; alpha = 0.9;
+          } else if (t < 0.33) {
+            // Mid-1: indigo
+            r = 99; g = 102; b = 241; alpha = 0.5 * (1 - t / 0.33);
+          } else if (t < 0.66) {
+            // Mid-2: darker indigo
+            r = 67; g = 56; b = 202; alpha = 0.2 * (1 - (t - 0.33) / 0.33);
+          } else {
+            // Tail: deep indigo
+            r = 49; g = 46; b = 129; alpha = 0.05 * (1 - (t - 0.66) / 0.34);
+          }
+
+          // Boost opacity near mouse
+          if (proximityFactor > 0) {
+            alpha = Math.min(1, alpha * (1 + proximityFactor * 2));
+          }
+
+          // Brighten characters at scan line position
+          if (Math.abs(charY - scanY) < 6) {
+            alpha = Math.min(1, alpha * 2.5);
+          }
+
+          ctx.globalAlpha = Math.max(0, alpha);
+          ctx.fillStyle = `rgb(${r},${g},${b})`;
+          ctx.fillText(getChar(col, s), col.x, charY);
+        }
+      }
+
+      ctx.globalAlpha = 1;
+    }
+
+    // Mouse tracking
+    if (!isCta) {
+      window.addEventListener('mousemove', (e) => {
+        const rect = wrap.getBoundingClientRect();
+        mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+      });
+      window.addEventListener('mouseleave', () => { mouse = null; });
+      window.addEventListener('touchstart', () => { mouse = null; }, { passive: true });
+    }
+
+    const ro = new ResizeObserver(() => resize());
+    ro.observe(wrap);
+    resize();
+
+    lastTime = performance.now();
+    rafId = requestAnimationFrame(frame);
+
+    // Fade in
+    requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+  }
+
+  // ── Hero canvas ──────────────────────────────────────────────────────────────
+  const heroCanvas = document.querySelector<HTMLCanvasElement>('.bg-canvas')!;
+  const heroWrap   = document.getElementById('hero-wrap')!;
+  initCanvas(heroCanvas, heroWrap, false);
+
+  // Hide grid-texture so canvas is the sole background
+  const gridTex = heroWrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ── CTA canvas ───────────────────────────────────────────────────────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const ctaCanvas = document.createElement('canvas');
+      ctaCanvas.setAttribute('aria-hidden', 'true');
+      ctaCanvas.style.cssText = [
+        'position:absolute',
+        'inset:0',
+        'z-index:0',
+        'pointer-events:none',
+        'will-change:transform',
+        'border-radius:inherit',
+        'opacity:0',
+        'transition:opacity 2s ease-in',
+      ].join(';');
+      ctaCard.style.position = 'relative';
+      ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+      initCanvas(ctaCanvas, ctaCard, true);
+
+      // Hide CTA grid-texture too
+      const ctaGridTex = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGridTex) ctaGridTex.style.display = 'none';
+    }
+  }
+
+  }); // end ric
+</script>
