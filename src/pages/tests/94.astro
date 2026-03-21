@@ -1,0 +1,409 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="bg-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99,102,241,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  // Polyfill requestIdleCallback for Safari
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Perlin Noise ──────────────────────────────────────────────────────────
+  const PERM = new Uint8Array(512);
+  {
+    const p = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) p[i] = i;
+    for (let i = 255; i > 0; i--) {
+      const j = ((i * 1664525 + 1013904223) >>> 0) % (i + 1);
+      const tmp = p[i]!; p[i] = p[j]!; p[j] = tmp;
+    }
+    for (let i = 0; i < 512; i++) PERM[i] = p[i & 255]!;
+  }
+  const GRADS2: [number,number][] = [[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+  function fade(t: number): number { return t*t*t*(t*(t*6-15)+10); }
+  function lerp(a: number, b: number, t: number): number { return a + t*(b-a); }
+  function grad2(h: number, x: number, y: number): number {
+    const g = GRADS2[h & 7]!;
+    return g[0]*x + g[1]*y;
+  }
+  function noise2(x: number, y: number): number {
+    const X = Math.floor(x) & 255, Y = Math.floor(y) & 255;
+    const xf = x - Math.floor(x), yf = y - Math.floor(y);
+    const u = fade(xf), v = fade(yf);
+    const aa = PERM[PERM[X]!   + Y]!,   ab = PERM[PERM[X]!   + Y+1]!;
+    const ba = PERM[PERM[X+1]! + Y]!,   bb = PERM[PERM[X+1]! + Y+1]!;
+    return lerp(
+      lerp(grad2(aa, xf,   yf),   grad2(ba, xf-1, yf),   u),
+      lerp(grad2(ab, xf,   yf-1), grad2(bb, xf-1, yf-1), u),
+      v
+    );
+  }
+
+  // ─── Helpers ───────────────────────────────────────────────────────────────
+  function hex2rgb(hex: string): [number,number,number] {
+    return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
+  }
+
+  function bezierPoint(
+    t: number,
+    p0: [number,number], cp: [number,number], p1: [number,number]
+  ): [number,number] {
+    const mt = 1 - t;
+    return [mt*mt*p0[0] + 2*mt*t*cp[0] + t*t*p1[0], mt*mt*p0[1] + 2*mt*t*cp[1] + t*t*p1[1]];
+  }
+
+  // ─── Types ─────────────────────────────────────────────────────────────────
+  interface CWNode {
+    ox: number; oy: number; // original position
+    x: number;  y: number;  // animated position
+    nox: number; noy: number; // noise offsets for drift
+    color: string;
+  }
+
+  interface Filament {
+    i: number; j: number;
+    cpNox: number; cpNoy: number; // noise offsets for control point
+    galaxyTs: number[];          // t values for galaxy dots along curve
+    baseAlpha: number;           // normally-visible filaments vs hidden
+  }
+
+  // ─── Pello palette at low saturation ──────────────────────────────────────
+  const NODE_COLORS = ['#6366f1','#8b5cf6','#a855f7','#7c3aed','#4f46e5','#9333ea'];
+
+  // ─── Main effect ───────────────────────────────────────────────────────────
+  function createCosmicWeb(canvas: HTMLCanvasElement, container: HTMLElement) {
+    const dpr = window.devicePixelRatio || 1;
+    let W = 0, H = 0;
+    const ctx = canvas.getContext('2d')!;
+
+    function resize() {
+      const r = container.getBoundingClientRect();
+      W = Math.round(r.width); H = Math.round(r.height);
+      canvas.width = W * dpr; canvas.height = H * dpr;
+      canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    let nodes: CWNode[] = [];
+    let filaments: Filament[] = [];
+    let mouseX: number | null = null, mouseY: number | null = null;
+    let t = 0, rafId = 0;
+
+    function build() {
+      nodes = []; filaments = [];
+      const mobile = W < 768;
+      const targetCount = mobile ? 10 : 18;
+      const MIN_DIST = 120;
+      const pad = 60;
+
+      // Generate nodes with minimum distance enforcement
+      let attempts = 0;
+      while (nodes.length < targetCount && attempts < targetCount * 30) {
+        attempts++;
+        const nx = pad + Math.random() * (W - pad*2);
+        const ny = pad + Math.random() * (H - pad*2);
+        let ok = true;
+        for (const n of nodes) {
+          if (Math.hypot(n.ox - nx, n.oy - ny) < MIN_DIST) { ok = false; break; }
+        }
+        if (ok) {
+          nodes.push({
+            ox: nx, oy: ny, x: nx, y: ny,
+            nox: Math.random() * 200,
+            noy: Math.random() * 200,
+            color: NODE_COLORS[nodes.length % NODE_COLORS.length]!
+          });
+        }
+      }
+
+      // Generate filaments between nearby node pairs
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const ni = nodes[i]!, nj = nodes[j]!;
+          const d = Math.hypot(ni.ox - nj.ox, ni.oy - nj.oy);
+          if (d < 350) {
+            const galaxyCount = 8 + Math.floor(Math.random() * 5);
+            filaments.push({
+              i, j,
+              cpNox: Math.random() * 200,
+              cpNoy: Math.random() * 200,
+              galaxyTs: Array.from({ length: galaxyCount }, () => Math.random()),
+              // Close pairs always visible; distant pairs are "hidden" (revealed by mouse)
+              baseAlpha: d < 240 ? 0.05 + Math.random() * 0.03 : 0.015
+            });
+          }
+        }
+      }
+    }
+
+    function frame() {
+      rafId = requestAnimationFrame(frame);
+      t += 0.004;
+
+      // Drift nodes via noise — smooth, slow movement
+      for (const n of nodes) {
+        n.x = n.ox + noise2(n.nox + t * 0.4, 0) * 7;
+        n.y = n.oy + noise2(0, n.noy + t * 0.4) * 7;
+      }
+
+      ctx.clearRect(0, 0, W, H);
+
+      // ─── Draw filaments ──────────────────────────────────────────────────
+      for (const f of filaments) {
+        const ni = nodes[f.i]!, nj = nodes[f.j]!;
+        const mx = (ni.x + nj.x) * 0.5, my = (ni.y + nj.y) * 0.5;
+        const ddx = nj.x - ni.x, ddy = nj.y - ni.y;
+        const dlen = Math.sqrt(ddx*ddx + ddy*ddy) + 1e-6;
+        // Perpendicular offset — evolves slowly via noise
+        const cpOff = noise2(f.cpNox + t * 0.25, f.cpNoy) * 40;
+        const cp: [number,number] = [mx + (-ddy / dlen) * cpOff, my + (ddx / dlen) * cpOff];
+
+        // Mouse proximity boost
+        let alpha = f.baseAlpha;
+        if (mouseX !== null) {
+          const mDistNi = Math.hypot(mouseX - ni.x, mouseY! - ni.y);
+          const mDistNj = Math.hypot(mouseX - nj.x, mouseY! - nj.y);
+          const mDistCp = Math.hypot(mouseX - cp[0], mouseY! - cp[1]);
+          const nearest = Math.min(mDistNi, mDistNj, mDistCp);
+          if (nearest < 200) {
+            const boost = 0.15 * (1 - nearest / 200);
+            alpha = Math.max(alpha, boost);
+          }
+        }
+
+        // Draw filament as Bézier curve
+        ctx.beginPath();
+        ctx.moveTo(ni.x, ni.y);
+        ctx.quadraticCurveTo(cp[0], cp[1], nj.x, nj.y);
+        ctx.strokeStyle = `rgba(70,55,190,${alpha})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+
+        // Galaxy dots sliding slowly along filament
+        for (const gt of f.galaxyTs) {
+          const slideT = (gt + t * 0.015) % 1;
+          const [gx, gy] = bezierPoint(slideT, [ni.x, ni.y], cp, [nj.x, nj.y]);
+
+          let galAlpha = 0.06;
+          if (mouseX !== null) {
+            const md = Math.hypot(mouseX - gx, mouseY! - gy);
+            if (md < 200) galAlpha = Math.max(galAlpha, 0.18 * (1 - md / 200));
+          }
+
+          ctx.beginPath();
+          ctx.arc(gx, gy, 0.5, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(140,130,220,${galAlpha})`;
+          ctx.fill();
+        }
+      }
+
+      // ─── Draw nodes ─────────────────────────────────────────────────────
+      for (const n of nodes) {
+        const [r, g, b] = hex2rgb(n.color);
+
+        let brightness = 0.12;
+        if (mouseX !== null) {
+          const md = Math.hypot(mouseX - n.x, mouseY! - n.y);
+          if (md < 200) brightness = Math.max(brightness, 0.30 * (1 - md / 200));
+        }
+
+        // Soft node glow
+        const grd = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, 22);
+        grd.addColorStop(0, `rgba(${r},${g},${b},${brightness})`);
+        grd.addColorStop(1, `rgba(${r},${g},${b},0)`);
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, 22, 0, Math.PI * 2);
+        ctx.fillStyle = grd;
+        ctx.fill();
+
+        // Bright node center
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${r},${g},${b},${Math.min(1, brightness * 3.5)})`;
+        ctx.fill();
+      }
+
+      // ─── Hidden structure reveal near mouse ──────────────────────────────
+      // Extra faint filaments between nodes that are otherwise too dim to see.
+      // These appear only when mouse sweeps nearby — like torch-light into the web.
+      if (mouseX !== null) {
+        for (let i = 0; i < nodes.length; i++) {
+          for (let j = i + 1; j < nodes.length; j++) {
+            const ni = nodes[i]!, nj = nodes[j]!;
+            const d = Math.hypot(ni.x - nj.x, ni.y - nj.y);
+            // Only for pairs NOT already in filaments (350–550px apart)
+            if (d < 350 || d > 550) continue;
+            const mDistNi = Math.hypot(mouseX - ni.x, mouseY! - ni.y);
+            const mDistNj = Math.hypot(mouseX - nj.x, mouseY! - nj.y);
+            const nearest = Math.min(mDistNi, mDistNj);
+            if (nearest > 200) continue;
+
+            const revealAlpha = 0.07 * (1 - nearest / 200);
+            const mx = (ni.x + nj.x) * 0.5, my = (ni.y + nj.y) * 0.5;
+            ctx.beginPath();
+            ctx.moveTo(ni.x, ni.y);
+            ctx.lineTo(nj.x, nj.y);
+            ctx.strokeStyle = `rgba(100,80,220,${revealAlpha})`;
+            ctx.lineWidth = 0.4;
+            ctx.stroke();
+            void mx; void my; // suppress unused warning
+          }
+        }
+      }
+    }
+
+    container.addEventListener('mousemove', (e: MouseEvent) => {
+      const r = container.getBoundingClientRect();
+      mouseX = e.clientX - r.left; mouseY = e.clientY - r.top;
+    });
+    container.addEventListener('mouseleave', () => { mouseX = null; mouseY = null; });
+
+    const ro = new ResizeObserver(() => { resize(); ctx.setTransform(dpr,0,0,dpr,0,0); build(); });
+    ro.observe(container);
+
+    resize();
+    build();
+    rafId = requestAnimationFrame(frame);
+    requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+    return { stop: () => cancelAnimationFrame(rafId) };
+  }
+
+  // ─── Hero ──────────────────────────────────────────────────────────────────
+  const heroCanvas = document.querySelector<HTMLCanvasElement>('#hero-wrap .bg-canvas')!;
+  const heroWrap   = document.getElementById('hero-wrap')!;
+  if (heroCanvas && heroWrap) {
+    createCosmicWeb(heroCanvas, heroWrap);
+  }
+
+  const gridTex = heroWrap?.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── FinalCTA ──────────────────────────────────────────────────────────────
+  const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+  if (ctaCard) {
+    const ctaCanvas = document.createElement('canvas');
+    ctaCanvas.setAttribute('aria-hidden', 'true');
+    ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+    ctaCard.style.position = 'relative';
+    ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+    createCosmicWeb(ctaCanvas, ctaCard);
+
+    const gridTexCta = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+    if (gridTexCta) gridTexCta.style.display = 'none';
+  }
+
+  }); // end ric
+</script>

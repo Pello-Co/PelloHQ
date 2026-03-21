@@ -1,0 +1,374 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="bg-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99,102,241,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  // Polyfill requestIdleCallback for Safari
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Perlin Noise ──────────────────────────────────────────────────────────
+  const PERM = new Uint8Array(512);
+  {
+    const p = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) p[i] = i;
+    for (let i = 255; i > 0; i--) {
+      const j = ((i * 1664525 + 1013904223) >>> 0) % (i + 1);
+      const tmp = p[i]!; p[i] = p[j]!; p[j] = tmp;
+    }
+    for (let i = 0; i < 512; i++) PERM[i] = p[i & 255]!;
+  }
+  const GRADS2: [number,number][] = [[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+  function fade(t: number): number { return t*t*t*(t*(t*6-15)+10); }
+  function lerp(a: number, b: number, t: number): number { return a + t*(b-a); }
+  function grad2(h: number, x: number, y: number): number {
+    const g = GRADS2[h & 7]!;
+    return g[0]*x + g[1]*y;
+  }
+  function noise2(x: number, y: number): number {
+    const X = Math.floor(x) & 255, Y = Math.floor(y) & 255;
+    const xf = x - Math.floor(x), yf = y - Math.floor(y);
+    const u = fade(xf), v = fade(yf);
+    const aa = PERM[PERM[X]!   + Y]!,   ab = PERM[PERM[X]!   + Y+1]!;
+    const ba = PERM[PERM[X+1]! + Y]!,   bb = PERM[PERM[X+1]! + Y+1]!;
+    return lerp(
+      lerp(grad2(aa, xf,   yf),   grad2(ba, xf-1, yf),   u),
+      lerp(grad2(ab, xf,   yf-1), grad2(bb, xf-1, yf-1), u),
+      v
+    );
+  }
+
+  // ─── Dot type ──────────────────────────────────────────────────────────────
+  interface Dot {
+    ox: number; oy: number;
+    x: number;  y: number;
+    vx: number; vy: number;
+    trail: { x: number; y: number }[];
+  }
+
+  // ─── Color by proximity ────────────────────────────────────────────────────
+  function dotColor(dist: number): [number,number,number] {
+    if (dist > 500) return [90, 90, 105];
+    const t = 1 - dist / 500; // 0=far, 1=singularity
+    if (t < 0.4) { // 500–300px: grey → indigo
+      const f = t / 0.4;
+      return [lerp(90,99,f)|0, lerp(90,102,f)|0, lerp(105,241,f)|0];
+    } else if (t < 0.7) { // 300–150px: indigo → bright violet
+      const f = (t - 0.4) / 0.3;
+      return [lerp(99,200,f)|0, lerp(102,80,f)|0, lerp(241,255,f)|0];
+    } else { // 150px and in: violet → white
+      const f = (t - 0.7) / 0.3;
+      return [lerp(200,255,f)|0, lerp(80,255,f)|0, 255];
+    }
+  }
+
+  // ─── Main effect ───────────────────────────────────────────────────────────
+  function createSpaghettification(canvas: HTMLCanvasElement, container: HTMLElement) {
+    const dpr = window.devicePixelRatio || 1;
+    let W = 0, H = 0;
+    const ctx = canvas.getContext('2d')!;
+
+    function resize() {
+      const r = container.getBoundingClientRect();
+      W = Math.round(r.width); H = Math.round(r.height);
+      canvas.width = W * dpr; canvas.height = H * dpr;
+      canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    const GRID = 16;
+    let dots: Dot[] = [];
+
+    function buildGrid() {
+      dots = [];
+      const cols = Math.ceil(W / GRID) + 1;
+      const rows = Math.ceil(H / GRID) + 1;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          dots.push({ ox: c*GRID, oy: r*GRID, x: c*GRID, y: r*GRID, vx: 0, vy: 0, trail: [] });
+        }
+      }
+    }
+
+    // Singularity state
+    let six = 0, siy = 0, targetX = 0, targetY = 0;
+    let mouseX: number | null = null, mouseY: number | null = null;
+    let t = 0, rafId = 0;
+
+    function frame() {
+      rafId = requestAnimationFrame(frame);
+      t += 0.005;
+
+      // Singularity target
+      if (mouseX !== null) {
+        targetX = mouseX; targetY = mouseY!;
+      } else {
+        // Lissajous drift — irrational ratio for non-repeating path
+        targetX = W * 0.5 + W * 0.22 * Math.sin(2.71 * t);
+        targetY = H * 0.5 + H * 0.18 * Math.sin(2.37 * t + 0.9);
+      }
+      six += (targetX - six) * 0.055;
+      siy += (targetY - siy) * 0.055;
+
+      // Update dots
+      for (const d of dots) {
+        const dx = six - d.x, dy = siy - d.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+
+        // Respawn at event horizon
+        if (dist < 30) {
+          d.x = d.ox; d.y = d.oy; d.vx = 0; d.vy = 0; d.trail = [];
+          continue;
+        }
+
+        // Gravitational pull within 150px
+        if (dist < 150) {
+          const force = 0.03 * (1 + (1 - dist / 150) * 2); // 0.03–0.09, stronger closer
+          d.vx += (dx / dist) * force;
+          d.vy += (dy / dist) * force;
+        }
+
+        // Damping
+        d.vx *= 0.97; d.vy *= 0.97;
+
+        const speed = Math.sqrt(d.vx*d.vx + d.vy*d.vy);
+
+        // Trail: track fast dots near singularity
+        if (speed > 0.25 && dist < 280) {
+          d.trail.push({ x: d.x, y: d.y });
+          if (d.trail.length > 6) d.trail.shift();
+        } else if (d.trail.length > 0) {
+          d.trail.shift();
+        }
+
+        d.x += d.vx; d.y += d.vy;
+      }
+
+      ctx.clearRect(0, 0, W, H);
+
+      // Outer accretion glow
+      const grd = ctx.createRadialGradient(six, siy, 28, six, siy, 80);
+      grd.addColorStop(0, 'rgba(0,0,0,0)');
+      grd.addColorStop(0.45, `rgba(80,50,200,${0.07 + 0.03*Math.sin(t*3)})`);
+      grd.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.beginPath();
+      ctx.arc(six, siy, 80, 0, Math.PI * 2);
+      ctx.fillStyle = grd;
+      ctx.fill();
+
+      // Photon ring — thin arc, pulsing
+      ctx.beginPath();
+      ctx.arc(six, siy, 35, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(200,170,255,${0.10 + 0.06*Math.sin(t*5)})`;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Black void
+      ctx.beginPath();
+      ctx.arc(six, siy, 30, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0,0,10,0.97)';
+      ctx.fill();
+
+      // Trails (draw before dots)
+      for (const d of dots) {
+        if (d.trail.length < 2) continue;
+        const speed = Math.sqrt(d.vx*d.vx + d.vy*d.vy);
+        const speedFactor = Math.min(speed / 1.5, 1);
+        for (let i = 1; i < d.trail.length; i++) {
+          const a = d.trail[i-1]!, b = d.trail[i]!;
+          const tf = i / d.trail.length;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.strokeStyle = `rgba(180,130,255,${tf * 0.55 * speedFactor})`;
+          ctx.lineWidth = tf * 1.8;
+          ctx.stroke();
+        }
+      }
+
+      // Dots
+      for (const d of dots) {
+        const dx = six - d.x, dy = siy - d.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 31) continue;
+
+        const [r, g, b] = dotColor(dist);
+        const alpha = dist > 500 ? 0.4 : 0.4 + (1 - dist / 500) * 0.55;
+
+        // Ambient breathing: noise-based radius oscillation ±0.15px
+        const breathe = noise2(d.ox * 0.04 + t * 0.15, d.oy * 0.04) * 0.15;
+        const baseR = 2 + breathe;
+
+        // Ellipse stretch: long axis toward singularity
+        const sf = dist < 500 ? Math.max(1, 1 + (1 - dist / 500) * 4) : 1;
+        const angle = Math.atan2(siy - d.y, six - d.x);
+
+        ctx.fillStyle = `rgba(${r},${g},${b},${Math.min(1, alpha)})`;
+        ctx.beginPath();
+        if (sf > 1.05) {
+          // radiusX = long axis (aligned to 'angle'), radiusY = short axis
+          ctx.ellipse(d.x, d.y, baseR * sf, baseR / sf, angle, 0, Math.PI * 2);
+        } else {
+          ctx.arc(d.x, d.y, baseR, 0, Math.PI * 2);
+        }
+        ctx.fill();
+      }
+    }
+
+    container.addEventListener('mousemove', (e: MouseEvent) => {
+      const r = container.getBoundingClientRect();
+      mouseX = e.clientX - r.left; mouseY = e.clientY - r.top;
+    });
+    container.addEventListener('mouseleave', () => { mouseX = null; mouseY = null; });
+
+    const ro = new ResizeObserver(() => { resize(); ctx.setTransform(dpr,0,0,dpr,0,0); buildGrid(); });
+    ro.observe(container);
+
+    resize();
+    six = W / 2; siy = H / 2; targetX = W / 2; targetY = H / 2;
+    buildGrid();
+    rafId = requestAnimationFrame(frame);
+    requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+    return { stop: () => cancelAnimationFrame(rafId) };
+  }
+
+  // ─── Hero ──────────────────────────────────────────────────────────────────
+  const heroCanvas = document.querySelector<HTMLCanvasElement>('#hero-wrap .bg-canvas')!;
+  const heroWrap   = document.getElementById('hero-wrap')!;
+  if (heroCanvas && heroWrap) {
+    createSpaghettification(heroCanvas, heroWrap);
+  }
+
+  const gridTex = heroWrap?.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── FinalCTA ──────────────────────────────────────────────────────────────
+  const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+  if (ctaCard) {
+    const ctaCanvas = document.createElement('canvas');
+    ctaCanvas.setAttribute('aria-hidden', 'true');
+    ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+    ctaCard.style.position = 'relative';
+    ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+    createSpaghettification(ctaCanvas, ctaCard);
+
+    const gridTexCta = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+    if (gridTexCta) gridTexCta.style.display = 'none';
+  }
+
+  }); // end ric
+</script>
