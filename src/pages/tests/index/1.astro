@@ -251,38 +251,45 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
 <style is:global>
   /* The visual panel (browser-style box on the left/right) */
   .product-card .product-visual-panel {
-    background: rgba(6, 7, 18, 0.45) !important;
-    backdrop-filter: blur(16px) saturate(1.3);
-    -webkit-backdrop-filter: blur(16px) saturate(1.3);
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  }
-
-  /* Panel header bar */
-  .product-card .product-visual-panel > div:first-child {
-    background: rgba(0, 0, 0, 0.2) !important;
-  }
-
-  /* Data rows inside the panel */
-  .product-card .product-visual-panel [style*="background: rgba(255,255,255,0.03)"] {
-    background: rgba(255, 255, 255, 0.04) !important;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.06) !important;
-  }
-
-  /* Feature pills / checkmark items */
-  .product-card .feature-pill {
+    background: rgba(6, 7, 18, 0.2) !important;
     backdrop-filter: blur(12px) saturate(1.2);
     -webkit-backdrop-filter: blur(12px) saturate(1.2);
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
   }
 
+  /* Panel header bar */
+  .product-card .product-visual-panel > div:first-child {
+    background: rgba(0, 0, 0, 0.1) !important;
+  }
+
+  /* Data rows inside the panel */
+  .product-card .product-visual-panel [style*="background: rgba(255,255,255,0.03)"] {
+    background: rgba(255, 255, 255, 0.03) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  }
+
+  /* Feature pills / checkmark items */
+  .product-card .feature-pill {
+    background: rgba(255, 255, 255, 0.04) !important;
+    backdrop-filter: blur(10px) saturate(1.2);
+    -webkit-backdrop-filter: blur(10px) saturate(1.2);
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  }
+
   /* CTA buttons — frosted glass */
   .product-card .btn-primary,
   .product-card .btn-secondary {
-    backdrop-filter: blur(12px) saturate(1.3);
-    -webkit-backdrop-filter: blur(12px) saturate(1.3);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+  .product-card .btn-primary:hover,
+  .product-card .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.14) !important;
   }
 
   /* Product icon badge container */
