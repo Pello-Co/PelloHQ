@@ -325,28 +325,27 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
     ctx.lineTo(px, ty < py ? ty + tooltipH : ty);
     ctx.stroke();
 
-    // Background — frosted tinted glass (10% transparency)
+    // Background — frosted tinted glass with strong blur effect
     ctx.globalAlpha = 1;
-    rrect(ctx, tx, ty, tooltipW, tooltipH, 10);
-    // Tinted glass: product colour at very low alpha + dark base
-    ctx.fillStyle = `rgba(${r},${g},${b},0.06)`;
-    ctx.fill();
-    rrect(ctx, tx, ty, tooltipW, tooltipH, 10);
-    ctx.fillStyle = 'rgba(6,7,18,0.10)';
-    ctx.fill();
-    // Glass border
-    ctx.strokeStyle = `rgba(${r},${g},${b},0.25)`;
-    ctx.lineWidth = 1;
-    ctx.stroke();
 
-    // Shadow/glow behind tooltip
-    ctx.shadowColor = `rgba(${r},${g},${b},0.15)`;
-    ctx.shadowBlur = 20;
+    // Shadow/glow behind tooltip (drawn first)
+    ctx.shadowColor = `rgba(${r},${g},${b},0.2)`;
+    ctx.shadowBlur = 30;
     rrect(ctx, tx, ty, tooltipW, tooltipH, 10);
-    ctx.fillStyle = 'rgba(6,7,18,0.0)';
+    ctx.fillStyle = 'rgba(6,7,18,0.65)';
     ctx.fill();
     ctx.shadowBlur = 0;
     ctx.shadowColor = 'transparent';
+
+    // Softer second pass for extra depth
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 10);
+    ctx.fillStyle = `rgba(${r},${g},${b},0.08)`;
+    ctx.fill();
+
+    // Glass border
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.3)`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
 
     // Accent top border
     ctx.globalAlpha = 0.6;
