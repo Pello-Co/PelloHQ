@@ -1,0 +1,780 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout
+  title="PelloReach — 98.2% Inbox Rate | Pello"
+  description="PelloReach delivers emails straight to the inbox. 500+ warmed domains, zero blacklists, real-time deliverability visualization. Watch every message land."
+>
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="reach6-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(139,92,246,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Data constants ────────────────────────────────────────────────────────
+  const FIRST_NAMES   = ["Sarah","James","Emma","Michael","Sophie","Daniel","Rachel","Tom","Jessica","Alex","Chris","Lauren","David","Hannah","Ben","Kate","Ryan","Olivia","Mark","Lucy"] as const;
+  const LAST_NAMES    = ["Chen","Williams","Patel","Thompson","Garcia","Anderson","Martinez","Johnson","Lee","Taylor","Brown","Wilson","Moore","Clark","Hall","Young","King","Wright","Scott","Green"] as const;
+  const COMPANIES     = ["Acme Corp","TechFlow","DataSync","CloudNine","Nexus Labs","Horizon AI","Vertex Systems","PulseMedia","Zenith Group","Atlas Digital","BrightPath","CoreStack","DeepBlue","EdgePoint","FrontLine","GrowthLab","HyperScale","InnoVate","JetStream","KineticIO"] as const;
+  const SEND_DOMAINS  = ["outreach-hub.io","connect-reach.co","mailflow-pro.com","sendgrid-alt.io","inbox-direct.co","pulse-mail.com","rapid-reach.io","smart-send.co","flow-mail.io","direct-reach.com"] as const;
+  const SUBJECTS      = [
+    "Quick question about {company}'s growth strategy",
+    "{firstName}, saw your recent {company} launch",
+    "Idea for {company}'s outreach — 3 min read",
+    "{firstName} — {company} + Pello could be interesting",
+    "Re: scaling {company}'s pipeline",
+    "{firstName}, one thing about {company}'s email strategy",
+  ] as const;
+  const OPENERS = [
+    "I noticed {company} just expanded into new markets — impressive growth.",
+    "Saw your LinkedIn post about {company}'s Q3 results, {firstName}.",
+    "A mutual connection mentioned {company} is scaling outreach.",
+    "Your talk at SaaStr about {company}'s growth was spot on, {firstName}.",
+  ] as const;
+
+  // ─── Helpers ───────────────────────────────────────────────────────────────
+  function pick<T>(arr: readonly T[]): T {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function fillTpl(tpl: string, vars: Record<string, string>): string {
+    return tpl.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
+  }
+
+  function rrect(rctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+    rctx.beginPath();
+    rctx.moveTo(x + r, y);
+    rctx.lineTo(x + w - r, y);
+    rctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    rctx.lineTo(x + w, y + h - r);
+    rctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    rctx.lineTo(x + r, y + h);
+    rctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    rctx.lineTo(x, y + r);
+    rctx.quadraticCurveTo(x, y, x + r, y);
+    rctx.closePath();
+  }
+
+  // ─── Email envelope drawing ────────────────────────────────────────────────
+  function drawEnvelope(
+    rctx: CanvasRenderingContext2D,
+    x: number, y: number,
+    scale: number,
+    color: string,
+    alpha: number,
+  ) {
+    const w  = 10 * scale;
+    const h  = 7  * scale;
+    const hw = w / 2;
+    const hh = h / 2;
+    rctx.save();
+    rctx.globalAlpha = alpha;
+    rctx.strokeStyle = color;
+    rctx.lineWidth   = Math.max(0.6, 0.8 * scale);
+    // Body
+    rctx.beginPath();
+    rctx.rect(x - hw, y - hh, w, h);
+    rctx.stroke();
+    // V-flap (top fold)
+    rctx.beginPath();
+    rctx.moveTo(x - hw, y - hh);
+    rctx.lineTo(x,       y - hh + h * 0.45);
+    rctx.lineTo(x + hw,  y - hh);
+    rctx.stroke();
+    rctx.restore();
+  }
+
+  // ─── Types ────────────────────────────────────────────────────────────────
+  interface SlotData {
+    x: number; y: number;
+    company: string;
+    count: number;
+    glowT: number;
+  }
+
+  interface EmailParticle {
+    id: number;
+    x: number; y: number;
+    vx: number; vy: number;
+    isSpam: boolean;
+    state: 'falling' | 'curving' | 'deflecting' | 'done';
+    targetSlotIdx: number;
+    alpha: number;
+    deflectT: number;
+    hoverScale: number;
+    from_addr: string;
+    to_name: string;
+    to_company: string;
+    subject: string;
+    opener: string;
+    sinePhase: number;
+    sineAmp: number;
+  }
+
+  // ─── Canvas / state ───────────────────────────────────────────────────────
+  const canvas  = document.querySelector<HTMLCanvasElement>('.reach6-canvas')!;
+  const wrap    = document.getElementById('hero-wrap')!;
+  const ctx     = canvas.getContext('2d')!;
+
+  let cW = 0, cH = 0, dpr = 1;
+  let slotY = 0;
+  let slots: SlotData[] = [];
+  let emails: EmailParticle[] = [];
+  let emailIdCounter = 0;
+  let mouse: { x: number; y: number } | null = null;
+  let lastSpawnT = 0;
+  let totalSpawned = 0;
+  let totalLanded  = 0;
+  let totalDeflected = 0;
+
+  const NUM_SLOTS    = 8;
+  const SLOT_W       = 38;
+  const SLOT_H       = 14;
+  const SLOT_GAP     = 16;
+  const CURVE_DIST   = 110;  // px above slotY to start curving
+  const SPAM_DIST    = 160;  // px above slotY to start deflecting
+  const SPAWN_INTERVAL = 0.15; // seconds
+  const MAX_EMAILS   = 90;
+  const PUSH_RADIUS  = 60;
+  const HOVER_RADIUS = 16;
+
+  function buildSlots() {
+    const totalW = NUM_SLOTS * SLOT_W + (NUM_SLOTS - 1) * SLOT_GAP;
+    const startX = (cW - totalW) / 2;
+    slotY = cH * 0.82;
+    // Use a rotating set of companies
+    const cos = [...COMPANIES];
+    slots = Array.from({ length: NUM_SLOTS }, (_, i) => ({
+      x:       startX + i * (SLOT_W + SLOT_GAP) + SLOT_W / 2,
+      y:       slotY,
+      company: cos[i % cos.length].split(' ')[0], // first word only for label
+      count:   0,
+      glowT:   -99,
+    }));
+  }
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    cW = Math.round(rect.width);
+    cH = Math.round(rect.height);
+    canvas.width  = cW * dpr;
+    canvas.height = cH * dpr;
+    canvas.style.width  = cW + 'px';
+    canvas.style.height = cH + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildSlots();
+    emails = []; // clear emails on resize
+  }
+
+  function spawnEmail(t: number) {
+    const fn = pick(FIRST_NAMES);
+    const ln = pick(LAST_NAMES);
+    const co = pick(COMPANIES);
+    const dom = pick(SEND_DOMAINS);
+    const subjectTpl = pick(SUBJECTS);
+    const openerTpl  = pick(OPENERS);
+    const isSpam     = Math.random() < 0.018;
+
+    // Spawn across full width, avoid edges
+    const padX  = 20;
+    const spawnX = padX + Math.random() * (cW - padX * 2);
+
+    // Pre-pick nearest slot for non-spam (will be used when curving starts)
+    let nearestSlotIdx = 0;
+    if (!isSpam) {
+      let bestD = Infinity;
+      for (let i = 0; i < slots.length; i++) {
+        const d = Math.abs(slots[i].x - spawnX);
+        if (d < bestD) { bestD = d; nearestSlotIdx = i; }
+      }
+    }
+
+    emails.push({
+      id:           emailIdCounter++,
+      x:            spawnX,
+      y:            -12,
+      vx:           (Math.random() - 0.5) * 0.4,
+      vy:           1.6 + Math.random() * 0.9,
+      isSpam,
+      state:        'falling',
+      targetSlotIdx: nearestSlotIdx,
+      alpha:        1,
+      deflectT:     0,
+      hoverScale:   1,
+      from_addr:    `alex@${dom}`,
+      to_name:      `${fn} ${ln}`,
+      to_company:   co,
+      subject:      fillTpl(subjectTpl, { company: co, firstName: fn }),
+      opener:       fillTpl(openerTpl,  { company: co, firstName: fn }),
+      sinePhase:    Math.random() * Math.PI * 2,
+      sineAmp:      3 + Math.random() * 4,
+    });
+    totalSpawned++;
+  }
+
+  // ─── Find hovered email ────────────────────────────────────────────────────
+  function getHoveredEmail(): number {
+    if (!mouse) return -1;
+    let best = -1, bestD = HOVER_RADIUS;
+    for (let i = 0; i < emails.length; i++) {
+      const e = emails[i];
+      if (e.state === 'done') continue;
+      const dx = e.x - mouse.x;
+      const dy = e.y - mouse.y;
+      const d  = Math.sqrt(dx * dx + dy * dy);
+      if (d < bestD) { bestD = d; best = i; }
+    }
+    return best;
+  }
+
+  // ─── Tooltip for hovered email ─────────────────────────────────────────────
+  function drawEmailTooltip(e: EmailParticle) {
+    const W = cW;
+    const px = e.x, py = e.y;
+
+    const pad = 14;
+    const tooltipW = 300;
+    const tooltipH = 110;
+
+    let tx = px + 20;
+    let ty = py - tooltipH / 2;
+    if (tx + tooltipW + 8 > W) tx = px - tooltipW - 20;
+    ty = Math.max(8, Math.min(cH - tooltipH - 8, ty));
+
+    ctx.save();
+
+    // Shadow
+    ctx.shadowColor = 'rgba(139,92,246,0.25)';
+    ctx.shadowBlur  = 24;
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 8);
+    ctx.fillStyle = 'rgba(6,7,18,0.92)';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Tint
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 8);
+    ctx.fillStyle = 'rgba(139,92,246,0.06)';
+    ctx.fill();
+
+    // Border
+    ctx.strokeStyle = 'rgba(139,92,246,0.35)';
+    ctx.lineWidth   = 1;
+    ctx.stroke();
+
+    // Top accent
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle   = 'rgba(74,222,128,1)';
+    rrect(ctx, tx, ty, tooltipW, 3, 3);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    const mono = '"SF Mono","Fira Code",monospace';
+    const labelX = tx + pad;
+
+    // FROM
+    ctx.font      = `10px ${mono}`;
+    ctx.fillStyle = 'rgba(139,92,246,0.7)';
+    ctx.textAlign = 'left';
+    ctx.fillText('FROM', labelX, ty + pad + 14);
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.fillText(e.from_addr, labelX + 44, ty + pad + 14);
+
+    // TO
+    ctx.fillStyle = 'rgba(139,92,246,0.7)';
+    ctx.fillText('TO', labelX, ty + pad + 30);
+    ctx.fillStyle = '#c4b5fd';
+    ctx.fillText(`${e.to_name} · ${e.to_company}`, labelX + 44, ty + pad + 30);
+
+    // SUBJECT
+    ctx.fillStyle = 'rgba(139,92,246,0.7)';
+    ctx.fillText('SUBJ', labelX, ty + pad + 46);
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    const subj = e.subject.length > 30 ? e.subject.slice(0, 30) + '…' : e.subject;
+    ctx.fillText(subj, labelX + 44, ty + pad + 46);
+
+    // Opener (truncated)
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle   = '#a1a1aa';
+    ctx.font        = `9px ${mono}`;
+    const openText = '"' + (e.opener.length > 40 ? e.opener.slice(0, 40) + '…' : e.opener) + '"';
+    ctx.fillText(openText, labelX, ty + pad + 64);
+    ctx.globalAlpha = 1;
+
+    // Status
+    ctx.fillStyle = 'rgba(74,222,128,0.9)';
+    ctx.font      = `10px ${mono}`;
+    ctx.fillText('✓ Inbox verified  ·  0 blacklists', labelX, ty + pad + 82);
+
+    ctx.restore();
+  }
+
+  // ─── Draw slot ─────────────────────────────────────────────────────────────
+  function drawSlot(s: SlotData, t: number) {
+    const glowAge    = t - s.glowT;
+    const glowActive = glowAge < 0.5;
+    const glowIntensity = glowActive ? Math.max(0, 1 - glowAge / 0.5) : 0;
+
+    // Glow fill
+    if (glowIntensity > 0) {
+      ctx.save();
+      ctx.globalAlpha = glowIntensity * 0.12;
+      ctx.fillStyle   = 'rgba(74,222,128,1)';
+      rrect(ctx, s.x - SLOT_W / 2, s.y - SLOT_H / 2, SLOT_W, SLOT_H, 3);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Border
+    const borderA = 0.15 + glowIntensity * 0.5;
+    ctx.save();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = `rgba(74,222,128,${borderA})`;
+    ctx.lineWidth   = 1;
+    rrect(ctx, s.x - SLOT_W / 2, s.y - SLOT_H / 2, SLOT_W, SLOT_H, 3);
+    ctx.stroke();
+    ctx.restore();
+
+    const mono = '"SF Mono","Fira Code",monospace';
+
+    // Company label above
+    ctx.save();
+    ctx.globalAlpha = 0.3 + glowIntensity * 0.2;
+    ctx.fillStyle   = '#a1a1aa';
+    ctx.font        = `7px ${mono}`;
+    ctx.textAlign   = 'center';
+    ctx.fillText(s.company, s.x, s.y - SLOT_H / 2 - 4);
+    ctx.restore();
+
+    // Counter below
+    ctx.save();
+    ctx.globalAlpha = 0.5 + glowIntensity * 0.4;
+    ctx.fillStyle   = `rgba(74,222,128,${0.6 + glowIntensity * 0.4})`;
+    ctx.font        = `9px ${mono}`;
+    ctx.textAlign   = 'center';
+    ctx.fillText(s.count.toString(), s.x, s.y + SLOT_H / 2 + 11);
+    ctx.restore();
+  }
+
+  // ─── Main frame ────────────────────────────────────────────────────────────
+  function frame() {
+    requestAnimationFrame(frame);
+    const t  = performance.now() * 0.001;
+    ctx.clearRect(0, 0, cW, cH);
+
+    // Spawn
+    if (t - lastSpawnT > SPAWN_INTERVAL && emails.length < MAX_EMAILS) {
+      spawnEmail(t);
+      lastSpawnT = t;
+    }
+
+    const hovIdx = getHoveredEmail();
+    const mx = mouse ? mouse.x : -9999;
+    const my = mouse ? mouse.y : -9999;
+
+    // Update emails
+    for (let i = emails.length - 1; i >= 0; i--) {
+      const e = emails[i];
+      if (e.state === 'done') { emails.splice(i, 1); continue; }
+
+      const isHovered = hovIdx === i;
+
+      // Lerp hover scale
+      e.hoverScale += ((isHovered ? 3 : 1) - e.hoverScale) * 0.12;
+
+      if (!isHovered) {
+        // Sine drift (only while falling)
+        if (e.state === 'falling' || e.state === 'curving') {
+          e.x += e.vx + Math.sin(t * 1.5 + e.sinePhase) * 0.12 * e.sineAmp * 0.08;
+          e.y += e.vy;
+          e.vx *= 0.98; // gentle drag
+        }
+
+        // Mouse push (falling + curving)
+        if (e.state === 'falling' || e.state === 'curving') {
+          const pdx  = e.x - mx;
+          const pdy  = e.y - my;
+          const pdist = Math.sqrt(pdx * pdx + pdy * pdy);
+          if (pdist < PUSH_RADIUS && pdist > 0) {
+            const force = (1 - pdist / PUSH_RADIUS) * 1.8;
+            e.vx += (pdx / pdist) * force * 0.08;
+            e.vy -= pdy > 0 ? force * 0.02 : 0;
+          }
+        }
+
+        // State transitions
+        if (e.state === 'falling') {
+          if (!e.isSpam && e.y > slotY - CURVE_DIST) {
+            // Reassign to nearest slot at this point
+            let best = e.targetSlotIdx, bestD = Infinity;
+            for (let si = 0; si < slots.length; si++) {
+              const d = Math.abs(slots[si].x - e.x);
+              if (d < bestD) { bestD = d; best = si; }
+            }
+            e.targetSlotIdx = best;
+            e.state = 'curving';
+          } else if (e.isSpam && e.y > slotY - SPAM_DIST) {
+            e.state   = 'deflecting';
+            e.deflectT = t;
+          } else if (e.y > cH + 20) {
+            // Off screen without landing (edge case)
+            e.state = 'done';
+          }
+
+        } else if (e.state === 'curving') {
+          const slot = slots[e.targetSlotIdx];
+          const dx   = slot.x - e.x;
+          const dy   = slot.y - e.y;
+          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+          // Steer toward slot
+          e.vx += (dx / dist * 2.8 - e.vx) * 0.09;
+          e.vy += (dy / dist * 2.8 - e.vy) * 0.07;
+
+          if (dist < 6) {
+            e.state  = 'done';
+            e.alpha  = 0;
+            slots[e.targetSlotIdx].count++;
+            slots[e.targetSlotIdx].glowT = t;
+            totalLanded++;
+          }
+
+        } else if (e.state === 'deflecting') {
+          const age  = t - e.deflectT;
+          // Wobble and fade
+          e.vx += Math.sin(age * 18 + e.sinePhase) * 0.35;
+          e.vx *= 0.96;
+          e.vy += 0.04;
+          e.alpha = Math.max(0, 1 - age / 0.7);
+          if (e.alpha <= 0.02) {
+            e.state = 'done';
+            totalDeflected++;
+          }
+        }
+      }
+      // If hovered: position is frozen (no updates above), tooltip drawn below
+    }
+
+    // Draw slots
+    for (const s of slots) drawSlot(s, t);
+
+    // Draw emails (non-hovered first, then hovered on top)
+    for (let i = 0; i < emails.length; i++) {
+      if (i === hovIdx) continue;
+      const e = emails[i];
+      if (e.state === 'done') continue;
+
+      const isSpamColor   = e.isSpam || e.state === 'deflecting';
+      const spamProgress  = e.state === 'deflecting' ? Math.min(1, (t - e.deflectT) / 0.35) : 0;
+      const r = Math.round(139 + spamProgress * (220 - 139));
+      const g = Math.round(92  + spamProgress * (38  - 92));
+      const b_col = Math.round(246 + spamProgress * (38  - 246));
+      const color = `rgb(${r},${g},${b_col})`;
+
+      drawEnvelope(ctx, e.x, e.y, 1, color, e.alpha * 0.75);
+
+      // Tiny label text (texture, not readable)
+      if (e.alpha > 0.3 && e.hoverScale < 1.5) {
+        ctx.save();
+        ctx.globalAlpha = e.alpha * 0.18;
+        ctx.fillStyle   = '#d4d4d8';
+        ctx.font        = '7px "SF Mono","Fira Code",monospace';
+        ctx.textAlign   = 'left';
+        ctx.fillText(e.to_name, e.x + 7, e.y + 3);
+        ctx.restore();
+      }
+    }
+
+    // Draw hovered email on top
+    if (hovIdx >= 0 && hovIdx < emails.length) {
+      const e = emails[hovIdx];
+      if (e.state !== 'done') {
+        const hs = e.hoverScale;
+        const isSpamColor  = e.isSpam || e.state === 'deflecting';
+        const envColor     = isSpamColor ? 'rgba(248,113,113,0.9)' : 'rgba(167,139,250,0.95)';
+        drawEnvelope(ctx, e.x, e.y, hs, envColor, 0.95);
+        drawEmailTooltip(e);
+      }
+    }
+
+    // Big deliverability counter
+    const mono    = '"SF Mono","Fira Code",monospace';
+    const counterX = cW / 2;
+    const counterY = slotY - 62;
+
+    const processed     = totalLanded + totalDeflected;
+    const displayRate   = processed < 50 ? '98.2' : ((totalLanded / processed) * 100).toFixed(1);
+
+    ctx.save();
+    ctx.textAlign = 'center';
+
+    // Backdrop
+    ctx.globalAlpha = 0.55;
+    rrect(ctx, counterX - 130, counterY - 22, 260, 44, 6);
+    ctx.fillStyle = 'rgba(6,7,18,0.7)';
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Rate number
+    ctx.fillStyle = 'rgba(74,222,128,0.9)';
+    ctx.font      = `bold 22px ${mono}`;
+    ctx.fillText(`${displayRate}%`, counterX - 28, counterY);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.font      = `13px -apple-system,system-ui,sans-serif`;
+    ctx.fillText('inbox rate', counterX + 52, counterY);
+
+    // Sub-label
+    ctx.globalAlpha = 0.35;
+    ctx.fillStyle   = '#a1a1aa';
+    ctx.font        = `9px ${mono}`;
+    ctx.fillText('0 blacklists · 500+ domains · DKIM + SPF + DMARC', counterX, counterY + 16);
+
+    ctx.restore();
+  }
+
+  // ─── Event listeners ───────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  });
+  wrap.addEventListener('mouseleave', () => { mouse = null; });
+  wrap.addEventListener('touchstart', () => { mouse = null; }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  lastSpawnT = performance.now() * 0.001;
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── FinalCTA: dots falling into slots ────────────────────────────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const ctaCanvas = document.createElement('canvas');
+      ctaCanvas.setAttribute('aria-hidden', 'true');
+      ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+
+      const cc     = ctaCanvas.getContext('2d')!;
+      let ctaDpr   = 1;
+      let ctaW     = 0, ctaH = 0;
+
+      interface CtaDot { x: number; y: number; vy: number; alpha: number; isSpam: boolean; sinePhase: number; }
+      let ctaDots: CtaDot[]   = [];
+      let ctaLastSpawn        = 0;
+      const CTA_SLOT_Y_FRAC   = 0.80;
+      const CTA_NUM_SLOTS     = 6;
+
+      function resizeCta() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        ctaW = Math.round(rect.width);
+        ctaH = Math.round(rect.height);
+        ctaCanvas.width  = ctaW * ctaDpr;
+        ctaCanvas.height = ctaH * ctaDpr;
+        ctaCanvas.style.width  = ctaW + 'px';
+        ctaCanvas.style.height = ctaH + 'px';
+        cc.setTransform(ctaDpr, 0, 0, ctaDpr, 0, 0);
+        ctaDots = [];
+      }
+
+      function frameCta() {
+        requestAnimationFrame(frameCta);
+        const t = performance.now() * 0.001;
+        cc.clearRect(0, 0, ctaW, ctaH);
+
+        const ctaSlotY    = ctaH * CTA_SLOT_Y_FRAC;
+        const ctaSlotW    = 28, ctaSlotGap = 20;
+        const totalSlotW  = CTA_NUM_SLOTS * ctaSlotW + (CTA_NUM_SLOTS - 1) * ctaSlotGap;
+        const slotStartX  = (ctaW - totalSlotW) / 2;
+
+        // Slot positions
+        const ctaSlotXs: number[] = Array.from({ length: CTA_NUM_SLOTS }, (_, i) =>
+          slotStartX + i * (ctaSlotW + ctaSlotGap) + ctaSlotW / 2
+        );
+
+        // Spawn dots
+        if (t - ctaLastSpawn > 0.22 && ctaDots.length < 40) {
+          const isSpam   = Math.random() < 0.018;
+          const spawnX   = 20 + Math.random() * (ctaW - 40);
+          ctaDots.push({ x: spawnX, y: -6, vy: 1.4 + Math.random() * 0.8, alpha: 1, isSpam, sinePhase: Math.random() * Math.PI * 2 });
+          ctaLastSpawn = t;
+        }
+
+        // Draw slots
+        cc.save();
+        for (const sx of ctaSlotXs) {
+          cc.globalAlpha = 0.2;
+          cc.strokeStyle = 'rgba(74,222,128,1)';
+          cc.lineWidth   = 1;
+          rrect(cc, sx - ctaSlotW / 2, ctaSlotY - 5, ctaSlotW, 10, 2);
+          cc.stroke();
+        }
+        cc.restore();
+
+        // Update + draw dots
+        for (let i = ctaDots.length - 1; i >= 0; i--) {
+          const d = ctaDots[i];
+          d.x += Math.sin(t * 1.2 + d.sinePhase) * 0.15;
+          d.y += d.vy;
+
+          // Steer toward nearest slot when close
+          if (!d.isSpam && d.y > ctaSlotY - 70) {
+            let best = ctaSlotXs[0], bestDist = Infinity;
+            for (const sx of ctaSlotXs) {
+              const dist = Math.abs(sx - d.x);
+              if (dist < bestDist) { bestDist = dist; best = sx; }
+            }
+            d.x += (best - d.x) * 0.08;
+          }
+
+          // Fade spam
+          if (d.isSpam && d.y > ctaSlotY - 80) {
+            d.alpha = Math.max(0, d.alpha - 0.04);
+          }
+
+          // Remove landed/faded
+          if (d.y > ctaSlotY + 10 || d.alpha <= 0.02) {
+            ctaDots.splice(i, 1);
+            continue;
+          }
+
+          const color = d.isSpam ? 'rgba(248,113,113,' : 'rgba(74,222,128,';
+          cc.save();
+          cc.globalAlpha = d.alpha * 0.45;
+          cc.fillStyle   = color + '1)';
+          cc.beginPath();
+          cc.arc(d.x, d.y, 2.5, 0, Math.PI * 2);
+          cc.fill();
+          cc.restore();
+        }
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaCard);
+      resizeCta();
+      ctaLastSpawn = performance.now() * 0.001;
+      requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { ctaCanvas.style.opacity = '1'; });
+
+      const ctaGrid = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGrid) ctaGrid.style.display = 'none';
+    }
+  }
+
+  }); // end requestIdleCallback
+</script>

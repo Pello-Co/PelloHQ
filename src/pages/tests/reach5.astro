@@ -1,0 +1,637 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout
+  title="PelloReach — AI Outreach That Lands | Pello"
+  description="PelloReach writes and sends AI-personalised emails at scale. 500+ warmed domains. Zero blacklists. Built for high-volume inbox landing."
+>
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="reach5-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(139,92,246,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  // Polyfill requestIdleCallback for Safari
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Data constants ────────────────────────────────────────────────────────
+  const FIRST_NAMES = ["Sarah","James","Emma","Michael","Sophie","Daniel","Rachel","Tom","Jessica","Alex","Chris","Lauren","David","Hannah","Ben","Kate","Ryan","Olivia","Mark","Lucy"] as const;
+  const LAST_NAMES  = ["Chen","Williams","Patel","Thompson","Garcia","Anderson","Martinez","Johnson","Lee","Taylor","Brown","Wilson","Moore","Clark","Hall","Young","King","Wright","Scott","Green"] as const;
+  const COMPANIES   = ["Acme Corp","TechFlow","DataSync","CloudNine","Nexus Labs","Horizon AI","Vertex Systems","PulseMedia","Zenith Group","Atlas Digital","BrightPath","CoreStack","DeepBlue","EdgePoint","FrontLine","GrowthLab","HyperScale","InnoVate","JetStream","KineticIO"] as const;
+  const SUBJECTS    = [
+    "Quick question about {company}'s growth strategy",
+    "{firstName}, saw your recent {company} launch",
+    "Idea for {company}'s outreach — 3 min read",
+    "{firstName} — {company} + Pello could be interesting",
+    "Re: scaling {company}'s pipeline",
+    "{firstName}, one thing about {company}'s email strategy",
+  ] as const;
+  const OPENERS = [
+    "I noticed {company} just expanded into new markets — impressive growth.",
+    "Saw your LinkedIn post about {company}'s Q3 results, {firstName}.",
+    "A mutual connection mentioned {company} is scaling outreach.",
+    "Your talk at SaaStr about {company}'s growth was spot on, {firstName}.",
+  ] as const;
+
+  // ─── Helpers ───────────────────────────────────────────────────────────────
+  function pick<T>(arr: readonly T[]): T {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function fillTpl(tpl: string, vars: Record<string, string>): string {
+    return tpl.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
+  }
+
+  function wrapText(rctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
+    const paragraphs = text.split('\n');
+    const lines: string[] = [];
+    for (const para of paragraphs) {
+      if (!para.trim()) { lines.push(''); continue; }
+      const words = para.split(' ');
+      let line = '';
+      for (const word of words) {
+        const test = line ? line + ' ' + word : word;
+        if (rctx.measureText(test).width > maxW && line) {
+          lines.push(line);
+          line = word;
+        } else {
+          line = test;
+        }
+      }
+      if (line) lines.push(line);
+    }
+    return lines;
+  }
+
+  function rrect(rctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+    rctx.beginPath();
+    rctx.moveTo(x + r, y);
+    rctx.lineTo(x + w - r, y);
+    rctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    rctx.lineTo(x + w, y + h - r);
+    rctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    rctx.lineTo(x + r, y + h);
+    rctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    rctx.lineTo(x, y + r);
+    rctx.quadraticCurveTo(x, y, x + r, y);
+    rctx.closePath();
+  }
+
+  function truncate(rctx: CanvasRenderingContext2D, text: string, maxW: number): string {
+    if (rctx.measureText(text).width <= maxW) return text;
+    let t = text;
+    while (t.length > 1 && rctx.measureText(t + '…').width > maxW) t = t.slice(0, -1);
+    return t + '…';
+  }
+
+  // ─── Email generation ──────────────────────────────────────────────────────
+  interface EmailData { to: string; subject: string; body: string; }
+
+  function genEmail(): EmailData {
+    const fn = pick(FIRST_NAMES);
+    const ln = pick(LAST_NAMES);
+    const co = pick(COMPANIES);
+    const emailDom = co.toLowerCase().replace(/\s+/g, '') + '.com';
+    const to = `${fn} ${ln} <${fn.toLowerCase()}.${ln.toLowerCase()}@${emailDom}>`;
+    const subject = fillTpl(pick(SUBJECTS), { company: co, firstName: fn });
+    const opener  = fillTpl(pick(OPENERS),  { company: co, firstName: fn });
+    const body    = opener + '\n\nWould love to show you how we can help ' + co + ' scale outreach without burning deliverability. 5 minutes this week?\n\nBest,\nAlex from Pello';
+    return { to, subject, body };
+  }
+
+  // ─── Window state ──────────────────────────────────────────────────────────
+  interface WinState {
+    cx: number; cy: number; depth: number;
+    rx: number; ry: number;
+    email: EmailData;
+    charIdx: number;
+    lastCharT: number;
+    state: 'typing' | 'done' | 'sending' | 'typing_next';
+    stateT: number;
+    hLerp: number;
+    _wrapCache: string[];
+    _wrapCacheIdx: number;
+  }
+
+  // Layout constants (base coords at depth=1)
+  const BASE_W   = 290;
+  const BASE_H   = 172;
+  const PAD      = 10;
+  const HEADER_H = 20;
+  const FIELD_H  = 15;
+  const BODY_Y   = HEADER_H + FIELD_H * 2 + 5; // top of body area inside window, from window top
+  const LINE_H   = 13;
+  const BODY_MAX_H = BASE_H - BODY_Y - 8;
+  const MAX_LINES  = Math.floor(BODY_MAX_H / LINE_H); // ~10
+  const BODY_FONT  = '9px "SF Mono","Fira Code",monospace';
+  const BODY_MAX_W = BASE_W - PAD * 2;
+
+  // Window layout: [cx_fraction, cy_fraction, depth]
+  const WIN_DEFS: [number, number, number][] = [
+    [0.11, 0.22, 0.30],  // back left
+    [0.84, 0.60, 0.30],  // back right
+    [0.25, 0.64, 0.60],  // mid left
+    [0.71, 0.18, 0.60],  // mid top-right
+    [0.89, 0.44, 0.60],  // mid right
+    [0.42, 0.38, 1.00],  // front center
+    [0.60, 0.68, 1.00],  // front lower-right
+  ];
+
+  let wins: WinState[] = [];
+  let mouse: { x: number; y: number } | null = null;
+  let emailsSent = 3847;
+  let cW = 0, cH = 0, dpr = 1;
+
+  const canvas  = document.querySelector<HTMLCanvasElement>('.reach5-canvas')!;
+  const wrap    = document.getElementById('hero-wrap')!;
+  const ctx     = canvas.getContext('2d')!;
+
+  function makeWin(def: [number, number, number], now: number): WinState {
+    return {
+      cx: def[0], cy: def[1], depth: def[2],
+      rx: def[0] * cW, ry: def[1] * cH,
+      email: genEmail(),
+      charIdx: Math.floor(Math.random() * 60), // stagger initial state
+      lastCharT: now - Math.random() * 1.5,
+      state: 'typing',
+      stateT: now,
+      hLerp: 0,
+      _wrapCache: [],
+      _wrapCacheIdx: -1,
+    };
+  }
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    cW = Math.round(rect.width);
+    cH = Math.round(rect.height);
+    canvas.width  = cW * dpr;
+    canvas.height = cH * dpr;
+    canvas.style.width  = cW + 'px';
+    canvas.style.height = cH + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const now = performance.now() * 0.001;
+    wins = WIN_DEFS.map(def => makeWin(def, now));
+  }
+
+  // ─── Hover detection (front-to-back order) ────────────────────────────────
+  function getHoveredWin(): number {
+    if (!mouse) return -1;
+    const order = [...wins.keys()].sort((a, b) => wins[b].depth - wins[a].depth);
+    for (const i of order) {
+      const w = wins[i];
+      const hw = (BASE_W * w.depth) / 2 + 4;
+      const hh = (BASE_H * w.depth) / 2 + 4;
+      if (Math.abs(mouse.x - w.rx) < hw && Math.abs(mouse.y - w.ry) < hh) return i;
+    }
+    return -1;
+  }
+
+  // ─── Window renderer ──────────────────────────────────────────────────────
+  function drawWindow(
+    rctx: CanvasRenderingContext2D,
+    w: WinState,
+    t: number,
+    hovIdx: number,
+    winIdx: number,
+    alphaOverride?: number,
+  ) {
+    const scale      = w.depth;
+    const isFocused  = hovIdx === winIdx;
+    const anyHovered = hovIdx >= 0;
+    const dimmed     = anyHovered && !isFocused;
+    const baseAlpha  = alphaOverride ?? w.depth;
+    const dimFactor  = dimmed ? 0.45 : 1;
+    const focusFactor = isFocused ? (1 + w.hLerp * 0.05) : 1; // very subtle scale-up
+    const effectiveScale = scale * focusFactor;
+
+    rctx.save();
+    rctx.translate(w.rx, w.ry);
+    rctx.scale(effectiveScale, effectiveScale);
+
+    const x0 = -BASE_W / 2;
+    const y0 = -BASE_H / 2;
+
+    // ── Background ──────────────────────────────────────────────────────────
+    const isSending = w.state === 'sending';
+    const sendProgress = isSending ? Math.min(1, (t - w.stateT) / 0.4) : 0;
+    const flashIntensity = isSending ? Math.sin(sendProgress * Math.PI) : 0;
+
+    rctx.globalAlpha = baseAlpha * dimFactor;
+    rrect(rctx, x0, y0, BASE_W, BASE_H, 8);
+    rctx.fillStyle = 'rgba(6,7,18,0.88)';
+    rctx.fill();
+
+    // Tinted glass overlay
+    rrect(rctx, x0, y0, BASE_W, BASE_H, 8);
+    rctx.fillStyle = `rgba(139,92,246,${0.04 + w.hLerp * 0.04})`;
+    rctx.fill();
+
+    // Border
+    const borderAlpha = isSending
+      ? 0.3 + flashIntensity * 0.6
+      : 0.15 + w.hLerp * 0.35;
+    const borderColor = isSending
+      ? `rgba(74,222,128,${borderAlpha})`
+      : `rgba(139,92,246,${borderAlpha})`;
+    rctx.strokeStyle = borderColor;
+    rctx.lineWidth   = (isFocused ? 1.5 : 1) / effectiveScale;
+    rctx.stroke();
+
+    // Sending flash: green inner glow
+    if (isSending && flashIntensity > 0.1) {
+      rctx.globalAlpha = baseAlpha * dimFactor * flashIntensity * 0.15;
+      rrect(rctx, x0, y0, BASE_W, BASE_H, 8);
+      rctx.fillStyle = 'rgba(74,222,128,1)';
+      rctx.fill();
+    }
+
+    // ── Header bar ──────────────────────────────────────────────────────────
+    rctx.globalAlpha = baseAlpha * dimFactor;
+    rctx.fillStyle   = 'rgba(139,92,246,0.07)';
+    rctx.fillRect(x0, y0, BASE_W, HEADER_H);
+
+    // Traffic-light dots
+    rctx.globalAlpha = 0.5 * baseAlpha * dimFactor;
+    const dotColors = ['#ff5f57', '#febc2e', '#28c840'];
+    for (let d = 0; d < 3; d++) {
+      rctx.beginPath();
+      rctx.arc(x0 + PAD + d * 10, y0 + HEADER_H / 2, 2.5, 0, Math.PI * 2);
+      rctx.fillStyle = dotColors[d];
+      rctx.fill();
+    }
+
+    // "Compose" label
+    rctx.globalAlpha = 0.28 * baseAlpha * dimFactor;
+    rctx.fillStyle   = '#ffffff';
+    rctx.font        = `8px "SF Mono","Fira Code",monospace`;
+    rctx.textAlign   = 'center';
+    rctx.fillText('Compose', 0, y0 + HEADER_H - 5);
+
+    // ── To: field ──────────────────────────────────────────────────────────
+    const toY = y0 + HEADER_H + FIELD_H - 4;
+    rctx.globalAlpha = 0.45 * baseAlpha * dimFactor;
+    rctx.fillStyle   = 'rgba(139,92,246,0.8)';
+    rctx.font        = `9px "SF Mono","Fira Code",monospace`;
+    rctx.textAlign   = 'left';
+    rctx.fillText('To:', x0 + PAD, toY);
+
+    rctx.globalAlpha = 0.65 * baseAlpha * dimFactor;
+    rctx.fillStyle   = '#c4b5fd';
+    rctx.font        = BODY_FONT;
+    const toText = truncate(rctx, w.email.to, BODY_MAX_W - 22);
+    rctx.fillText(toText, x0 + PAD + 22, toY);
+
+    // ── Subject: field ─────────────────────────────────────────────────────
+    const subY = y0 + HEADER_H + FIELD_H * 2 - 4;
+    rctx.globalAlpha = 0.45 * baseAlpha * dimFactor;
+    rctx.fillStyle   = 'rgba(139,92,246,0.8)';
+    rctx.font        = `9px "SF Mono","Fira Code",monospace`;
+    rctx.fillText('Subj:', x0 + PAD, subY);
+
+    rctx.globalAlpha = 0.8 * baseAlpha * dimFactor;
+    rctx.fillStyle   = '#e4e4e7';
+    rctx.font        = BODY_FONT;
+    const subText = truncate(rctx, w.email.subject, BODY_MAX_W - 28);
+    rctx.fillText(subText, x0 + PAD + 28, subY);
+
+    // ── Separator ──────────────────────────────────────────────────────────
+    const sepY = y0 + HEADER_H + FIELD_H * 2 + 2;
+    rctx.globalAlpha = 0.12 * baseAlpha * dimFactor;
+    rctx.strokeStyle = 'rgba(139,92,246,1)';
+    rctx.lineWidth   = 0.5 / effectiveScale;
+    rctx.beginPath();
+    rctx.moveTo(x0 + PAD, sepY);
+    rctx.lineTo(x0 + BASE_W - PAD, sepY);
+    rctx.stroke();
+
+    // ── Body text ──────────────────────────────────────────────────────────
+    const bodyX  = x0 + PAD;
+    const bodyY0 = sepY + 7;
+
+    // Cache wrapped lines (only re-wrap when charIdx changes)
+    if (w._wrapCacheIdx !== w.charIdx) {
+      rctx.font = BODY_FONT;
+      const partial = w.email.body.slice(0, w.charIdx);
+      w._wrapCache    = wrapText(rctx, partial, BODY_MAX_W);
+      w._wrapCacheIdx = w.charIdx;
+    }
+
+    const visLines = w._wrapCache.slice(0, MAX_LINES);
+
+    rctx.globalAlpha = 0.72 * baseAlpha * dimFactor;
+    rctx.fillStyle   = '#d4d4d8';
+    rctx.font        = BODY_FONT;
+    rctx.textAlign   = 'left';
+    for (let li = 0; li < visLines.length; li++) {
+      if (visLines[li]) rctx.fillText(visLines[li], bodyX, bodyY0 + li * LINE_H);
+    }
+
+    // ── Blinking cursor ────────────────────────────────────────────────────
+    if (w.state === 'typing' && Math.floor(t * 2) % 2 === 0) {
+      const lastLineIdx = Math.min(visLines.length - 1, MAX_LINES - 1);
+      const lastLine    = visLines[lastLineIdx] || '';
+      rctx.font = BODY_FONT;
+      const cursorX = bodyX + rctx.measureText(lastLine).width + 1.5;
+      const cursorY = bodyY0 + lastLineIdx * LINE_H;
+      rctx.globalAlpha = 0.9 * baseAlpha * dimFactor;
+      rctx.fillStyle   = 'rgba(167,139,250,0.95)';
+      rctx.fillRect(cursorX, cursorY - 10, 1.5 / effectiveScale, 11);
+    }
+
+    rctx.restore();
+  }
+
+  // ─── Main frame loop ───────────────────────────────────────────────────────
+  let hoveredWinIdx = -1;
+
+  function frame() {
+    requestAnimationFrame(frame);
+    const t = performance.now() * 0.001;
+
+    ctx.clearRect(0, 0, cW, cH);
+
+    hoveredWinIdx = getHoveredWin();
+
+    for (let i = 0; i < wins.length; i++) {
+      const w         = wins[i];
+      const isFocused = hoveredWinIdx === i;
+
+      // Update hover lerp
+      w.hLerp += ((isFocused ? 1 : 0) - w.hLerp) * 0.1;
+
+      // Parallax: front moves more
+      const mx      = mouse ? mouse.x : cW / 2;
+      const my      = mouse ? mouse.y : cH / 2;
+      const tRx = w.cx * cW + (mx - cW / 2) * w.depth * 0.022;
+      const tRy = w.cy * cH + (my - cH / 2) * w.depth * 0.016;
+      w.rx += (tRx - w.rx) * 0.05;
+      w.ry += (tRy - w.ry) * 0.05;
+
+      // Typing state machine
+      const typingSpeed  = isFocused ? 20 : 60;
+      const charInterval = 1 / typingSpeed;
+
+      if (w.state === 'typing') {
+        if (t >= w.lastCharT + charInterval) {
+          const advance = Math.min(
+            w.email.body.length - w.charIdx,
+            Math.floor((t - w.lastCharT) / charInterval)
+          );
+          w.charIdx    += advance;
+          w.lastCharT   = t;
+          if (w.charIdx >= w.email.body.length) {
+            w.state  = 'done';
+            w.stateT = t;
+          }
+        }
+      } else if (w.state === 'done') {
+        if (t - w.stateT > 2.0) {
+          w.state  = 'sending';
+          w.stateT = t;
+        }
+      } else if (w.state === 'sending') {
+        if (t - w.stateT > 0.4) {
+          emailsSent++;
+          w.email           = genEmail();
+          w.charIdx         = 0;
+          w._wrapCacheIdx   = -1;
+          w.lastCharT       = t + 0.25;
+          w.state           = 'typing';
+          w.stateT          = t;
+        }
+      }
+    }
+
+    // Render: back-to-front (ascending depth)
+    const renderOrder = [...wins.keys()].sort((a, b) => wins[a].depth - wins[b].depth);
+    for (const i of renderOrder) {
+      drawWindow(ctx, wins[i], t, hoveredWinIdx, i);
+    }
+
+    // Counter (top-right)
+    ctx.save();
+    ctx.textAlign   = 'right';
+    ctx.globalAlpha = 1;
+    ctx.fillStyle   = 'rgba(139,92,246,0.65)';
+    ctx.font        = '11px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${emailsSent.toLocaleString()} emails written today`, cW - 16, 24);
+    ctx.globalAlpha = 0.28;
+    ctx.fillStyle   = '#ffffff';
+    ctx.font        = '9px "SF Mono","Fira Code",monospace';
+    ctx.fillText('AI-personalised · avg 47 words · 0 templates', cW - 16, 38);
+    ctx.restore();
+  }
+
+  // ─── Event listeners ───────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  });
+  wrap.addEventListener('mouseleave', () => { mouse = null; hoveredWinIdx = -1; });
+  wrap.addEventListener('touchstart', () => { mouse = null; }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── FinalCTA: 3 quiet compose windows ────────────────────────────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const ctaCanvas = document.createElement('canvas');
+      ctaCanvas.setAttribute('aria-hidden', 'true');
+      ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+
+      const cc     = ctaCanvas.getContext('2d')!;
+      let ctaDpr   = 1;
+      let ctaW     = 0, ctaH = 0;
+
+      const CTA_DEFS: [number, number, number][] = [
+        [0.20, 0.50, 0.42],
+        [0.80, 0.45, 0.42],
+        [0.50, 0.58, 0.28],
+      ];
+
+      let ctaWins: WinState[] = [];
+
+      function resizeCta() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        ctaW = Math.round(rect.width);
+        ctaH = Math.round(rect.height);
+        ctaCanvas.width  = ctaW * ctaDpr;
+        ctaCanvas.height = ctaH * ctaDpr;
+        ctaCanvas.style.width  = ctaW + 'px';
+        ctaCanvas.style.height = ctaH + 'px';
+        cc.setTransform(ctaDpr, 0, 0, ctaDpr, 0, 0);
+        const now = performance.now() * 0.001;
+        ctaWins = CTA_DEFS.map(def => ({
+          cx: def[0], cy: def[1], depth: def[2],
+          rx: def[0] * ctaW, ry: def[1] * ctaH,
+          email: genEmail(),
+          charIdx: Math.floor(Math.random() * 50),
+          lastCharT: now - Math.random(),
+          state: 'typing' as const,
+          stateT: now,
+          hLerp: 0,
+          _wrapCache: [] as string[],
+          _wrapCacheIdx: -1,
+        }));
+      }
+
+      function frameCta() {
+        requestAnimationFrame(frameCta);
+        const t = performance.now() * 0.001;
+        cc.clearRect(0, 0, ctaW, ctaH);
+
+        for (const w of ctaWins) {
+          // Update typing
+          const interval = 1 / 35;
+          if (w.state === 'typing' && t >= w.lastCharT + interval) {
+            const adv  = Math.min(w.email.body.length - w.charIdx, Math.floor((t - w.lastCharT) / interval));
+            w.charIdx += adv;
+            w.lastCharT = t;
+            if (w.charIdx >= w.email.body.length) { w.state = 'done'; w.stateT = t; }
+          } else if (w.state === 'done' && t - w.stateT > 1.8) {
+            w.email = genEmail(); w.charIdx = 0; w._wrapCacheIdx = -1; w.lastCharT = t + 0.4; w.state = 'typing';
+          }
+
+          // Update position (no parallax for CTA)
+          w.rx = w.cx * ctaW;
+          w.ry = w.cy * ctaH;
+
+          // Draw at reduced alpha (CTA is bg decoration only)
+          drawWindow(cc, w, t, -1, -1, w.depth * 0.55);
+        }
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaCard);
+      resizeCta();
+      requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { ctaCanvas.style.opacity = '1'; });
+
+      const ctaGrid = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGrid) ctaGrid.style.display = 'none';
+    }
+  }
+
+  }); // end requestIdleCallback
+</script>
