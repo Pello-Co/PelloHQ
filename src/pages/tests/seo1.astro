@@ -1,0 +1,569 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="seo-dot-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99,102,241,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  // Polyfill requestIdleCallback for Safari
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Template definitions ──────────────────────────────────────────────────
+  interface Template { name: string; color: [number,number,number]; weight: number; }
+  const TEMPLATES: Template[] = [
+    { name: "Best {Service} in {City}",         color: [99,  102, 241], weight: 0.30 },
+    { name: "{Product} for {Industry}",          color: [139, 92,  246], weight: 0.20 },
+    { name: "How to {Action} with {Tool}",       color: [168, 85,  247], weight: 0.15 },
+    { name: "{Competitor} Alternative",          color: [192, 38,  211], weight: 0.12 },
+    { name: "Top {N} {Category} in {Year}",      color: [124, 58,  237], weight: 0.13 },
+    { name: "{Service} near {Location}",         color: [79,  70,  229], weight: 0.10 },
+  ];
+
+  // Cumulative weights for fast weighted selection
+  const TEMPLATE_CUM: number[] = [];
+  { let s = 0; for (const t of TEMPLATES) { s += t.weight; TEMPLATE_CUM.push(s); } }
+
+  // Fill value arrays
+  const SERVICES   = ["Plumber","Electrician","Personal Trainer","Accountant","Dentist","Lawyer","Photographer","Web Designer","Therapist","Mechanic","Tutor","Cleaner","Landscaper","Roofer","Painter"];
+  const CITIES     = ["London","Manchester","Birmingham","Leeds","Glasgow","Bristol","Liverpool","Edinburgh","Cardiff","Belfast","Oxford","Cambridge","Brighton","Bath","York"];
+  const PRODUCTS   = ["CRM Software","Project Management","Email Marketing","Analytics Platform","HR Software","Inventory System","Booking Platform","Payment Gateway"];
+  const INDUSTRIES = ["SaaS","E-commerce","Healthcare","Finance","Education","Real Estate","Hospitality","Legal"];
+  const ACTIONS    = ["Grow Revenue","Reduce Churn","Scale Operations","Automate Workflows","Track Metrics","Generate Leads"];
+  const TOOLS      = ["AI","Automation","Data Analytics","Machine Learning","No-Code","API Integration"];
+  const COMPETITORS= ["HubSpot","Mailchimp","Salesforce","Monday.com","Ahrefs","SEMrush","Moz","Shopify"];
+  const CATEGORIES = ["Marketing Tools","CRM Platforms","SEO Strategies","Content Ideas","Growth Hacks","Automation Tools"];
+  const LOCATIONS  = ["Central London","Downtown Manchester","East Birmingham","North Leeds","Shoreditch","Canary Wharf","Soho","Camden"];
+  const TOPS_N     = ["5","7","10","15","20"];
+  const YEARS      = ["2024","2025","2026"];
+
+  function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function pickTemplate(): number {
+    const r = Math.random();
+    for (let i = 0; i < TEMPLATE_CUM.length; i++) if (r < TEMPLATE_CUM[i]) return i;
+    return TEMPLATES.length - 1;
+  }
+
+  function generateTitle(tIdx: number): string {
+    switch (tIdx) {
+      case 0: return `Best ${pick(SERVICES)} in ${pick(CITIES)}`;
+      case 1: return `${pick(PRODUCTS)} for ${pick(INDUSTRIES)}`;
+      case 2: return `How to ${pick(ACTIONS)} with ${pick(TOOLS)}`;
+      case 3: return `${pick(COMPETITORS)} Alternative`;
+      case 4: return `Top ${pick(TOPS_N)} ${pick(CATEGORIES)} in ${pick(YEARS)}`;
+      case 5: return `${pick(SERVICES)} near ${pick(LOCATIONS)}`;
+      default: return `Page ${tIdx}`;
+    }
+  }
+
+  // ─── Constants ─────────────────────────────────────────────────────────────
+  const GRID            = 10;
+  const INFLUENCE_RADIUS = 200;
+  const PUSH_STRENGTH   = 8;
+  const LERP_SPEED      = 0.035;
+  const HOVER_RADIUS    = 15;
+  const PROXIMITY_RADIUS = 60;
+  const STATUS_INDEXED    = 0;  // 70% — steady alpha 0.25
+  const STATUS_PUBLISHED  = 1;  // 10% — pulse alpha 0.2–0.4
+  const STATUS_GENERATING = 2;  // 20% — dimmer alpha 0.12, size pulse
+
+  // ─── Dot type ──────────────────────────────────────────────────────────────
+  interface Dot {
+    gx: number; gy: number;
+    x: number;  y: number;
+    templateIdx: number;
+    title: string;
+    status: number;
+    birthTime: number;  // elapsed seconds when this dot becomes visible
+    phase: number;      // random animation phase offset
+  }
+
+  // ─── Canvas setup ──────────────────────────────────────────────────────────
+  const canvas = document.querySelector<HTMLCanvasElement>('.seo-dot-canvas')!;
+  const wrap   = document.getElementById('hero-wrap')!;
+  const ctx    = canvas.getContext('2d')!;
+
+  let dots: Dot[]    = [];
+  let mouse: { x: number; y: number } | null = null;
+  let lastMX = -1, lastMY = -1;
+  let hoveredIdx = -1;
+  let dpr = 1;
+  let startTime = 0;
+
+  function buildGrid() {
+    dots = [];
+    const W    = canvas.width / dpr;
+    const H    = canvas.height / dpr;
+    const cols = Math.ceil(W / GRID) + 1;
+    const rows = Math.ceil(H / GRID) + 1;
+    const cx   = W / 2;
+    const cy   = H / 2;
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const gx  = c * GRID;
+        const gy  = r * GRID;
+        const tIdx = pickTemplate();
+        const sr   = Math.random();
+        const status = sr < 0.10 ? STATUS_PUBLISHED : sr < 0.30 ? STATUS_GENERATING : STATUS_INDEXED;
+        const dist  = Math.sqrt((gx - cx) ** 2 + (gy - cy) ** 2);
+        dots.push({
+          gx, gy, x: gx, y: gy,
+          templateIdx: tIdx,
+          title: generateTitle(tIdx),
+          status,
+          birthTime: dist * 0.003,
+          phase: Math.random() * Math.PI * 2,
+        });
+      }
+    }
+    startTime = performance.now() * 0.001;
+  }
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    const w = Math.round(rect.width);
+    const h = Math.round(rect.height);
+    canvas.width  = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width  = `${w}px`;
+    canvas.style.height = `${h}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildGrid();
+  }
+
+  // ─── Nearest dot search ────────────────────────────────────────────────────
+  function findNearest(mx: number, my: number, elapsed: number): number {
+    let best = -1, bestD = HOVER_RADIUS;
+    for (let i = 0; i < dots.length; i++) {
+      const d = dots[i];
+      if (elapsed - d.birthTime < 0) continue;
+      const dx = d.x - mx, dy = d.y - my;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < bestD) { bestD = dist; best = i; }
+    }
+    return best;
+  }
+
+  // ─── Smoothstep ────────────────────────────────────────────────────────────
+  function smoothstep(x: number): number {
+    x = Math.max(0, Math.min(1, x));
+    return x * x * (3 - 2 * x);
+  }
+
+  // ─── Rounded rect helper ───────────────────────────────────────────────────
+  function rrect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r);
+    c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r);
+    c.lineTo(x, y + r);
+    c.quadraticCurveTo(x, y, x + r, y);
+    c.closePath();
+  }
+
+  // ─── Tooltip renderer ──────────────────────────────────────────────────────
+  function drawTooltip(dot: Dot) {
+    const W = canvas.width / dpr;
+    const px = dot.x, py = dot.y;
+    const tmpl = TEMPLATES[dot.templateIdx];
+    const [r, g, b] = tmpl.color;
+
+    const catLabel = tmpl.name.toUpperCase();
+    const titleText = dot.title;
+    const isIndexed   = dot.status === STATUS_INDEXED;
+    const isPublished = dot.status === STATUS_PUBLISHED;
+    const statusDot   = isPublished ? '●' : isIndexed ? '●' : '○';
+    const statusLabel = isPublished ? ' published' : isIndexed ? ' indexed' : ' generating';
+    const statusColor = isPublished ? 'rgba(74,222,128,0.9)' : isIndexed ? 'rgba(99,202,241,0.8)' : 'rgba(251,191,36,0.8)';
+
+    const tooltipW = 248;
+    const tooltipH = 66;
+    const pad = 10;
+
+    // Position above dot, clamped to canvas
+    let tx = px - tooltipW / 2;
+    let ty = py - tooltipH - 16;
+    tx = Math.max(8, Math.min(W - tooltipW - 8, tx));
+    if (ty < 8) ty = py + 16;
+
+    ctx.save();
+
+    // Connecting line
+    ctx.globalAlpha = 0.18;
+    ctx.strokeStyle = `rgb(${r},${g},${b})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(px, py - 6);
+    ctx.lineTo(px, ty < py ? ty + tooltipH : ty);
+    ctx.stroke();
+
+    // Background
+    ctx.globalAlpha = 1;
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 7);
+    ctx.fillStyle = 'rgba(6,7,18,0.93)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.11)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Accent top border
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    rrect(ctx, tx, ty, tooltipW, 2, 2);
+    ctx.fill();
+
+    // Category label
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.font = 'bold 8px "SF Mono", "Fira Code", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(catLabel, tx + pad, ty + pad + 8);
+
+    // Generated title
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '500 13px -apple-system, system-ui, BlinkMacSystemFont, sans-serif';
+    ctx.fillText(titleText, tx + pad, ty + pad + 26);
+
+    // Status indicator
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = statusColor;
+    ctx.font = '9px "SF Mono", "Fira Code", monospace';
+    ctx.fillText(statusDot + statusLabel, tx + pad, ty + pad + 44);
+
+    ctx.restore();
+  }
+
+  // ─── Main frame loop ───────────────────────────────────────────────────────
+  function frame() {
+    requestAnimationFrame(frame);
+
+    const W       = canvas.width / dpr;
+    const H       = canvas.height / dpr;
+    const t       = performance.now() * 0.001;
+    const elapsed = t - startTime;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Update hovered dot only when mouse position changes
+    if (mouse && (mouse.x !== lastMX || mouse.y !== lastMY)) {
+      hoveredIdx = findNearest(mouse.x, mouse.y, elapsed);
+      lastMX = mouse.x;
+      lastMY = mouse.y;
+    } else if (!mouse) {
+      hoveredIdx = -1;
+    }
+
+    const hoveredTmpl = hoveredIdx >= 0 ? dots[hoveredIdx].templateIdx : -1;
+    const mx = mouse ? mouse.x : -99999;
+    const my = mouse ? mouse.y : -99999;
+
+    let visibleCount = 0;
+
+    for (let i = 0; i < dots.length; i++) {
+      const dot = dots[i];
+
+      // Generation wave: birth and fade-in
+      const age = elapsed - dot.birthTime;
+      if (age < 0) continue;
+      const fadeIn = Math.min(1, age / 0.3);
+      if (fadeIn < 0.005) continue;
+
+      visibleCount++;
+
+      // Mouse push physics (gentle)
+      let targetX = dot.gx, targetY = dot.gy;
+      const pdx = dot.gx - mx, pdy = dot.gy - my;
+      const pdist = Math.sqrt(pdx * pdx + pdy * pdy);
+      if (pdist < INFLUENCE_RADIUS) {
+        const raw = 1 - pdist / INFLUENCE_RADIUS;
+        const s   = raw * raw * (3 - 2 * raw);
+        const inf = s * s * (3 - 2 * s);
+        const pushMag = Math.pow(inf, 3) * PUSH_STRENGTH;
+        const len = pdist || 1;
+        targetX += (pdx / len) * pushMag;
+        targetY += (pdy / len) * pushMag;
+      }
+      dot.x += (targetX - dot.x) * LERP_SPEED;
+      dot.y += (targetY - dot.y) * LERP_SPEED;
+
+      // Vertical fade-out toward bottom
+      const fadeZone = H * 0.78;
+      let vFade = 1;
+      if (dot.gy > fadeZone) vFade = 1 - Math.min(1, (dot.gy - fadeZone) / (H - fadeZone));
+      if (vFade < 0.005) continue;
+
+      const [r, g, b] = TEMPLATES[dot.templateIdx].color;
+
+      // Base alpha + radius by status
+      let alpha: number;
+      let radius: number;
+
+      if (dot.status === STATUS_PUBLISHED) {
+        // Gentle pulse: alpha 0.2–0.4
+        alpha  = 0.30 + Math.sin(t * 1.2 + dot.phase) * 0.10;
+        radius = 2;
+      } else if (dot.status === STATUS_GENERATING) {
+        // Dimmer, size pulse
+        alpha  = 0.12;
+        radius = 1.8 + Math.sin(t * 0.8 + dot.phase) * 0.2;
+      } else {
+        // Indexed — steady backbone
+        alpha  = 0.25;
+        radius = 2;
+      }
+
+      // Hover state overrides
+      if (hoveredIdx === i) {
+        alpha  = 0.9;
+        radius = 6;
+      } else if (hoveredTmpl >= 0) {
+        alpha  = dot.templateIdx === hoveredTmpl ? 0.4 : 0.08;
+      }
+
+      // Proximity magnification lens (skip for the hovered dot itself)
+      if (hoveredIdx !== i) {
+        const ldx = dot.x - mx, ldy = dot.y - my;
+        const ldist = Math.sqrt(ldx * ldx + ldy * ldy);
+        if (ldist < PROXIMITY_RADIUS) {
+          const pf = smoothstep(1 - ldist / PROXIMITY_RADIUS);
+          radius += pf * 1.0;
+          if (hoveredTmpl < 0) alpha += pf * 0.10;
+        }
+      }
+
+      ctx.globalAlpha = alpha * fadeIn * vFade;
+      ctx.fillStyle   = `rgb(${r},${g},${b})`;
+      ctx.beginPath();
+      ctx.arc(dot.x, dot.y, Math.max(0.5, radius), 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.globalAlpha = 1;
+
+    // Tooltip (on top of all dots)
+    if (hoveredIdx >= 0) {
+      const dot = dots[hoveredIdx];
+      if (elapsed - dot.birthTime >= 0) drawTooltip(dot);
+    }
+
+    // Page counter (top-right)
+    const counterX = W - 16;
+    ctx.save();
+    ctx.textAlign  = 'right';
+    ctx.globalAlpha = 1;
+    ctx.fillStyle  = 'rgba(99,102,241,0.55)';
+    ctx.font       = '11px "SF Mono", "Fira Code", monospace';
+    ctx.fillText(`${visibleCount.toLocaleString()} pages generated`, counterX, 24);
+    ctx.globalAlpha = 0.28;
+    ctx.fillStyle   = '#ffffff';
+    ctx.font        = '9px "SF Mono", "Fira Code", monospace';
+    ctx.fillText('6 templates · 15 cities · 8 industries', counterX, 38);
+    ctx.restore();
+  }
+
+  // ─── Mouse tracking (on wrap so hero content doesn't block it) ─────────────
+  wrap.addEventListener('mousemove', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  });
+  wrap.addEventListener('mouseleave', () => { mouse = null; hoveredIdx = -1; });
+  wrap.addEventListener('touchstart', () => { mouse = null; hoveredIdx = -1; }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+  // Hide default grid-texture so the seo canvas replaces it
+  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── FinalCTA: coloured template dots, gentle pulse, no tooltips ──────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const ctaCanvas = document.createElement('canvas');
+      ctaCanvas.setAttribute('aria-hidden', 'true');
+      ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.style.position = 'relative';
+      ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+
+      const cc = ctaCanvas.getContext('2d')!;
+      interface CtaDot { gx: number; gy: number; tIdx: number; phase: number; }
+      let ctaDots: CtaDot[] = [];
+      let ctaDpr = 1;
+
+      function buildCtaGrid() {
+        ctaDots = [];
+        const W = ctaCanvas.width / ctaDpr;
+        const H = ctaCanvas.height / ctaDpr;
+        const cols = Math.ceil(W / GRID) + 1;
+        const rows = Math.ceil(H / GRID) + 1;
+        for (let r = 0; r < rows; r++)
+          for (let c = 0; c < cols; c++)
+            ctaDots.push({ gx: c * GRID, gy: r * GRID, tIdx: pickTemplate(), phase: Math.random() * Math.PI * 2 });
+      }
+
+      function resizeCta() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        const w = Math.round(rect.width), h = Math.round(rect.height);
+        ctaCanvas.width  = w * ctaDpr;
+        ctaCanvas.height = h * ctaDpr;
+        ctaCanvas.style.width  = `${w}px`;
+        ctaCanvas.style.height = `${h}px`;
+        cc.setTransform(ctaDpr, 0, 0, ctaDpr, 0, 0);
+        buildCtaGrid();
+      }
+
+      function frameCta() {
+        requestAnimationFrame(frameCta);
+        const W = ctaCanvas.width / ctaDpr;
+        const H = ctaCanvas.height / ctaDpr;
+        const t = performance.now() * 0.001;
+        cc.clearRect(0, 0, W, H);
+        for (const dot of ctaDots) {
+          const [r, g, b] = TEMPLATES[dot.tIdx].color;
+          const alpha = 0.15 + Math.sin(t * 0.8 + dot.phase) * 0.06;
+          cc.globalAlpha = alpha;
+          cc.fillStyle   = `rgb(${r},${g},${b})`;
+          cc.beginPath();
+          cc.arc(dot.gx, dot.gy, 2, 0, Math.PI * 2);
+          cc.fill();
+        }
+        cc.globalAlpha = 1;
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaCard);
+      resizeCta();
+      requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { ctaCanvas.style.opacity = '1'; });
+
+      const ctaGridTex = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGridTex) ctaGridTex.style.display = 'none';
+    }
+  }
+
+  }); // end requestIdleCallback
+</script>
