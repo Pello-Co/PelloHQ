@@ -8,19 +8,16 @@ import Header from '../components/layout/Header.astro';
   <main class="relative min-h-screen flex items-center justify-center overflow-hidden">
     <canvas id="bg-404" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
 
-    <div class="relative z-10 text-center px-6 max-w-xl">
-      <p class="text-[8rem] sm:text-[12rem] font-bold leading-none select-none error-number">404</p>
-      <h1 class="text-2xl sm:text-3xl font-semibold text-white mb-4 -mt-4">Page not found</h1>
-      <p class="text-zinc-400 text-base sm:text-lg mb-10 max-w-md mx-auto">The page you're looking for doesn't exist, or has been moved. Let's get you back to solid ground.</p>
-      <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
-        <a href="/" class="btn-primary px-6 py-3">
-          Back to Home
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" class="ml-1.5">
-            <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </a>
-        <a href="/tests" class="text-sm text-zinc-500 hover:text-zinc-300 transition-colors py-3 px-4">View Experiments →</a>
-      </div>
+    <div class="relative z-10 text-center px-6 max-w-2xl">
+      <p class="text-[10rem] sm:text-[16rem] lg:text-[20rem] font-black leading-none select-none error-number">404</p>
+      <h1 class="text-2xl sm:text-3xl font-semibold text-white mb-3 -mt-6">This page got lost in the growth engine</h1>
+      <p class="text-zinc-500 text-sm sm:text-base mb-10 max-w-md mx-auto">We've optimised thousands of pages — just not this one. Our AI is looking into it. (It's not.)</p>
+      <a href="/" class="btn-primary px-8 py-3.5 text-base">
+        Take me home
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" class="ml-1.5">
+          <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
     </div>
   </main>
 </Layout>
