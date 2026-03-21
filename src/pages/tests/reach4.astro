@@ -1,0 +1,749 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloReach — Sequence Flow | Email Outreach at Scale" description="PelloReach automates intelligent email sequences. Watch your prospect pipeline unfold in real-time with AI-personalised outreach.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="reach4-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(139,92,246,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Email data ──────────────────────────────────────────────────────────────
+  const FIRST_NAMES = ["Sarah","James","Emma","Michael","Sophie","Daniel","Rachel","Tom","Jessica","Alex","Chris","Lauren","David","Hannah","Ben","Kate","Ryan","Olivia","Mark","Lucy"];
+  const LAST_NAMES  = ["Chen","Williams","Patel","Thompson","Garcia","Anderson","Martinez","Johnson","Lee","Taylor","Brown","Wilson","Moore","Clark","Hall","Young","King","Wright","Scott","Green"];
+  const COMPANIES   = ["Acme Corp","TechFlow","DataSync","CloudNine","Nexus Labs","Horizon AI","Vertex Systems","PulseMedia","Zenith Group","Atlas Digital","BrightPath","CoreStack","DeepBlue","EdgePoint","FrontLine","GrowthLab","HyperScale","InnoVate","JetStream","KineticIO"];
+  const ROLES       = ["Head of Marketing","VP Growth","CMO","Marketing Director","Digital Lead","Growth Manager","Head of Demand Gen","Performance Lead","Brand Director","Acquisition Manager"];
+  const SUBJECTS    = [
+    "Quick question about {company}'s growth strategy",
+    "{firstName}, saw your recent {company} launch",
+    "Idea for {company}'s outreach — 3 min read",
+    "{firstName} — {company} + Pello could be interesting",
+    "Re: scaling {company}'s pipeline",
+    "{firstName}, one thing about {company}'s email strategy",
+  ];
+  const STEP_NAMES  = ["Initial outreach","Follow-up","Final follow-up","Break-up email","Re-engage"];
+  const REPLY_TEXTS = [
+    "Thanks, let's chat next week",
+    "Sounds interesting, tell me more",
+    "Can we do Thursday at 2pm?",
+    "Yes, I'd love to see a demo",
+    "This is exactly what we need",
+  ];
+  const BRANCH_LABELS = ["Meeting Booked","Deal Started","Demo Scheduled","Call Booked","Intro Call Set"];
+
+  // ─── Node colours ────────────────────────────────────────────────────────────
+  type NodeStatus = 'sent' | 'opened' | 'replied' | 'scheduled';
+  const NODE_COLORS: Record<NodeStatus,[number,number,number]> = {
+    sent:      [139, 92,  246],
+    opened:    [167, 139, 250],
+    replied:   [74,  222, 128],
+    scheduled: [200, 200, 220],
+  };
+  const NODE_BASE_ALPHA: Record<NodeStatus,number> = {
+    sent: 0.50, opened: 0.70, replied: 0.70, scheduled: 0.20,
+  };
+
+  function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+  function fillSubject(t: string, fn: string, co: string): string {
+    return t.replace('{company}', co).replace('{firstName}', fn);
+  }
+
+  // ─── Types ───────────────────────────────────────────────────────────────────
+  const PERIOD = 800;
+
+  interface R4Particle { x: number; y: number; vy: number; alpha: number; cr: number; cg: number; cb: number; }
+  interface R4Node {
+    relX: number;
+    status: NodeStatus;
+    subject: string;
+    stepNum: number; totalSteps: number;
+    openedTime: string;
+    replyText: string;
+    flashTimer: number;
+  }
+  interface R4Lane {
+    y: number;
+    offset: number;
+    baseSpeed: number;
+    prospect: { firstName: string; lastName: string; company: string; role: string; };
+    nodes: R4Node[];
+    pulseWorldX: number | null;  // null = no active pulse
+    returnWorldX: number | null; // null = no return pulse
+    branchNodeIdx: number;
+    branchLabel: string;
+  }
+
+  // ─── Globals ─────────────────────────────────────────────────────────────────
+  const canvas = document.querySelector<HTMLCanvasElement>('.reach4-canvas')!;
+  const wrap   = document.getElementById('hero-wrap')!;
+  const ctx    = canvas.getContext('2d')!;
+
+  let dpr = 1;
+  let mouse: { x: number; y: number } | null = null;
+  let lastMX = -1, lastMY = -1;
+  let hoveredLane = -1, hoveredNode = -1;
+  let lastPulseSpawn = 0;
+  const particles: R4Particle[] = [];
+
+  // ─── Lane generation ─────────────────────────────────────────────────────────
+  function generateLanes(): R4Lane[] {
+    const NUM = 10;
+    const lanes: R4Lane[] = [];
+    for (let i = 0; i < NUM; i++) {
+      const fn = pick(FIRST_NAMES), ln = pick(LAST_NAMES);
+      const co = pick(COMPANIES),   ro = pick(ROLES);
+      const numNodes = Math.random() < 0.4 ? 5 : 4;
+      const spacing  = PERIOD / (numNodes + 1);
+      const nodes: R4Node[] = [];
+
+      for (let j = 0; j < numNodes; j++) {
+        const relX = Math.round(spacing * (j + 1));
+        const progress = j / numNodes;
+        let status: NodeStatus;
+        if (progress < 0.35)      status = Math.random() < 0.65 ? 'opened' : 'sent';
+        else if (progress < 0.55) status = Math.random() < 0.18 ? 'replied' : (Math.random() < 0.5 ? 'sent' : 'opened');
+        else if (progress < 0.75) status = Math.random() < 0.45 ? 'sent' : 'scheduled';
+        else                       status = 'scheduled';
+
+        const hrs = (1 + Math.random() * 14).toFixed(1);
+        nodes.push({
+          relX, status,
+          subject:    fillSubject(pick(SUBJECTS), fn, co),
+          stepNum:    j + 1, totalSteps: numNodes,
+          openedTime: `${hrs} hours after send`,
+          replyText:  pick(REPLY_TEXTS),
+          flashTimer: 0,
+        });
+      }
+
+      const repliedIdx = nodes.findIndex(n => n.status === 'replied');
+      lanes.push({
+        y: 0,
+        offset:     Math.random() * PERIOD,
+        baseSpeed:  0.17 + Math.random() * 0.07,
+        prospect:   { firstName: fn, lastName: ln, company: co, role: ro },
+        nodes,
+        pulseWorldX:  null,
+        returnWorldX: null,
+        branchNodeIdx: repliedIdx,
+        branchLabel:   pick(BRANCH_LABELS),
+      });
+    }
+    return lanes;
+  }
+
+  const lanes = generateLanes();
+
+  // ─── Resize ──────────────────────────────────────────────────────────────────
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    const w = Math.round(rect.width), h = Math.round(rect.height);
+    canvas.width  = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width  = `${w}px`;
+    canvas.style.height = `${h}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const topY    = h * 0.10;
+    const bottomY = h * 0.90;
+    const step    = (bottomY - topY) / (lanes.length - 1);
+    for (let i = 0; i < lanes.length; i++) lanes[i].y = topY + i * step;
+  }
+
+  // ─── Node canvas x (normalised to [0, PERIOD)) ───────────────────────────────
+  function nodeCanvasX(node: R4Node, lane: R4Lane): number {
+    let x = node.relX - lane.offset;
+    x = ((x % PERIOD) + PERIOD) % PERIOD;
+    return x;
+  }
+
+  // ─── Hover detection ─────────────────────────────────────────────────────────
+  function updateHover(mx: number, my: number) {
+    let bestD = 15, bL = -1, bN = -1;
+    for (let li = 0; li < lanes.length; li++) {
+      const lane = lanes[li];
+      for (let ni = 0; ni < lane.nodes.length; ni++) {
+        const nx = nodeCanvasX(lane.nodes[ni], lane);
+        const dist = Math.sqrt((nx - mx) ** 2 + (lane.y - my) ** 2);
+        if (dist < bestD) { bestD = dist; bL = li; bN = ni; }
+      }
+    }
+    hoveredLane = bL; hoveredNode = bN;
+  }
+
+  // ─── Tooltip ─────────────────────────────────────────────────────────────────
+  function rrect(x: number, y: number, w: number, h: number, r: number) {
+    ctx.beginPath();
+    ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y);
+    ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+    ctx.lineTo(x+w, y+h-r);
+    ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+    ctx.lineTo(x+r, y+h);
+    ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+    ctx.lineTo(x, y+r);
+    ctx.quadraticCurveTo(x, y, x+r, y);
+    ctx.closePath();
+  }
+
+  function drawTooltip(lane: R4Lane, nodeIdx: number, px: number, py: number) {
+    const W = canvas.width / dpr;
+    const node = lane.nodes[nodeIdx];
+    const isReply = node.status === 'replied';
+    const isOpened = node.status === 'opened' || isReply;
+    const tooltipW = 340, tooltipH = isReply ? 148 : 128;
+    let tx = px - tooltipW / 2;
+    let ty = py - tooltipH - 22;
+    tx = Math.max(8, Math.min(W - tooltipW - 8, tx));
+    if (ty < 8) ty = py + 22;
+    const pad = 16;
+
+    ctx.save();
+    // Connector
+    ctx.globalAlpha = 0.18;
+    ctx.strokeStyle = 'rgba(139,92,246,0.8)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(px, py - 7);
+    ctx.lineTo(px, ty < py ? ty + tooltipH : ty);
+    ctx.stroke();
+
+    // Background
+    ctx.globalAlpha = 1;
+    ctx.shadowColor = 'rgba(139,92,246,0.2)';
+    ctx.shadowBlur = 28;
+    rrect(tx, ty, tooltipW, tooltipH, 10);
+    ctx.fillStyle = 'rgba(6,7,18,0.75)';
+    ctx.fill();
+    ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+
+    rrect(tx, ty, tooltipW, tooltipH, 10);
+    ctx.fillStyle = 'rgba(139,92,246,0.07)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(139,92,246,0.28)';
+    ctx.lineWidth = 1; ctx.stroke();
+
+    // Accent top
+    ctx.globalAlpha = 0.55;
+    rrect(tx, ty, tooltipW, 3, 3);
+    ctx.fillStyle = 'rgb(139,92,246)';
+    ctx.fill();
+
+    ctx.globalAlpha = 1;
+    ctx.textAlign = 'left';
+
+    // PROSPECT
+    ctx.font = 'bold 13px -apple-system, system-ui, sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(`${lane.prospect.firstName} ${lane.prospect.lastName}, ${lane.prospect.role} at ${lane.prospect.company}`, tx + pad, ty + pad + 13);
+
+    // SEQUENCE
+    ctx.font = '10px "SF Mono",monospace';
+    ctx.globalAlpha = 0.75;
+    ctx.fillStyle = '#a78bfa';
+    const stepName = STEP_NAMES[Math.min(node.stepNum - 1, STEP_NAMES.length - 1)];
+    ctx.fillText(`Step ${node.stepNum} of ${node.totalSteps} · ${stepName}`, tx + pad, ty + pad + 30);
+
+    // SUBJECT
+    ctx.globalAlpha = 0.9;
+    ctx.font = '12px -apple-system, system-ui, sans-serif';
+    ctx.fillStyle = '#e8e8f0';
+    const subj = node.subject.length > 44 ? node.subject.slice(0, 41) + '…' : node.subject;
+    ctx.fillText(subj, tx + pad, ty + pad + 50);
+
+    // OPENED
+    ctx.font = '11px "SF Mono",monospace';
+    if (isOpened) {
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = 'rgb(74,222,128)';
+      ctx.fillText(`✓ Opened ${node.openedTime}`, tx + pad, ty + pad + 70);
+    } else {
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = '#c0c0d0';
+      ctx.fillText('○ Pending', tx + pad, ty + pad + 70);
+    }
+
+    // REPLY (only on replied)
+    if (isReply) {
+      ctx.globalAlpha = 0.85;
+      ctx.font = 'italic 11px -apple-system, system-ui, sans-serif';
+      ctx.fillStyle = 'rgb(74,222,128)';
+      const rt = node.replyText.length > 42 ? node.replyText.slice(0, 39) + '…' : node.replyText;
+      ctx.fillText(`"${rt}"`, tx + pad, ty + pad + 92);
+    }
+
+    ctx.restore();
+  }
+
+  // ─── Frame loop ──────────────────────────────────────────────────────────────
+  function frame() {
+    requestAnimationFrame(frame);
+    const W = canvas.width / dpr, H = canvas.height / dpr;
+    const now = performance.now() * 0.001;
+    ctx.clearRect(0, 0, W, H);
+
+    // Update hover
+    if (mouse && (mouse.x !== lastMX || mouse.y !== lastMY)) {
+      updateHover(mouse.x, mouse.y);
+      lastMX = mouse.x; lastMY = mouse.y;
+    } else if (!mouse) { hoveredLane = -1; hoveredNode = -1; }
+
+    // Spawn pulse every 2s
+    if (now - lastPulseSpawn >= 2.0) {
+      const candidates = lanes.filter(l => l.pulseWorldX === null);
+      if (candidates.length > 0) {
+        const lane = pick(candidates);
+        lane.pulseWorldX = lane.nodes[0].relX - 30;
+      }
+      lastPulseSpawn = now;
+    }
+
+    let tooltipLane = -1, tooltipNode = -1, tooltipX = 0, tooltipY = 0;
+
+    for (let li = 0; li < lanes.length; li++) {
+      const lane = lanes[li];
+      const isHoveredLane = hoveredLane === li;
+
+      // Speed: base + boost if mouse is near this lane
+      let speed = lane.baseSpeed;
+      if (mouse) {
+        const dy = Math.abs(mouse.y - lane.y);
+        if (dy < 80) speed += (1 - dy / 80) * 0.15;
+      }
+      lane.offset += speed;
+      if (lane.offset >= PERIOD) lane.offset -= PERIOD;
+
+      // Advance pulse
+      if (lane.pulseWorldX !== null) {
+        lane.pulseWorldX += 3.2;
+        const lastNodeRelX = lane.nodes[lane.nodes.length - 1].relX;
+
+        // Check node triggers
+        for (let ni = 0; ni < lane.nodes.length; ni++) {
+          const node = lane.nodes[ni];
+          if (lane.pulseWorldX >= node.relX && lane.pulseWorldX < node.relX + 6 && node.flashTimer < 0.05) {
+            node.flashTimer = 1.0;
+            const nx = nodeCanvasX(node, lane);
+            if (node.status === 'opened') {
+              const [cr, cg, cb] = NODE_COLORS[node.status];
+              for (let p = 0; p < 3; p++) {
+                particles.push({ x: nx + (Math.random()-0.5)*6, y: lane.y, vy: -(0.5 + Math.random()*0.8), alpha: 0.9, cr, cg, cb });
+              }
+            }
+            if (node.status === 'replied' && lane.returnWorldX === null) {
+              lane.returnWorldX = node.relX;
+            }
+          }
+        }
+        if (lane.pulseWorldX > lastNodeRelX + 60) lane.pulseWorldX = null;
+      }
+
+      // Advance return pulse
+      if (lane.returnWorldX !== null) {
+        lane.returnWorldX -= 2.8;
+        if (lane.returnWorldX < lane.nodes[0].relX - 70) lane.returnWorldX = null;
+      }
+
+      // Decay flash timers
+      for (const node of lane.nodes) {
+        if (node.flashTimer > 0) node.flashTimer = Math.max(0, node.flashTimer - 0.022);
+      }
+
+      // ── Draw lane track ──
+      ctx.save();
+      ctx.globalAlpha = isHoveredLane ? 0.14 : 0.06;
+      ctx.strokeStyle = isHoveredLane ? '#c4b5fd' : '#a78bfa';
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(0, lane.y);
+      ctx.lineTo(W, lane.y);
+      ctx.stroke();
+      ctx.restore();
+
+      // ── Draw 2 chunks for seamless wrap ──
+      for (const k of [0, 1]) {
+        const baseX = k * PERIOD - lane.offset;
+
+        // Connecting lines
+        for (let ni = 0; ni < lane.nodes.length - 1; ni++) {
+          const nx0 = baseX + lane.nodes[ni].relX;
+          const nx1 = baseX + lane.nodes[ni+1].relX;
+          if (nx1 < -10 || nx0 > W + 10) continue;
+          ctx.save();
+          ctx.globalAlpha = isHoveredLane ? 0.28 : 0.12;
+          ctx.strokeStyle = '#a78bfa';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(nx0, lane.y);
+          ctx.lineTo(nx1, lane.y);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // Nodes
+        for (let ni = 0; ni < lane.nodes.length; ni++) {
+          const node = lane.nodes[ni];
+          const nx = baseX + node.relX;
+          if (nx < -20 || nx > W + 20) continue;
+
+          const [r, g, b] = NODE_COLORS[node.status];
+          let alpha  = NODE_BASE_ALPHA[node.status];
+          let radius = 5;
+
+          if (node.flashTimer > 0) {
+            const pulse = Math.sin(node.flashTimer * Math.PI);
+            alpha  = Math.min(0.92, alpha + pulse * 0.45);
+            radius = 5 + pulse * 2.5;
+          }
+          if (isHoveredLane) {
+            alpha  = Math.min(0.92, alpha + 0.25);
+            radius = Math.max(radius, 5.5);
+          }
+          if (hoveredLane === li && hoveredNode === ni) {
+            alpha = 1.0; radius = 8;
+            tooltipLane = li; tooltipNode = ni;
+            tooltipX = nx; tooltipY = lane.y;
+          }
+
+          ctx.save();
+          // Glow behind hovered node
+          if (hoveredLane === li && hoveredNode === ni) {
+            const ng = ctx.createRadialGradient(nx, lane.y, 0, nx, lane.y, 16);
+            ng.addColorStop(0, `rgba(${r},${g},${b},0.3)`);
+            ng.addColorStop(1, `rgba(${r},${g},${b},0)`);
+            ctx.fillStyle = ng;
+            ctx.beginPath(); ctx.arc(nx, lane.y, 16, 0, Math.PI * 2); ctx.fill();
+          }
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = `rgb(${r},${g},${b})`;
+          ctx.beginPath();
+          ctx.arc(nx, lane.y, Math.max(0.5, radius), 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+
+          // Branch visual (replied node)
+          if (ni === lane.branchNodeIdx && nx >= -5 && nx <= W + 5) {
+            const bx = nx + 28, by = lane.y - 22;
+            ctx.save();
+            ctx.globalAlpha = isHoveredLane ? 0.55 : 0.28;
+            ctx.strokeStyle = 'rgb(74,222,128)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(nx, lane.y);
+            ctx.lineTo(bx, by);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(bx, by, 3, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgb(74,222,128)';
+            ctx.fill();
+            if (isHoveredLane) {
+              ctx.globalAlpha = 0.7;
+              ctx.font = '9px "SF Mono",monospace';
+              ctx.fillStyle = 'rgb(74,222,128)';
+              ctx.textAlign = 'left';
+              ctx.fillText(lane.branchLabel, bx + 6, by + 3);
+            }
+            ctx.restore();
+          }
+        }
+
+        // Pulse dot
+        if (lane.pulseWorldX !== null) {
+          const px2 = baseX + lane.pulseWorldX;
+          if (px2 >= -10 && px2 <= W + 10) {
+            const pg = ctx.createRadialGradient(px2, lane.y, 0, px2, lane.y, 9);
+            pg.addColorStop(0, 'rgba(139,92,246,0.7)');
+            pg.addColorStop(1, 'rgba(139,92,246,0)');
+            ctx.save();
+            ctx.fillStyle = pg;
+            ctx.beginPath(); ctx.arc(px2, lane.y, 9, 0, Math.PI * 2); ctx.fill();
+            ctx.globalAlpha = 0.9;
+            ctx.fillStyle = '#c4b5fd';
+            ctx.beginPath(); ctx.arc(px2, lane.y, 3, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+          }
+        }
+
+        // Return pulse (green)
+        if (lane.returnWorldX !== null) {
+          const rpx = baseX + lane.returnWorldX;
+          if (rpx >= -10 && rpx <= W + 10) {
+            ctx.save();
+            ctx.globalAlpha = 0.75;
+            ctx.fillStyle = 'rgb(74,222,128)';
+            ctx.beginPath(); ctx.arc(rpx, lane.y, 3, 0, Math.PI * 2); ctx.fill();
+            ctx.globalAlpha = 0.3;
+            ctx.beginPath(); ctx.arc(rpx + 10, lane.y, 2, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+          }
+        }
+      }
+    }
+
+    // Particles (global, fixed canvas coords)
+    for (let pi = particles.length - 1; pi >= 0; pi--) {
+      const p = particles[pi];
+      p.y += p.vy;
+      p.vy *= 0.95;
+      p.alpha -= 0.022;
+      if (p.alpha <= 0) { particles.splice(pi, 1); continue; }
+      ctx.save();
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = `rgb(${p.cr},${p.cg},${p.cb})`;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+
+    // Tooltip (drawn last, on top of everything)
+    if (tooltipLane >= 0 && tooltipNode >= 0) {
+      drawTooltip(lanes[tooltipLane], tooltipNode, tooltipX, tooltipY);
+    }
+
+    // Counter (top-right)
+    const totalReplied = lanes.reduce((s, l) => s + l.nodes.filter(n => n.status === 'replied').length, 0);
+    const totalNodes   = lanes.reduce((s, l) => s + l.nodes.length, 0);
+    const avgSteps     = (lanes.reduce((s, l) => s + l.nodes.length, 0) / lanes.length).toFixed(1);
+    const replyRate    = totalNodes > 0 ? Math.round(totalReplied / totalNodes * 100) : 23;
+
+    ctx.save();
+    ctx.textAlign = 'right';
+    const cx2 = W - 16;
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = 'rgba(139,92,246,0.65)';
+    ctx.font = '11px "SF Mono","Fira Code",monospace';
+    ctx.fillText('847 active sequences', cx2, 24);
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '9px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`avg ${avgSteps} steps · ${replyRate}% reply rate`, cx2, 38);
+    ctx.restore();
+  }
+
+  // ─── Mouse tracking ──────────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  });
+  wrap.addEventListener('mouseleave', () => { mouse = null; hoveredLane = -1; hoveredNode = -1; });
+  wrap.addEventListener('touchstart', () => { mouse = null; hoveredLane = -1; hoveredNode = -1; }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── FinalCTA: simplified flowing lanes ──────────────────────────────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const ctaCanvas = document.createElement('canvas');
+      ctaCanvas.setAttribute('aria-hidden', 'true');
+      ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.style.position = 'relative';
+      ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+      const cc = ctaCanvas.getContext('2d')!;
+
+      interface CtaLane { y: number; offset: number; nodes: { relX: number; phase: number; }[]; }
+      let ctaLanes: CtaLane[] = [];
+      let ctaDpr = 1;
+
+      function buildCtaLanes() {
+        ctaLanes = [];
+        const H2 = ctaCanvas.height / ctaDpr;
+        const NUM = 6;
+        for (let i = 0; i < NUM; i++) {
+          const y = H2 * 0.1 + (H2 * 0.8 / (NUM - 1)) * i;
+          const numNodes = 4 + (Math.random() < 0.4 ? 1 : 0);
+          const sp = PERIOD / (numNodes + 1);
+          const nodes = Array.from({ length: numNodes }, (_, j) => ({
+            relX: Math.round(sp * (j + 1)),
+            phase: Math.random() * Math.PI * 2,
+          }));
+          ctaLanes.push({ y, offset: Math.random() * PERIOD, nodes });
+        }
+      }
+
+      function resizeCta() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        const w = Math.round(rect.width), h = Math.round(rect.height);
+        ctaCanvas.width = w * ctaDpr; ctaCanvas.height = h * ctaDpr;
+        ctaCanvas.style.width = `${w}px`; ctaCanvas.style.height = `${h}px`;
+        cc.setTransform(ctaDpr, 0, 0, ctaDpr, 0, 0);
+        buildCtaLanes();
+      }
+
+      function frameCta() {
+        requestAnimationFrame(frameCta);
+        const W2 = ctaCanvas.width / ctaDpr;
+        const t = performance.now() * 0.001;
+        cc.clearRect(0, 0, W2, ctaCanvas.height / ctaDpr);
+
+        for (const lane of ctaLanes) {
+          lane.offset += 0.18;
+          if (lane.offset >= PERIOD) lane.offset -= PERIOD;
+
+          // Track line
+          cc.save();
+          cc.globalAlpha = 0.05;
+          cc.strokeStyle = '#a78bfa';
+          cc.lineWidth = 0.5;
+          cc.beginPath(); cc.moveTo(0, lane.y); cc.lineTo(W2, lane.y); cc.stroke();
+          cc.restore();
+
+          for (const k of [0, 1]) {
+            const baseX = k * PERIOD - lane.offset;
+            // Connecting lines
+            for (let ni = 0; ni < lane.nodes.length - 1; ni++) {
+              const nx0 = baseX + lane.nodes[ni].relX;
+              const nx1 = baseX + lane.nodes[ni+1].relX;
+              if (nx1 < -5 || nx0 > W2 + 5) continue;
+              cc.save();
+              cc.globalAlpha = 0.08;
+              cc.strokeStyle = '#a78bfa';
+              cc.lineWidth = 1;
+              cc.beginPath(); cc.moveTo(nx0, lane.y); cc.lineTo(nx1, lane.y); cc.stroke();
+              cc.restore();
+            }
+            // Nodes
+            for (const node of lane.nodes) {
+              const nx = baseX + node.relX;
+              if (nx < -10 || nx > W2 + 10) continue;
+              const alpha = 0.18 + Math.sin(t * 0.7 + node.phase) * 0.06;
+              cc.save();
+              cc.globalAlpha = alpha;
+              cc.fillStyle = '#a78bfa';
+              cc.beginPath(); cc.arc(nx, lane.y, 3, 0, Math.PI * 2); cc.fill();
+              cc.restore();
+            }
+          }
+        }
+        cc.globalAlpha = 1;
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaCard);
+      resizeCta();
+      requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { ctaCanvas.style.opacity = '1'; });
+      const ctaGrid = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGrid) ctaGrid.style.display = 'none';
+    }
+  }
+
+  }); // end ric
+</script>

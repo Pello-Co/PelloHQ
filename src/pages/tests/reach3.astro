@@ -1,0 +1,644 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloReach — Flight Paths | Email Outreach at Scale" description="PelloReach delivers cold email at massive scale. 500+ warmed domains, AI-personalised sequences, 98.4% inbox placement.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="reach3-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(139,92,246,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Email data ──────────────────────────────────────────────────────────────
+  const FIRST_NAMES = ["Sarah","James","Emma","Michael","Sophie","Daniel","Rachel","Tom","Jessica","Alex","Chris","Lauren","David","Hannah","Ben","Kate","Ryan","Olivia","Mark","Lucy"];
+  const LAST_NAMES  = ["Chen","Williams","Patel","Thompson","Garcia","Anderson","Martinez","Johnson","Lee","Taylor","Brown","Wilson","Moore","Clark","Hall","Young","King","Wright","Scott","Green"];
+  const COMPANIES   = ["Acme Corp","TechFlow","DataSync","CloudNine","Nexus Labs","Horizon AI","Vertex Systems","PulseMedia","Zenith Group","Atlas Digital","BrightPath","CoreStack","DeepBlue","EdgePoint","FrontLine","GrowthLab","HyperScale","InnoVate","JetStream","KineticIO"];
+  const ROLES       = ["Head of Marketing","VP Growth","CMO","Marketing Director","Digital Lead","Growth Manager","Head of Demand Gen","Performance Lead","Brand Director","Acquisition Manager"];
+  const SUBJECTS    = [
+    "Quick question about {company}'s growth strategy",
+    "{firstName}, saw your recent {company} launch",
+    "Idea for {company}'s outreach — 3 min read",
+    "{firstName} — {company} + Pello could be interesting",
+    "Re: scaling {company}'s pipeline",
+    "{firstName}, one thing about {company}'s email strategy",
+  ];
+
+  // ─── Stage constants ─────────────────────────────────────────────────────────
+  const STAGE_DELIVERED = 0;
+  const STAGE_OPENED    = 1;
+  const STAGE_REPLIED   = 2;
+  const STAGE_PENDING   = 3;
+
+  const STAGE_COLORS: [number,number,number][] = [
+    [74,  222, 128],  // delivered: green
+    [139, 92,  246],  // opened: violet
+    [255, 215, 0],    // replied: gold
+    [200, 200, 220],  // pending: dim white
+  ];
+  const STAGE_BASE_ALPHA = [0.30, 0.40, 0.50, 0.15];
+  const STAGE_LABELS     = ['Delivered','Opened','Replied','Pending'];
+
+  function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+  function fillSubject(t: string, fn: string, co: string): string {
+    return t.replace('{company}', co).replace('{firstName}', fn);
+  }
+
+  // ─── Types ───────────────────────────────────────────────────────────────────
+  interface Recipient {
+    x: number; y: number;
+    firstName: string; lastName: string;
+    company: string; role: string;
+    subject: string;
+    stage: number;
+    sequenceStep: number; totalSteps: number;
+    pulseTimer: number;
+  }
+  interface Flight {
+    recipientIdx: number;
+    t: number;
+    startTime: number;
+    duration: number;
+  }
+
+  // ─── Canvas setup ────────────────────────────────────────────────────────────
+  const canvas = document.querySelector<HTMLCanvasElement>('.reach3-canvas')!;
+  const wrap   = document.getElementById('hero-wrap')!;
+  const ctx    = canvas.getContext('2d')!;
+
+  let recipients: Recipient[] = [];
+  let flights: Flight[] = [];
+  let totalSent = 0;
+  let mouse: { x: number; y: number } | null = null;
+  let hoveredIdx = -1;
+  let dpr = 1;
+  let startTime = 0;
+  let lastSpawnTime = 0;
+  let lastMX = -1, lastMY = -1;
+
+  // ─── Bezier helpers ──────────────────────────────────────────────────────────
+  function bezierPt(t: number, x0: number, y0: number, cx: number, cy: number, x1: number, y1: number) {
+    const mt = 1 - t;
+    return { x: mt*mt*x0 + 2*mt*t*cx + t*t*x1, y: mt*mt*y0 + 2*mt*t*cy + t*t*y1 };
+  }
+  function controlPoint(x0: number, y0: number, x1: number, y1: number) {
+    const mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+    const dist = Math.sqrt((x1-x0)**2 + (y1-y0)**2);
+    return { x: mx, y: my - dist * 0.3 };
+  }
+
+  // ─── Recipient generation (Poisson-disc rejection sampling) ──────────────────
+  function generateRecipients(W: number, H: number): Recipient[] {
+    const recs: Recipient[] = [];
+    const minDist2 = 30 * 30;
+    const minX = W * 0.38, maxX = W * 0.95;
+    const minY = H * 0.06, maxY = H * 0.94;
+    let attempts = 0;
+    while (recs.length < 130 && attempts < 15000) {
+      attempts++;
+      const x = minX + Math.random() * (maxX - minX);
+      const y = minY + Math.random() * (maxY - minY);
+      let ok = true;
+      for (const r of recs) {
+        if ((x-r.x)*(x-r.x) + (y-r.y)*(y-r.y) < minDist2) { ok = false; break; }
+      }
+      if (!ok) continue;
+      const sr = Math.random();
+      const stage = sr < 0.08 ? STAGE_REPLIED : sr < 0.38 ? STAGE_OPENED : sr < 0.80 ? STAGE_DELIVERED : STAGE_PENDING;
+      const fn = pick(FIRST_NAMES), ln = pick(LAST_NAMES);
+      const co = pick(COMPANIES), ro = pick(ROLES);
+      const sub = fillSubject(pick(SUBJECTS), fn, co);
+      const step = Math.floor(Math.random() * 3) + 1;
+      const total = step + Math.floor(Math.random() * 2) + 1;
+      recs.push({ x, y, firstName: fn, lastName: ln, company: co, role: ro, subject: sub, stage, sequenceStep: step, totalSteps: total, pulseTimer: 0 });
+    }
+    return recs;
+  }
+
+  // ─── Resize ──────────────────────────────────────────────────────────────────
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    const w = Math.round(rect.width), h = Math.round(rect.height);
+    canvas.width  = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width  = `${w}px`;
+    canvas.style.height = `${h}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    recipients = generateRecipients(w, h);
+    flights = [];
+    startTime = performance.now() * 0.001;
+    lastSpawnTime = startTime;
+  }
+
+  // ─── Nearest recipient ───────────────────────────────────────────────────────
+  function findNearest(mx: number, my: number): number {
+    let best = -1, bestD = 18;
+    for (let i = 0; i < recipients.length; i++) {
+      const r = recipients[i];
+      const d = Math.sqrt((r.x - mx) ** 2 + (r.y - my) ** 2);
+      if (d < bestD) { bestD = d; best = i; }
+    }
+    return best;
+  }
+
+  // ─── Tooltip ─────────────────────────────────────────────────────────────────
+  function rrect(x: number, y: number, w: number, h: number, r: number) {
+    ctx.beginPath();
+    ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y);
+    ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+    ctx.lineTo(x+w, y+h-r);
+    ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+    ctx.lineTo(x+r, y+h);
+    ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+    ctx.lineTo(x, y+r);
+    ctx.quadraticCurveTo(x, y, x+r, y);
+    ctx.closePath();
+  }
+
+  function drawTooltip(rec: Recipient) {
+    const W = canvas.width / dpr;
+    const px = rec.x, py = rec.y;
+    const [r, g, b] = STAGE_COLORS[rec.stage];
+    const stageIcon  = rec.stage === STAGE_REPLIED ? '★' : '●';
+    const stageName  = STAGE_LABELS[rec.stage];
+    const pad = 16, tooltipW = 340, tooltipH = 118;
+    let tx = px - tooltipW / 2;
+    let ty = py - tooltipH - 22;
+    tx = Math.max(8, Math.min(W - tooltipW - 8, tx));
+    if (ty < 8) ty = py + 22;
+
+    ctx.save();
+    // Connector
+    ctx.globalAlpha = 0.2;
+    ctx.strokeStyle = `rgb(${r},${g},${b})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(px, py - 7);
+    ctx.lineTo(px, ty < py ? ty + tooltipH : ty);
+    ctx.stroke();
+
+    // Background
+    ctx.globalAlpha = 1;
+    ctx.shadowColor = `rgba(${r},${g},${b},0.25)`;
+    ctx.shadowBlur = 28;
+    rrect(tx, ty, tooltipW, tooltipH, 10);
+    ctx.fillStyle = 'rgba(6,7,18,0.75)';
+    ctx.fill();
+    ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+
+    rrect(tx, ty, tooltipW, tooltipH, 10);
+    ctx.fillStyle = `rgba(${r},${g},${b},0.07)`;
+    ctx.fill();
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.3)`;
+    ctx.lineWidth = 1; ctx.stroke();
+
+    // Accent top bar
+    ctx.globalAlpha = 0.55;
+    rrect(tx, ty, tooltipW, 3, 3);
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.fill();
+
+    ctx.globalAlpha = 1;
+    ctx.textAlign = 'left';
+
+    // Name
+    ctx.font = 'bold 14px -apple-system, system-ui, sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(`${rec.firstName} ${rec.lastName}`, tx + pad, ty + pad + 14);
+
+    // Role · Company
+    ctx.font = '11px "SF Mono", monospace';
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle = '#c0c0d0';
+    ctx.fillText(`${rec.role} · ${rec.company}`, tx + pad, ty + pad + 30);
+
+    // Subject
+    ctx.globalAlpha = 0.9;
+    ctx.font = '12px -apple-system, system-ui, sans-serif';
+    ctx.fillStyle = '#e8e8f0';
+    const subj = rec.subject.length > 44 ? rec.subject.slice(0, 41) + '…' : rec.subject;
+    ctx.fillText(subj, tx + pad, ty + pad + 52);
+
+    // Status
+    ctx.globalAlpha = 0.9;
+    ctx.font = '11px "SF Mono", monospace';
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.fillText(`${stageIcon} ${stageName}`, tx + pad, ty + pad + 70);
+
+    // Sequence bar
+    const barY = ty + tooltipH - 16;
+    const barW = tooltipW - pad * 2;
+    const progress = rec.sequenceStep / rec.totalSteps;
+    ctx.globalAlpha = 0.15;
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.beginPath(); ctx.rect(tx + pad, barY, barW, 3); ctx.fill();
+    ctx.globalAlpha = 0.5;
+    ctx.beginPath(); ctx.rect(tx + pad, barY, barW * progress, 3); ctx.fill();
+    ctx.font = '9px "SF Mono", monospace';
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.textAlign = 'right';
+    ctx.fillText(`Step ${rec.sequenceStep} of ${rec.totalSteps}`, tx + tooltipW - pad, barY - 3);
+
+    ctx.restore();
+  }
+
+  // ─── Frame loop ──────────────────────────────────────────────────────────────
+  function frame() {
+    requestAnimationFrame(frame);
+    const W = canvas.width / dpr, H = canvas.height / dpr;
+    const now = performance.now() * 0.001;
+    const elapsed = now - startTime;
+    ctx.clearRect(0, 0, W, H);
+
+    const originX = W * 0.30, originY = H * 0.50;
+
+    // Update hover
+    if (mouse && (mouse.x !== lastMX || mouse.y !== lastMY)) {
+      hoveredIdx = findNearest(mouse.x, mouse.y);
+      lastMX = mouse.x; lastMY = mouse.y;
+    } else if (!mouse) { hoveredIdx = -1; }
+
+    // Spawn new flight every 0.3s
+    if (now - lastSpawnTime >= 0.3 && flights.length < 20 && recipients.length > 0) {
+      const idx = Math.floor(Math.random() * recipients.length);
+      flights.push({ recipientIdx: idx, t: 0, startTime: now, duration: 1.5 });
+      lastSpawnTime = now;
+    }
+
+    // Advance + complete flights
+    for (let i = flights.length - 1; i >= 0; i--) {
+      const f = flights[i];
+      f.t = Math.min(1, (now - f.startTime) / f.duration);
+      if (f.t >= 1) {
+        recipients[f.recipientIdx].pulseTimer = 1.0;
+        totalSent++;
+        flights.splice(i, 1);
+      }
+    }
+
+    // Origin pulse rings (2 staggered rings, every 2s)
+    for (let ring = 0; ring < 2; ring++) {
+      const phase = ((elapsed + ring * 1.0) % 2) / 2;
+      const ringR = 8 + phase * 68;
+      const ringA = (1 - phase) * 0.22;
+      ctx.save();
+      ctx.globalAlpha = ringA;
+      ctx.strokeStyle = 'rgba(139,92,246,1)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(originX, originY, ringR, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Origin glow + core dot
+    const pulseR = 19 + Math.sin(elapsed * 2.5) * 1.5;
+    const grad = ctx.createRadialGradient(originX, originY, 0, originX, originY, pulseR * 3);
+    grad.addColorStop(0, 'rgba(139,92,246,0.55)');
+    grad.addColorStop(0.45, 'rgba(139,92,246,0.15)');
+    grad.addColorStop(1, 'rgba(139,92,246,0)');
+    ctx.save();
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(originX, originY, pulseR * 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 0.92;
+    ctx.fillStyle = 'rgba(139,92,246,1)';
+    ctx.beginPath();
+    ctx.arc(originX, originY, pulseR * 0.55, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Permanent arc to hovered recipient
+    if (hoveredIdx >= 0) {
+      const hr = recipients[hoveredIdx];
+      const cp = controlPoint(originX, originY, hr.x, hr.y);
+      const [r, g, b] = STAGE_COLORS[hr.stage];
+      ctx.save();
+      ctx.globalAlpha = 0.3;
+      ctx.strokeStyle = `rgb(${r},${g},${b})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(originX, originY);
+      ctx.quadraticCurveTo(cp.x, cp.y, hr.x, hr.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Draw flight arcs
+    for (const flight of flights) {
+      const rec = recipients[flight.recipientIdx];
+      const [r, g, b] = STAGE_COLORS[rec.stage];
+      const cp = controlPoint(originX, originY, rec.x, rec.y);
+      const steps = Math.max(4, Math.ceil(flight.t * 36));
+
+      ctx.save();
+      ctx.lineWidth = 1;
+      for (let s = 0; s < steps - 1; s++) {
+        const t0 = (s / steps) * flight.t;
+        const t1 = ((s + 1) / steps) * flight.t;
+        const p0 = bezierPt(t0, originX, originY, cp.x, cp.y, rec.x, rec.y);
+        const p1 = bezierPt(t1, originX, originY, cp.x, cp.y, rec.x, rec.y);
+        ctx.globalAlpha = (s / steps) * 0.38;
+        ctx.strokeStyle = `rgb(${r},${g},${b})`;
+        ctx.beginPath();
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.stroke();
+      }
+      // Particle at tip
+      const tip = bezierPt(flight.t, originX, originY, cp.x, cp.y, rec.x, rec.y);
+      ctx.globalAlpha = 0.92;
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.beginPath();
+      ctx.arc(tip.x, tip.y, 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Draw recipients
+    for (let i = 0; i < recipients.length; i++) {
+      const rec = recipients[i];
+      const [r, g, b] = STAGE_COLORS[rec.stage];
+      const isHovered = hoveredIdx === i;
+
+      if (rec.pulseTimer > 0) rec.pulseTimer = Math.max(0, rec.pulseTimer - 0.025);
+
+      let alpha = STAGE_BASE_ALPHA[rec.stage];
+      let radius = 3;
+      if (rec.pulseTimer > 0) {
+        const pulse = Math.sin(rec.pulseTimer * Math.PI);
+        alpha  = Math.min(0.95, alpha + pulse * 0.5);
+        radius = 3 + pulse * 2;
+      }
+      if (isHovered) { alpha = 1.0; radius = 7; }
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.beginPath();
+      ctx.arc(rec.x, rec.y, Math.max(0.5, radius), 0, Math.PI * 2);
+      ctx.fill();
+      if (isHovered) {
+        ctx.globalAlpha = 0.28;
+        ctx.strokeStyle = `rgb(${r},${g},${b})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(rec.x, rec.y, radius + 5, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // Tooltip
+    if (hoveredIdx >= 0) drawTooltip(recipients[hoveredIdx]);
+
+    // Counter
+    const openedCount  = recipients.filter(rc => rc.stage === STAGE_OPENED || rc.stage === STAGE_REPLIED).length;
+    const repliedCount = recipients.filter(rc => rc.stage === STAGE_REPLIED).length;
+    const total = recipients.length || 1;
+    const openedPct  = Math.round(openedCount  / total * 100);
+    const repliedPct = Math.round(repliedCount / total * 100);
+
+    ctx.save();
+    ctx.textAlign = 'right';
+    const cx2 = W - 16;
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = 'rgba(139,92,246,0.65)';
+    ctx.font = '11px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${(1247 + totalSent).toLocaleString()} emails in flight`, cx2, 24);
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '9px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${openedPct}% opened · ${repliedPct}% replied · 98.4% delivered`, cx2, 38);
+    ctx.restore();
+  }
+
+  // ─── Mouse tracking ──────────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  });
+  wrap.addEventListener('mouseleave', () => { mouse = null; hoveredIdx = -1; });
+  wrap.addEventListener('touchstart', () => { mouse = null; hoveredIdx = -1; }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── FinalCTA: scattered dots with arc flights ────────────────────────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const cc2 = document.createElement('canvas');
+      cc2.setAttribute('aria-hidden', 'true');
+      cc2.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.style.position = 'relative';
+      ctaCard.insertBefore(cc2, ctaCard.firstChild);
+      const c2 = cc2.getContext('2d')!;
+
+      interface CtaDot { x: number; y: number; stage: number; phase: number; }
+      interface CtaArc { x0: number; y0: number; x1: number; y1: number; t: number; stage: number; }
+      let ctaDots: CtaDot[] = [];
+      let ctaArcs: CtaArc[] = [];
+      let ctaDpr = 1, ctaLastSpawn = 0;
+
+      function buildCtaDots() {
+        ctaDots = [];
+        const W2 = cc2.width / ctaDpr, H2 = cc2.height / ctaDpr;
+        const md2 = 40 * 40;
+        let att = 0;
+        while (ctaDots.length < 55 && att < 6000) {
+          att++;
+          const x = Math.random() * W2, y = Math.random() * H2;
+          let ok = true;
+          for (const d of ctaDots) if ((x-d.x)**2 + (y-d.y)**2 < md2) { ok = false; break; }
+          if (ok) ctaDots.push({ x, y, stage: Math.floor(Math.random() * 4), phase: Math.random() * Math.PI * 2 });
+        }
+      }
+
+      function resizeCta2() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect2 = ctaCard!.getBoundingClientRect();
+        const w2 = Math.round(rect2.width), h2 = Math.round(rect2.height);
+        cc2.width = w2 * ctaDpr; cc2.height = h2 * ctaDpr;
+        cc2.style.width = `${w2}px`; cc2.style.height = `${h2}px`;
+        c2.setTransform(ctaDpr, 0, 0, ctaDpr, 0, 0);
+        buildCtaDots();
+      }
+
+      function frameCta2() {
+        requestAnimationFrame(frameCta2);
+        const W2 = cc2.width / ctaDpr, H2 = cc2.height / ctaDpr;
+        const t = performance.now() * 0.001;
+        c2.clearRect(0, 0, W2, H2);
+
+        if (t - ctaLastSpawn > 0.8 && ctaArcs.length < 8 && ctaDots.length > 1) {
+          let i = Math.floor(Math.random() * ctaDots.length);
+          let j = Math.floor(Math.random() * ctaDots.length);
+          while (j === i) j = Math.floor(Math.random() * ctaDots.length);
+          ctaArcs.push({ x0: ctaDots[i].x, y0: ctaDots[i].y, x1: ctaDots[j].x, y1: ctaDots[j].y, t: 0, stage: ctaDots[i].stage });
+          ctaLastSpawn = t;
+        }
+        for (let i = ctaArcs.length - 1; i >= 0; i--) {
+          ctaArcs[i].t = Math.min(1, ctaArcs[i].t + 0.011);
+          if (ctaArcs[i].t >= 1) ctaArcs.splice(i, 1);
+        }
+
+        for (const d of ctaDots) {
+          const [r2, g2, b2] = STAGE_COLORS[d.stage];
+          c2.globalAlpha = 0.12 + Math.sin(t * 0.6 + d.phase) * 0.04;
+          c2.fillStyle = `rgb(${r2},${g2},${b2})`;
+          c2.beginPath(); c2.arc(d.x, d.y, 2.5, 0, Math.PI * 2); c2.fill();
+        }
+
+        for (const arc of ctaArcs) {
+          const [r2, g2, b2] = STAGE_COLORS[arc.stage];
+          const midX = (arc.x0 + arc.x1) / 2;
+          const midY = (arc.y0 + arc.y1) / 2 - Math.sqrt((arc.x1-arc.x0)**2 + (arc.y1-arc.y0)**2) * 0.25;
+          const steps2 = Math.max(4, Math.ceil(arc.t * 28));
+          c2.save(); c2.lineWidth = 1;
+          for (let s = 0; s < steps2 - 1; s++) {
+            const t0 = (s / steps2) * arc.t, t1 = ((s+1) / steps2) * arc.t;
+            const p0 = bezierPt(t0, arc.x0, arc.y0, midX, midY, arc.x1, arc.y1);
+            const p1 = bezierPt(t1, arc.x0, arc.y0, midX, midY, arc.x1, arc.y1);
+            c2.globalAlpha = (s / steps2) * 0.22;
+            c2.strokeStyle = `rgb(${r2},${g2},${b2})`;
+            c2.beginPath(); c2.moveTo(p0.x, p0.y); c2.lineTo(p1.x, p1.y); c2.stroke();
+          }
+          const tip2 = bezierPt(arc.t, arc.x0, arc.y0, midX, midY, arc.x1, arc.y1);
+          c2.globalAlpha = 0.7;
+          c2.fillStyle = `rgb(${r2},${g2},${b2})`;
+          c2.beginPath(); c2.arc(tip2.x, tip2.y, 2, 0, Math.PI * 2); c2.fill();
+          c2.restore();
+        }
+        c2.globalAlpha = 1;
+      }
+
+      const roCta2 = new ResizeObserver(() => resizeCta2());
+      roCta2.observe(ctaCard);
+      resizeCta2();
+      requestAnimationFrame(frameCta2);
+      requestAnimationFrame(() => { cc2.style.opacity = '1'; });
+      const ctaGrid = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGrid) ctaGrid.style.display = 'none';
+    }
+  }
+
+  }); // end ric
+</script>
