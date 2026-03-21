@@ -417,6 +417,26 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
       const fadeIn = Math.min(1, age / 0.3);
       if (fadeIn < 0.005) continue;
 
+      // Repeating pulse ripple — every 8 seconds, a radial wave sweeps outward
+      const PULSE_INTERVAL = 8;  // seconds between pulses
+      const PULSE_SPEED = 0.003; // same as initial birth wave speed
+      const PULSE_DURATION = 0.6; // how long each dot brightens
+      const cx = W / 2, cy = H / 2;
+      const distFromCenter = Math.sqrt((dot.gx - cx) * (dot.gx - cx) + (dot.gy - cy) * (dot.gy - cy));
+      const dotDelay = distFromCenter * PULSE_SPEED;
+      // Time within current pulse cycle (starts after initial generation completes ~4s)
+      const pulseElapsed = elapsed - 5; // first pulse starts at 5s
+      let pulseAlpha = 0;
+      if (pulseElapsed > 0) {
+        const cycleTime = pulseElapsed % PULSE_INTERVAL;
+        const dotCycleAge = cycleTime - dotDelay;
+        if (dotCycleAge > 0 && dotCycleAge < PULSE_DURATION) {
+          // Smooth rise and fall
+          const t = dotCycleAge / PULSE_DURATION;
+          pulseAlpha = Math.sin(t * Math.PI) * 0.3; // peaks at +0.3 alpha boost
+        }
+      }
+
       visibleCount++;
 
       // Mouse push physics (gentle)
@@ -479,6 +499,9 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
           if (hoveredTmpl < 0) alpha += pf * 0.10;
         }
       }
+
+      // Apply pulse ripple boost
+      alpha = Math.min(0.95, alpha + pulseAlpha);
 
       ctx.globalAlpha = alpha * fadeIn * vFade;
       ctx.fillStyle   = `rgb(${r},${g},${b})`;
