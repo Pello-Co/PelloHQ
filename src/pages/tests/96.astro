@@ -1,0 +1,388 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="bg-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99,102,241,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  // Polyfill requestIdleCallback for Safari
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Gravitational Lensing — Einstein ring optics ──────────────────────────
+
+  const EINSTEIN_RADIUS = 80; // px
+  const LENS_INFLUENCE = 250; // px — distortion reaches this far
+
+  interface Star {
+    // True (undistorted) position
+    trueX: number;
+    trueY: number;
+    // Proper motion (slow drift)
+    vx: number;
+    vy: number;
+    // Visual properties
+    size: number;
+    baseAlpha: number;
+    // Base colour: warm [200,180,150] to cool [150,180,255]
+    warm: boolean;
+  }
+
+  // Gravitational lens equation
+  // Given star true angle θ_s from lens, compute apparent angles θ± of two images.
+  // θ± = 0.5 * (θ_s ± sqrt(θ_s² + 4·θ_E²))
+  // We work in pixel distances, treating θ as dist in px.
+  function lensImages(
+    sx: number, sy: number,  // star true position
+    lx: number, ly: number,  // lens position
+    eR: number               // Einstein radius
+  ): { x1: number; y1: number; mu1: number; x2: number; y2: number; mu2: number; isRing: boolean } {
+    const dx = sx - lx;
+    const dy = sy - ly;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist < 3) {
+      // Star almost exactly behind lens — Einstein ring
+      return {
+        x1: lx, y1: ly, mu1: 3,
+        x2: lx, y2: ly, mu2: 3,
+        isRing: true,
+      };
+    }
+
+    // Reduced lens equation in 1D (distance from lens)
+    // θ± = 0.5*(θ ± sqrt(θ²+4θE²))
+    const discriminant = Math.sqrt(dist * dist + 4 * eR * eR);
+    const theta1 = 0.5 * (dist + discriminant); // outer image
+    const theta2 = 0.5 * (dist - discriminant); // inner image (negative = opposite side)
+
+    const nx = dx / dist;
+    const ny = dy / dist;
+
+    const x1 = lx + nx * theta1;
+    const y1 = ly + ny * theta1;
+    const x2 = lx + nx * theta2; // negative theta2 means opposite side
+    const y2 = ly + ny * theta2;
+
+    // Magnification: μ = |u²+2| / |u·sqrt(u²+4)| where u = dist/eR
+    const u = dist / eR;
+    const mu = (u * u + 2) / (u * Math.sqrt(u * u + 4));
+    const mu1 = Math.max(1, mu * 0.5 + 0.5);
+    const mu2 = Math.max(0.2, mu * 0.5);
+
+    return { x1, y1, mu1, x2, y2, mu2, isRing: false };
+  }
+
+  function createGravLens(canvas: HTMLCanvasElement, container: HTMLElement) {
+    const dpr = window.devicePixelRatio || 1;
+    let W = 0, H = 0;
+
+    function resizeCanvas() {
+      const rect = container.getBoundingClientRect();
+      W = Math.round(rect.width);
+      H = Math.round(rect.height);
+      canvas.width  = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width  = `${W}px`;
+      canvas.style.height = `${H}px`;
+    }
+
+    resizeCanvas();
+    const ctx = canvas.getContext('2d')!;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // Stars
+    const NUM_STARS = 250;
+    const stars: Star[] = [];
+
+    function initStars() {
+      stars.length = 0;
+      for (let i = 0; i < NUM_STARS; i++) {
+        const bright = i < 10;
+        stars.push({
+          trueX: Math.random() * W,
+          trueY: Math.random() * H,
+          vx: (Math.random() - 0.5) * 0.04,
+          vy: (Math.random() - 0.5) * 0.04,
+          size: bright ? 2 : 0.5 + Math.random() * 1.5,
+          baseAlpha: bright ? 0.25 + Math.random() * 0.1 : 0.05 + Math.random() * 0.25,
+          warm: Math.random() < 0.6,
+        });
+      }
+    }
+    initStars();
+
+    // Lens position — either mouse or autonomous Lissajous
+    let lensX = W / 2;
+    let lensY = H / 2;
+    let targetLensX = W / 2;
+    let targetLensY = H / 2;
+    let mouseActive = false;
+    let lissTime = 0;
+
+    let lastTime = 0;
+    let rafId = 0;
+
+    function drawStar(
+      sx: number, sy: number,
+      size: number, alpha: number,
+      warm: boolean, magnification: number
+    ) {
+      if (alpha < 0.005) return;
+      // Colour: lerp warm/cool by magnification (capped)
+      const t = Math.min(1, (magnification - 1) / 3);
+      const r = Math.round(200 - t * 50);  // 200→150
+      const g = Math.round(180 + t * 0);   // 180
+      const b = Math.round(warm ? 150 + t * 105 : 200 + t * 55); // warm→cool
+
+      // Soft dot via shadow blur
+      ctx.save();
+      ctx.shadowColor = `rgba(${r},${g},${b},${alpha * 0.5})`;
+      ctx.shadowBlur = size * 3;
+      ctx.beginPath();
+      ctx.arc(sx, sy, size * Math.min(2, magnification * 0.5 + 0.5), 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function frame(ts: number) {
+      rafId = requestAnimationFrame(frame);
+      const dt = Math.min((ts - lastTime) / 1000, 0.05);
+      lastTime = ts;
+
+      // Lens position
+      if (!mouseActive) {
+        lissTime += dt * 0.18;
+        // Lissajous drift — always near centre to keep distortions visible
+        targetLensX = W * 0.5 + W * 0.22 * Math.sin(lissTime * 1.3);
+        targetLensY = H * 0.5 + H * 0.18 * Math.sin(lissTime * 0.9 + 1.2);
+      }
+      lensX += (targetLensX - lensX) * 0.06;
+      lensY += (targetLensY - lensY) * 0.06;
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+
+      // ── Einstein radius indicator (very faint circle) ──────────────────────
+      ctx.beginPath();
+      ctx.arc(lensX, lensY, EINSTEIN_RADIUS, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(150,180,255,0.03)`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // ── Stars ──────────────────────────────────────────────────────────────
+      for (const s of stars) {
+        // Proper motion (wrap around)
+        s.trueX += s.vx;
+        s.trueY += s.vy;
+        if (s.trueX < 0)  s.trueX += W;
+        if (s.trueX > W)  s.trueX -= W;
+        if (s.trueY < 0)  s.trueY += H;
+        if (s.trueY > H)  s.trueY -= H;
+
+        const dxLens = s.trueX - lensX;
+        const dyLens = s.trueY - lensY;
+        const distToLens = Math.sqrt(dxLens * dxLens + dyLens * dyLens);
+
+        if (distToLens > LENS_INFLUENCE) {
+          // Far from lens — draw normally
+          drawStar(s.trueX, s.trueY, s.size, s.baseAlpha, s.warm, 1);
+        } else {
+          // Lensed — compute two images
+          const { x1, y1, mu1, x2, y2, mu2, isRing } = lensImages(
+            s.trueX, s.trueY, lensX, lensY, EINSTEIN_RADIUS
+          );
+
+          if (isRing) {
+            // Einstein ring
+            ctx.save();
+            ctx.shadowColor = `rgba(150,180,255,0.4)`;
+            ctx.shadowBlur = 6;
+            ctx.beginPath();
+            ctx.arc(lensX, lensY, EINSTEIN_RADIUS, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(180,200,255,${s.baseAlpha * 2.5})`;
+            ctx.lineWidth = s.size * 1.5;
+            ctx.stroke();
+            ctx.restore();
+          } else {
+            // Image 1 (outer — brighter)
+            const fade1 = 1 - (distToLens / LENS_INFLUENCE) * 0.3;
+            drawStar(x1, y1, s.size, s.baseAlpha * mu1 * fade1, s.warm, mu1);
+
+            // Image 2 (inner — dimmer, opposite side)
+            if (mu2 > 0.3) {
+              const fade2 = 1 - (distToLens / LENS_INFLUENCE) * 0.5;
+              drawStar(x2, y2, s.size * 0.7, s.baseAlpha * mu2 * fade2, false, mu2);
+            }
+          }
+        }
+      }
+    }
+
+    // Mouse tracking — move lens to mouse position
+    container.addEventListener('mousemove', (e: MouseEvent) => {
+      const rect = container.getBoundingClientRect();
+      targetLensX = e.clientX - rect.left;
+      targetLensY = e.clientY - rect.top;
+      mouseActive = true;
+    });
+    container.addEventListener('mouseleave', () => {
+      mouseActive = false;
+    });
+
+    const ro = new ResizeObserver(() => {
+      resizeCanvas();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      lensX = W / 2;
+      lensY = H / 2;
+      targetLensX = W / 2;
+      targetLensY = H / 2;
+      initStars();
+    });
+    ro.observe(container);
+
+    lastTime = performance.now();
+    rafId = requestAnimationFrame(frame);
+    requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+    return { stop: () => cancelAnimationFrame(rafId) };
+  }
+
+  // ─── Instantiate for hero wrap ──────────────────────────────────────────────
+  const heroCanvas = document.querySelector<HTMLCanvasElement>('#hero-wrap .bg-canvas')!;
+  const heroWrap   = document.getElementById('hero-wrap')!;
+  if (heroCanvas && heroWrap) {
+    createGravLens(heroCanvas, heroWrap);
+  }
+
+  const gridTex = heroWrap?.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── Inject + instantiate for final-cta ────────────────────────────────────
+  const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+  if (ctaCard) {
+    const ctaCanvas = document.createElement('canvas');
+    ctaCanvas.setAttribute('aria-hidden', 'true');
+    ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+    ctaCard.style.position = 'relative';
+    ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+    createGravLens(ctaCanvas, ctaCard);
+
+    const gridTexCta = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+    if (gridTexCta) gridTexCta.style.display = 'none';
+  }
+
+  }); // end ric
+</script>

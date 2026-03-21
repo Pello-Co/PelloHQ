@@ -1,0 +1,432 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="bg-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99,102,241,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  // Polyfill requestIdleCallback for Safari
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Pulsar — rotating neutron star with sweeping lighthouse beams ─────────
+
+  const BEAM_COLOR: [number, number, number] = [99, 102, 241]; // electric indigo
+
+  interface Particle {
+    fieldLine: number;   // which field line (0–7)
+    t: number;           // position along field line 0–1
+    tVel: number;        // velocity along field line (bounces)
+    alpha: number;       // current alpha (boosted by beam pass)
+    baseAlpha: number;   // resting alpha
+    size: number;
+  }
+
+  interface Star {
+    x: number;
+    y: number;
+    alpha: number;
+    afterglow: number;   // 0–1, fades after beam sweeps over
+  }
+
+  function createPulsar(canvas: HTMLCanvasElement, container: HTMLElement) {
+    const dpr = window.devicePixelRatio || 1;
+    let W = 0, H = 0;
+    let cx = 0, cy = 0;  // canvas center
+
+    function resizeCanvas() {
+      const rect = container.getBoundingClientRect();
+      W = Math.round(rect.width);
+      H = Math.round(rect.height);
+      canvas.width  = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width  = `${W}px`;
+      canvas.style.height = `${H}px`;
+      cx = W / 2;
+      cy = H / 2;
+    }
+
+    resizeCanvas();
+    const ctx = canvas.getContext('2d')!;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // Mouse tilt state
+    let mouseTiltX = 0;     // -1 to 1 (normalised viewport)
+    let targetTiltX = 0;
+
+    // Rotation angle (radians)
+    let beamAngle = 0;
+    const ROTATION_PERIOD = 2.5; // seconds per revolution
+    const BEAM_HALF_ANGLE = (15 * Math.PI) / 180; // 15° in radians
+
+    // Static star field (40 dots)
+    const stars: Star[] = [];
+    function initStars() {
+      stars.length = 0;
+      for (let i = 0; i < 40; i++) {
+        stars.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          alpha: 0.02 + Math.random() * 0.02,
+          afterglow: 0,
+        });
+      }
+    }
+    initStars();
+
+    // Magnetic field line: dipole r = r0 * cos²(θ) in polar
+    // We compute points along a field line by sweeping θ from -π/2 to π/2
+    const NUM_FIELD_LINES = 8;
+    const FIELD_POINTS = 60;
+    const MAX_FIELD_RADIUS = Math.min(W, H) * 0.38;
+
+    // Field line points in local (axis-aligned) space, then rotated
+    function getFieldLinePoints(lineIndex: number, tiltX: number): [number, number][] {
+      // Spread lines evenly around the poles in azimuthal angle
+      const phi = (lineIndex / NUM_FIELD_LINES) * 2 * Math.PI;
+      const points: [number, number][] = [];
+      for (let i = 0; i <= FIELD_POINTS; i++) {
+        const theta = -Math.PI / 2 + (Math.PI * i) / FIELD_POINTS;
+        const r = MAX_FIELD_RADIUS * Math.cos(theta) * Math.cos(theta);
+        // In 3D: x = r*sin(theta)*cos(phi), z = r*sin(theta)*sin(phi), y = r*cos(theta)...
+        // We project onto 2D canvas with tilt affecting x
+        const localX = r * Math.cos(theta) * Math.cos(phi) * Math.sin(tiltX * 0.3 + 0.001) +
+                        r * Math.sin(theta) * 0.2 * Math.cos(phi);
+        const localY = r * Math.cos(theta);
+        // Proper dipole field in 2D: treat as a set of ellipses
+        // For simplicity: r = r0 * cos²(theta-based), x=r*sin(theta), y=r*cos(theta)
+        const px = r * Math.sin(theta) * Math.cos(phi) + cx + tiltX * 30 * Math.sin(theta);
+        const py = r * Math.cos(theta) + cy;
+        points.push([px, py]);
+      }
+      return points;
+    }
+
+    // Particles along field lines
+    const NUM_PARTICLES = 200;
+    const particles: Particle[] = [];
+    function initParticles() {
+      particles.length = 0;
+      for (let i = 0; i < NUM_PARTICLES; i++) {
+        const fl = Math.floor(Math.random() * NUM_FIELD_LINES);
+        const t = Math.random();
+        // Faster near equator (t ~ 0.5), slower near poles
+        const equatorFactor = 1 - Math.abs(t - 0.5) * 2; // 0 at poles, 1 at equator
+        const speed = 0.002 + equatorFactor * 0.006;
+        particles.push({
+          fieldLine: fl,
+          t,
+          tVel: (Math.random() < 0.5 ? 1 : -1) * speed,
+          alpha: 0.05 + Math.random() * 0.1,
+          baseAlpha: 0.05 + Math.random() * 0.1,
+          size: 0.5 + Math.random() * 0.5,
+        });
+      }
+    }
+    initParticles();
+
+    // Get world position of a particle from its field line and t
+    function getParticlePos(p: Particle, tiltX: number): [number, number] {
+      const pts = getFieldLinePoints(p.fieldLine, tiltX);
+      const idx = Math.floor(p.t * FIELD_POINTS);
+      const clamped = Math.max(0, Math.min(FIELD_POINTS - 1, idx));
+      return pts[clamped] ?? [cx, cy];
+    }
+
+    // Check if a world point is inside either beam cone
+    function isInBeam(px: number, py: number, beamAng: number, tiltX: number): boolean {
+      const dx = px - cx;
+      const dy = py - cy;
+      if (dx === 0 && dy === 0) return false;
+      // Beam direction (tilt adjusts perceived axis)
+      const axisAngle = beamAng + tiltX * 0.5;
+      const pointAngle = Math.atan2(dy, dx);
+      // Check both beam directions (180° apart)
+      for (const ba of [axisAngle, axisAngle + Math.PI]) {
+        let diff = pointAngle - ba;
+        // normalise to -PI..PI
+        while (diff > Math.PI) diff -= 2 * Math.PI;
+        while (diff < -Math.PI) diff += 2 * Math.PI;
+        if (Math.abs(diff) < BEAM_HALF_ANGLE) return true;
+      }
+      return false;
+    }
+
+    let lastTime = 0;
+    let rafId = 0;
+
+    function frame(ts: number) {
+      rafId = requestAnimationFrame(frame);
+      const dt = Math.min((ts - lastTime) / 1000, 0.05);
+      lastTime = ts;
+
+      // Smooth mouse tilt
+      mouseTiltX += (targetTiltX - mouseTiltX) * 0.05;
+
+      // Advance beam rotation
+      beamAngle += (2 * Math.PI / ROTATION_PERIOD) * dt;
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+
+      // ── Star field ──────────────────────────────────────────────────────────
+      for (const s of stars) {
+        const inBeam = isInBeam(s.x, s.y, beamAngle, mouseTiltX);
+        if (inBeam) {
+          s.afterglow = 1.0;
+        } else {
+          s.afterglow *= 0.97; // fade over ~0.5s at 60fps
+        }
+        const alpha = s.alpha + s.afterglow * 0.15;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, 1, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(200,210,255,${alpha})`;
+        ctx.fill();
+      }
+
+      // ── Magnetic field lines ─────────────────────────────────────────────────
+      ctx.lineWidth = 0.5;
+      ctx.strokeStyle = `rgba(167,139,250,0.06)`;
+      for (let li = 0; li < NUM_FIELD_LINES; li++) {
+        const pts = getFieldLinePoints(li, mouseTiltX);
+        ctx.beginPath();
+        for (let i = 0; i < pts.length; i++) {
+          const [px, py] = pts[i]!;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+      }
+
+      // ── Particles ───────────────────────────────────────────────────────────
+      for (const p of particles) {
+        // Advance position
+        p.t += p.tVel;
+        if (p.t >= 1) { p.t = 1; p.tVel = -Math.abs(p.tVel); }
+        if (p.t <= 0) { p.t = 0; p.tVel =  Math.abs(p.tVel); }
+
+        const [px, py] = getParticlePos(p, mouseTiltX);
+        const inBeam = isInBeam(px, py, beamAngle, mouseTiltX);
+
+        if (inBeam) {
+          p.alpha = Math.min(0.5, p.alpha + 0.15);
+        } else {
+          p.alpha += (p.baseAlpha - p.alpha) * 0.03;
+        }
+
+        ctx.beginPath();
+        ctx.arc(px, py, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(167,139,250,${p.alpha})`;
+        ctx.fill();
+      }
+
+      // ── Lighthouse beams ────────────────────────────────────────────────────
+      const R = Math.sqrt(W * W + H * H); // reach to corner
+      const tiltedAngle = beamAngle + mouseTiltX * 0.5;
+
+      for (const offset of [0, Math.PI]) {
+        const bAngle = tiltedAngle + offset;
+        const x1 = cx + R * Math.cos(bAngle - BEAM_HALF_ANGLE);
+        const y1 = cy + R * Math.sin(bAngle - BEAM_HALF_ANGLE);
+        const x2 = cx + R * Math.cos(bAngle + BEAM_HALF_ANGLE);
+        const y2 = cy + R * Math.sin(bAngle + BEAM_HALF_ANGLE);
+
+        // Radial gradient from core outward along beam axis
+        const farX = cx + R * Math.cos(bAngle);
+        const farY = cy + R * Math.sin(bAngle);
+        const grad = ctx.createLinearGradient(cx, cy, farX, farY);
+        grad.addColorStop(0,   `rgba(${BEAM_COLOR[0]},${BEAM_COLOR[1]},${BEAM_COLOR[2]},0.18)`);
+        grad.addColorStop(0.3, `rgba(${BEAM_COLOR[0]},${BEAM_COLOR[1]},${BEAM_COLOR[2]},0.08)`);
+        grad.addColorStop(1,   `rgba(${BEAM_COLOR[0]},${BEAM_COLOR[1]},${BEAM_COLOR[2]},0)`);
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+      }
+
+      // ── Pulsar core ─────────────────────────────────────────────────────────
+      const pulse = (Math.sin(ts * 0.003) + 1) * 0.5; // 0–1 breathing
+
+      // Outer glow
+      const glowRadius = 15 + pulse * 8;
+      const glowAlpha = 0.1 + pulse * 0.2;
+      const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowRadius);
+      glow.addColorStop(0,   `rgba(200,210,255,${glowAlpha})`);
+      glow.addColorStop(0.5, `rgba(${BEAM_COLOR[0]},${BEAM_COLOR[1]},${BEAM_COLOR[2]},${glowAlpha * 0.4})`);
+      glow.addColorStop(1,   `rgba(${BEAM_COLOR[0]},${BEAM_COLOR[1]},${BEAM_COLOR[2]},0)`);
+      ctx.beginPath();
+      ctx.arc(cx, cy, glowRadius, 0, Math.PI * 2);
+      ctx.fillStyle = glow;
+      ctx.fill();
+
+      // Hard bright core (4px)
+      ctx.beginPath();
+      ctx.arc(cx, cy, 2, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(240,245,255,0.6)`;
+      ctx.fill();
+    }
+
+    // Mouse tracking — tilt axis by mouse X position
+    container.addEventListener('mousemove', (e: MouseEvent) => {
+      const rect = container.getBoundingClientRect();
+      targetTiltX = ((e.clientX - rect.left) / rect.width - 0.5) * 2; // -1 to 1
+    });
+    container.addEventListener('mouseleave', () => {
+      targetTiltX = 0;
+    });
+
+    const ro = new ResizeObserver(() => {
+      resizeCanvas();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      initStars();
+    });
+    ro.observe(container);
+
+    lastTime = performance.now();
+    rafId = requestAnimationFrame(frame);
+    requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+    return { stop: () => cancelAnimationFrame(rafId) };
+  }
+
+  // ─── Instantiate for hero wrap ──────────────────────────────────────────────
+  const heroCanvas = document.querySelector<HTMLCanvasElement>('#hero-wrap .bg-canvas')!;
+  const heroWrap   = document.getElementById('hero-wrap')!;
+  if (heroCanvas && heroWrap) {
+    createPulsar(heroCanvas, heroWrap);
+  }
+
+  const gridTex = heroWrap?.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── Inject + instantiate for final-cta ────────────────────────────────────
+  const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+  if (ctaCard) {
+    const ctaCanvas = document.createElement('canvas');
+    ctaCanvas.setAttribute('aria-hidden', 'true');
+    ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+    ctaCard.style.position = 'relative';
+    ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+    createPulsar(ctaCanvas, ctaCard);
+
+    const gridTexCta = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+    if (gridTexCta) gridTexCta.style.display = 'none';
+  }
+
+  }); // end ric
+</script>
