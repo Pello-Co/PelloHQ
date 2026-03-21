@@ -1373,43 +1373,402 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     }
   }
 
-  // ── Product 3: Social Network Nodes ──────────────────────────────────────
-  interface SNode { x:number; y:number; vx:number; vy:number; }
-  function initNodes(w: number, h: number) {
-    const nodes: SNode[]=[];
-    for (let i=0;i<14;i++) nodes.push({
-      x: Math.random()*w, y: Math.random()*h,
-      vx: (Math.random()-0.5)*0.3, vy: (Math.random()-0.5)*0.3,
-    });
-    return { nodes };
+  // ── Product 3: Social Holographic Globe ──────────────────────────────────
+  const SOC_PLATFORMS = [
+    { name: 'TikTok',    color: [0,242,234]   as [number,number,number] },
+    { name: 'Instagram', color: [228,64,95]    as [number,number,number] },
+    { name: 'X',         color: [29,161,242]   as [number,number,number] },
+    { name: 'Reddit',    color: [255,69,0]     as [number,number,number] },
+    { name: 'YouTube',   color: [255,0,0]      as [number,number,number] },
+  ];
+  const SOC_NICHES  = ['fitness','food','travel','tech','finance','fashion','gaming','beauty','sports','music'];
+  const SOC_FNAMES  = ['alex','casey','jordan','taylor','morgan','riley','sage','quinn','blake','drew','luna','nova','rex','ivy','leo'];
+  const SOC_MODELS  = ['iPhone 15','iPhone 14','Samsung S24','Pixel 8','iPhone 15 Pro','Samsung S23','OnePlus 12'];
+  const SOC_STATUSES = ['Active','Posting','Engaging'] as const;
+  const SOC_CITIES = [
+    { name: 'London',      lat: 51.5,  lon: -0.1,   code: 'LDN', count: 7  },
+    { name: 'New York',    lat: 40.7,  lon: -74.0,  code: 'NYC', count: 6  },
+    { name: 'Los Angeles', lat: 34.0,  lon: -118.2, code: 'LA',  count: 5  },
+    { name: 'Tokyo',       lat: 35.7,  lon: 139.7,  code: 'TKY', count: 5  },
+    { name: 'Berlin',      lat: 52.5,  lon: 13.4,   code: 'BLN', count: 4  },
+    { name: 'Sydney',      lat: -33.9, lon: 151.2,  code: 'SYD', count: 4  },
+    { name: 'Dubai',       lat: 25.2,  lon: 55.3,   code: 'DXB', count: 3  },
+    { name: 'Singapore',   lat: 1.3,   lon: 103.8,  code: 'SGP', count: 3  },
+    { name: 'São Paulo',   lat: -23.5, lon: -46.6,  code: 'SAO', count: 3  },
+    { name: 'Mumbai',      lat: 19.1,  lon: 72.9,   code: 'MUM', count: 3  },
+    { name: 'Seoul',       lat: 37.6,  lon: 127.0,  code: 'SEL', count: 3  },
+    { name: 'Toronto',     lat: 43.7,  lon: -79.4,  code: 'TOR', count: 3  },
+  ];
+
+  interface SocAccount { platform: string; color: [number,number,number]; username: string; followers: string; }
+  interface PhoneSocNode {
+    lat: number; lon: number; x3d: number; y3d: number; z3d: number;
+    phoneNum: number; model: string; city: string;
+    accounts: SocAccount[]; status: 'Active'|'Posting'|'Engaging';
+    phase: number; postsToday: number;
   }
-  function drawNodes(ctx: CanvasRenderingContext2D, w: number, h: number, _t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
-    const { nodes } = state as { nodes: SNode[] };
-    const [r,g,b]=PV_RGB[3];
-    for (const n of nodes) {
-      n.vx+=(Math.random()-0.5)*0.05; n.vy+=(Math.random()-0.5)*0.05;
-      n.vx*=0.98; n.vy*=0.98;
-      if (hasMouse) {
-        const dx=mx-n.x, dy=my-n.y, d=Math.sqrt(dx*dx+dy*dy);
-        if (d<200&&d>0) { n.vx+=(dx/d)*0.04; n.vy+=(dy/d)*0.04; }
+  interface SocGlobeDot { x: number; y: number; z: number; isLand: boolean; }
+  interface SocActivityPulse { sx: number; sy: number; born: number; duration: number; color: [number,number,number]; }
+
+  function socR01() { return Math.random(); }
+  function socRPick<T>(arr: readonly T[]): T { return arr[Math.floor(socR01()*arr.length)]; }
+  function socRRange(a: number, b: number) { return a+socR01()*(b-a); }
+
+  function socIsLand(lat: number, lon: number): boolean {
+    if (lat>=15&&lat<=70&&lon>=-168&&lon<=-52) return true;
+    if (lat>=7&&lat<=22&&lon>=-92&&lon<=-60) return true;
+    if (lat>=-56&&lat<=12&&lon>=-82&&lon<=-34) return true;
+    if (lat>=50&&lat<=59&&lon>=-11&&lon<=2) return true;
+    if (lat>=63&&lat<=67&&lon>=-25&&lon<=-12) return true;
+    if (lat>=36&&lat<=60&&lon>=-10&&lon<=30) return true;
+    if (lat>=55&&lat<=71&&lon>=4&&lon<=30) return true;
+    if (lat>=60&&lat<=83&&lon>=-57&&lon<=-17) return true;
+    if (lat>=18&&lat<=37&&lon>=-17&&lon<=38) return true;
+    if (lat>=-5&&lat<=18&&lon>=-18&&lon<=15) return true;
+    if (lat>=-35&&lat<=12&&lon>=14&&lon<=52) return true;
+    if (lat>=-26&&lat<=-12&&lon>=43&&lon<=51) return true;
+    if (lat>=12&&lat<=42&&lon>=25&&lon<=62) return true;
+    if (lat>=42&&lat<=75&&lon>=28&&lon<=180) return true;
+    if (lat>=6&&lat<=28&&lon>=66&&lon<=92) return true;
+    if (lat>=1&&lat<=28&&lon>=92&&lon<=110) return true;
+    if (lat>=4&&lat<=20&&lon>=116&&lon<=128) return true;
+    if (lat>=-10&&lat<=6&&lon>=95&&lon<=141) return true;
+    if (lat>=18&&lat<=55&&lon>=100&&lon<=135) return true;
+    if (lat>=30&&lat<=45&&lon>=129&&lon<=146) return true;
+    if (lat>=-39&&lat<=-10&&lon>=113&&lon<=154) return true;
+    if (lat>=-47&&lat<=-34&&lon>=166&&lon<=180) return true;
+    return false;
+  }
+
+  function socLatLonTo3D(lat: number, lon: number): [number,number,number] {
+    const phi=(90-lat)*Math.PI/180, theta=(lon+180)*Math.PI/180;
+    return [Math.sin(phi)*Math.cos(theta),Math.cos(phi),Math.sin(phi)*Math.sin(theta)];
+  }
+
+  const SOC_TILT = 15*Math.PI/180;
+
+  function socApplyRotations(x: number, y: number, z: number, rotY: number): [number,number,number] {
+    const ct=Math.cos(SOC_TILT), st2=Math.sin(SOC_TILT);
+    const x2=x*ct-y*st2, y2=x*st2+y*ct, z2=z;
+    const cy=Math.cos(rotY), sy=Math.sin(rotY);
+    return [x2*cy+z2*sy, y2, -x2*sy+z2*cy];
+  }
+
+  function socProject(x: number, y: number, z: number, rotY: number, globeR: number, globeCX: number, globeCY: number) {
+    const [rx,ry,rz]=socApplyRotations(x,y,z,rotY);
+    return { sx:globeCX+rx*globeR, sy:globeCY-ry*globeR, depth:rz, visible:rz>-0.1 };
+  }
+
+  function initSocial(w: number, h: number): Record<string,unknown> {
+    const GLOBE_R=Math.min(w,h)*0.35;
+    const GLOBE_CX=w*0.5, GLOBE_CY=h*0.5;
+    // Fibonacci sphere 800 dots
+    const globeDots: SocGlobeDot[]=[];
+    { const gr2=(1+Math.sqrt(5))/2;
+      for (let i=0;i<800;i++) {
+        const theta=2*Math.PI*i/gr2, phi=Math.acos(1-2*(i+0.5)/800);
+        const x=Math.sin(phi)*Math.cos(theta), y=Math.cos(phi), z=Math.sin(phi)*Math.sin(theta);
+        const lat=90-(phi*180/Math.PI);
+        const lon=((theta*180/Math.PI)%360+360)%360-180;
+        globeDots.push({x,y,z,isLand:socIsLand(lat,lon)});
       }
-      n.x+=n.vx; n.y+=n.vy;
-      if (n.x<0) n.x+=w; if (n.x>w) n.x-=w;
-      if (n.y<0) n.y+=h; if (n.y>h) n.y-=h;
     }
-    for (let i=0;i<nodes.length;i++) for (let j=i+1;j<nodes.length;j++) {
-      const dx=nodes[i].x-nodes[j].x, dy=nodes[i].y-nodes[j].y;
-      const d=Math.sqrt(dx*dx+dy*dy);
-      if (d<120) {
-        ctx.strokeStyle=`rgba(${r},${g},${b},${0.30*(1-d/120)})`;
-        ctx.lineWidth=1;
-        ctx.beginPath(); ctx.moveTo(nodes[i].x,nodes[i].y); ctx.lineTo(nodes[j].x,nodes[j].y); ctx.stroke();
+    // Phones
+    const socPhones: PhoneSocNode[]=[];
+    let pNum=1;
+    for (const city of SOC_CITIES) {
+      for (let i=0;i<city.count;i++) {
+        const spread=city.name==='Singapore'?0.5:1.5;
+        const lat=city.lat+socRRange(-spread,spread), lon=city.lon+socRRange(-spread,spread);
+        const [x3d,y3d,z3d]=socLatLonTo3D(lat,lon);
+        const n=Math.floor(socR01()*2)+2;
+        const accs: SocAccount[]=[];
+        for (let a=0;a<n;a++) {
+          const pl=socRPick(SOC_PLATFORMS);
+          const fol=Math.floor(socRRange(1000,80000));
+          accs.push({platform:pl.name,color:pl.color,username:`@${socRPick(SOC_FNAMES)}_${socRPick(SOC_NICHES)}_${city.code.toLowerCase()}`,followers:fol>=1000?`${(fol/1000).toFixed(1)}k`:`${fol}`});
+        }
+        socPhones.push({lat,lon,x3d,y3d,z3d,phoneNum:pNum++,model:socRPick(SOC_MODELS),city:city.name,accounts:accs,status:socRPick(SOC_STATUSES),phase:socR01()*Math.PI*2,postsToday:Math.floor(socRRange(5,80))});
       }
     }
-    for (const n of nodes) {
-      ctx.fillStyle=`rgba(${r},${g},${b},0.40)`;
-      ctx.beginPath(); ctx.arc(n.x,n.y,2.5,0,Math.PI*2); ctx.fill();
+    const totalPhones=socPhones.length;
+    const totalAccounts=socPhones.reduce((s,p)=>s+p.accounts.length,0);
+    return {
+      GLOBE_R,GLOBE_CX,GLOBE_CY,rotY:0,
+      globeDots,socPhones,totalPhones,totalAccounts,
+      activityPulses:[] as SocActivityPulse[],lastPulseSpawn:0,
+      hoveredPhone:null as PhoneSocNode|null,stickyPhone:null as PhoneSocNode|null,
+      autoHoverIdx:0,autoHoverTimer:0,
+    };
+  }
+
+  function drawSocTooltip(c: CanvasRenderingContext2D, phone: PhoneSocNode, sx: number, sy: number, W: number, H: number) {
+    const pad=12, lineH=16;
+    const tooltipW=280, tooltipH=pad*2+lineH*(phone.accounts.length+3)+10;
+    let tx=sx+16, ty=sy-tooltipH/2;
+    if (tx+tooltipW>W-8) tx=sx-tooltipW-16;
+    ty=Math.max(8,Math.min(H-tooltipH-8,ty));
+    c.save();
+    c.shadowColor='rgba(0,242,234,0.25)'; c.shadowBlur=24;
+    rrect(c,tx,ty,tooltipW,tooltipH,8); c.fillStyle='rgba(4,12,18,0.45)'; c.fill(); c.shadowBlur=0;
+    rrect(c,tx,ty,tooltipW,tooltipH,8); c.fillStyle='rgba(0,242,234,0.06)'; c.fill();
+    c.save(); c.beginPath(); c.rect(tx,ty,tooltipW,tooltipH); c.clip();
+    c.lineWidth=0.5;
+    for (let y2=ty;y2<ty+tooltipH;y2+=3) {
+      c.globalAlpha=0.03; c.strokeStyle='#00f2ea';
+      c.beginPath(); c.moveTo(tx,y2); c.lineTo(tx+tooltipW,y2); c.stroke();
     }
+    c.restore();
+    rrect(c,tx,ty,tooltipW,tooltipH,8); c.strokeStyle='rgba(0,242,234,0.25)'; c.lineWidth=1; c.stroke();
+    c.globalAlpha=0.6; c.fillStyle='rgba(0,242,234,0.5)';
+    rrect(c,tx,ty,tooltipW,3,3); c.fill(); c.globalAlpha=1;
+    let cy3=ty+pad+11;
+    c.globalAlpha=1; c.textAlign='left';
+    c.fillStyle='#00f2ea'; c.font='bold 10px "SF Mono","Fira Code",monospace';
+    c.fillText(`PHONE #${phone.phoneNum}  //  ${phone.model}`,tx+pad,cy3); cy3+=lineH;
+    c.fillStyle='rgba(0,242,234,0.45)'; c.font='9px "SF Mono","Fira Code",monospace';
+    c.fillText(`>> ${phone.city}`,tx+pad,cy3); cy3+=lineH+3;
+    const groups=new Map<string,{color:[number,number,number];entries:{u:string;f:string}[]}>();
+    for (const acc of phone.accounts) {
+      if (!groups.has(acc.platform)) groups.set(acc.platform,{color:acc.color,entries:[]});
+      groups.get(acc.platform)!.entries.push({u:acc.username,f:acc.followers});
+    }
+    for (const [,{color,entries}] of groups) {
+      const [r2,g2,b2]=color;
+      c.fillStyle=`rgb(${r2},${g2},${b2})`;
+      c.beginPath(); c.arc(tx+pad+4,cy3-3,3,0,Math.PI*2); c.fill();
+      const cnt=entries.length>1?`${entries.length}x `:'   ';
+      const line=`${cnt}${entries.map(e=>`${e.u} (${e.f})`).join('  ')}`;
+      c.fillStyle='rgba(200,255,255,0.85)'; c.font='9px "SF Mono","Fira Code",monospace';
+      c.save(); c.beginPath(); c.rect(tx+pad+12,cy3-12,tooltipW-pad-20,15); c.clip();
+      c.fillText(line,tx+pad+12,cy3); c.restore(); cy3+=lineH;
+    }
+    cy3+=3;
+    const sc=phone.status==='Active'?'rgba(74,222,128,0.9)':phone.status==='Posting'?'rgba(0,242,234,0.9)':'rgba(251,191,36,0.8)';
+    c.fillStyle=sc; c.font='9px "SF Mono","Fira Code",monospace';
+    c.fillText(`[ ${phone.status} ]  ${phone.accounts.length} accts  //  ${phone.postsToday} posts`,tx+pad,cy3);
+    c.restore();
+  }
+
+  function drawSocial(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, state: Record<string,unknown>) {
+    const st=state as {
+      GLOBE_R:number;GLOBE_CX:number;GLOBE_CY:number;rotY:number;
+      globeDots:SocGlobeDot[];socPhones:PhoneSocNode[];
+      totalPhones:number;totalAccounts:number;
+      activityPulses:SocActivityPulse[];lastPulseSpawn:number;
+      hoveredPhone:PhoneSocNode|null;stickyPhone:PhoneSocNode|null;
+      autoHoverIdx:number;autoHoverTimer:number;
+    };
+    st.rotY+=0.005;
+    const { GLOBE_R, GLOBE_CX, GLOBE_CY } = st;
+    const rotY=st.rotY;
+    function proj(x: number, y: number, z: number) { return socProject(x,y,z,rotY,GLOBE_R,GLOBE_CX,GLOBE_CY); }
+
+    // Scan beam
+    const beamY=GLOBE_CY-GLOBE_R+((t%5)/5)*(GLOBE_R*2);
+
+    // Globe ambient glow
+    const breathe=0.03+Math.sin(t*0.5)*0.008;
+    const grd=ctx.createRadialGradient(GLOBE_CX,GLOBE_CY,0,GLOBE_CX,GLOBE_CY,GLOBE_R*1.5);
+    grd.addColorStop(0,`rgba(0,242,234,${breathe})`);
+    grd.addColorStop(0.5,`rgba(0,242,234,${breathe*0.4})`);
+    grd.addColorStop(1,'rgba(0,242,234,0)');
+    ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(GLOBE_CX,GLOBE_CY,GLOBE_R*1.5,0,Math.PI*2); ctx.fill();
+
+    // Edge ring
+    ctx.save();
+    ctx.strokeStyle=`rgba(0,242,234,${0.12+Math.sin(t*0.3)*0.04})`; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(GLOBE_CX,GLOBE_CY,GLOBE_R,0,Math.PI*2); ctx.stroke();
+    ctx.restore();
+
+    // Scan lines
+    ctx.lineWidth=0.5;
+    for (let y=GLOBE_CY-GLOBE_R;y<GLOBE_CY+GLOBE_R;y+=4) {
+      const dy=y-GLOBE_CY, cr=Math.sqrt(Math.max(0,GLOBE_R*GLOBE_R-dy*dy));
+      if (cr<2) continue;
+      const near=Math.abs(y-beamY)<8;
+      ctx.globalAlpha=near?0.20:0.035; ctx.strokeStyle='#00f2ea';
+      ctx.beginPath(); ctx.moveTo(GLOBE_CX-cr,y); ctx.lineTo(GLOBE_CX+cr,y); ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+    if (beamY>GLOBE_CY-GLOBE_R&&beamY<GLOBE_CY+GLOBE_R) {
+      const dy=beamY-GLOBE_CY, cr=Math.sqrt(Math.max(0,GLOBE_R*GLOBE_R-dy*dy));
+      for (let offset=-10;offset<=0;offset+=2) {
+        const trailY=beamY+offset, tdy=trailY-GLOBE_CY;
+        const tcr=Math.sqrt(Math.max(0,GLOBE_R*GLOBE_R-tdy*tdy));
+        if (tcr<2) continue;
+        ctx.globalAlpha=0.03*(1+offset/10); ctx.strokeStyle='#00f2ea'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(GLOBE_CX-tcr,trailY); ctx.lineTo(GLOBE_CX+tcr,trailY); ctx.stroke();
+      }
+      const bg=ctx.createLinearGradient(GLOBE_CX-cr,0,GLOBE_CX+cr,0);
+      bg.addColorStop(0,'rgba(0,242,234,0)'); bg.addColorStop(0.3,'rgba(0,242,234,0.25)');
+      bg.addColorStop(0.5,'rgba(0,242,234,0.35)'); bg.addColorStop(0.7,'rgba(0,242,234,0.25)');
+      bg.addColorStop(1,'rgba(0,242,234,0)');
+      ctx.globalAlpha=1; ctx.lineWidth=2; ctx.strokeStyle=bg;
+      ctx.beginPath(); ctx.moveTo(GLOBE_CX-cr,beamY); ctx.lineTo(GLOBE_CX+cr,beamY); ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+
+    // Globe dots — 4 passes
+    for (const dot of st.globeDots) {
+      if (!dot.isLand) continue;
+      const [rx,ry,rz]=socApplyRotations(dot.x,dot.y,dot.z,rotY);
+      if (rz>=-0.05) continue;
+      const sx=GLOBE_CX+rx*GLOBE_R, sy=GLOBE_CY-ry*GLOBE_R;
+      const bd=Math.max(0,-rz-0.05);
+      ctx.globalAlpha=0.12+bd*0.10; ctx.fillStyle='rgb(0,200,195)';
+      ctx.beginPath(); ctx.arc(sx,sy,0.8+bd*0.4,0,Math.PI*2); ctx.fill();
+    }
+    for (const dot of st.globeDots) {
+      if (dot.isLand) continue;
+      const [rx,ry,rz]=socApplyRotations(dot.x,dot.y,dot.z,rotY);
+      if (rz>=-0.05) continue;
+      const sx=GLOBE_CX+rx*GLOBE_R, sy=GLOBE_CY-ry*GLOBE_R;
+      ctx.globalAlpha=0.015; ctx.fillStyle='rgb(0,70,68)';
+      ctx.beginPath(); ctx.arc(sx,sy,0.4,0,Math.PI*2); ctx.fill();
+    }
+    for (const dot of st.globeDots) {
+      if (dot.isLand) continue;
+      const [rx,ry,rz]=socApplyRotations(dot.x,dot.y,dot.z,rotY);
+      if (rz<-0.05) continue;
+      const sx=GLOBE_CX+rx*GLOBE_R, sy=GLOBE_CY-ry*GLOBE_R;
+      const depth=Math.max(0,rz), nearBeam=Math.abs(sy-beamY)<8;
+      ctx.globalAlpha=nearBeam?0.10:(0.015+depth*0.025); ctx.fillStyle='rgb(0,80,78)';
+      ctx.beginPath(); ctx.arc(sx,sy,0.5,0,Math.PI*2); ctx.fill();
+    }
+    ctx.save(); ctx.shadowColor='rgba(0,242,234,0.35)'; ctx.shadowBlur=3;
+    for (const dot of st.globeDots) {
+      if (!dot.isLand) continue;
+      const [rx,ry,rz]=socApplyRotations(dot.x,dot.y,dot.z,rotY);
+      if (rz<-0.05) continue;
+      const sx=GLOBE_CX+rx*GLOBE_R, sy=GLOBE_CY-ry*GLOBE_R;
+      const depth=Math.max(0,rz), nearBeam=Math.abs(sy-beamY)<10;
+      const flicker=0.92+Math.sin(t*8+dot.x*20+dot.y*30)*0.08;
+      const baseAlpha=(0.28+depth*0.45)*flicker;
+      ctx.globalAlpha=nearBeam?Math.min(1,baseAlpha+0.45):baseAlpha;
+      ctx.fillStyle=nearBeam?'rgb(150,255,252)':'rgb(0,242,234)';
+      const rad=(1.0+depth*0.9)*(nearBeam?1.4:1);
+      ctx.beginPath(); ctx.arc(sx,sy,rad,0,Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+
+    // Activity pulses
+    if (t-st.lastPulseSpawn>0.6) {
+      st.lastPulseSpawn=t;
+      const cands: {sx:number;sy:number}[]=[];
+      for (const p of st.socPhones) { const pp=proj(p.x3d,p.y3d,p.z3d); if (pp.visible) cands.push({sx:pp.sx,sy:pp.sy}); }
+      if (cands.length>0) {
+        const cc2=cands[Math.floor(Math.random()*cands.length)];
+        const acct=st.socPhones[Math.floor(Math.random()*st.socPhones.length)].accounts[0];
+        st.activityPulses.push({sx:cc2.sx+(Math.random()-0.5)*12,sy:cc2.sy+(Math.random()-0.5)*12,born:t,duration:1.2,color:acct.color});
+      }
+    }
+    for (let i=st.activityPulses.length-1;i>=0;i--) {
+      const pulse=st.activityPulses[i], age=t-pulse.born;
+      if (age>pulse.duration) { st.activityPulses.splice(i,1); continue; }
+      const progress=age/pulse.duration;
+      const [pr2,pg2,pb2]=pulse.color;
+      ctx.globalAlpha=(1-progress)*0.25; ctx.strokeStyle=`rgb(${pr2},${pg2},${pb2})`; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(pulse.sx,pulse.sy,3+progress*15,0,Math.PI*2); ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+
+    // Hover: user mouse > sticky (3s) > auto-hover (4s cycle)
+    if (hasMouse) {
+      let best: PhoneSocNode|null=null, bestD=25;
+      for (const p of st.socPhones) {
+        const pp=proj(p.x3d,p.y3d,p.z3d); if (!pp.visible) continue;
+        const d=Math.sqrt((pp.sx-mx)**2+(pp.sy-my)**2);
+        if (d<bestD){bestD=d;best=p;}
+      }
+      if (best) { st.stickyPhone=best; st.hoveredPhone=best; }
+      else {
+        if (st.stickyPhone) {
+          const pp=proj(st.stickyPhone.x3d,st.stickyPhone.y3d,st.stickyPhone.z3d);
+          st.hoveredPhone=(pp.visible&&pp.depth>0.05)?st.stickyPhone:null;
+          if (!st.hoveredPhone) st.stickyPhone=null;
+        } else { st.hoveredPhone=null; }
+      }
+    } else {
+      if (st.stickyPhone) {
+        const pp=proj(st.stickyPhone.x3d,st.stickyPhone.y3d,st.stickyPhone.z3d);
+        st.hoveredPhone=(pp.visible&&pp.depth>0.05)?st.stickyPhone:null;
+        if (!st.hoveredPhone) st.stickyPhone=null;
+      }
+      if (!st.hoveredPhone) {
+        if (t-st.autoHoverTimer>4) {
+          st.autoHoverTimer=t;
+          for (let tries=0;tries<st.socPhones.length;tries++) {
+            st.autoHoverIdx=(st.autoHoverIdx+1)%st.socPhones.length;
+            const pp=proj(st.socPhones[st.autoHoverIdx].x3d,st.socPhones[st.autoHoverIdx].y3d,st.socPhones[st.autoHoverIdx].z3d);
+            if (pp.visible) break;
+          }
+        }
+        const ap=st.socPhones[st.autoHoverIdx];
+        const apr=proj(ap.x3d,ap.y3d,ap.z3d);
+        st.hoveredPhone=apr.visible?ap:null;
+      }
+    }
+
+    // Phone nodes
+    for (const phone of st.socPhones) {
+      const p=proj(phone.x3d,phone.y3d,phone.z3d);
+      if (!p.visible) {
+        ctx.globalAlpha=0.04; ctx.fillStyle='#00f2ea';
+        ctx.beginPath(); ctx.arc(p.sx,p.sy,1,0,Math.PI*2); ctx.fill();
+        ctx.globalAlpha=1; continue;
+      }
+      const hov=st.hoveredPhone===phone;
+      const depth=Math.max(0.2,p.depth);
+      let alpha=0.5*depth, rad=4;
+      const nearBeam=Math.abs(p.sy-beamY)<12;
+      if (nearBeam) alpha=Math.min(0.95,alpha+0.35);
+      if (phone.status==='Posting') alpha=Math.max(alpha,0.4+Math.sin(t*3+phone.phase)*0.15);
+      if (hov){alpha=1;rad=8;}
+      ctx.globalAlpha=alpha*0.4; ctx.strokeStyle='#00f2ea'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(p.sx,p.sy,rad+3,0,Math.PI*2); ctx.stroke();
+      ctx.globalAlpha=alpha*0.15; ctx.fillStyle='#00f2ea';
+      ctx.beginPath(); ctx.arc(p.sx,p.sy,rad+5,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha=alpha; ctx.fillStyle='#00f2ea';
+      ctx.beginPath(); ctx.arc(p.sx,p.sy,rad,0,Math.PI*2); ctx.fill();
+      const [pr3,pg3,pb3]=phone.accounts[0].color;
+      ctx.globalAlpha=hov?1:alpha*0.9; ctx.fillStyle=`rgb(${pr3},${pg3},${pb3})`;
+      ctx.beginPath(); ctx.arc(p.sx,p.sy,hov?4:2,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha=1;
+    }
+
+    if (st.hoveredPhone) {
+      const p=proj(st.hoveredPhone.x3d,st.hoveredPhone.y3d,st.hoveredPhone.z3d);
+      drawSocTooltip(ctx,st.hoveredPhone,p.sx,p.sy,w,h);
+    }
+
+    // Mini HUD (top-left)
+    ctx.save();
+    ctx.textAlign='left'; ctx.font='bold 8px "SF Mono","Fira Code",monospace';
+    ctx.globalAlpha=0.7+Math.sin(t*0.8)*0.1; ctx.fillStyle='#80fff8';
+    ctx.fillText('SOCIAL NETWORK',12,14);
+    const hudRows=[
+      {label:'PHONES',value:`${st.totalPhones}`},
+      {label:'ACCOUNTS',value:`${st.totalAccounts}`},
+      {label:'CITIES',value:'12'},
+      {label:'UPTIME',value:'99.7%'},
+    ];
+    ctx.font='8px "SF Mono","Fira Code",monospace';
+    for (let i=0;i<hudRows.length;i++) {
+      const ry=14+14+i*14;
+      const flicker=0.55+Math.sin(t*1.1+i*0.5)*0.1;
+      ctx.globalAlpha=flicker; ctx.fillStyle='#b0fffc'; ctx.textAlign='left';
+      ctx.fillText(hudRows[i].value,80,ry);
+      ctx.globalAlpha=flicker*0.6; ctx.fillStyle='#00f2ea';
+      ctx.fillText(hudRows[i].label,12,ry);
+    }
+    ctx.restore();
+
+    // Counter (top-right)
+    ctx.save(); ctx.textAlign='right'; ctx.font='10px "SF Mono","Fira Code",monospace';
+    ctx.globalAlpha=0.55; ctx.fillStyle='rgba(0,242,234,0.55)';
+    ctx.fillText(`${st.totalPhones} phones  ·  ${st.totalAccounts} accounts  ·  12 cities`,w-10,16);
+    ctx.restore();
   }
 
   // ── Product 4: Pitch Topo Contours ───────────────────────────────────────
@@ -1563,7 +1922,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       case 0: return initSEO(w,h);
       case 1: return initReach(w,h);
       case 2: return initRain(w,h);
-      case 3: return initNodes(w,h);
+      case 3: return initSocial(w,h);
       case 6: return initParticles(w,h);
       case 7: return initBlueprint();
       default: return {};
@@ -1580,7 +1939,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       case 0: drawSEO(ctx,w,h,t,lx,ly,hasMouse,state); break;
       case 1: drawReach(ctx,w,h,t,lx,ly,hasMouse,state); break;
       case 2: drawRain(ctx,w,h,t,lx,ly,hasMouse,state); break;
-      case 3: drawNodes(ctx,w,h,t,lx,ly,hasMouse,state); break;
+      case 3: drawSocial(ctx,w,h,t,lx,ly,hasMouse,state); break;
       case 4: drawTopo(ctx,w,h,t,lx,ly,hasMouse,state); break;
       case 5: drawBars(ctx,w,h,t,lx,ly,hasMouse,state); break;
       case 6: drawParticles(ctx,w,h,t,lx,ly,hasMouse,state); break;
