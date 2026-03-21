@@ -1760,95 +1760,74 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       drawSocTooltip(ctx,st.hoveredPhone,p.sx,p.sy,w,h);
     }
 
-    // ── HUD panel — just left of globe edge ──
+    // ── HUD panel — frosted glass box centered on globe ──
     ctx.save();
-    const hudX = GLOBE_CX - GLOBE_R - 8;
-    const hudTop = GLOBE_CY - GLOBE_R * 0.80;
-    ctx.textAlign='right';
-
-    // Section 1: Infrastructure
-    ctx.globalAlpha = 0.7+Math.sin(t*0.8)*0.1; ctx.fillStyle='#80fff8';
-    ctx.font='bold 9px "SF Mono","Fira Code",monospace';
-    ctx.fillText('INFRASTRUCTURE', hudX, hudTop);
-    ctx.globalAlpha=0.25; ctx.strokeStyle='#00f2ea'; ctx.lineWidth=0.5;
-    ctx.beginPath(); ctx.moveTo(hudX-120, hudTop+5); ctx.lineTo(hudX, hudTop+5); ctx.stroke();
-
-    ctx.font='9px "SF Mono","Fira Code",monospace';
-    const infraRows=[
-      {label:'PHONES',value:`${st.totalPhones}`,phase:0},
+    const allRows = [
+      {label:'PHONES',value:`${st.totalPhones}`,phase:0,section:'INFRASTRUCTURE'},
       {label:'ACTIVE',value:`${st.totalPhones-3}/${st.totalPhones}`,phase:0.5},
       {label:'CITIES',value:'12',phase:1.0},
       {label:'UPTIME',value:'99.7%',phase:1.5},
       {label:'LATENCY',value:'< 14ms',phase:2.0},
       {label:'SYNC',value:'REAL-TIME',phase:2.5},
-    ];
-    for (let i=0;i<infraRows.length;i++) {
-      const row=infraRows[i]; const ry=hudTop+18+i*13;
-      const fl=0.55+Math.sin(t*1.1+row.phase)*0.1;
-      ctx.globalAlpha=fl; ctx.fillStyle='#b0fffc'; ctx.textAlign='right';
-      ctx.fillText(row.value,hudX,ry);
-      ctx.globalAlpha=fl*0.6; ctx.fillStyle='#00f2ea';
-      ctx.fillText(row.label,hudX-65,ry);
-    }
-
-    // Section 2: Operations
-    const opsTop=hudTop+18+infraRows.length*13+10;
-    ctx.globalAlpha=0.7+Math.sin(t*0.9+1)*0.1; ctx.fillStyle='#80fff8';
-    ctx.font='bold 9px "SF Mono","Fira Code",monospace'; ctx.textAlign='right';
-    ctx.fillText('OPERATIONS',hudX,opsTop);
-    ctx.globalAlpha=0.25;
-    ctx.beginPath(); ctx.moveTo(hudX-120,opsTop+5); ctx.lineTo(hudX,opsTop+5); ctx.stroke();
-
-    ctx.font='9px "SF Mono","Fira Code",monospace';
-    const opsRows=[
-      {label:'ACCOUNTS',value:`${st.totalAccounts}`,phase:0.3},
+      {label:'ACCOUNTS',value:`${st.totalAccounts}`,phase:0.3,section:'OPERATIONS'},
       {label:'POSTS/DAY',value:'1,247',phase:0.8},
       {label:'PLATFORMS',value:'5 active',phase:1.3},
-      {label:'AI ENGINE',value:'GPT-4 + LLAMA',phase:1.8},
       {label:'QUEUE',value:`${Math.floor(47+Math.sin(t*0.3)*12)} pending`,phase:2.3},
       {label:'ENGAGEMENT',value:'6.8% avg',phase:2.8},
     ];
-    for (let i=0;i<opsRows.length;i++) {
-      const row=opsRows[i]; const ry=opsTop+18+i*13;
-      const fl=0.55+Math.sin(t*1.2+row.phase)*0.1;
-      ctx.globalAlpha=fl; ctx.fillStyle='#b0fffc'; ctx.textAlign='right';
-      ctx.fillText(row.value,hudX,ry);
-      ctx.globalAlpha=fl*0.6; ctx.fillStyle='#00f2ea';
-      ctx.fillText(row.label,hudX-65,ry);
-    }
+    const ROW_H=14, SEC_GAP=20, PAD=12;
+    // Calculate box height
+    let boxH=PAD*2; let sectionCount=0;
+    for (const r of allRows) { if (r.section) sectionCount++; }
+    boxH += allRows.length*ROW_H + sectionCount*(SEC_GAP) + (sectionCount-1?4:0);
+    const BOX_W=180, BOX_H=boxH;
+    const bx=GLOBE_CX-BOX_W/2, by=GLOBE_CY-BOX_H/2;
 
-    // Section 3: Growth
-    const growTop=opsTop+18+opsRows.length*13+10;
-    ctx.globalAlpha=0.7+Math.sin(t*1.0+2)*0.1; ctx.fillStyle='#80fff8';
-    ctx.font='bold 9px "SF Mono","Fira Code",monospace'; ctx.textAlign='right';
-    ctx.fillText('GROWTH',hudX,growTop);
-    ctx.globalAlpha=0.25;
-    ctx.beginPath(); ctx.moveTo(hudX-120,growTop+5); ctx.lineTo(hudX,growTop+5); ctx.stroke();
+    // Glass background
+    ctx.globalAlpha=0.55;
+    ctx.fillStyle='rgba(0,12,14,0.50)';
+    rrect(ctx,bx,by,BOX_W,BOX_H,10); ctx.fill();
+    // Cyan tint
+    ctx.globalAlpha=0.06;
+    ctx.fillStyle='#00f2ea';
+    rrect(ctx,bx,by,BOX_W,BOX_H,10); ctx.fill();
+    // Border
+    ctx.globalAlpha=0.15;
+    ctx.strokeStyle='#00f2ea'; ctx.lineWidth=1;
+    rrect(ctx,bx,by,BOX_W,BOX_H,10); ctx.stroke();
 
-    ctx.font='9px "SF Mono","Fira Code",monospace';
-    const growRows=[
-      {label:'RATE',value:'+14.2%/mo',phase:3.3},
-      {label:'CONTENT',value:'GENERATING',phase:3.8},
-      {label:'BANDWIDTH',value:'NOMINAL',phase:4.1},
-      {label:'ENCRYPTION',value:'AES-256',phase:4.5},
-    ];
-    for (let i=0;i<growRows.length;i++) {
-      const row=growRows[i]; const ry=growTop+18+i*13;
-      const fl=0.55+Math.sin(t*1.0+row.phase)*0.1;
-      ctx.globalAlpha=fl; ctx.fillStyle='#b0fffc'; ctx.textAlign='right';
-      ctx.fillText(row.value,hudX,ry);
+    // Draw rows
+    let cy=by+PAD;
+    for (const row of allRows) {
+      if (row.section) {
+        // Section header
+        ctx.globalAlpha=0.7+Math.sin(t*0.8+(row.section==='OPERATIONS'?1:0))*0.1;
+        ctx.fillStyle='#80fff8';
+        ctx.font='bold 9px "SF Mono","Fira Code",monospace';
+        ctx.textAlign='center';
+        ctx.fillText(row.section,GLOBE_CX,cy+10);
+        // Separator
+        ctx.globalAlpha=0.2; ctx.strokeStyle='#00f2ea'; ctx.lineWidth=0.5;
+        ctx.beginPath(); ctx.moveTo(bx+PAD,cy+14); ctx.lineTo(bx+BOX_W-PAD,cy+14); ctx.stroke();
+        cy+=SEC_GAP;
+      }
+      const fl=0.6+Math.sin(t*1.1+row.phase)*0.1;
+      ctx.globalAlpha=fl; ctx.fillStyle='#b0fffc';
+      ctx.font='9px "SF Mono","Fira Code",monospace';
+      ctx.textAlign='right';
+      ctx.fillText(row.value,bx+BOX_W-PAD,cy+10);
       ctx.globalAlpha=fl*0.6; ctx.fillStyle='#00f2ea';
-      ctx.fillText(row.label,hudX-65,ry);
+      ctx.textAlign='left';
+      ctx.fillText(row.label,bx+PAD,cy+10);
+      cy+=ROW_H;
     }
 
     // Bottom status bar
     ctx.textAlign='center';
-    ctx.globalAlpha=0.45+Math.sin(t*0.6)*0.1; ctx.font='8px "SF Mono","Fira Code",monospace'; ctx.fillStyle='#80fff8';
-    const bottomY=GLOBE_CY+GLOBE_R+18;
+    ctx.globalAlpha=0.40+Math.sin(t*0.6)*0.1; ctx.font='8px "SF Mono","Fira Code",monospace'; ctx.fillStyle='#80fff8';
+    const bottomY=by+BOX_H+14;
     const statusFlash=Math.floor(t*2)%2===0;
     ctx.fillText(`${statusFlash?'●':'○'}  ALL SYSTEMS OPERATIONAL  ${statusFlash?'●':'○'}`,GLOBE_CX,bottomY);
-    ctx.globalAlpha=0.30+Math.sin(t*0.4+1)*0.08; ctx.fillStyle='#00f2ea';
-    ctx.fillText(`THROUGHPUT: ${(2847+Math.floor(Math.sin(t*0.2)*200)).toLocaleString()} ops/min  ·  ERR: 0.02%`,GLOBE_CX,bottomY+13);
     ctx.restore();
   }
 
