@@ -194,8 +194,16 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     position: relative;
     border-radius: 1.25rem;
     border: 1px solid rgba(255, 255, 255, 0.06);
-    background: rgba(6, 7, 18, 0.6);
+    background: rgba(6, 7, 18, 0.7);
     overflow: hidden;
+  }
+  .product-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    pointer-events: none;
   }
   .product-bg {
     position: absolute;
@@ -209,6 +217,12 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
   .product-card-content {
     position: relative;
     z-index: 1;
+    padding: 1.5rem 1rem;
+  }
+  @media (min-width: 768px) {
+    .product-card-content {
+      padding: 2.5rem 2rem;
+    }
   }
   /* Strip the ProductSection's own section chrome so the card provides the container */
   .product-card .ps-section {
@@ -216,6 +230,13 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     border: none !important;
     padding-top: 0 !important;
     padding-bottom: 0 !important;
+  }
+  .product-card .container {
+    max-width: none;
+    padding: 0;
+  }
+  .product-card .ps-section .grid {
+    gap: 2.5rem;
   }
   .product-card .section-divider {
     display: none !important;
@@ -706,7 +727,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       }
       dot.x+=(tx-dot.x)*LERP;
       dot.y+=(ty-dot.y)*LERP;
-      const alpha=inf>0 ? 0.15+inf*0.3 : 0.12;
+      const alpha=inf>0 ? 0.30+inf*0.6 : 0.25;
       ctx.globalAlpha=alpha;
       ctx.fillStyle=`rgb(${r},${g},${b})`;
       ctx.beginPath(); ctx.arc(dot.x,dot.y,1,0,Math.PI*2); ctx.fill();
@@ -728,7 +749,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
         const dy=Math.abs(my-yPos);
         if (dy < h/numWaves) amp*=1+(1-dy/(h/numWaves));
       }
-      ctx.strokeStyle=`rgba(${r},${g},${b},0.10)`;
+      ctx.strokeStyle=`rgba(${r},${g},${b},0.18)`;
       ctx.beginPath();
       for (let x=0;x<=w;x+=2) {
         const y=yPos+Math.sin(x*0.025+phase+phaseOff)*amp;
@@ -748,7 +769,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       const dashes: RainDash[]=[];
       for (let d=0;d<10;d++) dashes.push({
         y: Math.random()*h,
-        alpha: 0.07+Math.random()*0.06,
+        alpha: 0.14+Math.random()*0.08,
         speed: 0.3+Math.random()*0.5,
       });
       columns.push({ x: c*colW+colW/2, dashes });
@@ -764,8 +785,8 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       const alphaMult=near ? 1.8 : 1;
       for (const dash of col.dashes) {
         dash.y+=dash.speed*speedMult;
-        if (dash.y > h+5) { dash.y=-5; dash.speed=0.3+Math.random()*0.5; dash.alpha=0.07+Math.random()*0.06; }
-        const a=Math.min(0.22, dash.alpha*alphaMult);
+        if (dash.y > h+5) { dash.y=-5; dash.speed=0.3+Math.random()*0.5; dash.alpha=0.14+Math.random()*0.08; }
+        const a=Math.min(0.44, dash.alpha*alphaMult);
         ctx.strokeStyle=`rgba(${r},${g},${b},${a})`;
         ctx.lineWidth=2;
         ctx.beginPath(); ctx.moveTo(col.x-1.5, dash.y); ctx.lineTo(col.x+1.5, dash.y); ctx.stroke();
@@ -801,13 +822,13 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       const dx=nodes[i].x-nodes[j].x, dy=nodes[i].y-nodes[j].y;
       const d=Math.sqrt(dx*dx+dy*dy);
       if (d<120) {
-        ctx.strokeStyle=`rgba(${r},${g},${b},${0.10*(1-d/120)})`;
+        ctx.strokeStyle=`rgba(${r},${g},${b},${0.20*(1-d/120)})`;
         ctx.lineWidth=1;
         ctx.beginPath(); ctx.moveTo(nodes[i].x,nodes[i].y); ctx.lineTo(nodes[j].x,nodes[j].y); ctx.stroke();
       }
     }
     for (const n of nodes) {
-      ctx.fillStyle=`rgba(${r},${g},${b},0.20)`;
+      ctx.fillStyle=`rgba(${r},${g},${b},0.40)`;
       ctx.beginPath(); ctx.arc(n.x,n.y,2.5,0,Math.PI*2); ctx.fill();
     }
   }
@@ -831,7 +852,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       }
     }
     const levels=[-0.5,-0.3,-0.1,0.1,0.3,0.5];
-    const alphas=[0.05,0.07,0.08,0.10,0.12,0.13];
+    const alphas=[0.10,0.14,0.16,0.20,0.24,0.26];
     for (let li=0;li<levels.length;li++) {
       const level=levels[li];
       ctx.strokeStyle=`rgba(${r},${g},${b},${alphas[li]})`;
@@ -872,7 +893,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
         const dx=Math.abs(mx-bCx);
         if (dx<60) barH=Math.max(barH, Math.pow(1-dx/60,2)*35);
       }
-      const alpha=0.05+(barH/34)*0.13;
+      const alpha=0.10+(barH/34)*0.26;
       ctx.fillStyle=`rgba(${r},${g},${b},${alpha})`;
       ctx.fillRect(x, centerY-barH, barW, barH);
     }
@@ -908,11 +929,11 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       if (p.x<0) p.x+=w; if (p.x>w) p.x-=w;
       if (p.y<0) p.y+=h; if (p.y>h) p.y-=h;
       for (let ti=1;ti<p.trail.length;ti++) {
-        ctx.strokeStyle=`rgba(${r},${g},${b},${(ti/p.trail.length)*0.13})`;
+        ctx.strokeStyle=`rgba(${r},${g},${b},${(ti/p.trail.length)*0.26})`;
         ctx.lineWidth=1;
         ctx.beginPath(); ctx.moveTo(p.trail[ti-1].x,p.trail[ti-1].y); ctx.lineTo(p.trail[ti].x,p.trail[ti].y); ctx.stroke();
       }
-      ctx.fillStyle=`rgba(${r},${g},${b},0.13)`;
+      ctx.fillStyle=`rgba(${r},${g},${b},0.26)`;
       ctx.beginPath(); ctx.arc(p.x,p.y,1,0,Math.PI*2); ctx.fill();
     }
   }
@@ -935,18 +956,18 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     }
     st.builds=st.builds.filter((bld:BuildAnim)=>(now-bld.startTime)<1500);
     for (let y=0;y<=h;y+=BG) {
-      const alpha=hasMouse&&Math.abs(my-y)<BG ? 0.08 : 0.03;
+      const alpha=hasMouse&&Math.abs(my-y)<BG ? 0.14 : 0.07;
       ctx.strokeStyle=`rgba(${r},${g},${b},${alpha})`; ctx.lineWidth=0.5;
       ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke();
     }
     for (let x=0;x<=w;x+=BG) {
-      const alpha=hasMouse&&Math.abs(mx-x)<BG ? 0.08 : 0.03;
+      const alpha=hasMouse&&Math.abs(mx-x)<BG ? 0.14 : 0.07;
       ctx.strokeStyle=`rgba(${r},${g},${b},${alpha})`; ctx.lineWidth=0.5;
       ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke();
     }
     for (const bld of st.builds) {
       const elapsed=(now-bld.startTime)/1000;
-      const alpha=elapsed<0.5 ? 0.15 : 0.15*(1-(elapsed-0.5)/1.0);
+      const alpha=elapsed<0.5 ? 0.30 : 0.30*(1-(elapsed-0.5)/1.0);
       if (alpha<0.005) continue;
       const progress=Math.min(1,elapsed/0.5);
       ctx.strokeStyle=`rgba(${r},${g},${b},${alpha})`; ctx.lineWidth=2;
@@ -996,7 +1017,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     if (i >= 8) return;
     const bgCanvas = card.querySelector<HTMLCanvasElement>('.product-bg')!;
     const bgCtx = bgCanvas.getContext('2d')!;
-    const halfDpr = Math.max(0.5, (window.devicePixelRatio||1) * 0.5);
+    const halfDpr = Math.max(0.5, (window.devicePixelRatio||1) * 0.75);
     const rect = card.getBoundingClientRect();
     const cw = Math.round(rect.width) || 800;
     const ch = Math.round(rect.height) || 400;
@@ -1007,6 +1028,12 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     bgCtx.setTransform(halfDpr, 0, 0, halfDpr, 0, 0);
     const pState = initProdState(i, cw, ch);
     pvCards.push({ canvas: bgCanvas, ctx: bgCtx, w: cw, h: ch, dpr: halfDpr, visible: false, state: pState });
+
+    // Apply product colour tint to card background
+    const section = card.querySelector('.ps-section') as HTMLElement|null;
+    const color = section?.style.getPropertyValue('--product-color') || '#6366f1';
+    card.style.background = `linear-gradient(135deg, ${color}08 0%, rgba(6, 7, 18, 0.75) 50%, ${color}05 100%)`;
+    card.style.borderColor = `${color}15`;
 
     // Resize observer — track full card dimensions
     new ResizeObserver(() => {
