@@ -1,0 +1,859 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloSocial — Account Tree | Pello" description="PelloSocial grows a living account tree — one client, thousands of accounts, millions of posts.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="social8-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <div id="social8-tooltip" aria-hidden="true" style="display:none;position:fixed;z-index:9999;pointer-events:none;"></div>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: #c026d3;
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #c026d3 !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,10,30,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(192,38,211,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+
+  #social8-tooltip {
+    background: rgba(6,7,18,0.85);
+    border: 1px solid rgba(192,38,211,0.4);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-family: -apple-system, system-ui, BlinkMacSystemFont, sans-serif;
+    font-size: 13px;
+    color: #fff;
+    max-width: 280px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(192,38,211,0.15);
+  }
+  #social8-tooltip .tip-label {
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 10px;
+    color: #c026d3;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  #social8-tooltip .tip-value {
+    color: rgba(255,255,255,0.9);
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+  #social8-tooltip .tip-value:last-child { margin-bottom: 0; }
+</style>
+
+<script>
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Data constants ─────────────────────────────────────────────────────────
+  interface Platform { name: string; color: [number,number,number]; weight: number; }
+  const PLATFORMS_SOCIAL: Platform[] = [
+    { name: "Instagram",  color: [225, 48,  108], weight: 0.30 },
+    { name: "TikTok",     color: [0,   242, 234], weight: 0.25 },
+    { name: "Twitter/X",  color: [139, 92,  246], weight: 0.20 },
+    { name: "YouTube",    color: [255, 0,   0  ], weight: 0.10 },
+    { name: "Facebook",   color: [24,  119, 242], weight: 0.10 },
+    { name: "Reddit",     color: [255, 69,  0  ], weight: 0.05 },
+  ];
+
+  const PERSONA_FIRST = ["Alex","Jordan","Casey","Riley","Morgan","Taylor","Jamie","Quinn","Sage","Blake","Drew","Avery","Dakota","Skyler","Reese","Kai","Nova","Zara","Luna","Phoenix"];
+  const PERSONA_LAST  = ["Rivera","Kim","Santos","Nakamura","Ahmed","Berg","Costa","Johal","Novak","Park","Silva","Tanaka","Volkov","Wu","Zhang"];
+  const CITIES        = ["London","New York","LA","Tokyo","Berlin","Sydney","Toronto","Dubai","Singapore","São Paulo","Mumbai","Paris","Seoul","Amsterdam","Miami"];
+  const NICHES        = ["Fitness","Tech Reviews","Food","Travel","Fashion","Gaming","Finance","Wellness","Photography","Music"];
+  const FOLLOWER_COUNTS = ["2.3k","4.7k","8.1k","12.4k","18.9k","24.2k","31.5k","47.8k"];
+  const POST_TYPES    = ["Reel","Story","Post","Carousel","Short","Thread","Review","UGC Clip"];
+  const TOPICS        = ["Morning workout tips","Best ramen spots","Latest GPU benchmarks","Solo travel in Japan","Autumn outfit ideas","Speedrun glitch","Compound interest explained","Breathwork routine","Golden hour shots","Indie folk finds"];
+
+  function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+  function rnd(a: number, b: number) { return a + Math.random() * (b - a); }
+  function lerp(a: number, b: number, t: number) { return a + (b - a) * t; }
+
+  // ─── Tree node types ──────────────────────────────────────────────────────────
+  type NodeKind = 'root' | 'cluster' | 'account' | 'post';
+
+  interface TreeNode {
+    id: number;
+    kind: NodeKind;
+    x: number; y: number;
+    baseY: number; // for jitter reference
+    targetY: number;
+    r: number;       // radius
+    platform: Platform | null;
+    parentId: number;
+    children: number[];
+    // Data fields
+    city?: string;
+    phoneCount?: number;
+    accountCount?: number;
+    postsToday?: number;
+    name?: string;
+    niche?: string;
+    followers?: string;
+    engagement?: string;
+    postType?: string;
+    topic?: string;
+    timeAgo?: string;
+    // Animation
+    birthT: number;    // seconds timestamp when node was born
+    scale: number;     // 0→1 grow-in
+    highlighted: boolean;
+    // Energy flow
+    flowDots: FlowDot[];
+  }
+
+  interface FlowDot {
+    t: number;   // 0→1 along the line from parent to this node
+    speed: number;
+    dir: 1 | -1; // 1=toward root (data back), -1=toward leaf (commands out)
+  }
+
+  interface EdgeFlash {
+    fromId: number;
+    toId: number;
+    progress: number; // 0→1 extension progress
+  }
+
+  let nodes: TreeNode[]  = [];
+  let idCounter = 0;
+  let edgeFlashes: EdgeFlash[] = [];
+
+  let W = 0, H = 0;
+  let dpr = 1;
+
+  const canvas = document.querySelector<HTMLCanvasElement>('.social8-canvas')!;
+  const wrap   = document.getElementById('hero-wrap')!;
+  const ctx    = canvas.getContext('2d')!;
+  const tooltip = document.getElementById('social8-tooltip')!;
+
+  // X positions for each level
+  const X_ROOT    = () => W * 0.15;
+  const X_CLUSTER = () => W * 0.32;
+  const X_ACCOUNT = () => W * 0.57;
+  const X_POST    = () => W * 0.78;
+
+  function nextId() { return ++idCounter; }
+
+  function makeRoot(): TreeNode {
+    return {
+      id: nextId(), kind: 'root',
+      x: X_ROOT(), y: H / 2, baseY: H / 2, targetY: H / 2,
+      r: 15, platform: null, parentId: -1, children: [],
+      postsToday: 4281, accountCount: 347,
+      birthT: 0, scale: 1, highlighted: false,
+      flowDots: [],
+    };
+  }
+
+  function makeCluster(parentId: number, y: number): TreeNode {
+    const jitter = (Math.random() - 0.5) * 30;
+    return {
+      id: nextId(), kind: 'cluster',
+      x: X_CLUSTER(), y: y + jitter, baseY: y + jitter, targetY: y + jitter,
+      r: 6, platform: null, parentId, children: [],
+      city: pick(CITIES),
+      phoneCount: Math.floor(rnd(20, 50)),
+      accountCount: Math.floor(rnd(30, 120)),
+      postsToday: Math.floor(rnd(300, 1200)),
+      birthT: performance.now() * 0.001,
+      scale: 0, highlighted: false,
+      flowDots: seedFlowDots(5),
+    };
+  }
+
+  function makeAccount(parentId: number, clusterY: number): TreeNode {
+    const jitter = (Math.random() - 0.5) * 25;
+    const platIdx = weightedPickPlatform();
+    return {
+      id: nextId(), kind: 'account',
+      x: X_ACCOUNT(), y: clusterY + jitter, baseY: clusterY + jitter, targetY: clusterY + jitter,
+      r: 3, platform: PLATFORMS_SOCIAL[platIdx], parentId, children: [],
+      name: `${pick(PERSONA_FIRST)} ${pick(PERSONA_LAST)}`,
+      niche: pick(NICHES),
+      followers: pick(FOLLOWER_COUNTS),
+      engagement: `${(rnd(2, 8)).toFixed(1)}%`,
+      city: pick(CITIES),
+      birthT: performance.now() * 0.001,
+      scale: 0, highlighted: false,
+      flowDots: seedFlowDots(3),
+    };
+  }
+
+  function makePost(parentId: number, accountY: number): TreeNode {
+    const jitter = (Math.random() - 0.5) * 18;
+    const parentNode = nodes.find(n => n.id === parentId)!;
+    return {
+      id: nextId(), kind: 'post',
+      x: X_POST(), y: accountY + jitter, baseY: accountY + jitter, targetY: accountY + jitter,
+      r: 1.5, platform: parentNode?.platform ?? null, parentId, children: [],
+      postType: pick(POST_TYPES),
+      topic: pick(TOPICS),
+      timeAgo: `${Math.floor(rnd(1, 59))}m ago`,
+      birthT: performance.now() * 0.001,
+      scale: 0, highlighted: false,
+      flowDots: seedFlowDots(2),
+    };
+  }
+
+  function seedFlowDots(count: number): FlowDot[] {
+    return Array.from({ length: count }, (_, i) => ({
+      t: i / count,
+      speed: rnd(0.004, 0.01),
+      dir: Math.random() < 0.6 ? -1 : 1, // more commands out than data back
+    } as FlowDot));
+  }
+
+  const PLAT_CUM: number[] = [];
+  { let s = 0; for (const p of PLATFORMS_SOCIAL) { s += p.weight; PLAT_CUM.push(s); } }
+  function weightedPickPlatform(): number {
+    const r = Math.random();
+    for (let i = 0; i < PLAT_CUM.length; i++) if (r < PLAT_CUM[i]) return i;
+    return 0;
+  }
+
+  // ─── Build initial tree ──────────────────────────────────────────────────────
+  function buildTree() {
+    nodes = [];
+    idCounter = 0;
+    edgeFlashes = [];
+
+    const root = makeRoot();
+    nodes.push(root);
+
+    const numClusters = Math.min(12, Math.max(6, Math.floor(H / 65)));
+    const clusterSpacing = H / (numClusters + 1);
+
+    for (let ci = 0; ci < numClusters; ci++) {
+      const cy = clusterSpacing * (ci + 1);
+      const cluster = makeCluster(root.id, cy);
+      cluster.scale = 1; // pre-born
+      root.children.push(cluster.id);
+      nodes.push(cluster);
+
+      const numAccounts = Math.floor(rnd(4, 9));
+      const accountSpread = Math.min(60, H / (numClusters * 2));
+      for (let ai = 0; ai < numAccounts; ai++) {
+        const ay = cy + (ai - numAccounts / 2) * (accountSpread / numAccounts) + (Math.random() - 0.5) * 15;
+        const account = makeAccount(cluster.id, ay);
+        account.scale = 1;
+        cluster.children.push(account.id);
+        nodes.push(account);
+
+        const numPosts = Math.floor(rnd(2, 5));
+        const postSpread = accountSpread * 0.7;
+        for (let pi2 = 0; pi2 < numPosts; pi2++) {
+          const py = ay + (pi2 - numPosts / 2) * (postSpread / numPosts) + (Math.random() - 0.5) * 10;
+          const post = makePost(account.id, py);
+          post.scale = 1;
+          account.children.push(post.id);
+          nodes.push(post);
+        }
+      }
+    }
+  }
+
+  // ─── Growth timers ────────────────────────────────────────────────────────────
+  let lastAccountBud = 0;
+  let lastPostBud    = 0;
+  let lastClusterBud = 0;
+
+  function growthTick(now: number) {
+    const t = now * 0.001;
+
+    // New account every 4s
+    if (t - lastAccountBud > 4) {
+      lastAccountBud = t;
+      const clusters = nodes.filter(n => n.kind === 'cluster');
+      if (clusters.length > 0) {
+        const cluster = clusters[Math.floor(Math.random() * clusters.length)];
+        const acct = makeAccount(cluster.id, cluster.y);
+        cluster.children.push(acct.id);
+        nodes.push(acct);
+        edgeFlashes.push({ fromId: cluster.id, toId: acct.id, progress: 0 });
+      }
+    }
+
+    // New post every 8s
+    if (t - lastPostBud > 8) {
+      lastPostBud = t;
+      const accounts = nodes.filter(n => n.kind === 'account' && n.children.length < 6);
+      if (accounts.length > 0) {
+        const account = accounts[Math.floor(Math.random() * accounts.length)];
+        const post = makePost(account.id, account.y);
+        account.children.push(post.id);
+        nodes.push(post);
+        edgeFlashes.push({ fromId: account.id, toId: post.id, progress: 0 });
+      }
+    }
+
+    // New cluster every 15s
+    if (t - lastClusterBud > 15) {
+      lastClusterBud = t;
+      const root = nodes.find(n => n.kind === 'root');
+      if (root) {
+        const cy = rnd(H * 0.1, H * 0.9);
+        const cluster = makeCluster(root.id, cy);
+        root.children.push(cluster.id);
+        nodes.push(cluster);
+        edgeFlashes.push({ fromId: root.id, toId: cluster.id, progress: 0 });
+      }
+    }
+  }
+
+  // ─── Hover state ──────────────────────────────────────────────────────────────
+  let mouse: { x: number; y: number } | null = null;
+  let hoveredId = -1;
+
+  function hitTest(mx: number, my: number): number {
+    let bestId = -1, bestD = 20;
+    for (const n of nodes) {
+      const r = Math.max(n.r * n.scale + 4, 8);
+      const d = Math.hypot(mx - n.x, my - n.y);
+      if (d < r && d < bestD) { bestD = d; bestId = n.id; }
+    }
+    return bestId;
+  }
+
+  // ─── Highlight propagation ────────────────────────────────────────────────────
+  function highlightTree(id: number, kind: NodeKind) {
+    for (const n of nodes) n.highlighted = false;
+    if (id < 0) return;
+    const node = nodes.find(n => n.id === id);
+    if (!node) return;
+    // Highlight node itself
+    node.highlighted = true;
+    // Depending on kind, highlight ancestors or descendants
+    if (kind === 'root') {
+      for (const n of nodes) n.highlighted = true;
+    } else if (kind === 'cluster') {
+      // Highlight root + this cluster + all descendants
+      const root = nodes.find(n => n.kind === 'root');
+      if (root) root.highlighted = true;
+      highlightDescendants(id);
+    } else if (kind === 'account') {
+      // Highlight parent + this + children
+      const parent = nodes.find(n => n.id === node.parentId);
+      if (parent) parent.highlighted = true;
+      highlightDescendants(id);
+    } else if (kind === 'post') {
+      // Just self + parent
+      const parent = nodes.find(n => n.id === node.parentId);
+      if (parent) parent.highlighted = true;
+    }
+  }
+
+  function highlightDescendants(id: number) {
+    const node = nodes.find(n => n.id === id);
+    if (!node) return;
+    node.highlighted = true;
+    for (const cid of node.children) highlightDescendants(cid);
+  }
+
+  // ─── Tooltip ─────────────────────────────────────────────────────────────────
+  function tipRow(label: string, value: string) {
+    return `<div class="tip-label">${label}</div><div class="tip-value">${value}</div>`;
+  }
+
+  function showTooltip(html: string, screenX: number, screenY: number) {
+    tooltip.innerHTML = html;
+    tooltip.style.display = 'block';
+    const rect = tooltip.getBoundingClientRect();
+    let tx = screenX + 16, ty = screenY - rect.height / 2;
+    if (tx + rect.width > window.innerWidth - 8) tx = screenX - rect.width - 16;
+    if (ty < 8) ty = 8;
+    if (ty + rect.height > window.innerHeight - 8) ty = window.innerHeight - rect.height - 8;
+    tooltip.style.left = `${tx}px`;
+    tooltip.style.top  = `${ty}px`;
+  }
+
+  function hideTooltip() { tooltip.style.display = 'none'; }
+
+  // ─── Drawing helpers ──────────────────────────────────────────────────────────
+  function getNodeById(id: number): TreeNode | undefined {
+    return nodes.find(n => n.id === id);
+  }
+
+  function drawEdge(from: TreeNode, to: TreeNode, progress: number, flashProgress?: number) {
+    const [r, g, b] = to.platform ? to.platform.color : [192, 38, 211];
+    const isRoot = from.kind === 'root';
+    const alpha = isRoot ? 0.06 : 0.04;
+    const highlightAlpha = (from.highlighted && to.highlighted) ? alpha * 5 : alpha;
+
+    const cx = (from.x + to.x) / 2;
+    const cpY = (from.y + to.y) / 2 + (to.y - from.y) * 0.2;
+
+    // Partial draw if progress < 1
+    if (progress < 1) {
+      // Just a simple line extending
+      const ex = lerp(from.x, to.x, progress);
+      const ey = lerp(from.y, to.y, progress);
+      ctx.save();
+      ctx.globalAlpha = 0.4;
+      ctx.strokeStyle = `rgba(192,38,211,0.4)`;
+      ctx.lineWidth   = 1;
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(ex, ey);
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
+
+    ctx.save();
+    ctx.globalAlpha = highlightAlpha;
+    ctx.strokeStyle = isRoot ? `rgba(192,38,211,${highlightAlpha})` : `rgba(${r},${g},${b},${highlightAlpha})`;
+    ctx.lineWidth   = 1;
+    ctx.beginPath();
+    ctx.moveTo(from.x, from.y);
+    ctx.quadraticCurveTo(cx, cpY, to.x, to.y);
+    ctx.stroke();
+    ctx.restore();
+
+    // Flow dots along the edge
+    const bothHighlighted = from.highlighted && to.highlighted;
+    for (const fd of to.flowDots) {
+      fd.t = (fd.t + fd.speed * fd.dir + 1) % 1;
+      const ft   = fd.dir === -1 ? fd.t : 1 - fd.t; // -1=toward root = reverse along edge
+      const mt   = 1 - ft;
+      const fdx  = mt * mt * from.x + 2 * mt * ft * cx + ft * ft * to.x;
+      const fdy  = mt * mt * from.y + 2 * mt * ft * cpY + ft * ft * to.y;
+      const dotAlpha = bothHighlighted ? 0.7 : 0.15;
+      ctx.globalAlpha = dotAlpha;
+      ctx.fillStyle   = isRoot ? 'rgba(192,38,211,1)' : `rgba(${r},${g},${b},1)`;
+      ctx.beginPath();
+      ctx.arc(fdx, fdy, 1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // ─── Resize ───────────────────────────────────────────────────────────────────
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    W = Math.round(rect.width);
+    H = Math.round(rect.height);
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width  = `${W}px`;
+    canvas.style.height = `${H}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildTree();
+    lastAccountBud = performance.now() * 0.001;
+    lastPostBud    = performance.now() * 0.001;
+    lastClusterBud = performance.now() * 0.001;
+  }
+
+  // ─── Main frame ──────────────────────────────────────────────────────────────
+  function frame(now: number) {
+    requestAnimationFrame(frame);
+    const t = now * 0.001;
+
+    ctx.clearRect(0, 0, W, H);
+
+    growthTick(now);
+
+    // Update highlight
+    highlightTree(hoveredId, nodes.find(n => n.id === hoveredId)?.kind ?? 'post');
+
+    // Update edge flashes
+    for (let i = edgeFlashes.length - 1; i >= 0; i--) {
+      edgeFlashes[i].progress += 0.04;
+      if (edgeFlashes[i].progress >= 1) edgeFlashes.splice(i, 1);
+    }
+
+    // Grow-in animation for new nodes
+    for (const n of nodes) {
+      if (n.scale < 1) {
+        n.scale = Math.min(1, n.scale + 0.05);
+      }
+    }
+
+    // Root root-pulse
+    const root = nodes.find(n => n.kind === 'root');
+    if (root) {
+      root.x = X_ROOT();
+      root.y = H / 2;
+    }
+
+    // Draw all edges first
+    for (const child of nodes) {
+      if (child.parentId < 0) continue;
+      const parent = getNodeById(child.parentId);
+      if (!parent) continue;
+      const flash = edgeFlashes.find(ef => ef.toId === child.id);
+      drawEdge(parent, child, flash ? flash.progress : 1);
+    }
+
+    // Draw all nodes on top
+    for (const n of nodes) {
+      const s = n.scale;
+      if (s < 0.01) continue;
+
+      const [r, g, b] = n.platform ? n.platform.color : [192, 38, 211];
+      const highlighted = n.highlighted;
+
+      ctx.save();
+      ctx.translate(n.x, n.y);
+      ctx.scale(s, s);
+
+      if (n.kind === 'root') {
+        // Root: large pulsing magenta node
+        const pulse = 0.7 + 0.3 * Math.sin(t * 2);
+        ctx.shadowColor = `rgba(192,38,211,${0.5 * pulse})`;
+        ctx.shadowBlur  = 20 * pulse;
+        ctx.fillStyle   = `rgba(192,38,211,${0.85 * pulse})`;
+        ctx.beginPath();
+        ctx.arc(0, 0, 15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        ctx.globalAlpha = 0.7;
+        ctx.fillStyle   = '#ffffff';
+        ctx.font        = 'bold 8px "SF Mono","Fira Code",monospace';
+        ctx.textAlign   = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('CLIENT', 0, 0);
+        ctx.textBaseline = 'alphabetic';
+
+      } else if (n.kind === 'cluster') {
+        const glowA = highlighted ? 0.5 : 0.15;
+        ctx.shadowColor = `rgba(192,38,211,${glowA})`;
+        ctx.shadowBlur  = highlighted ? 12 : 6;
+        ctx.fillStyle   = `rgba(192,38,211,${highlighted ? 0.9 : 0.55})`;
+        ctx.beginPath();
+        ctx.arc(0, 0, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        ctx.globalAlpha = highlighted ? 0.6 : 0.18;
+        ctx.fillStyle   = '#c026d3';
+        ctx.font        = '7px "SF Mono","Fira Code",monospace';
+        ctx.textAlign   = 'left';
+        ctx.fillText(n.city ?? '', 9, 3);
+
+      } else if (n.kind === 'account') {
+        const glowA = highlighted ? 0.5 : 0.1;
+        ctx.shadowColor = `rgba(${r},${g},${b},${glowA})`;
+        ctx.shadowBlur  = highlighted ? 8 : 4;
+        ctx.fillStyle   = `rgba(${r},${g},${b},${highlighted ? 0.9 : 0.6})`;
+        ctx.beginPath();
+        ctx.arc(0, 0, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+      } else if (n.kind === 'post') {
+        ctx.globalAlpha = highlighted ? 0.7 : 0.3;
+        ctx.fillStyle   = `rgba(${r},${g},${b},1)`;
+        ctx.beginPath();
+        ctx.arc(0, 0, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    // ── Counter top-right ────────────────────────────────────────────────────
+    const numClusters  = nodes.filter(n => n.kind === 'cluster').length;
+    const numAccounts  = nodes.filter(n => n.kind === 'account').length;
+    const numPosts     = nodes.filter(n => n.kind === 'post').length;
+    ctx.save();
+    ctx.textAlign  = 'right';
+    ctx.fillStyle  = 'rgba(192,38,211,0.55)';
+    ctx.font       = '11px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`1 client · ${numClusters} clusters · ${numAccounts} accounts · ${numPosts.toLocaleString()} posts`, W - 16, 24);
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle  = '#ffffff';
+    ctx.font       = '9px "SF Mono","Fira Code",monospace';
+    ctx.fillText('living organism · grows in real time', W - 16, 38);
+    ctx.restore();
+
+    // ── Hover tooltip ─────────────────────────────────────────────────────────
+    if (mouse && hoveredId >= 0) {
+      const node = nodes.find(n => n.id === hoveredId);
+      const wRect = wrap.getBoundingClientRect();
+      const sx = wRect.left + mouse.x;
+      const sy = wRect.top  + mouse.y;
+
+      if (node) {
+        if (node.kind === 'root') {
+          const numCl = nodes.filter(n => n.kind === 'cluster').length;
+          const numAc = nodes.filter(n => n.kind === 'account').length;
+          const numPo = nodes.filter(n => n.kind === 'post').length;
+          showTooltip(
+            tipRow('CLIENT', 'Your Business') +
+            tipRow('CLUSTERS', `${numCl} phone clusters`) +
+            tipRow('ACCOUNTS', `${numAc} active accounts`) +
+            tipRow('OUTPUT', `${numPo.toLocaleString()} posts total`),
+            sx, sy
+          );
+        } else if (node.kind === 'cluster') {
+          const numAc = nodes.filter(n => n.parentId === node.id).length;
+          const numPo = nodes.filter(n => {
+            const acc = nodes.find(a => a.id === n.parentId);
+            return n.kind === 'post' && acc && acc.parentId === node.id;
+          }).length;
+          showTooltip(
+            tipRow('CLUSTER', `${node.city} · ${node.phoneCount} phones`) +
+            tipRow('ACCOUNTS', `${numAc} accounts`) +
+            tipRow('OUTPUT', `${node.postsToday?.toLocaleString()} posts today`),
+            sx, sy
+          );
+        } else if (node.kind === 'account') {
+          showTooltip(
+            tipRow('ACCOUNT', node.name ?? '') +
+            tipRow('PLATFORM', node.platform?.name ?? '') +
+            tipRow('NICHE', `${node.niche} · ${node.city}`) +
+            tipRow('FOLLOWERS', `${node.followers} · ${node.engagement} eng.`),
+            sx, sy
+          );
+        } else if (node.kind === 'post') {
+          showTooltip(
+            tipRow('POST TYPE', node.postType ?? '') +
+            tipRow('TOPIC', node.topic ?? '') +
+            tipRow('POSTED', node.timeAgo ?? ''),
+            sx, sy
+          );
+        }
+      }
+    } else {
+      hideTooltip();
+    }
+  }
+
+  // ─── Mouse ────────────────────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    mouse = { x: mx, y: my };
+    hoveredId = hitTest(mx, my);
+  });
+  wrap.addEventListener('mouseleave', () => {
+    mouse = null; hoveredId = -1; hideTooltip();
+    for (const n of nodes) n.highlighted = false;
+  });
+  wrap.addEventListener('touchstart', () => {
+    mouse = null; hoveredId = -1; hideTooltip();
+  }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── FinalCTA: branching lines with pulsing dots ──────────────────────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const ctaCanvas = document.createElement('canvas');
+      ctaCanvas.setAttribute('aria-hidden', 'true');
+      ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.style.position = 'relative';
+      ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+
+      const cc = ctaCanvas.getContext('2d')!;
+      let ctaDpr = 1, ctaW = 0, ctaH = 0;
+
+      interface CtaBranch {
+        x1: number; y1: number; x2: number; y2: number;
+        cpX: number; cpY: number;
+        platColor: [number,number,number];
+        phase: number;
+        dot: { t: number; speed: number };
+      }
+
+      let ctaBranches: CtaBranch[] = [];
+
+      function buildCtaBranches() {
+        ctaBranches = [];
+        const rootX = ctaW * 0.1, rootY = ctaH / 2;
+        const numBranches = Math.floor(ctaH / 30);
+        for (let i = 0; i < numBranches; i++) {
+          const endY = (i + 1) * ctaH / (numBranches + 1);
+          const plat = PLATFORMS_SOCIAL[i % PLATFORMS_SOCIAL.length];
+          const endX = ctaW * rnd(0.6, 0.95);
+          const cpX  = ctaW * rnd(0.3, 0.6);
+          const cpY  = (rootY + endY) / 2 + (Math.random() - 0.5) * 40;
+          ctaBranches.push({
+            x1: rootX, y1: rootY,
+            x2: endX,  y2: endY,
+            cpX, cpY,
+            platColor: plat.color,
+            phase: Math.random() * Math.PI * 2,
+            dot: { t: Math.random(), speed: rnd(0.003, 0.007) },
+          });
+        }
+      }
+
+      function resizeCta() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        ctaW = Math.round(rect.width);
+        ctaH = Math.round(rect.height);
+        ctaCanvas.width  = ctaW * ctaDpr;
+        ctaCanvas.height = ctaH * ctaDpr;
+        ctaCanvas.style.width  = `${ctaW}px`;
+        ctaCanvas.style.height = `${ctaH}px`;
+        cc.setTransform(ctaDpr, 0, 0, ctaDpr, 0, 0);
+        buildCtaBranches();
+      }
+
+      function frameCta(now: number) {
+        requestAnimationFrame(frameCta);
+        const t = now * 0.001;
+        cc.clearRect(0, 0, ctaW, ctaH);
+
+        for (const b of ctaBranches) {
+          const [r, g, bl] = b.platColor;
+          // Line
+          cc.globalAlpha = 0.06;
+          cc.strokeStyle = `rgba(${r},${g},${bl},1)`;
+          cc.lineWidth = 1;
+          cc.beginPath();
+          cc.moveTo(b.x1, b.y1);
+          cc.quadraticCurveTo(b.cpX, b.cpY, b.x2, b.y2);
+          cc.stroke();
+
+          // Moving dot
+          b.dot.t = (b.dot.t + b.dot.speed) % 1;
+          const ft = b.dot.t;
+          const mt = 1 - ft;
+          const dx = mt * mt * b.x1 + 2 * mt * ft * b.cpX + ft * ft * b.x2;
+          const dy = mt * mt * b.y1 + 2 * mt * ft * b.cpY + ft * ft * b.y2;
+          const pulse = 0.15 + 0.1 * Math.sin(t * 2 + b.phase);
+          cc.globalAlpha = pulse;
+          cc.fillStyle   = `rgba(${r},${g},${bl},1)`;
+          cc.beginPath();
+          cc.arc(dx, dy, 2, 0, Math.PI * 2);
+          cc.fill();
+
+          // Endpoint dot
+          const endPulse = 0.3 + 0.2 * Math.sin(t * 1.5 + b.phase);
+          cc.globalAlpha = endPulse;
+          cc.fillStyle   = `rgba(${r},${g},${bl},1)`;
+          cc.beginPath();
+          cc.arc(b.x2, b.y2, 2.5, 0, Math.PI * 2);
+          cc.fill();
+        }
+
+        cc.globalAlpha = 1;
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaCard);
+      resizeCta();
+      requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { ctaCanvas.style.opacity = '1'; });
+
+      const ctaGridTex = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGridTex) ctaGridTex.style.display = 'none';
+    }
+  }
+
+  }); // end requestIdleCallback
+</script>

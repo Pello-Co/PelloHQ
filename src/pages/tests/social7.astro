@@ -1,0 +1,715 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloSocial — Content Flood | Pello" description="PelloSocial floods every platform with a constant stream of content from your server-farm phones.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="social7-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <div id="social7-tooltip" aria-hidden="true" style="display:none;position:fixed;z-index:9999;pointer-events:none;"></div>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: #c026d3;
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #c026d3 !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,10,30,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(192,38,211,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+
+  #social7-tooltip {
+    background: rgba(6,7,18,0.85);
+    border: 1px solid rgba(192,38,211,0.4);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-family: -apple-system, system-ui, BlinkMacSystemFont, sans-serif;
+    font-size: 13px;
+    color: #fff;
+    max-width: 260px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(192,38,211,0.15);
+  }
+  #social7-tooltip .tip-label {
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 10px;
+    color: #c026d3;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  #social7-tooltip .tip-value {
+    color: rgba(255,255,255,0.9);
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+  #social7-tooltip .tip-value:last-child { margin-bottom: 0; }
+</style>
+
+<script>
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Data constants ─────────────────────────────────────────────────────────
+  interface Platform { name: string; color: [number,number,number]; weight: number; }
+  const PLATFORMS_SOCIAL: Platform[] = [
+    { name: "Instagram",  color: [225, 48,  108], weight: 0.30 },
+    { name: "TikTok",     color: [0,   242, 234], weight: 0.25 },
+    { name: "Twitter/X",  color: [139, 92,  246], weight: 0.20 },
+    { name: "YouTube",    color: [255, 0,   0  ], weight: 0.10 },
+    { name: "Facebook",   color: [24,  119, 242], weight: 0.10 },
+    { name: "Reddit",     color: [255, 69,  0  ], weight: 0.05 },
+  ];
+
+  const PERSONA_FIRST = ["Alex","Jordan","Casey","Riley","Morgan","Taylor","Jamie","Quinn","Sage","Blake","Drew","Avery","Dakota","Skyler","Reese","Kai","Nova","Zara","Luna","Phoenix"];
+  const PERSONA_LAST  = ["Rivera","Kim","Santos","Nakamura","Ahmed","Berg","Costa","Johal","Novak","Park","Silva","Tanaka","Volkov","Wu","Zhang"];
+  const CITIES        = ["London","New York","LA","Tokyo","Berlin","Sydney","Toronto","Dubai","Singapore","São Paulo","Mumbai","Paris","Seoul","Amsterdam","Miami"];
+  const NICHES        = ["Fitness","Tech Reviews","Food","Travel","Fashion","Gaming","Finance","Wellness","Photography","Music"];
+  const PHONE_MODELS  = ["iPhone 15","iPhone 14","Pixel 8","Samsung S24","OnePlus 12"];
+  const FOLLOWER_COUNTS = ["2.3k","4.7k","8.1k","12.4k","18.9k","24.2k","31.5k","47.8k"];
+  const POST_TYPES    = ["Reel","Story","Post","Carousel","Short","Thread","Review","UGC Clip"];
+
+  function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+  function rnd(a: number, b: number) { return a + Math.random() * (b - a); }
+
+  // ─── Canvas & wrap ──────────────────────────────────────────────────────────
+  const canvas = document.querySelector<HTMLCanvasElement>('.social7-canvas')!;
+  const wrap   = document.getElementById('hero-wrap')!;
+  const ctx    = canvas.getContext('2d')!;
+  const tooltip = document.getElementById('social7-tooltip')!;
+
+  let dpr = 1;
+  let W = 0, H = 0;
+
+  // ─── Phones ─────────────────────────────────────────────────────────────────
+  interface Phone {
+    x: number; y: number;
+    city: string; model: string;
+    niche: string;
+    streams: Stream[];
+    surgeUntil: number;
+    flashUntil: number;
+    postsToday: number;
+  }
+
+  // ─── Platform nodes ──────────────────────────────────────────────────────────
+  interface PlatNode {
+    x: number; y: number;
+    platform: Platform;
+    glowUntil: number;
+    postsReceived: number;
+    phoneCount: number;
+    topNiche: string;
+  }
+
+  // ─── Streams ─────────────────────────────────────────────────────────────────
+  interface Stream {
+    phoneIdx: number;
+    platIdx: number;
+    spacing: number;    // base spacing between dots
+    bow: number;        // bezier control point Y offset
+    particles: Particle[];
+    postType: string;
+    topic: string;
+  }
+
+  interface Particle {
+    t: number;   // 0→1 progress along stream
+    speed: number;
+  }
+
+  let phones: Phone[]    = [];
+  let platNodes: PlatNode[] = [];
+  let streams: Stream[]  = [];
+  let lastSurge = 0;
+  let lastSurgePIdx = -1;
+
+  function buildScene() {
+    const numPhones = Math.min(10, Math.max(6, Math.floor(H / 70)));
+    const numPlats  = PLATFORMS_SOCIAL.length;
+    const phoneX    = W * 0.12;
+    const platX     = W * 0.88;
+
+    phones = [];
+    platNodes = [];
+    streams = [];
+
+    const phoneSpacing = H / (numPhones + 1);
+    for (let i = 0; i < numPhones; i++) {
+      phones.push({
+        x: phoneX,
+        y: phoneSpacing * (i + 1),
+        city: pick(CITIES),
+        model: pick(PHONE_MODELS),
+        niche: pick(NICHES),
+        streams: [],
+        surgeUntil: 0,
+        flashUntil: 0,
+        postsToday: Math.floor(rnd(20, 80)),
+      });
+    }
+
+    const platSpacing = H / (numPlats + 1);
+    for (let i = 0; i < numPlats; i++) {
+      platNodes.push({
+        x: platX,
+        y: platSpacing * (i + 1),
+        platform: PLATFORMS_SOCIAL[i],
+        glowUntil: 0,
+        postsReceived: Math.floor(rnd(800, 3000)),
+        phoneCount: Math.floor(rnd(80, 200)),
+        topNiche: pick(NICHES),
+      });
+    }
+
+    // Build streams: each phone → 2-3 platforms
+    const chosen: [number,number][] = [];
+    for (let pi = 0; pi < phones.length; pi++) {
+      const count = 2 + (Math.random() < 0.4 ? 1 : 0);
+      const platIndices = shuffled(numPlats).slice(0, count);
+      for (const pli of platIndices) {
+        const key = pi * 100 + pli;
+        if (chosen.includes(key as any)) continue;
+        (chosen as any).push(key);
+        const phone = phones[pi];
+        const plat  = platNodes[pli];
+        const midY  = (phone.y + plat.y) / 2;
+        const bow   = midY + (Math.random() < 0.5 ? 1 : -1) * rnd(40, 120);
+        const spacing = rnd(6, 14);
+        const s: Stream = {
+          phoneIdx: pi,
+          platIdx: pli,
+          spacing,
+          bow,
+          particles: [],
+          postType: pick(POST_TYPES),
+          topic: `${pick(NICHES)} ${pick(POST_TYPES)}`,
+        };
+        // Seed initial particles
+        const pathLen = estimatePathLen(phone.x, phone.y, plat.x, plat.y, bow);
+        const numParticles = Math.floor(pathLen / spacing);
+        for (let k = 0; k < numParticles; k++) {
+          s.particles.push({ t: k / numParticles, speed: rnd(0.003, 0.006) });
+        }
+        streams.push(s);
+        phone.streams.push(s);
+      }
+    }
+  }
+
+  function shuffled(n: number): number[] {
+    const arr = Array.from({ length: n }, (_, i) => i);
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function estimatePathLen(x0: number, y0: number, x1: number, y1: number, ctrlY: number): number {
+    // Rough quadratic bezier length via 10-step subdivision
+    const cx = (x0 + x1) / 2;
+    let len = 0, px = x0, py = y0;
+    for (let i = 1; i <= 10; i++) {
+      const t = i / 10;
+      const mt = 1 - t;
+      const nx = mt * mt * x0 + 2 * mt * t * cx + t * t * x1;
+      const ny = mt * mt * y0 + 2 * mt * t * ctrlY + t * t * y1;
+      len += Math.hypot(nx - px, ny - py);
+      px = nx; py = ny;
+    }
+    return len;
+  }
+
+  function bezierPoint(x0: number, y0: number, x1: number, y1: number, ctrlY: number, t: number): [number, number] {
+    const cx = (x0 + x1) / 2;
+    const mt = 1 - t;
+    return [
+      mt * mt * x0 + 2 * mt * t * cx + t * t * x1,
+      mt * mt * y0 + 2 * mt * t * ctrlY + t * t * y1,
+    ];
+  }
+
+  // ─── Hover state ─────────────────────────────────────────────────────────────
+  let mouse: { x: number; y: number } | null = null;
+  let hoveredPhone = -1;
+  let hoveredPlat  = -1;
+
+  const PHONE_W = 20, PHONE_H = 30;
+  const PLAT_R  = 10;
+
+  function hitTestPhone(mx: number, my: number): number {
+    for (let i = 0; i < phones.length; i++) {
+      const p = phones[i];
+      if (Math.abs(mx - p.x) < PHONE_W && Math.abs(my - p.y) < PHONE_H) return i;
+    }
+    return -1;
+  }
+
+  function hitTestPlat(mx: number, my: number): number {
+    for (let i = 0; i < platNodes.length; i++) {
+      const p = platNodes[i];
+      if (Math.hypot(mx - p.x, my - p.y) < PLAT_R + 8) return i;
+    }
+    return -1;
+  }
+
+  // ─── Tooltip DOM helper ───────────────────────────────────────────────────────
+  function showTooltip(html: string, mx: number, my: number) {
+    tooltip.innerHTML = html;
+    tooltip.style.display = 'block';
+    const rect = tooltip.getBoundingClientRect();
+    let tx = mx + 16;
+    let ty = my - rect.height / 2;
+    if (tx + rect.width > window.innerWidth - 8) tx = mx - rect.width - 16;
+    if (ty < 8) ty = 8;
+    if (ty + rect.height > window.innerHeight - 8) ty = window.innerHeight - rect.height - 8;
+    tooltip.style.left = `${tx}px`;
+    tooltip.style.top  = `${ty}px`;
+  }
+
+  function hideTooltip() {
+    tooltip.style.display = 'none';
+  }
+
+  function tipRow(label: string, value: string) {
+    return `<div class="tip-label">${label}</div><div class="tip-value">${value}</div>`;
+  }
+
+  // ─── Rounded rect ─────────────────────────────────────────────────────────────
+  function rrect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r);
+    c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r);
+    c.lineTo(x, y + r);
+    c.quadraticCurveTo(x, y, x + r, y);
+    c.closePath();
+  }
+
+  // ─── Resize ───────────────────────────────────────────────────────────────────
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    W = Math.round(rect.width);
+    H = Math.round(rect.height);
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width  = `${W}px`;
+    canvas.style.height = `${H}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildScene();
+  }
+
+  // ─── Main frame ──────────────────────────────────────────────────────────────
+  let totalPosts = 0;
+  let frameCount = 0;
+
+  function frame(now: number) {
+    requestAnimationFrame(frame);
+    const t = now * 0.001;
+    ctx.clearRect(0, 0, W, H);
+
+    // Surge trigger: every 3s surge a random phone
+    if (t - lastSurge > 3) {
+      lastSurge = t;
+      lastSurgePIdx = Math.floor(Math.random() * phones.length);
+      const p = phones[lastSurgePIdx];
+      p.surgeUntil = t + 1.5;
+      p.flashUntil = t + 0.5;
+    }
+
+    // ── Draw stream paths (faint guide curves) ────────────────────────────────
+    for (let si = 0; si < streams.length; si++) {
+      const s     = streams[si];
+      const phone = phones[s.phoneIdx];
+      const plat  = platNodes[s.platIdx];
+      const [r, g, b] = plat.platform.color;
+
+      const isPhoneHovered = hoveredPhone === s.phoneIdx;
+      const isPlatHovered  = hoveredPlat  === s.platIdx;
+      const highlighted    = isPhoneHovered || isPlatHovered;
+
+      const cx = (phone.x + plat.x) / 2;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(phone.x, phone.y);
+      ctx.quadraticCurveTo(cx, s.bow, plat.x, plat.y);
+      ctx.strokeStyle = `rgba(${r},${g},${b},${highlighted ? 0.12 : 0.03})`;
+      ctx.lineWidth   = 1;
+      ctx.stroke();
+      ctx.restore();
+
+      // Update & draw particles
+      const surging    = t < phone.surgeUntil;
+      const effectiveSpacing = surging ? s.spacing * 0.33 : s.spacing;
+      const pathLen = estimatePathLen(phone.x, phone.y, plat.x, plat.y, s.bow);
+      const numTarget = Math.max(3, Math.floor(pathLen / effectiveSpacing));
+
+      // Add new particles if surging and below target
+      while (s.particles.length < numTarget && surging) {
+        s.particles.push({ t: 0, speed: rnd(0.003, 0.006) });
+      }
+
+      const dotAlpha = highlighted ? 0.8 : 0.3;
+
+      for (let pi2 = s.particles.length - 1; pi2 >= 0; pi2--) {
+        const par = s.particles[pi2];
+        par.t += par.speed;
+
+        if (par.t >= 1) {
+          // Particle arrived at platform
+          plat.glowUntil = t + 0.3;
+          plat.postsReceived++;
+          totalPosts++;
+          par.t = 0;
+          par.speed = rnd(0.003, 0.006);
+          // Remove excess particles when not surging
+          if (!surging && s.particles.length > numTarget) {
+            s.particles.splice(pi2, 1);
+            continue;
+          }
+        }
+
+        const [px2, py2] = bezierPoint(phone.x, phone.y, plat.x, plat.y, s.bow, par.t);
+
+        ctx.globalAlpha = dotAlpha;
+        ctx.fillStyle   = `rgb(${r},${g},${b})`;
+        ctx.beginPath();
+        ctx.arc(px2, py2, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // ── Draw platform nodes ────────────────────────────────────────────────────
+    for (let i = 0; i < platNodes.length; i++) {
+      const pn = platNodes[i];
+      const [r, g, b] = pn.platform.color;
+      const glowing = t < pn.glowUntil;
+      const hovered = hoveredPlat === i;
+
+      // Glow
+      const glowAlpha = glowing ? 0.35 : (hovered ? 0.25 : 0.1);
+      ctx.save();
+      ctx.shadowColor = `rgba(${r},${g},${b},${glowAlpha})`;
+      ctx.shadowBlur  = glowing ? 20 : (hovered ? 15 : 8);
+      ctx.fillStyle   = `rgba(${r},${g},${b},${hovered ? 0.9 : 0.7})`;
+      ctx.beginPath();
+      ctx.arc(pn.x, pn.y, hovered ? PLAT_R + 2 : PLAT_R, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Label
+      ctx.save();
+      ctx.globalAlpha = hovered ? 0.6 : 0.2;
+      ctx.fillStyle   = `rgb(${r},${g},${b})`;
+      ctx.font        = '8px "SF Mono","Fira Code",monospace';
+      ctx.textAlign   = 'right';
+      ctx.fillText(pn.platform.name, pn.x - PLAT_R - 6, pn.y + 3);
+      ctx.restore();
+
+      // Post counter
+      ctx.save();
+      ctx.globalAlpha = hovered ? 0.7 : 0.2;
+      ctx.fillStyle   = `rgb(${r},${g},${b})`;
+      ctx.font        = '7px "SF Mono","Fira Code",monospace';
+      ctx.textAlign   = 'right';
+      ctx.fillText(pn.postsReceived.toLocaleString(), pn.x - PLAT_R - 6, pn.y + 13);
+      ctx.restore();
+    }
+
+    // ── Draw phone icons ───────────────────────────────────────────────────────
+    for (let i = 0; i < phones.length; i++) {
+      const ph = phones[i];
+      const hovered = hoveredPhone === i;
+      const flashing = t < ph.flashUntil;
+      const surging  = t < ph.surgeUntil;
+      const scale    = hovered ? 1.3 : (surging ? 1.1 : 1);
+      const pw = PHONE_W * scale, phh = PHONE_H * scale;
+      const px = ph.x - pw / 2, py = ph.y - phh / 2;
+
+      const flashPulse = flashing ? 0.5 + 0.5 * Math.sin(t * 30) : 0;
+      const borderAlpha = hovered ? 0.6 : (flashing ? 0.3 + flashPulse * 0.5 : 0.12);
+      const borderColor = flashing ? `rgba(192,38,211,${borderAlpha})` : `rgba(192,38,211,${borderAlpha})`;
+
+      ctx.save();
+      // Phone body
+      rrect(ctx, px, py, pw, phh, 4 * scale);
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth   = flashing ? 2 : 1;
+      ctx.stroke();
+      ctx.fillStyle   = `rgba(192,38,211,${hovered ? 0.08 : 0.03})`;
+      ctx.fill();
+
+      // Phone screen indicator
+      ctx.fillStyle = `rgba(192,38,211,${hovered ? 0.2 : 0.05})`;
+      rrect(ctx, px + 3 * scale, py + 5 * scale, pw - 6 * scale, phh - 12 * scale, 2 * scale);
+      ctx.fill();
+
+      // City label
+      ctx.globalAlpha = hovered ? 0.7 : 0.2;
+      ctx.fillStyle   = '#c026d3';
+      ctx.font        = `6px "SF Mono","Fira Code",monospace`;
+      ctx.textAlign   = 'left';
+      ctx.fillText(ph.city, ph.x + pw / 2 + 4, ph.y + 3);
+      ctx.restore();
+    }
+
+    // ── Counter top-right ─────────────────────────────────────────────────────
+    const totalPhones = phones.length;
+    ctx.save();
+    ctx.textAlign   = 'right';
+    ctx.fillStyle   = 'rgba(192,38,211,0.55)';
+    ctx.font        = '11px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${totalPhones} phones → ${PLATFORMS_SOCIAL.length} platforms · ${totalPosts.toLocaleString()} posts`, W - 16, 24);
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle   = '#ffffff';
+    ctx.font        = '9px "SF Mono","Fira Code",monospace';
+    ctx.fillText('server farm · continuous output', W - 16, 38);
+    ctx.restore();
+
+    // ── Hover tooltip ─────────────────────────────────────────────────────────
+    if (mouse) {
+      const wRect = wrap.getBoundingClientRect();
+      const screenX = wRect.left + mouse.x;
+      const screenY = wRect.top  + mouse.y;
+
+      if (hoveredPhone >= 0) {
+        const ph = phones[hoveredPhone];
+        const platNames = [...new Set(ph.streams.map(s => platNodes[s.platIdx].platform.name))].join(', ');
+        showTooltip(
+          tipRow('DEVICE', `${ph.model} · ${ph.city}`) +
+          tipRow('ACCOUNTS', '3 accounts active') +
+          tipRow('OUTPUT', `${ph.postsToday} posts today across ${platNames}`),
+          screenX, screenY
+        );
+      } else if (hoveredPlat >= 0) {
+        const pn = platNodes[hoveredPlat];
+        showTooltip(
+          tipRow('PLATFORM', pn.platform.name) +
+          tipRow('VOLUME', `${pn.postsReceived.toLocaleString()} posts from ${pn.phoneCount} phones`) +
+          tipRow('TOP NICHE', `${pn.topNiche} (34%)`),
+          screenX, screenY
+        );
+      } else {
+        hideTooltip();
+      }
+    }
+
+    frameCount++;
+  }
+
+  // ─── Mouse / touch ────────────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    mouse = { x: mx, y: my };
+    hoveredPhone = hitTestPhone(mx, my);
+    hoveredPlat  = hoveredPhone >= 0 ? -1 : hitTestPlat(mx, my);
+  });
+  wrap.addEventListener('mouseleave', () => {
+    mouse = null; hoveredPhone = -1; hoveredPlat = -1; hideTooltip();
+  });
+  wrap.addEventListener('touchstart', () => {
+    mouse = null; hoveredPhone = -1; hoveredPlat = -1; hideTooltip();
+  }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── FinalCTA: flowing particles between two sides ────────────────────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const ctaCanvas = document.createElement('canvas');
+      ctaCanvas.setAttribute('aria-hidden', 'true');
+      ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.style.position = 'relative';
+      ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+
+      const cc = ctaCanvas.getContext('2d')!;
+      let ctaDpr = 1;
+      let ctaW = 0, ctaH = 0;
+
+      interface CtaStream {
+        y: number;
+        bow: number;
+        platColor: [number,number,number];
+        particles: { t: number; speed: number }[];
+        spacing: number;
+      }
+      let ctaStreams: CtaStream[] = [];
+
+      function buildCtaScene() {
+        ctaStreams = [];
+        const numStreams = Math.floor(ctaH / 40);
+        for (let i = 0; i < numStreams; i++) {
+          const y = (i + 1) * ctaH / (numStreams + 1);
+          const plat = PLATFORMS_SOCIAL[i % PLATFORMS_SOCIAL.length];
+          const bow  = y + (Math.random() < 0.5 ? 1 : -1) * rnd(20, 60);
+          const spacing = rnd(8, 16);
+          const numP = Math.floor(ctaW / spacing);
+          const particles = Array.from({ length: numP }, (_, k) => ({
+            t: k / numP,
+            speed: rnd(0.002, 0.004),
+          }));
+          ctaStreams.push({ y, bow, platColor: plat.color, particles, spacing });
+        }
+      }
+
+      function resizeCta() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        ctaW = Math.round(rect.width);
+        ctaH = Math.round(rect.height);
+        ctaCanvas.width  = ctaW * ctaDpr;
+        ctaCanvas.height = ctaH * ctaDpr;
+        ctaCanvas.style.width  = `${ctaW}px`;
+        ctaCanvas.style.height = `${ctaH}px`;
+        cc.setTransform(ctaDpr, 0, 0, ctaDpr, 0, 0);
+        buildCtaScene();
+      }
+
+      function frameCta() {
+        requestAnimationFrame(frameCta);
+        cc.clearRect(0, 0, ctaW, ctaH);
+        for (const s of ctaStreams) {
+          const [r, g, b] = s.platColor;
+          const midX = ctaW / 2;
+          for (const par of s.particles) {
+            par.t = (par.t + par.speed) % 1;
+            const mt = 1 - par.t;
+            const px2 = mt * mt * 0 + 2 * mt * par.t * midX + par.t * par.t * ctaW;
+            const py2 = mt * mt * s.y + 2 * mt * par.t * s.bow + par.t * par.t * s.y;
+            cc.globalAlpha = 0.2;
+            cc.fillStyle   = `rgb(${r},${g},${b})`;
+            cc.beginPath();
+            cc.arc(px2, py2, 1.5, 0, Math.PI * 2);
+            cc.fill();
+          }
+        }
+        cc.globalAlpha = 1;
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaCard);
+      resizeCta();
+      requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { ctaCanvas.style.opacity = '1'; });
+
+      const ctaGridTex = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGridTex) ctaGridTex.style.display = 'none';
+    }
+  }
+
+  }); // end requestIdleCallback
+</script>
