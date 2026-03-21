@@ -1,0 +1,661 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloReach — Domain Constellation" description="PelloReach delivers cold email outreach with 500+ warmed domains, AI-personalised sequences, and inbox placement technology that actually gets replies.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="reach-constellation-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(139,92,246,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  // Polyfill requestIdleCallback for Safari
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Domain data constants ─────────────────────────────────────────────────
+  const DOMAINS = ["outreach-hub.io","connect-reach.co","mailflow-pro.com","sendgrid-alt.io","inbox-direct.co","pulse-mail.com","rapid-reach.io","smart-send.co","flow-mail.io","direct-reach.com","auto-reach.co","mail-engine.io","reach-hub.com","send-pro.io","inbox-flow.co","mail-pulse.com","smart-reach.io","auto-mail.co","flow-send.io","direct-mail.co","surge-mail.io","pitch-send.co","velocity-mail.com","reply-flow.io","ping-reach.co","fast-inbox.com","connect-send.io","bulk-reach.co","mass-mail.io","drip-flow.com","warm-send.io","trusted-reach.co","relay-mail.com","smart-inbox.io","domain-flow.co","fire-reach.com","batch-send.io","rapid-mail.co","prime-reach.com","vault-mail.io"];
+
+  function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  // ─── Status types ──────────────────────────────────────────────────────────
+  // 0=warm(green), 1=warming(amber), 2=new(violet)
+  const STATUS_WARM    = 0;
+  const STATUS_WARMING = 1;
+  const STATUS_NEW     = 2;
+
+  function pickStatus(): number {
+    const r = Math.random();
+    if (r < 0.60) return STATUS_WARM;
+    if (r < 0.85) return STATUS_WARMING;
+    return STATUS_NEW;
+  }
+
+  function statusColor(s: number): [number,number,number] {
+    if (s === STATUS_WARM)    return [74,  222, 128];
+    if (s === STATUS_WARMING) return [251, 191,  36];
+    return [139, 92, 246];
+  }
+  function statusBaseAlpha(s: number): number {
+    if (s === STATUS_WARM)    return 0.30;
+    if (s === STATUS_WARMING) return 0.25;
+    return 0.20;
+  }
+  function statusLabel(s: number): string {
+    if (s === STATUS_WARM)    return '● Warmed';
+    if (s === STATUS_WARMING) return '◐ Warming';
+    return '○ New';
+  }
+
+  // ─── Dot type ──────────────────────────────────────────────────────────────
+  interface ConDot {
+    gx: number; gy: number;   // resting position
+    x:  number; y:  number;   // current position (with push displacement)
+    status: number;
+    domain: string;
+    sentToday: number;         // 0–50
+    reputation: number;        // 0–100
+    inboxRate: number;         // 92–99.9
+    phase: number;
+    // pulse wave state
+    pulseAlpha: number;        // extra alpha from pulse ripple
+    pulseSz: number;           // extra radius from pulse ripple
+  }
+
+  // ─── Constants ─────────────────────────────────────────────────────────────
+  const DOT_COUNT      = 512;
+  const BASE_RADIUS    = 2.5;
+  const MIN_DIST       = 15;
+  const LINE_DIST      = 40;
+  const HOVER_DIST     = 15;
+  const PUSH_RADIUS    = 120;
+  const PUSH_STRENGTH  = 6;
+  const LERP_SPEED     = 0.04;
+  const PULSE_INTERVAL = 3.0;   // seconds between random pulses
+
+  // ─── Canvas setup ──────────────────────────────────────────────────────────
+  const canvas = document.querySelector<HTMLCanvasElement>('.reach-constellation-canvas')!;
+  const wrap   = document.getElementById('hero-wrap')!;
+  const ctx    = canvas.getContext('2d')!;
+
+  let dots: ConDot[] = [];
+  let mouse: { x: number; y: number } | null = null;
+  let hoveredIdx = -1;
+  let dpr = 1;
+  let startTime = 0;
+  let nextPulseTime = 3.0; // first pulse at 3s
+
+  function buildDots() {
+    dots = [];
+    const W = canvas.width / dpr;
+    const H = canvas.height / dpr;
+
+    // Jittered grid with rejection sampling for min distance
+    const placed: ConDot[] = [];
+    let attempts = 0;
+    const maxAttempts = DOT_COUNT * 20;
+
+    while (placed.length < DOT_COUNT && attempts < maxAttempts) {
+      attempts++;
+      const cx = Math.random() * W;
+      const cy = Math.random() * H;
+
+      // Rejection sampling: min distance
+      let ok = true;
+      for (const p of placed) {
+        const dx = p.gx - cx, dy = p.gy - cy;
+        if (dx * dx + dy * dy < MIN_DIST * MIN_DIST) { ok = false; break; }
+      }
+      if (!ok) continue;
+
+      const st = pickStatus();
+      const sent = st === STATUS_WARM ? Math.floor(Math.random() * 40) + 10
+                 : st === STATUS_WARMING ? Math.floor(Math.random() * 20) + 2
+                 : Math.floor(Math.random() * 5);
+      const rep  = st === STATUS_WARM ? 80 + Math.floor(Math.random() * 20)
+                 : st === STATUS_WARMING ? 40 + Math.floor(Math.random() * 40)
+                 : Math.floor(Math.random() * 40);
+      const inbox = st === STATUS_WARM ? 94 + Math.random() * 5.9
+                  : st === STATUS_WARMING ? 70 + Math.random() * 20
+                  : 40 + Math.random() * 30;
+
+      const dot: ConDot = {
+        gx: cx, gy: cy, x: cx, y: cy,
+        status: st,
+        domain: pick(DOMAINS),
+        sentToday: sent,
+        reputation: rep,
+        inboxRate: inbox,
+        phase: Math.random() * Math.PI * 2,
+        pulseAlpha: 0,
+        pulseSz: 0,
+      };
+      placed.push(dot);
+    }
+    dots = placed;
+    startTime = performance.now() * 0.001;
+  }
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    const w = Math.round(rect.width);
+    const h = Math.round(rect.height);
+    canvas.width  = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width  = `${w}px`;
+    canvas.style.height = `${h}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildDots();
+  }
+
+  // ─── Rounded rect helper ───────────────────────────────────────────────────
+  function rrect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r);
+    c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r);
+    c.lineTo(x, y + r);
+    c.quadraticCurveTo(x, y, x + r, y);
+    c.closePath();
+  }
+
+  // ─── Tooltip renderer ──────────────────────────────────────────────────────
+  function drawTooltip(dot: ConDot) {
+    const W = canvas.width / dpr;
+    const px = dot.x, py = dot.y;
+    const [r, g, b] = statusColor(dot.status);
+
+    const pad = 14;
+    const tooltipW = 280;
+    const tooltipH = 118;
+
+    let tx = px - tooltipW / 2;
+    let ty = py - tooltipH - 16;
+    tx = Math.max(8, Math.min(W - tooltipW - 8, tx));
+    if (ty < 8) ty = py + 14;
+
+    ctx.save();
+
+    // Connecting line
+    ctx.globalAlpha = 0.2;
+    ctx.strokeStyle = `rgb(${r},${g},${b})`;
+    ctx.lineWidth   = 1;
+    ctx.beginPath();
+    ctx.moveTo(px, py - 4);
+    ctx.lineTo(px, ty < py ? ty + tooltipH : ty);
+    ctx.stroke();
+
+    // Background
+    ctx.globalAlpha = 1;
+    ctx.shadowColor = `rgba(${r},${g},${b},0.2)`;
+    ctx.shadowBlur  = 24;
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 10);
+    ctx.fillStyle   = 'rgba(6,7,18,0.80)';
+    ctx.fill();
+    ctx.shadowBlur  = 0;
+    ctx.shadowColor = 'transparent';
+
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 10);
+    ctx.fillStyle = `rgba(${r},${g},${b},0.07)`;
+    ctx.fill();
+
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.28)`;
+    ctx.lineWidth   = 1;
+    ctx.stroke();
+
+    // Accent bar
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle   = `rgb(${r},${g},${b})`;
+    rrect(ctx, tx, ty, tooltipW, 3, 3);
+    ctx.fill();
+
+    // DOMAIN
+    ctx.globalAlpha = 1;
+    ctx.fillStyle   = `rgb(${r},${g},${b})`;
+    ctx.font        = '12px "SF Mono","Fira Code",monospace';
+    ctx.textAlign   = 'left';
+    ctx.fillText(dot.domain, tx + pad, ty + pad + 12);
+
+    // STATUS
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle   = `rgb(${r},${g},${b})`;
+    ctx.font        = '11px "SF Mono","Fira Code",monospace';
+    ctx.fillText(statusLabel(dot.status), tx + pad, ty + pad + 30);
+
+    // SENT TODAY
+    ctx.globalAlpha = 1;
+    ctx.fillStyle   = '#ffffff';
+    ctx.font        = 'bold 14px -apple-system,system-ui,sans-serif';
+    ctx.fillText(`${dot.sentToday} emails today`, tx + pad, ty + pad + 50);
+
+    // REPUTATION bar
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle   = '#c4b5fd';
+    ctx.font        = '10px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`REP ${dot.reputation}/100`, tx + pad, ty + pad + 68);
+    // bar bg
+    ctx.globalAlpha = 0.15;
+    ctx.fillStyle   = '#ffffff';
+    ctx.fillRect(tx + pad + 84, ty + pad + 60, 80, 6);
+    // bar fill
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle   = `rgb(${r},${g},${b})`;
+    ctx.fillRect(tx + pad + 84, ty + pad + 60, 80 * (dot.reputation / 100), 6);
+
+    // INBOX RATE
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle   = 'rgb(74,222,128)';
+    ctx.font        = '11px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${dot.inboxRate.toFixed(1)}% inbox`, tx + pad, ty + tooltipH - pad);
+
+    ctx.restore();
+  }
+
+  // ─── Main frame loop ───────────────────────────────────────────────────────
+  function frame() {
+    requestAnimationFrame(frame);
+
+    const W       = canvas.width / dpr;
+    const H       = canvas.height / dpr;
+    const now     = performance.now() * 0.001;
+    const elapsed = now - startTime;
+
+    ctx.clearRect(0, 0, W, H);
+
+    const mx = mouse ? mouse.x : -99999;
+    const my = mouse ? mouse.y : -99999;
+
+    // Trigger a random warm-domain pulse
+    if (elapsed > nextPulseTime) {
+      nextPulseTime = elapsed + PULSE_INTERVAL + Math.random() * 0.5;
+      // Pick a random warm domain as the origin
+      const warmDots = dots.filter(d => d.status === STATUS_WARM);
+      if (warmDots.length > 0) {
+        const origin = warmDots[Math.floor(Math.random() * warmDots.length)];
+        // Propagate ripple outward — set pulseAlpha relative to distance from origin
+        for (const d of dots) {
+          const dx   = d.x - origin.x, dy = d.y - origin.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          // Delay based on distance, faster fall-off for far dots
+          const delay = dist * 0.004;
+          const peak  = 0.35 + Math.random() * 0.2;
+          // We encode: pulse will fire at (elapsed + delay), lasting 0.5s
+          // Store as: pulseAlpha = encoded trigger time (negative means "pending")
+          // Simpler: just set an immediate boost that decays
+          // Actually let's just tag a boost that we lerp away
+          const boost = peak * Math.max(0, 1 - dist / (Math.min(W, H) * 0.8));
+          if (boost > 0.02) {
+            // Set the pulse to fire at elapsed+delay
+            // We'll handle by storing a timestamp
+            (d as any).__pulseFireAt = elapsed + delay;
+            (d as any).__pulsePeak   = boost;
+          }
+        }
+      }
+    }
+
+    // Update pulse state
+    for (const d of dots) {
+      const fireAt = (d as any).__pulseFireAt as number | undefined;
+      if (fireAt !== undefined && elapsed >= fireAt) {
+        const age = elapsed - fireAt;
+        if (age < 0.5) {
+          const t = age / 0.5;
+          d.pulseAlpha = (d as any).__pulsePeak * Math.sin(t * Math.PI);
+          d.pulseSz    = (d as any).__pulsePeak * Math.sin(t * Math.PI) * 2.5;
+        } else {
+          d.pulseAlpha = 0;
+          d.pulseSz    = 0;
+          (d as any).__pulseFireAt = undefined;
+        }
+      } else if (fireAt === undefined) {
+        d.pulseAlpha = 0;
+        d.pulseSz    = 0;
+      }
+    }
+
+    // Find hovered dot
+    hoveredIdx = -1;
+    let bestD = HOVER_DIST;
+    for (let i = 0; i < dots.length; i++) {
+      const d  = dots[i];
+      const dx = d.x - mx, dy = d.y - my;
+      const dd = Math.sqrt(dx * dx + dy * dy);
+      if (dd < bestD) { bestD = dd; hoveredIdx = i; }
+    }
+
+    // Update positions (mouse push)
+    for (let i = 0; i < dots.length; i++) {
+      const d   = dots[i];
+      let tx    = d.gx;
+      let ty    = d.gy;
+      const pdx = d.gx - mx, pdy = d.gy - my;
+      const pd  = Math.sqrt(pdx * pdx + pdy * pdy);
+      if (pd < PUSH_RADIUS) {
+        const s   = 1 - pd / PUSH_RADIUS;
+        const inf = s * s * (3 - 2 * s);
+        const mag = inf * PUSH_STRENGTH;
+        const len = pd || 1;
+        tx += (pdx / len) * mag;
+        ty += (pdy / len) * mag;
+      }
+      d.x += (tx - d.x) * LERP_SPEED;
+      d.y += (ty - d.y) * LERP_SPEED;
+    }
+
+    // ─── Draw network lines ────────────────────────────────────────────────
+    for (let i = 0; i < dots.length; i++) {
+      const a = dots[i];
+      const [ar, ag, ab] = statusColor(a.status);
+
+      for (let j = i + 1; j < dots.length; j++) {
+        const b  = dots[j];
+        const dx = a.x - b.x, dy = a.y - b.y;
+        const dd = Math.sqrt(dx * dx + dy * dy);
+        if (dd > LINE_DIST) continue;
+
+        // Strengthen line if either end is hovered
+        let lineAlpha = 0.06;
+        if (i === hoveredIdx || j === hoveredIdx) lineAlpha = 0.30;
+        // Strengthen if either dot is pulsing
+        const pulseBoost = Math.max(a.pulseAlpha, b.pulseAlpha) * 0.4;
+        lineAlpha = Math.min(0.45, lineAlpha + pulseBoost);
+
+        ctx.globalAlpha = lineAlpha;
+        ctx.strokeStyle = `rgb(${ar},${ag},${ab})`;
+        ctx.lineWidth   = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+    }
+
+    // ─── Draw dots ────────────────────────────────────────────────────────
+    for (let i = 0; i < dots.length; i++) {
+      const d        = dots[i];
+      const [r, g, b] = statusColor(d.status);
+      const baseAlpha = statusBaseAlpha(d.status);
+      const isHov     = hoveredIdx === i;
+      const isNearHov = hoveredIdx >= 0 && !isHov && (() => {
+        const hd  = dots[hoveredIdx];
+        const ddx = d.x - hd.x, ddy = d.y - hd.y;
+        return Math.sqrt(ddx * ddx + ddy * ddy) <= LINE_DIST;
+      })();
+
+      let alpha  = baseAlpha + d.pulseAlpha + Math.sin(now * 0.7 + d.phase) * 0.04;
+      let radius = BASE_RADIUS + d.pulseSz;
+
+      if (isHov) {
+        alpha  = 1;
+        radius = 6;
+      } else if (isNearHov) {
+        alpha  = Math.min(0.75, alpha + 0.3);
+        radius = BASE_RADIUS + 0.5;
+      }
+
+      ctx.globalAlpha = Math.min(1, Math.max(0, alpha));
+      ctx.fillStyle   = `rgb(${r},${g},${b})`;
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, Math.max(0.5, radius), 0, Math.PI * 2);
+      ctx.fill();
+
+      // Glow for warm pulsing dots
+      if (d.pulseSz > 0.5 && d.status === STATUS_WARM) {
+        ctx.globalAlpha = d.pulseAlpha * 0.3;
+        ctx.shadowColor = `rgb(${r},${g},${b})`;
+        ctx.shadowBlur  = 8;
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, Math.max(0.5, radius + 2), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur  = 0;
+        ctx.shadowColor = 'transparent';
+      }
+    }
+
+    ctx.globalAlpha = 1;
+
+    // Tooltip
+    if (hoveredIdx >= 0) drawTooltip(dots[hoveredIdx]);
+
+    // Counter (top-right)
+    const counterX = W - 16;
+    ctx.save();
+    ctx.textAlign   = 'right';
+    ctx.globalAlpha = 1;
+    ctx.fillStyle   = 'rgba(139,92,246,0.6)';
+    ctx.font        = '11px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${dots.length} active domains`, counterX, 24);
+    ctx.globalAlpha = 0.28;
+    ctx.fillStyle   = '#ffffff';
+    ctx.font        = '9px "SF Mono","Fira Code",monospace';
+    ctx.fillText('avg 98.2% inbox · 34 emails/domain/day', counterX, 38);
+    ctx.restore();
+  }
+
+  // ─── Mouse tracking ────────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  });
+  wrap.addEventListener('mouseleave', () => { mouse = null; hoveredIdx = -1; });
+  wrap.addEventListener('touchstart', () => { mouse = null; hoveredIdx = -1; }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+  // Hide default grid-texture
+  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── FinalCTA: constellation dots, gentle pulse, no hover, no lines ───────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const ctaCanvas = document.createElement('canvas');
+      ctaCanvas.setAttribute('aria-hidden', 'true');
+      ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.style.position = 'relative';
+      ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+
+      const cc = ctaCanvas.getContext('2d')!;
+      interface CtaDot2 { x: number; y: number; phase: number; status: number; }
+      let ctaDots: CtaDot2[] = [];
+      let ctaDpr = 1;
+      let ctaPulseNext = 2.0;
+
+      function buildCtaDots() {
+        ctaDots = [];
+        const W = ctaCanvas.width / ctaDpr;
+        const H = ctaCanvas.height / ctaDpr;
+        const count = Math.min(200, Math.floor((W * H) / 3000));
+        for (let i = 0; i < count; i++) {
+          ctaDots.push({
+            x: Math.random() * W,
+            y: Math.random() * H,
+            phase: Math.random() * Math.PI * 2,
+            status: pickStatus(),
+          });
+        }
+      }
+
+      function resizeCta2() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        const w = Math.round(rect.width), h = Math.round(rect.height);
+        ctaCanvas.width  = w * ctaDpr;
+        ctaCanvas.height = h * ctaDpr;
+        ctaCanvas.style.width  = `${w}px`;
+        ctaCanvas.style.height = `${h}px`;
+        cc.setTransform(ctaDpr, 0, 0, ctaDpr, 0, 0);
+        buildCtaDots();
+      }
+
+      function frameCta2() {
+        requestAnimationFrame(frameCta2);
+        const t  = performance.now() * 0.001;
+        const W  = ctaCanvas.width  / ctaDpr;
+        const H  = ctaCanvas.height / ctaDpr;
+        cc.clearRect(0, 0, W, H);
+
+        // Trigger pulse
+        if (t > ctaPulseNext) {
+          ctaPulseNext = t + 3 + Math.random();
+          const warm = ctaDots.filter(d => d.status === STATUS_WARM);
+          if (warm.length > 0) {
+            const origin = warm[Math.floor(Math.random() * warm.length)];
+            for (const d of ctaDots) {
+              const dx = d.x - origin.x, dy = d.y - origin.y;
+              const dd = Math.sqrt(dx * dx + dy * dy);
+              (d as any).__ctaPulse = t + dd * 0.004;
+            }
+          }
+        }
+
+        for (const dot of ctaDots) {
+          const [r, g, b] = statusColor(dot.status);
+          let alpha = statusBaseAlpha(dot.status) * 0.7 + Math.sin(t * 0.7 + dot.phase) * 0.04;
+
+          const fireAt = (dot as any).__ctaPulse as number | undefined;
+          if (fireAt !== undefined && t >= fireAt) {
+            const age = t - fireAt;
+            if (age < 0.4) alpha = Math.min(0.7, alpha + Math.sin((age / 0.4) * Math.PI) * 0.3);
+          }
+
+          cc.globalAlpha = Math.min(0.7, Math.max(0, alpha));
+          cc.fillStyle   = `rgb(${r},${g},${b})`;
+          cc.beginPath();
+          cc.arc(dot.x, dot.y, 2.5, 0, Math.PI * 2);
+          cc.fill();
+        }
+        cc.globalAlpha = 1;
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta2());
+      roCta.observe(ctaCard);
+      resizeCta2();
+      requestAnimationFrame(frameCta2);
+      requestAnimationFrame(() => { ctaCanvas.style.opacity = '1'; });
+
+      const ctaGridTex = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGridTex) ctaGridTex.style.display = 'none';
+    }
+  }
+
+  }); // end requestIdleCallback
+</script>

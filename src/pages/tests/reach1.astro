@@ -1,0 +1,588 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloReach — Email Outreach at Massive Scale" description="PelloReach delivers cold email outreach with 500+ warmed domains, AI-personalised sequences, and inbox placement technology that actually gets replies.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="reach-rain-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(139,92,246,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  // Polyfill requestIdleCallback for Safari
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Email data constants ──────────────────────────────────────────────────
+  const FIRST_NAMES = ["Sarah","James","Emma","Michael","Sophie","Daniel","Rachel","Tom","Jessica","Alex","Chris","Lauren","David","Hannah","Ben","Kate","Ryan","Olivia","Mark","Lucy"];
+  const LAST_NAMES = ["Chen","Williams","Patel","Thompson","Garcia","Anderson","Martinez","Johnson","Lee","Taylor","Brown","Wilson","Moore","Clark","Hall","Young","King","Wright","Scott","Green"];
+  const COMPANIES = ["Acme Corp","TechFlow","DataSync","CloudNine","Nexus Labs","Horizon AI","Vertex Systems","PulseMedia","Zenith Group","Atlas Digital","BrightPath","CoreStack","DeepBlue","EdgePoint","FrontLine","GrowthLab","HyperScale","InnoVate","JetStream","KineticIO"];
+  const ROLES = ["Head of Marketing","VP Growth","CMO","Marketing Director","Digital Lead","Growth Manager","Head of Demand Gen","Performance Lead","Brand Director","Acquisition Manager"];
+  const DOMAINS = ["outreach-hub.io","connect-reach.co","mailflow-pro.com","sendgrid-alt.io","inbox-direct.co","pulse-mail.com","rapid-reach.io","smart-send.co","flow-mail.io","direct-reach.com","auto-reach.co","mail-engine.io","reach-hub.com","send-pro.io","inbox-flow.co","mail-pulse.com","smart-reach.io","auto-mail.co","flow-send.io","direct-mail.co"];
+  const SUBJECTS = [
+    "Quick question about {company}'s growth strategy",
+    "{firstName}, saw your recent {company} launch",
+    "Idea for {company}'s outreach — 3 min read",
+    "{firstName} — {company} + Pello could be interesting",
+    "Re: scaling {company}'s pipeline",
+    "Congrats on {company}'s Series B, {firstName}",
+    "{firstName}, one thing about {company}'s email",
+    "Thought you'd find this relevant, {firstName}",
+    "Quick win for {company}'s demand gen",
+    "{firstName} — noticed {company}'s hiring push"
+  ];
+  const OPENERS = [
+    "I noticed {company} just expanded into new markets — impressive growth.",
+    "Saw your LinkedIn post about {company}'s Q3 results, {firstName}.",
+    "I've been following {company}'s product launches closely.",
+    "A mutual connection mentioned {company} is scaling outreach.",
+    "Your talk at SaaStr about {company}'s growth was spot on.",
+    "{firstName}, I came across {company}'s case study on demand gen.",
+    "Noticed {company} is hiring 3 new SDRs — sounds like you're scaling.",
+    "Your recent blog post about {company}'s pipeline strategy was great.",
+  ];
+
+  function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function fillTemplate(tmpl: string, vars: Record<string, string>): string {
+    return tmpl.replace(/\{(\w+)\}/g, (_, k) => vars[k] || '');
+  }
+
+  function generateEmail() {
+    const firstName = pick(FIRST_NAMES);
+    const lastName  = pick(LAST_NAMES);
+    const company   = pick(COMPANIES);
+    const role      = pick(ROLES);
+    const domain    = pick(DOMAINS);
+    const senderFirst = pick(FIRST_NAMES);
+    const vars = { firstName, company };
+    return {
+      from: `${senderFirst} @ ${domain}`,
+      to: `${firstName} ${lastName}, ${role} at ${company}`,
+      subject: fillTemplate(pick(SUBJECTS), vars),
+      opener: fillTemplate(pick(OPENERS), vars),
+    };
+  }
+
+  // ─── Stage colours ─────────────────────────────────────────────────────────
+  const STAGES = [
+    { label: '1st touch',    r: 139, g:  92, b: 246, baseAlpha: 0.35 },  // violet
+    { label: 'follow-up',   r: 168, g:  85, b: 247, baseAlpha: 0.30 },  // purple
+    { label: 'final',       r: 192, g:  38, b: 211, baseAlpha: 0.25 },  // magenta
+    { label: 'reply ✓',     r:  74, g: 222, b: 128, baseAlpha: 0.40 },  // green (rare)
+  ];
+
+  function pickStage(): number {
+    const r = Math.random();
+    if (r < 0.05) return 3;  // reply — 5%
+    if (r < 0.25) return 2;  // final — 20%
+    if (r < 0.55) return 1;  // follow-up — 30%
+    return 0;                 // 1st touch — 45%
+  }
+
+  // ─── Packet type ───────────────────────────────────────────────────────────
+  interface Packet {
+    col: number;          // column index
+    x: number;            // pixel x (center of column)
+    y: number;            // current pixel y
+    speed: number;        // px/frame
+    stageIdx: number;
+    email: ReturnType<typeof generateEmail>;
+    columnActivateTime: number; // seconds when this column's wave arrives
+    offsetX: number;      // horizontal displacement from mouse push
+  }
+
+  // ─── Constants ─────────────────────────────────────────────────────────────
+  const COL_COUNT       = 38;
+  const PACKETS_PER_COL = 6;
+  const PKT_W           = 8;
+  const PKT_H           = 4;
+  const PKT_W_HOV       = 14;
+  const PKT_H_HOV       = 8;
+  const HOVER_RADIUS    = 20;
+  const PUSH_RADIUS     = 80;
+  const LERP_SPEED      = 0.06;
+  const DILATION_RADIUS = 100; // time dilation for nearby packets on hover
+
+  // ─── Canvas setup ──────────────────────────────────────────────────────────
+  const canvas = document.querySelector<HTMLCanvasElement>('.reach-rain-canvas')!;
+  const wrap   = document.getElementById('hero-wrap')!;
+  const ctx    = canvas.getContext('2d')!;
+
+  let packets: Packet[] = [];
+  let mouse: { x: number; y: number } | null = null;
+  let hoveredIdx = -1;
+  let dpr = 1;
+  let startTime = 0;
+  let emailsSent = 42000 + Math.floor(Math.random() * 5000);
+  let lastTickTime = 0;
+
+  function buildPackets() {
+    packets = [];
+    const W = canvas.width / dpr;
+    const H = canvas.height / dpr;
+    const colSpacing = W / COL_COUNT;
+
+    for (let c = 0; c < COL_COUNT; c++) {
+      const cx = c * colSpacing + colSpacing / 2;
+      const activateTime = (c / COL_COUNT) * 2.0; // left-to-right wave over 2s
+      for (let p = 0; p < PACKETS_PER_COL; p++) {
+        packets.push({
+          col: c,
+          x: cx,
+          y: (p / PACKETS_PER_COL) * H + Math.random() * (H / PACKETS_PER_COL),
+          speed: 0.3 + Math.random() * 0.5,
+          stageIdx: pickStage(),
+          email: generateEmail(),
+          columnActivateTime: activateTime,
+          offsetX: 0,
+        });
+      }
+    }
+    startTime = performance.now() * 0.001;
+  }
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    const w = Math.round(rect.width);
+    const h = Math.round(rect.height);
+    canvas.width  = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width  = `${w}px`;
+    canvas.style.height = `${h}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildPackets();
+  }
+
+  // ─── Rounded rect helper ───────────────────────────────────────────────────
+  function rrect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r);
+    c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r);
+    c.lineTo(x, y + r);
+    c.quadraticCurveTo(x, y, x + r, y);
+    c.closePath();
+  }
+
+  // ─── Tooltip renderer ──────────────────────────────────────────────────────
+  function drawTooltip(pkt: Packet) {
+    const W = canvas.width / dpr;
+    const px = pkt.x + pkt.offsetX;
+    const py = pkt.y;
+    const stage = STAGES[pkt.stageIdx];
+    const { from, to, subject, opener } = pkt.email;
+
+    const pad = 14;
+    const tooltipW = 360;
+    const tooltipH = 128;
+
+    let tx = px - tooltipW / 2;
+    let ty = py - tooltipH - 18;
+    tx = Math.max(8, Math.min(W - tooltipW - 8, tx));
+    if (ty < 8) ty = py + 16;
+
+    ctx.save();
+
+    // Connecting line
+    ctx.globalAlpha = 0.2;
+    ctx.strokeStyle = `rgb(${stage.r},${stage.g},${stage.b})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(px, py - PKT_H_HOV / 2);
+    ctx.lineTo(px, ty < py ? ty + tooltipH : ty);
+    ctx.stroke();
+
+    // Shadow/glow
+    ctx.globalAlpha = 1;
+    ctx.shadowColor = `rgba(${stage.r},${stage.g},${stage.b},0.25)`;
+    ctx.shadowBlur  = 28;
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 10);
+    ctx.fillStyle = 'rgba(6,7,18,0.78)';
+    ctx.fill();
+    ctx.shadowBlur  = 0;
+    ctx.shadowColor = 'transparent';
+
+    // Tint overlay
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 10);
+    ctx.fillStyle = `rgba(${stage.r},${stage.g},${stage.b},0.07)`;
+    ctx.fill();
+
+    // Border
+    ctx.strokeStyle = `rgba(${stage.r},${stage.g},${stage.b},0.28)`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Accent top bar
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle = `rgb(${stage.r},${stage.g},${stage.b})`;
+    rrect(ctx, tx, ty, tooltipW, 3, 3);
+    ctx.fill();
+
+    // FROM
+    ctx.globalAlpha = 0.65;
+    ctx.fillStyle   = `rgb(${stage.r},${stage.g},${stage.b})`;
+    ctx.font        = '10px "SF Mono","Fira Code",monospace';
+    ctx.textAlign   = 'left';
+    ctx.fillText(`FROM: ${from}`, tx + pad, ty + pad + 10);
+
+    // TO
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle   = '#ffffff';
+    ctx.font        = '12px -apple-system,system-ui,sans-serif';
+    ctx.fillText(`TO: ${to}`, tx + pad, ty + pad + 28);
+
+    // SUBJECT
+    ctx.globalAlpha = 1;
+    ctx.font        = 'bold 14px -apple-system,system-ui,sans-serif';
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(tx + pad, ty + pad + 34, tooltipW - pad * 2, 22);
+    ctx.clip();
+    ctx.fillText(subject, tx + pad, ty + pad + 50);
+    ctx.restore();
+
+    // OPENER
+    ctx.globalAlpha = 0.55;
+    ctx.font        = '11px -apple-system,system-ui,sans-serif';
+    ctx.fillStyle   = '#c4b5fd';
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(tx + pad, ty + pad + 56, tooltipW - pad * 2, 18);
+    ctx.clip();
+    ctx.fillText(opener, tx + pad, ty + pad + 68);
+    ctx.restore();
+
+    // Stage indicator
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle   = `rgb(${stage.r},${stage.g},${stage.b})`;
+    ctx.font        = '10px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`● ${stage.label.toUpperCase()}`, tx + pad, ty + tooltipH - pad);
+
+    ctx.restore();
+  }
+
+  // ─── Main frame loop ───────────────────────────────────────────────────────
+  function frame() {
+    requestAnimationFrame(frame);
+
+    const W       = canvas.width / dpr;
+    const H       = canvas.height / dpr;
+    const now     = performance.now() * 0.001;
+    const elapsed = now - startTime;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Tick email counter ~every 0.5s
+    if (now - lastTickTime > 0.5) {
+      emailsSent += Math.floor(Math.random() * 12) + 3;
+      lastTickTime = now;
+    }
+
+    const mx = mouse ? mouse.x : -99999;
+    const my = mouse ? mouse.y : -99999;
+
+    // Find hovered packet
+    hoveredIdx = -1;
+    let bestD = HOVER_RADIUS;
+    for (let i = 0; i < packets.length; i++) {
+      const pkt = packets[i];
+      if (elapsed < pkt.columnActivateTime) continue;
+      const dx = (pkt.x + pkt.offsetX) - mx;
+      const dy = pkt.y - my;
+      const d  = Math.sqrt(dx * dx + dy * dy);
+      if (d < bestD) { bestD = d; hoveredIdx = i; }
+    }
+
+    for (let i = 0; i < packets.length; i++) {
+      const pkt   = packets[i];
+      const age   = elapsed - pkt.columnActivateTime;
+      if (age < 0) continue;
+
+      const fadeIn = Math.min(1, age / 0.4);
+      const stage  = STAGES[pkt.stageIdx];
+      const isHov  = hoveredIdx === i;
+
+      // Time dilation: packets near hovered cursor slow down
+      let speedMult = 1;
+      if (hoveredIdx >= 0 && !isHov) {
+        const hPkt = packets[hoveredIdx];
+        const ddx  = pkt.x - (hPkt.x + hPkt.offsetX);
+        const ddy  = pkt.y - hPkt.y;
+        const dd   = Math.sqrt(ddx * ddx + ddy * ddy);
+        if (dd < DILATION_RADIUS) {
+          const t = 1 - dd / DILATION_RADIUS;
+          speedMult = 1 - t * t * 0.7; // slow down up to 70%
+        }
+      }
+
+      // Fall
+      pkt.y += pkt.speed * speedMult;
+      if (pkt.y > H + PKT_H * 2) {
+        pkt.y = -PKT_H * 2 - Math.random() * 60;
+        // Reassign email on wrap
+        pkt.email    = generateEmail();
+        pkt.stageIdx = pickStage();
+      }
+
+      // Mouse push — horizontal only
+      const pdx  = pkt.x - mx;
+      const pdy  = pkt.y - my;
+      const pdist = Math.sqrt(pdx * pdx + pdy * pdy);
+      let targetOffX = 0;
+      if (pdist < PUSH_RADIUS) {
+        const s   = (1 - pdist / PUSH_RADIUS);
+        const inf = s * s * (3 - 2 * s);
+        // horizontal component only (use pdx direction)
+        targetOffX = (pdx / (pdist || 1)) * inf * 18;
+      }
+      pkt.offsetX += (targetOffX - pkt.offsetX) * LERP_SPEED;
+
+      // Draw packet
+      const drawX = pkt.x + pkt.offsetX;
+      const drawY = pkt.y;
+      const pw    = isHov ? PKT_W_HOV : PKT_W;
+      const ph    = isHov ? PKT_H_HOV : PKT_H;
+      const alpha = isHov ? 0.9 : stage.baseAlpha;
+
+      ctx.globalAlpha = alpha * fadeIn;
+      ctx.fillStyle   = `rgb(${stage.r},${stage.g},${stage.b})`;
+      rrect(ctx, drawX - pw / 2, drawY - ph / 2, pw, ph, ph / 2);
+      ctx.fill();
+
+      // Glow for reply-received packets
+      if (pkt.stageIdx === 3 && !isHov) {
+        ctx.globalAlpha = 0.12 * fadeIn;
+        ctx.shadowColor = `rgb(${stage.r},${stage.g},${stage.b})`;
+        ctx.shadowBlur  = 6;
+        rrect(ctx, drawX - pw / 2, drawY - ph / 2, pw, ph, ph / 2);
+        ctx.fill();
+        ctx.shadowBlur  = 0;
+        ctx.shadowColor = 'transparent';
+      }
+    }
+
+    ctx.globalAlpha = 1;
+
+    // Tooltip
+    if (hoveredIdx >= 0) drawTooltip(packets[hoveredIdx]);
+
+    // Counter (top-right)
+    const counterX = W - 16;
+    ctx.save();
+    ctx.textAlign   = 'right';
+    ctx.globalAlpha = 1;
+    ctx.fillStyle   = 'rgba(139,92,246,0.6)';
+    ctx.font        = '11px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${emailsSent.toLocaleString()} emails sent today`, counterX, 24);
+    ctx.globalAlpha = 0.28;
+    ctx.fillStyle   = '#ffffff';
+    ctx.font        = '9px "SF Mono","Fira Code",monospace';
+    ctx.fillText('4 stages · 500+ domains · 98.2% inbox rate', counterX, 38);
+    ctx.restore();
+  }
+
+  // ─── Mouse tracking ────────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  });
+  wrap.addEventListener('mouseleave', () => { mouse = null; hoveredIdx = -1; });
+  wrap.addEventListener('touchstart', () => { mouse = null; hoveredIdx = -1; }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+  // Hide default grid-texture
+  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── FinalCTA: falling violet dots only ───────────────────────────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const ctaCanvas = document.createElement('canvas');
+      ctaCanvas.setAttribute('aria-hidden', 'true');
+      ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.style.position = 'relative';
+      ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+
+      const cc = ctaCanvas.getContext('2d')!;
+      interface CtaPkt { x: number; y: number; speed: number; phase: number; }
+      let ctaPkts: CtaPkt[] = [];
+      let ctaDpr = 1;
+
+      function buildCtaPkts() {
+        ctaPkts = [];
+        const W = ctaCanvas.width / ctaDpr;
+        const H = ctaCanvas.height / ctaDpr;
+        const count = Math.ceil(W / 24) * 5;
+        for (let i = 0; i < count; i++) {
+          ctaPkts.push({
+            x: Math.random() * W,
+            y: Math.random() * H,
+            speed: 0.2 + Math.random() * 0.35,
+            phase: Math.random() * Math.PI * 2,
+          });
+        }
+      }
+
+      function resizeCta() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        const w = Math.round(rect.width), h = Math.round(rect.height);
+        ctaCanvas.width  = w * ctaDpr;
+        ctaCanvas.height = h * ctaDpr;
+        ctaCanvas.style.width  = `${w}px`;
+        ctaCanvas.style.height = `${h}px`;
+        cc.setTransform(ctaDpr, 0, 0, ctaDpr, 0, 0);
+        buildCtaPkts();
+      }
+
+      function frameCta() {
+        requestAnimationFrame(frameCta);
+        const W  = ctaCanvas.width  / ctaDpr;
+        const H  = ctaCanvas.height / ctaDpr;
+        const t  = performance.now() * 0.001;
+        cc.clearRect(0, 0, W, H);
+        for (const pkt of ctaPkts) {
+          pkt.y += pkt.speed;
+          if (pkt.y > H + 4) { pkt.y = -4; pkt.x = Math.random() * W; }
+          const alpha = 0.18 + Math.sin(t * 0.9 + pkt.phase) * 0.07;
+          cc.globalAlpha = alpha;
+          cc.fillStyle   = 'rgb(139,92,246)';
+          cc.beginPath();
+          cc.arc(pkt.x, pkt.y, 2, 0, Math.PI * 2);
+          cc.fill();
+        }
+        cc.globalAlpha = 1;
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaCard);
+      resizeCta();
+      requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { ctaCanvas.style.opacity = '1'; });
+
+      const ctaGridTex = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGridTex) ctaGridTex.style.display = 'none';
+    }
+  }
+
+  }); // end requestIdleCallback
+</script>
