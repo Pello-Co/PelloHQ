@@ -1,0 +1,700 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloPublish — Social Feed Wall" description="PelloPublish: AI-generated social content across every platform. Watch your feed wall fill with AI-written posts.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="pub7-card-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(168,85,247,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Data ─────────────────────────────────────────────────────────────────
+  const PLATFORMS = [
+    { name: "Instagram", icon: "IG", color: [225, 48,  108] as [number,number,number] },
+    { name: "LinkedIn",  icon: "LI", color: [10,  102, 194] as [number,number,number] },
+    { name: "Twitter/X", icon: "X",  color: [139, 92,  246] as [number,number,number] },
+    { name: "TikTok",    icon: "TT", color: [0,   242, 234] as [number,number,number] },
+    { name: "Blog",      icon: "BL", color: [168, 85,  247] as [number,number,number] },
+    { name: "YouTube",   icon: "YT", color: [255, 0,   0  ] as [number,number,number] },
+  ];
+
+  // Card height per platform: IG, LI, X, TT, Blog, YT
+  const PLATFORM_CARD_H = [100, 90, 55, 120, 80, 75];
+
+  const CONTENT_TYPES_BY_PLATFORM = [
+    ["Carousel","Reel","Story"],
+    ["Article","Poll","Thought Leadership"],
+    ["Thread","Tweet","Poll"],
+    ["Short","UGC Clip","TikTok"],
+    ["Blog Post","Infographic","Guide"],
+    ["Short","Reel","Review"],
+  ];
+
+  const TOPICS = [
+    "5 Ways AI is Changing {industry}",
+    "Behind the Scenes: How We {action}",
+    "Why {topic} Matters More Than Ever",
+    "{number} Tips for Better {goal}",
+    "The Future of {industry} in 2026",
+    "How {company} Grew 3x with {strategy}",
+    "Stop Doing {mistake} — Do This Instead",
+    "We Tested {strategy} for 30 Days",
+  ];
+  const INDUSTRIES = ["SaaS","E-commerce","Healthcare","Finance","Education","Real Estate"];
+  const GOALS      = ["Engagement","Conversions","Brand Awareness","Lead Quality"];
+  const STRATEGIES = ["Content Repurposing","AI Writing","Video-First","Community Building"];
+  const POST_SNIPPETS = [
+    "We analysed 10,000 social posts and found that...",
+    "The #1 mistake most brands make with content is...",
+    "Here's the framework we use to generate 60+ posts/month:",
+    "AI-generated content gets 2.3x more engagement when...",
+    "Your audience doesn't care about your product. They care about...",
+    "Content repurposing is the single highest-ROI strategy because...",
+    "We tested posting 3x/day vs 1x/day for 30 days. Results:",
+    "The future of brand content is AI-assisted, human-directed.",
+  ];
+  const ENGAGEMENTS = ["1.2k likes","847 likes","2.3k views","412 shares","156 comments","3.1k reach","967 saves"];
+
+  function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function fillTopic(tpl: string): string {
+    return tpl
+      .replace('{industry}', pick(INDUSTRIES))
+      .replace('{action}',   pick(['Scale','Automate','Grow','Optimise']))
+      .replace('{topic}',    pick(['Content Marketing','AI Writing','Video Strategy']))
+      .replace('{number}',   pick(['5','7','10','12']))
+      .replace('{goal}',     pick(GOALS))
+      .replace('{company}',  pick(['TechCo','ScaleUp','GrowthHQ']))
+      .replace('{strategy}', pick(STRATEGIES))
+      .replace('{mistake}',  pick(['Batch Posting','Keyword Stuffing','Ignoring Comments']));
+  }
+
+  // ─── Types ────────────────────────────────────────────────────────────────
+  interface Card {
+    platformIdx: number;
+    contentType: string;
+    topic: string;
+    snippet: string;
+    engagement: string;
+    col: number;
+    baseX: number;
+    y: number;
+    w: number;
+    h: number;
+    depth: number;
+    phase: number;
+    flashUntil: number;
+    lineWidths: number[];
+  }
+
+  interface Sparkle {
+    x: number; y: number;
+    vx: number; vy: number;
+    startT: number; life: number;
+    color: [number,number,number];
+  }
+
+  // ─── Constants ────────────────────────────────────────────────────────────
+  const DRIFT_SPEED      = 0.05;
+  const CARD_GAP         = 8;
+  const FLASH_DURATION   = 0.8;
+  const FLASH_INTERVAL   = 3;
+  const PARALLAX_FACTORS = [0.012, 0.007, 0.003];
+  const DEPTH_ALPHAS     = [1.0, 0.85, 0.70];
+
+  // ─── Canvas ───────────────────────────────────────────────────────────────
+  const canvas = document.querySelector<HTMLCanvasElement>('.pub7-card-canvas')!;
+  const wrap   = document.getElementById('hero-wrap')!;
+  const ctx    = canvas.getContext('2d')!;
+
+  let cards: Card[]       = [];
+  let sparkles: Sparkle[] = [];
+  let colTotalH: number[] = [];
+  let mouse: { x: number; y: number } | null = null;
+  let hoveredCard: Card | null = null;
+  let lastFlashT = 0;
+  let dpr = 1;
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+  function rrect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r);
+    c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r);
+    c.lineTo(x, y + r);
+    c.quadraticCurveTo(x, y, x + r, y);
+    c.closePath();
+  }
+
+  function wrapText(text: string, maxWidth: number, c: CanvasRenderingContext2D): string[] {
+    const words = text.split(' ');
+    const lines: string[] = [];
+    let current = '';
+    for (const word of words) {
+      const test = current ? `${current} ${word}` : word;
+      if (c.measureText(test).width > maxWidth && current) {
+        lines.push(current);
+        current = word;
+      } else {
+        current = test;
+      }
+    }
+    if (current) lines.push(current);
+    return lines;
+  }
+
+  // ─── Card creation ────────────────────────────────────────────────────────
+  function createCard(platformIdx: number, col: number, x: number, y: number, w: number): Card {
+    const h = PLATFORM_CARD_H[platformIdx];
+    const numLines = Math.floor(Math.random() * 3) + 2;
+    const lineWidths = Array.from({ length: numLines }, () => 0.3 + Math.random() * 0.55);
+    return {
+      platformIdx,
+      contentType: pick(CONTENT_TYPES_BY_PLATFORM[platformIdx]),
+      topic: fillTopic(pick(TOPICS)),
+      snippet: pick(POST_SNIPPETS),
+      engagement: pick(ENGAGEMENTS),
+      col, baseX: x, y, w, h,
+      depth: col % 3,
+      phase: Math.random() * Math.PI * 2,
+      flashUntil: 0,
+      lineWidths,
+    };
+  }
+
+  // ─── Build column layout ──────────────────────────────────────────────────
+  function buildCards() {
+    cards = [];
+    const W = canvas.width / dpr;
+    const H = canvas.height / dpr;
+    const numCols = W < 600 ? 3 : W < 900 ? 4 : 5;
+    const totalGap = (numCols + 1) * CARD_GAP;
+    const colW = (W - totalGap) / numCols;
+
+    colTotalH = new Array(numCols).fill(0);
+
+    for (let c = 0; c < numCols; c++) {
+      const x = CARD_GAP + c * (colW + CARD_GAP);
+      let y = -H * 0.5;
+
+      while (y < H * 1.3) {
+        const pIdx = Math.floor(Math.random() * PLATFORMS.length);
+        const card = createCard(pIdx, c, x, y, colW);
+        cards.push(card);
+        colTotalH[c] += card.h + CARD_GAP;
+        y += card.h + CARD_GAP;
+      }
+    }
+  }
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    const w = Math.round(rect.width);
+    const h = Math.round(rect.height);
+    canvas.width  = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width  = `${w}px`;
+    canvas.style.height = `${h}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildCards();
+  }
+
+  // ─── Draw card (normal) ───────────────────────────────────────────────────
+  function drawCardBase(card: Card, px: number, py: number, alpha: number, flashProg: number) {
+    const [r, g, b] = PLATFORMS[card.platformIdx].color;
+    const isImage = card.platformIdx === 0 || card.platformIdx === 5; // IG or YT
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    // Background
+    rrect(ctx, px, py, card.w, card.h, 8);
+    ctx.fillStyle = 'rgba(6,7,18,0.35)';
+    ctx.fill();
+
+    // Border (brighter during flash)
+    const borderAlpha = 0.12 + flashProg * 0.38;
+    ctx.strokeStyle = `rgba(${r},${g},${b},${borderAlpha})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Flash glow
+    if (flashProg > 0) {
+      ctx.shadowColor = `rgba(${r},${g},${b},${flashProg * 0.5})`;
+      ctx.shadowBlur  = 14 * flashProg;
+      rrect(ctx, px, py, card.w, card.h, 8);
+      ctx.strokeStyle = `rgba(${r},${g},${b},${flashProg * 0.25})`;
+      ctx.stroke();
+      ctx.shadowBlur  = 0;
+      ctx.shadowColor = 'transparent';
+    }
+
+    // Platform icon dot (top-left)
+    ctx.globalAlpha = alpha * 0.6;
+    ctx.fillStyle   = `rgb(${r},${g},${b})`;
+    ctx.beginPath();
+    ctx.arc(px + 8, py + 9, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Format label (top-right)
+    ctx.globalAlpha = alpha * 0.15;
+    ctx.fillStyle   = '#ffffff';
+    ctx.font        = '5px "SF Mono",monospace';
+    ctx.textAlign   = 'right';
+    ctx.fillText(card.contentType.toUpperCase().slice(0, 9), px + card.w - 5, py + 10);
+
+    // Image/video block for IG and YT
+    if (isImage) {
+      ctx.globalAlpha = alpha * 0.06;
+      ctx.fillStyle   = `rgb(${r},${g},${b})`;
+      const blockH  = card.h * 0.42;
+      const blockY  = py + (card.h - blockH) * 0.38;
+      ctx.fillRect(px + 5, blockY, card.w - 10, blockH);
+    }
+
+    // Text lines
+    ctx.globalAlpha = alpha * 0.06;
+    ctx.fillStyle   = '#ffffff';
+    const lineBaseY  = py + (isImage ? card.h * 0.54 : card.h * 0.22);
+    const lineSpace  = Math.min(8, (card.h - (isImage ? card.h * 0.54 : card.h * 0.22) - 14) / card.lineWidths.length);
+    for (let l = 0; l < card.lineWidths.length; l++) {
+      ctx.fillRect(px + 5, lineBaseY + l * lineSpace, (card.w - 10) * card.lineWidths[l], 1);
+    }
+
+    // Engagement (bottom)
+    const engAlpha = 0.08 + flashProg * 0.5;
+    ctx.globalAlpha = alpha * engAlpha;
+    ctx.fillStyle   = flashProg > 0 ? `rgb(${r},${g},${b})` : '#ffffff';
+    ctx.font        = '5px "SF Mono",monospace';
+    ctx.textAlign   = 'left';
+    ctx.fillText(card.engagement, px + 5, py + card.h - 5);
+
+    ctx.restore();
+  }
+
+  // ─── Draw expanded hover card ─────────────────────────────────────────────
+  function drawCardExpanded(card: Card, px: number, py: number, W: number, H: number) {
+    const scale = 2.5;
+    const ew  = card.w * scale;
+    const eh  = card.h * scale;
+    const ecx = px + card.w / 2;
+    const ecy = py + card.h / 2;
+    let ex = ecx - ew / 2;
+    let ey = ecy - eh / 2;
+    ex = Math.max(4, Math.min(W - ew - 4, ex));
+    ey = Math.max(4, Math.min(H - eh - 4, ey));
+
+    const [r, g, b] = PLATFORMS[card.platformIdx].color;
+    const pad = 12;
+
+    ctx.save();
+
+    // Shadow
+    ctx.shadowColor = `rgba(${r},${g},${b},0.28)`;
+    ctx.shadowBlur  = 32;
+    rrect(ctx, ex, ey, ew, eh, 12);
+    ctx.fillStyle = 'rgba(6,7,18,0.94)';
+    ctx.fill();
+    ctx.shadowBlur  = 0;
+    ctx.shadowColor = 'transparent';
+
+    // Tint
+    rrect(ctx, ex, ey, ew, eh, 12);
+    ctx.fillStyle = `rgba(${r},${g},${b},0.10)`;
+    ctx.fill();
+
+    // Border
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.5)`;
+    ctx.lineWidth   = 1.5;
+    rrect(ctx, ex, ey, ew, eh, 12);
+    ctx.stroke();
+
+    // Top accent bar
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle   = `rgb(${r},${g},${b})`;
+    rrect(ctx, ex, ey, ew, 3, 3);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Platform + format header
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.beginPath();
+    ctx.arc(ex + pad + 5, ey + pad + 8, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font      = 'bold 11px "SF Mono","Fira Code",monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(`${PLATFORMS[card.platformIdx].name} \u00b7 ${card.contentType}`, ex + pad + 14, ey + pad + 12);
+
+    // Topic title
+    ctx.globalAlpha = 1;
+    ctx.fillStyle   = '#ffffff';
+    ctx.font        = 'bold 13px -apple-system,system-ui,sans-serif';
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(ex + pad, ey + pad + 17, ew - pad * 2, 20);
+    ctx.clip();
+    ctx.fillText(card.topic, ex + pad, ey + pad + 32);
+    ctx.restore();
+
+    // Snippet (wrapped)
+    ctx.globalAlpha = 0.78;
+    ctx.fillStyle   = '#ffffff';
+    ctx.font        = '10px -apple-system,system-ui,sans-serif';
+    const snippetLines = wrapText(card.snippet, ew - pad * 2, ctx);
+    const maxLines = Math.min(3, snippetLines.length);
+    for (let i = 0; i < maxLines; i++) {
+      ctx.fillText(snippetLines[i], ex + pad, ey + pad + 52 + i * 13);
+    }
+
+    // Engagement
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle   = 'rgba(74,222,128,0.9)';
+    ctx.font        = '9px "SF Mono",monospace';
+    ctx.fillText(card.engagement, ex + pad, ey + eh - pad - 14);
+
+    // Published time
+    ctx.globalAlpha = 0.38;
+    ctx.fillStyle   = '#ffffff';
+    ctx.font        = '8px "SF Mono",monospace';
+    ctx.fillText('Published Wed 3:00 PM', ex + pad, ey + eh - pad - 3);
+
+    ctx.restore();
+  }
+
+  // ─── Frame loop ───────────────────────────────────────────────────────────
+  function frame() {
+    requestAnimationFrame(frame);
+
+    const W = canvas.width / dpr;
+    const H = canvas.height / dpr;
+    const t = performance.now() * 0.001;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Parallax offsets per depth (0=front, 1=mid, 2=back)
+    const pOffX = [0, 1, 2].map(d => mouse ? (mouse.x - W / 2) * PARALLAX_FACTORS[d] : 0);
+    const pOffY = [0, 1, 2].map(d => mouse ? (mouse.y - H / 2) * PARALLAX_FACTORS[d] * 0.35 : 0);
+
+    // Drift + wrap
+    for (const card of cards) {
+      card.y -= DRIFT_SPEED;
+      if (card.y + card.h < 0) {
+        card.y += colTotalH[card.col];
+        // Regenerate content on re-entry
+        card.topic      = fillTopic(pick(TOPICS));
+        card.snippet    = pick(POST_SNIPPETS);
+        card.engagement = pick(ENGAGEMENTS);
+        card.flashUntil = 0;
+      }
+    }
+
+    // Flash trigger every FLASH_INTERVAL seconds
+    if (t - lastFlashT >= FLASH_INTERVAL && cards.length > 0) {
+      const fc = cards[Math.floor(Math.random() * cards.length)];
+      fc.flashUntil = t + FLASH_DURATION;
+      // Spawn sparkles around card border
+      const fpx = fc.baseX + pOffX[fc.depth] + fc.w / 2;
+      const fpy = fc.y    + pOffY[fc.depth] + fc.h / 2;
+      for (let s = 0; s < 6; s++) {
+        const angle = (s / 6) * Math.PI * 2 + Math.random() * 0.5;
+        sparkles.push({
+          x: fpx + Math.cos(angle) * (fc.w / 2 + 4),
+          y: fpy + Math.sin(angle) * (fc.h / 2 + 4),
+          vx: Math.cos(angle) * (1.2 + Math.random() * 0.8),
+          vy: Math.sin(angle) * (1.2 + Math.random() * 0.8),
+          startT: t, life: 0.5,
+          color: PLATFORMS[fc.platformIdx].color,
+        });
+      }
+      lastFlashT = t;
+    }
+
+    // Hover detection (iterate reverse to find topmost card)
+    hoveredCard = null;
+    if (mouse) {
+      for (let i = cards.length - 1; i >= 0; i--) {
+        const card = cards[i];
+        const px   = card.baseX + pOffX[card.depth];
+        const py   = card.y     + pOffY[card.depth];
+        if (mouse.x >= px && mouse.x <= px + card.w &&
+            mouse.y >= py && mouse.y <= py + card.h) {
+          hoveredCard = card;
+          break;
+        }
+      }
+    }
+
+    // Draw all cards (skip hovered card — drawn last, expanded)
+    for (const card of cards) {
+      const px = card.baseX + pOffX[card.depth];
+      const py = card.y     + pOffY[card.depth];
+      if (py + card.h < 0 || py > H) continue;
+
+      if (card === hoveredCard) continue;
+
+      const alpha     = DEPTH_ALPHAS[card.depth] * (hoveredCard ? 0.3 : 1.0);
+      const flashProg = card.flashUntil > 0 && t < card.flashUntil
+        ? Math.sin(((t - (card.flashUntil - FLASH_DURATION)) / FLASH_DURATION) * Math.PI)
+        : 0;
+
+      drawCardBase(card, px, py, alpha, flashProg);
+    }
+
+    // Draw sparkles
+    sparkles = sparkles.filter(s => {
+      const age = t - s.startT;
+      if (age >= s.life) return false;
+      const alpha = (1 - age / s.life) * 0.75;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle   = `rgb(${s.color[0]},${s.color[1]},${s.color[2]})`;
+      ctx.beginPath();
+      ctx.arc(s.x + s.vx * age * 28, s.y + s.vy * age * 28, 2, 0, Math.PI * 2);
+      ctx.fill();
+      return true;
+    });
+    ctx.globalAlpha = 1;
+
+    // Draw hovered card expanded (on top)
+    if (hoveredCard) {
+      const px = hoveredCard.baseX + pOffX[hoveredCard.depth];
+      const py = hoveredCard.y     + pOffY[hoveredCard.depth];
+      drawCardExpanded(hoveredCard, px, py, W, H);
+    }
+
+    // Counter (top-right)
+    const visibleCount = cards.filter(c => {
+      const py = c.y + pOffY[c.depth];
+      return py + c.h > 0 && py < H;
+    }).length;
+
+    ctx.save();
+    ctx.textAlign   = 'right';
+    ctx.globalAlpha = 1;
+    ctx.fillStyle   = 'rgba(168,85,247,0.55)';
+    ctx.font        = '11px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${visibleCount} posts this month`, W - 16, 24);
+    ctx.globalAlpha = 0.28;
+    ctx.fillStyle   = '#ffffff';
+    ctx.font        = '9px "SF Mono","Fira Code",monospace';
+    ctx.fillText('6 platforms \u00b7 AI-generated', W - 16, 38);
+    ctx.restore();
+  }
+
+  // ─── Mouse tracking ───────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  });
+  wrap.addEventListener('mouseleave', () => { mouse = null; hoveredCard = null; });
+  wrap.addEventListener('touchstart', () => { mouse = null; hoveredCard = null; }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── FinalCTA: floating coloured rectangles, gentle pulse ─────────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const ctaCanvas = document.createElement('canvas');
+      ctaCanvas.setAttribute('aria-hidden', 'true');
+      ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.style.position = 'relative';
+      ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+
+      const cc = ctaCanvas.getContext('2d')!;
+      interface CtaRect { x: number; y: number; w: number; h: number; pIdx: number; phase: number; }
+      let ctaRects: CtaRect[] = [];
+      let ctaDpr = 1;
+
+      function buildCtaRects() {
+        ctaRects = [];
+        const W = ctaCanvas.width / ctaDpr;
+        const H = ctaCanvas.height / ctaDpr;
+        const count = Math.max(8, Math.floor(W * H / 7000));
+        for (let i = 0; i < count; i++) {
+          const w = 18 + Math.random() * 62;
+          const h = 10 + Math.random() * 32;
+          ctaRects.push({
+            x: Math.random() * (W - w),
+            y: Math.random() * (H - h),
+            w, h,
+            pIdx: Math.floor(Math.random() * PLATFORMS.length),
+            phase: Math.random() * Math.PI * 2,
+          });
+        }
+      }
+
+      function resizeCta() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        const w = Math.round(rect.width), h = Math.round(rect.height);
+        ctaCanvas.width  = w * ctaDpr;
+        ctaCanvas.height = h * ctaDpr;
+        ctaCanvas.style.width  = `${w}px`;
+        ctaCanvas.style.height = `${h}px`;
+        cc.setTransform(ctaDpr, 0, 0, ctaDpr, 0, 0);
+        buildCtaRects();
+      }
+
+      function frameCta() {
+        requestAnimationFrame(frameCta);
+        const W = ctaCanvas.width / ctaDpr;
+        const H = ctaCanvas.height / ctaDpr;
+        const t = performance.now() * 0.001;
+        cc.clearRect(0, 0, W, H);
+        for (const rect of ctaRects) {
+          const [r, g, b] = PLATFORMS[rect.pIdx].color;
+          const alpha = 0.06 + Math.sin(t * 0.55 + rect.phase) * 0.03;
+          cc.globalAlpha = alpha;
+          cc.fillStyle   = `rgb(${r},${g},${b})`;
+          const rad = 3;
+          cc.beginPath();
+          cc.moveTo(rect.x + rad, rect.y);
+          cc.lineTo(rect.x + rect.w - rad, rect.y);
+          cc.quadraticCurveTo(rect.x + rect.w, rect.y, rect.x + rect.w, rect.y + rad);
+          cc.lineTo(rect.x + rect.w, rect.y + rect.h - rad);
+          cc.quadraticCurveTo(rect.x + rect.w, rect.y + rect.h, rect.x + rect.w - rad, rect.y + rect.h);
+          cc.lineTo(rect.x + rad, rect.y + rect.h);
+          cc.quadraticCurveTo(rect.x, rect.y + rect.h, rect.x, rect.y + rect.h - rad);
+          cc.lineTo(rect.x, rect.y + rad);
+          cc.quadraticCurveTo(rect.x, rect.y, rect.x + rad, rect.y);
+          cc.closePath();
+          cc.fill();
+        }
+        cc.globalAlpha = 1;
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaCard);
+      resizeCta();
+      requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { ctaCanvas.style.opacity = '1'; });
+
+      const ctaGridTex = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGridTex) ctaGridTex.style.display = 'none';
+    }
+  }
+
+  }); // end requestIdleCallback
+</script>
