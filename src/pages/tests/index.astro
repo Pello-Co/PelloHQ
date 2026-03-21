@@ -10,228 +10,281 @@ import Footer from '../../components/layout/Footer.astro';
     <div class="container max-w-5xl mx-auto px-6">
 
       <h1 class="text-4xl font-bold text-white mb-3">Hero Experiments</h1>
-      <p class="text-zinc-400 text-lg mb-12 max-w-2xl">All hero background variations in one place. Click any card to preview the full page.</p>
+      <p class="text-zinc-400 text-lg mb-14 max-w-2xl">All hero background concepts and their variations. Click any card to preview.</p>
 
-      <!-- ── Round 1: Core Concepts ──────────────────────────── -->
-      <section class="mb-16">
-        <div class="flex items-center gap-3 mb-6">
-          <h2 class="text-xl font-semibold text-white">Round 1 — Core Concepts</h2>
-          <span class="text-xs text-zinc-500 bg-zinc-800/50 px-2 py-0.5 rounded-full">8 variants</span>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <a href="/tests/1" class="test-card" style="--accent: #6366f1;">
-            <span class="test-num">/1</span>
-            <span class="test-name">The Scanner</span>
-            <span class="test-desc">Reactive particle flow responds to URL input</span>
-          </a>
-          <a href="/tests/2" class="test-card" style="--accent: #8b5cf6;">
-            <span class="test-num">/2</span>
-            <span class="test-name">Gravitational Orbit</span>
-            <span class="test-desc">Product orbs with Keplerian orbital physics</span>
-          </a>
-          <a href="/tests/3" class="test-card" style="--accent: #a855f7;">
-            <span class="test-num">/3</span>
-            <span class="test-name">Neural Mesh</span>
-            <span class="test-desc">Delaunay network with propagating pulses</span>
-          </a>
-          <a href="/tests/4" class="test-card" style="--accent: #c026d3;">
-            <span class="test-num">/4</span>
-            <span class="test-name">Topographic</span>
-            <span class="test-desc">Animated contour map with marching squares</span>
-          </a>
-          <a href="/tests/5" class="test-card" style="--accent: #7c3aed;">
-            <span class="test-num">/5</span>
-            <span class="test-name">Waveform</span>
-            <span class="test-desc">8 frequency lines — one per product channel</span>
-          </a>
-          <a href="/tests/6" class="test-card" style="--accent: #4f46e5;">
-            <span class="test-num">/6</span>
-            <span class="test-name">Magnetic Field</span>
-            <span class="test-desc">Iron filing simulation with dipole physics</span>
-          </a>
-          <a href="/tests/7" class="test-card" style="--accent: #9333ea;">
-            <span class="test-num">/7</span>
-            <span class="test-name">Data Rain</span>
-            <span class="test-desc">Cascading marketing terms — Matrix-style</span>
-          </a>
-          <a href="/tests/8" class="test-card" style="--accent: #6d28d9;">
-            <span class="test-num">/8</span>
-            <span class="test-name">Constellation</span>
-            <span class="test-desc">Star maps with shooting star triggers</span>
-          </a>
-        </div>
-      </section>
+      <!-- ── Ideas & Concepts ────────────────────────────────── -->
+      <section class="mb-20">
+        <h2 class="text-2xl font-semibold text-white mb-8">Ideas & Concepts</h2>
 
-      <!-- ── Round 2: Topographic Variations ─────────────────── -->
-      <section class="mb-16">
-        <div class="flex items-center gap-3 mb-2">
-          <h2 class="text-xl font-semibold text-white">Round 2 — Topographic Variations</h2>
-          <span class="text-xs text-zinc-500 bg-zinc-800/50 px-2 py-0.5 rounded-full">based on /4</span>
+        <!-- The Scanner -->
+        <div class="concept-group mb-12">
+          <div class="flex items-center gap-3 mb-4">
+            <h3 class="text-lg font-semibold text-white">The Scanner</h3>
+            <span class="concept-tag">particle flow</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <a href="/tests/1" class="test-card" style="--accent: #6366f1;">
+              <span class="test-num">base</span>
+              <span class="test-name">The Scanner</span>
+              <span class="test-desc">Reactive particle flow responds to URL input</span>
+            </a>
+          </div>
         </div>
-        <p class="text-zinc-500 text-sm mb-6">Contour map rendered with Perlin noise + marching squares. Each variant pushes the topographic concept differently.</p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <a href="/tests/41" class="test-card" style="--accent: #6366f1;">
-            <span class="test-num">/41</span>
-            <span class="test-name">Wandering Peaks</span>
-            <span class="test-desc">Autonomous drifting peaks that merge and separate</span>
-          </a>
-          <a href="/tests/42" class="test-card" style="--accent: #8b5cf6;">
-            <span class="test-num">/42</span>
-            <span class="test-name">Concentric Pulses</span>
-            <span class="test-desc">Expanding ring waves create interference patterns</span>
-          </a>
-          <a href="/tests/43" class="test-card" style="--accent: #a855f7;">
-            <span class="test-num">/43</span>
-            <span class="test-name">Ridge Warp</span>
-            <span class="test-desc">Domain-warped ridgelines — geological formations</span>
-          </a>
-          <a href="/tests/44" class="test-card" style="--accent: #c026d3;">
-            <span class="test-num">/44</span>
-            <span class="test-name">Flow Field</span>
-            <span class="test-desc">Contours + particles flowing downhill like water</span>
-          </a>
-          <a href="/tests/45" class="test-card" style="--accent: #7c3aed;">
-            <span class="test-num">/45</span>
-            <span class="test-name">Filled Bands</span>
-            <span class="test-desc">Colour-filled choropleth — shifting heat map</span>
-          </a>
-          <a href="/tests/46" class="test-card" style="--accent: #4f46e5;">
-            <span class="test-num">/46</span>
-            <span class="test-name">Tremor</span>
-            <span class="test-desc">Vibrating contour lines with seismic energy</span>
-          </a>
-          <a href="/tests/47" class="test-card" style="--accent: #9333ea;">
-            <span class="test-num">/47</span>
-            <span class="test-name">Parallax Strata</span>
-            <span class="test-desc">3 geological depth layers with parallax shift</span>
-          </a>
-          <a href="/tests/48" class="test-card" style="--accent: #6d28d9;">
-            <span class="test-num">/48</span>
-            <span class="test-name">Labeled Terrain</span>
-            <span class="test-desc">Product names floating at terrain peaks</span>
-          </a>
-        </div>
-      </section>
 
-      <!-- ── Round 2: Waveform Variations ────────────────────── -->
-      <section class="mb-16">
-        <div class="flex items-center gap-3 mb-2">
-          <h2 class="text-xl font-semibold text-white">Round 2 — Waveform Variations</h2>
-          <span class="text-xs text-zinc-500 bg-zinc-800/50 px-2 py-0.5 rounded-full">based on /5</span>
+        <!-- Gravitational Orbit -->
+        <div class="concept-group mb-12">
+          <div class="flex items-center gap-3 mb-4">
+            <h3 class="text-lg font-semibold text-white">Gravitational Orbit</h3>
+            <span class="concept-tag">orbital physics</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <a href="/tests/2" class="test-card" style="--accent: #8b5cf6;">
+              <span class="test-num">base</span>
+              <span class="test-name">Gravitational Orbit</span>
+              <span class="test-desc">Product orbs with Keplerian orbital physics</span>
+            </a>
+          </div>
         </div>
-        <p class="text-zinc-500 text-sm mb-6">Horizontal frequency lines — one per Pello product. Each variant explores a different waveform visualisation style.</p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <a href="/tests/51" class="test-card" style="--accent: #6366f1;">
-            <span class="test-num">/51</span>
-            <span class="test-name">Product Labels</span>
-            <span class="test-desc">Wave names + stats revealed on hover</span>
-          </a>
-          <a href="/tests/52" class="test-card" style="--accent: #8b5cf6;">
-            <span class="test-num">/52</span>
-            <span class="test-name">Spectral Fill</span>
-            <span class="test-desc">Translucent area fills — layered colour strata</span>
-          </a>
-          <a href="/tests/53" class="test-card" style="--accent: #a855f7;">
-            <span class="test-num">/53</span>
-            <span class="test-name">Frequency Fusion</span>
-            <span class="test-desc">8 waves merge into one super-wave then split</span>
-          </a>
-          <a href="/tests/54" class="test-card" style="--accent: #c026d3;">
-            <span class="test-num">/54</span>
-            <span class="test-name">Harmonic Resonance</span>
-            <span class="test-desc">Musical overtones — pluck one, harmonics ring</span>
-          </a>
-          <a href="/tests/55" class="test-card" style="--accent: #7c3aed;">
-            <span class="test-num">/55</span>
-            <span class="test-name">Oscilloscope</span>
-            <span class="test-desc">Retro CRT with phosphor glow and crosshair</span>
-          </a>
-          <a href="/tests/56" class="test-card" style="--accent: #4f46e5;">
-            <span class="test-num">/56</span>
-            <span class="test-name">Spectrum Analyzer</span>
-            <span class="test-desc">Equalizer bars pulsing like a music visualiser</span>
-          </a>
-          <a href="/tests/57" class="test-card" style="--accent: #9333ea;">
-            <span class="test-num">/57</span>
-            <span class="test-name">Interference</span>
-            <span class="test-desc">Standing wave patterns from opposing wave sets</span>
-          </a>
-          <a href="/tests/58" class="test-card" style="--accent: #6d28d9;">
-            <span class="test-num">/58</span>
-            <span class="test-name">Pulse / ECG</span>
-            <span class="test-desc">Heartbeat traces — each product has its own rhythm</span>
-          </a>
-        </div>
-      </section>
 
-      <!-- ── Round 3: Dot Grid + Aurora Variations ────────────── -->
-      <section class="mb-16">
-        <div class="flex items-center gap-3 mb-2">
-          <h2 class="text-xl font-semibold text-white">Round 3 — Dot Grid + Aurora Variations</h2>
-          <span class="text-xs text-zinc-500 bg-zinc-800/50 px-2 py-0.5 rounded-full">based on homepage</span>
+        <!-- Neural Mesh -->
+        <div class="concept-group mb-12">
+          <div class="flex items-center gap-3 mb-4">
+            <h3 class="text-lg font-semibold text-white">Neural Mesh</h3>
+            <span class="concept-tag">network topology</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <a href="/tests/3" class="test-card" style="--accent: #a855f7;">
+              <span class="test-num">base</span>
+              <span class="test-name">Neural Mesh</span>
+              <span class="test-desc">Delaunay network with propagating pulses</span>
+            </a>
+          </div>
         </div>
-        <p class="text-zinc-500 text-sm mb-6">Variations on the production dot grid + aurora nebula. Grid and aurora interact as a unified system.</p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <a href="/tests/round3/1" class="test-card" style="--accent: #a855f7;">
-            <span class="test-num">r3/1</span>
-            <span class="test-name">Aurora Bleed</span>
-            <span class="test-desc">Dots sample aurora colour — grid becomes LED display of nebula</span>
-          </a>
-          <a href="/tests/round3/2" class="test-card" style="--accent: #6366f1;">
-            <span class="test-num">r3/2</span>
-            <span class="test-name">Gravitational Lens</span>
-            <span class="test-desc">Mouse bends spacetime — grid and aurora warp around cursor</span>
-          </a>
-          <a href="/tests/round3/3" class="test-card" style="--accent: #8b5cf6;">
-            <span class="test-num">r3/3</span>
-            <span class="test-name">Connected Mesh</span>
-            <span class="test-desc">Neighbouring dots draw lines — living network over nebula</span>
-          </a>
-          <a href="/tests/round3/4" class="test-card" style="--accent: #c026d3;">
-            <span class="test-num">r3/4</span>
-            <span class="test-name">Tidal Ripple</span>
-            <span class="test-desc">Propagating wave rings through grid — aurora pulses in sync</span>
-          </a>
-          <a href="/tests/round3/5" class="test-card" style="--accent: #7c3aed;">
-            <span class="test-num">r3/5</span>
-            <span class="test-name">Curl Flow</span>
-            <span class="test-desc">Dots drift along curl noise — always alive, mouse = vortex</span>
-          </a>
-          <a href="/tests/round3/6" class="test-card" style="--accent: #4f46e5;">
-            <span class="test-num">r3/6</span>
-            <span class="test-name">Breathing Grid</span>
-            <span class="test-desc">Concentric pulses from center — grid breathes like an organism</span>
-          </a>
-          <a href="/tests/round3/7" class="test-card" style="--accent: #9333ea;">
-            <span class="test-num">r3/7</span>
-            <span class="test-name">Depth Field</span>
-            <span class="test-desc">Two grids at different scales — aurora floats between layers</span>
-          </a>
-          <a href="/tests/round3/8" class="test-card" style="--accent: #6d28d9;">
-            <span class="test-num">r3/8</span>
-            <span class="test-name">Light Painter</span>
-            <span class="test-desc">Mouse paints aurora colours onto dots — glowing trails that fade</span>
-          </a>
+
+        <!-- Topographic -->
+        <div class="concept-group mb-12">
+          <div class="flex items-center gap-3 mb-4">
+            <h3 class="text-lg font-semibold text-white">Topographic</h3>
+            <span class="concept-tag">contour maps</span>
+            <span class="concept-count">8 variations</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <a href="/tests/4" class="test-card" style="--accent: #c026d3;">
+              <span class="test-num">base</span>
+              <span class="test-name">Topographic</span>
+              <span class="test-desc">Animated contour map with marching squares</span>
+            </a>
+            <a href="/tests/41" class="test-card" style="--accent: #c026d3;">
+              <span class="test-num">v1</span>
+              <span class="test-name">Wandering Peaks</span>
+              <span class="test-desc">Autonomous drifting peaks that merge and separate</span>
+            </a>
+            <a href="/tests/42" class="test-card" style="--accent: #c026d3;">
+              <span class="test-num">v2</span>
+              <span class="test-name">Concentric Pulses</span>
+              <span class="test-desc">Expanding ring waves create interference patterns</span>
+            </a>
+            <a href="/tests/43" class="test-card" style="--accent: #c026d3;">
+              <span class="test-num">v3</span>
+              <span class="test-name">Ridge Warp</span>
+              <span class="test-desc">Domain-warped ridgelines — geological formations</span>
+            </a>
+            <a href="/tests/44" class="test-card" style="--accent: #c026d3;">
+              <span class="test-num">v4</span>
+              <span class="test-name">Flow Field</span>
+              <span class="test-desc">Contours + particles flowing downhill like water</span>
+            </a>
+            <a href="/tests/45" class="test-card" style="--accent: #c026d3;">
+              <span class="test-num">v5</span>
+              <span class="test-name">Filled Bands</span>
+              <span class="test-desc">Colour-filled choropleth — shifting heat map</span>
+            </a>
+            <a href="/tests/46" class="test-card" style="--accent: #c026d3;">
+              <span class="test-num">v6</span>
+              <span class="test-name">Tremor</span>
+              <span class="test-desc">Vibrating contour lines with seismic energy</span>
+            </a>
+            <a href="/tests/47" class="test-card" style="--accent: #c026d3;">
+              <span class="test-num">v7</span>
+              <span class="test-name">Parallax Strata</span>
+              <span class="test-desc">3 geological depth layers with parallax shift</span>
+            </a>
+            <a href="/tests/48" class="test-card" style="--accent: #c026d3;">
+              <span class="test-num">v8</span>
+              <span class="test-name">Labeled Terrain</span>
+              <span class="test-desc">Product names floating at terrain peaks</span>
+            </a>
+          </div>
         </div>
+
+        <!-- Waveform -->
+        <div class="concept-group mb-12">
+          <div class="flex items-center gap-3 mb-4">
+            <h3 class="text-lg font-semibold text-white">Waveform</h3>
+            <span class="concept-tag">frequency lines</span>
+            <span class="concept-count">8 variations</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <a href="/tests/5" class="test-card" style="--accent: #7c3aed;">
+              <span class="test-num">base</span>
+              <span class="test-name">Waveform</span>
+              <span class="test-desc">8 frequency lines — one per product channel</span>
+            </a>
+            <a href="/tests/51" class="test-card" style="--accent: #7c3aed;">
+              <span class="test-num">v1</span>
+              <span class="test-name">Product Labels</span>
+              <span class="test-desc">Wave names + stats revealed on hover</span>
+            </a>
+            <a href="/tests/52" class="test-card" style="--accent: #7c3aed;">
+              <span class="test-num">v2</span>
+              <span class="test-name">Spectral Fill</span>
+              <span class="test-desc">Translucent area fills — layered colour strata</span>
+            </a>
+            <a href="/tests/53" class="test-card" style="--accent: #7c3aed;">
+              <span class="test-num">v3</span>
+              <span class="test-name">Frequency Fusion</span>
+              <span class="test-desc">8 waves merge into one super-wave then split</span>
+            </a>
+            <a href="/tests/54" class="test-card" style="--accent: #7c3aed;">
+              <span class="test-num">v4</span>
+              <span class="test-name">Harmonic Resonance</span>
+              <span class="test-desc">Musical overtones — pluck one, harmonics ring</span>
+            </a>
+            <a href="/tests/55" class="test-card" style="--accent: #7c3aed;">
+              <span class="test-num">v5</span>
+              <span class="test-name">Oscilloscope</span>
+              <span class="test-desc">Retro CRT with phosphor glow and crosshair</span>
+            </a>
+            <a href="/tests/56" class="test-card" style="--accent: #7c3aed;">
+              <span class="test-num">v6</span>
+              <span class="test-name">Spectrum Analyzer</span>
+              <span class="test-desc">Equalizer bars pulsing like a music visualiser</span>
+            </a>
+            <a href="/tests/57" class="test-card" style="--accent: #7c3aed;">
+              <span class="test-num">v7</span>
+              <span class="test-name">Interference</span>
+              <span class="test-desc">Standing wave patterns from opposing wave sets</span>
+            </a>
+            <a href="/tests/58" class="test-card" style="--accent: #7c3aed;">
+              <span class="test-num">v8</span>
+              <span class="test-name">Pulse / ECG</span>
+              <span class="test-desc">Heartbeat traces — each product has its own rhythm</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Magnetic Field -->
+        <div class="concept-group mb-12">
+          <div class="flex items-center gap-3 mb-4">
+            <h3 class="text-lg font-semibold text-white">Magnetic Field</h3>
+            <span class="concept-tag">dipole physics</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <a href="/tests/6" class="test-card" style="--accent: #4f46e5;">
+              <span class="test-num">base</span>
+              <span class="test-name">Magnetic Field</span>
+              <span class="test-desc">Iron filing simulation with flowing field lines</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Data Rain -->
+        <div class="concept-group mb-12">
+          <div class="flex items-center gap-3 mb-4">
+            <h3 class="text-lg font-semibold text-white">Data Rain</h3>
+            <span class="concept-tag">cascading text</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <a href="/tests/7" class="test-card" style="--accent: #9333ea;">
+              <span class="test-num">base</span>
+              <span class="test-name">Data Rain</span>
+              <span class="test-desc">Cascading marketing terms — Matrix-style</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Constellation -->
+        <div class="concept-group mb-12">
+          <div class="flex items-center gap-3 mb-4">
+            <h3 class="text-lg font-semibold text-white">Constellation</h3>
+            <span class="concept-tag">star maps</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <a href="/tests/8" class="test-card" style="--accent: #6d28d9;">
+              <span class="test-num">base</span>
+              <span class="test-name">Constellation</span>
+              <span class="test-desc">Star maps with shooting star triggers</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Dot Grid + Aurora -->
+        <div class="concept-group mb-12">
+          <div class="flex items-center gap-3 mb-4">
+            <h3 class="text-lg font-semibold text-white">Dot Grid + Aurora</h3>
+            <span class="concept-tag">particle grid × nebula</span>
+            <span class="concept-count">8 variations</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <a href="/" class="test-card test-card--live" style="--accent: #10b981;">
+              <span class="test-num">live</span>
+              <span class="test-name">Dot Grid + Aurora</span>
+              <span class="test-desc">Current production homepage</span>
+            </a>
+            <a href="/tests/round3/1" class="test-card" style="--accent: #a855f7;">
+              <span class="test-num">v1</span>
+              <span class="test-name">Aurora Bleed</span>
+              <span class="test-desc">Dots sample aurora colour — grid becomes LED display</span>
+            </a>
+            <a href="/tests/round3/2" class="test-card" style="--accent: #a855f7;">
+              <span class="test-num">v2</span>
+              <span class="test-name">Gravitational Lens</span>
+              <span class="test-desc">Mouse bends spacetime — grid and aurora warp</span>
+            </a>
+            <a href="/tests/round3/3" class="test-card" style="--accent: #a855f7;">
+              <span class="test-num">v3</span>
+              <span class="test-name">Connected Mesh</span>
+              <span class="test-desc">Neighbouring dots draw lines — living network</span>
+            </a>
+            <a href="/tests/round3/4" class="test-card" style="--accent: #a855f7;">
+              <span class="test-num">v4</span>
+              <span class="test-name">Tidal Ripple</span>
+              <span class="test-desc">Wave rings through grid — aurora pulses in sync</span>
+            </a>
+            <a href="/tests/round3/5" class="test-card" style="--accent: #a855f7;">
+              <span class="test-num">v5</span>
+              <span class="test-name">Curl Flow</span>
+              <span class="test-desc">Dots drift along curl noise — always alive</span>
+            </a>
+            <a href="/tests/round3/6" class="test-card" style="--accent: #a855f7;">
+              <span class="test-num">v6</span>
+              <span class="test-name">Breathing Grid</span>
+              <span class="test-desc">Concentric pulses — grid breathes like an organism</span>
+            </a>
+            <a href="/tests/round3/7" class="test-card" style="--accent: #a855f7;">
+              <span class="test-num">v7</span>
+              <span class="test-name">Depth Field</span>
+              <span class="test-desc">Two grids — aurora floats between layers</span>
+            </a>
+            <a href="/tests/round3/8" class="test-card" style="--accent: #a855f7;">
+              <span class="test-num">v8</span>
+              <span class="test-name">Light Painter</span>
+              <span class="test-desc">Mouse paints aurora colours onto dots</span>
+            </a>
+          </div>
+        </div>
+
       </section>
 
       <!-- ── Homepage Experiments ────────────────────────────── -->
       <section class="mb-16">
-        <div class="flex items-center gap-3 mb-2">
-          <h2 class="text-xl font-semibold text-white">Homepage Experiments</h2>
-          <span class="text-xs text-emerald-400/80 bg-emerald-400/10 px-2 py-0.5 rounded-full">full page</span>
-        </div>
-        <p class="text-zinc-500 text-sm mb-6">Complete homepage variations — full production pages with different hero treatments.</p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <a href="/" class="test-card test-card--live" style="--accent: #10b981;">
-            <span class="test-num">live</span>
-            <span class="test-name">Dot Grid + Aurora</span>
-            <span class="test-desc">Interactive particle grid with nebula canvas — current production</span>
-          </a>
+        <h2 class="text-2xl font-semibold text-white mb-4">Homepage Experiments</h2>
+        <p class="text-zinc-500 text-sm mb-6">Complete homepage variations — full production pages with per-product animations.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <a href="/tests/index/1" class="test-card" style="--accent: #6366f1;">
             <span class="test-num">index/1</span>
-            <span class="test-name">Dot Grid + Aurora</span>
-            <span class="test-desc">Baseline copy of current homepage for experimentation</span>
+            <span class="test-name">Per-Product Canvases</span>
+            <span class="test-desc">Each product section has its own animated background</span>
           </a>
         </div>
       </section>
@@ -242,6 +295,27 @@ import Footer from '../../components/layout/Footer.astro';
 </Layout>
 
 <style is:global>
+  .concept-group {
+    border-left: 2px solid rgba(255, 255, 255, 0.04);
+    padding-left: 1.25rem;
+  }
+  .concept-tag {
+    font-size: 0.65rem;
+    color: rgb(161, 161, 170);
+    background: rgba(255, 255, 255, 0.04);
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+  .concept-count {
+    font-size: 0.65rem;
+    color: rgba(139, 92, 246, 0.8);
+    background: rgba(139, 92, 246, 0.08);
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+    font-weight: 600;
+  }
   .test-card {
     display: flex;
     flex-direction: column;
@@ -278,10 +352,6 @@ import Footer from '../../components/layout/Footer.astro';
     border-color: rgba(16, 185, 129, 0.2);
     background: rgba(16, 185, 129, 0.04);
   }
-  .test-card--pending {
-    opacity: 0.5;
-    pointer-events: none;
-  }
   .test-num {
     font-family: 'SF Mono', 'Fira Code', monospace;
     font-size: 0.7rem;
@@ -297,16 +367,5 @@ import Footer from '../../components/layout/Footer.astro';
     font-size: 0.78rem;
     color: rgb(161, 161, 170);
     line-height: 1.4;
-  }
-  .test-badge {
-    position: absolute;
-    top: 0.75rem;
-    right: 0.75rem;
-    font-size: 0.65rem;
-    color: rgb(250, 204, 21);
-    background: rgba(250, 204, 21, 0.1);
-    padding: 0.15rem 0.5rem;
-    border-radius: 9999px;
-    font-weight: 500;
   }
 </style>
