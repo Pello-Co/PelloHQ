@@ -597,9 +597,9 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
     ctx.textAlign='right';
 
     // ── Left HUD column — all system data ──
-    const hudX = 20;
+    const hudX = GLOBE_CX - GLOBE_R - 16;
     const hudTop = GLOBE_CY - GLOBE_R * 0.85;
-    ctx.textAlign='left';
+    ctx.textAlign='right';
 
     // Section 1: Infrastructure
     ctx.globalAlpha = 0.7 + Math.sin(t*0.8)*0.1;
@@ -611,7 +611,7 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
     ctx.globalAlpha = 0.3;
     ctx.strokeStyle = '#00f2ea';
     ctx.lineWidth = 0.5;
-    ctx.beginPath(); ctx.moveTo(hudX, hudTop + 6); ctx.lineTo(hudX + 160, hudTop + 6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(hudX - 160, hudTop + 6); ctx.lineTo(hudX, hudTop + 6); ctx.stroke();
 
     ctx.font='11px "SF Mono","Fira Code",monospace';
     const infraRows = [
@@ -626,23 +626,26 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
       const row = infraRows[i];
       const ry = hudTop + 22 + i * 17;
       const flicker = 0.55 + Math.sin(t * 1.1 + row.phase) * 0.1;
-      ctx.globalAlpha = flicker * 0.6;
-      ctx.fillStyle = '#00f2ea';
-      ctx.fillText(row.label, hudX, ry);
       ctx.globalAlpha = flicker;
       ctx.fillStyle = '#b0fffc';
-      ctx.fillText(row.value, hudX + 100, ry);
+      ctx.textAlign = 'right';
+      ctx.fillText(row.value, hudX, ry);
+      ctx.globalAlpha = flicker * 0.6;
+      ctx.fillStyle = '#00f2ea';
+      ctx.textAlign = 'right';
+      ctx.fillText(row.label, hudX - 80, ry);
     }
 
     // Section 2: Operations
     const opsTop = hudTop + 22 + infraRows.length * 17 + 14;
+    ctx.textAlign = 'right';
     ctx.globalAlpha = 0.7 + Math.sin(t*0.9+1)*0.1;
     ctx.fillStyle='#80fff8';
     ctx.font='bold 12px "SF Mono","Fira Code",monospace';
     ctx.fillText('OPERATIONS', hudX, opsTop);
 
     ctx.globalAlpha = 0.3;
-    ctx.beginPath(); ctx.moveTo(hudX, opsTop + 6); ctx.lineTo(hudX + 160, opsTop + 6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(hudX - 160, opsTop + 6); ctx.lineTo(hudX, opsTop + 6); ctx.stroke();
 
     ctx.font='11px "SF Mono","Fira Code",monospace';
     const opsRows = [
@@ -657,23 +660,25 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
       const row = opsRows[i];
       const ry = opsTop + 22 + i * 17;
       const flicker = 0.55 + Math.sin(t * 1.2 + row.phase) * 0.1;
-      ctx.globalAlpha = flicker * 0.6;
-      ctx.fillStyle = '#00f2ea';
-      ctx.fillText(row.label, hudX, ry);
       ctx.globalAlpha = flicker;
       ctx.fillStyle = '#b0fffc';
-      ctx.fillText(row.value, hudX + 100, ry);
+      ctx.textAlign = 'right';
+      ctx.fillText(row.value, hudX, ry);
+      ctx.globalAlpha = flicker * 0.6;
+      ctx.fillStyle = '#00f2ea';
+      ctx.fillText(row.label, hudX - 80, ry);
     }
 
     // Section 3: Growth
     const growTop = opsTop + 22 + opsRows.length * 17 + 14;
+    ctx.textAlign = 'right';
     ctx.globalAlpha = 0.7 + Math.sin(t*1.0+2)*0.1;
     ctx.fillStyle='#80fff8';
     ctx.font='bold 12px "SF Mono","Fira Code",monospace';
     ctx.fillText('GROWTH', hudX, growTop);
 
     ctx.globalAlpha = 0.3;
-    ctx.beginPath(); ctx.moveTo(hudX, growTop + 6); ctx.lineTo(hudX + 160, growTop + 6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(hudX - 160, growTop + 6); ctx.lineTo(hudX, growTop + 6); ctx.stroke();
 
     ctx.font='11px "SF Mono","Fira Code",monospace';
     const growRows = [
@@ -686,12 +691,13 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
       const row = growRows[i];
       const ry = growTop + 22 + i * 17;
       const flicker = 0.55 + Math.sin(t * 1.0 + row.phase) * 0.1;
-      ctx.globalAlpha = flicker * 0.6;
-      ctx.fillStyle = '#00f2ea';
-      ctx.fillText(row.label, hudX, ry);
       ctx.globalAlpha = flicker;
       ctx.fillStyle = '#b0fffc';
-      ctx.fillText(row.value, hudX + 100, ry);
+      ctx.textAlign = 'right';
+      ctx.fillText(row.value, hudX, ry);
+      ctx.globalAlpha = flicker * 0.6;
+      ctx.fillStyle = '#00f2ea';
+      ctx.fillText(row.label, hudX - 80, ry);
     }
 
     // ── Bottom status bar ──
