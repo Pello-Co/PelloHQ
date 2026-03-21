@@ -1,0 +1,477 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+import HeroPello from '../components/sections/HeroPello.astro';
+import HowItWorks from '../components/sections/HowItWorks.astro';
+import ProductSection from '../components/sections/ProductSection.astro';
+import UseCases from '../components/sections/UseCases.astro';
+import Stats from '../components/sections/Stats.astro';
+import FAQ from '../components/sections/FAQ.astro';
+import FinalCTA from '../components/sections/FinalCTA.astro';
+---
+
+<Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="bg-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99,102,241,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  // Polyfill requestIdleCallback for Safari
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── 2D Perlin Noise ──────────────────────────────────────────────────────
+  const PERM = new Uint8Array(512);
+  {
+    const p = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) p[i] = i;
+    for (let i = 255; i > 0; i--) {
+      const j = ((i * 1664525 + 1013904223) >>> 0) % (i + 1);
+      const tmp = p[i]!; p[i] = p[j]!; p[j] = tmp;
+    }
+    for (let i = 0; i < 512; i++) PERM[i] = p[i & 255]!;
+  }
+  const GRADS2: [number,number][] = [[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+
+  function fade(t: number): number { return t * t * t * (t * (t * 6 - 15) + 10); }
+  function lerp(a: number, b: number, t: number): number { return a + t * (b - a); }
+  function grad2(h: number, x: number, y: number): number {
+    const e = GRADS2[h & 7]!;
+    return e[0] * x + e[1] * y;
+  }
+  function noise2(x: number, y: number): number {
+    const X = Math.floor(x) & 255;
+    const Y = Math.floor(y) & 255;
+    const xf = x - Math.floor(x);
+    const yf = y - Math.floor(y);
+    const u = fade(xf), v = fade(yf);
+    const aa = PERM[PERM[X]!     + Y]!;
+    const ab = PERM[PERM[X]!     + Y + 1]!;
+    const ba = PERM[PERM[X + 1]! + Y]!;
+    const bb = PERM[PERM[X + 1]! + Y + 1]!;
+    return lerp(
+      lerp(grad2(aa, xf,     yf),     grad2(ba, xf - 1, yf),     u),
+      lerp(grad2(ab, xf,     yf - 1), grad2(bb, xf - 1, yf - 1), u),
+      v
+    );
+  }
+
+  // ─── Product peaks ────────────────────────────────────────────────────────
+  interface ProductDef {
+    name: string;
+    stat: string;
+    r: number; g: number; b: number;
+    cx: number; cy: number;   // center position in [0,1]
+    ax: number; ay: number;   // Lissajous amplitude in [0,1]
+    fa: number; fb: number;   // Lissajous frequencies
+    da: number;               // x-axis phase offset
+    ph: number;               // phase for strength oscillation
+  }
+
+  const PRODUCTS: ProductDef[] = [
+    { name: 'PELLOSEO',     stat: '+340% traffic',  r: 99,  g: 102, b: 241, cx: 0.22, cy: 0.28, ax: 0.12, ay: 0.10, fa: 1.3, fb: 1.7, da: 0.20, ph: 0.0 },
+    { name: 'PELLOREACH',   stat: '500+ domains',   r: 139, g: 92,  b: 246, cx: 0.55, cy: 0.18, ax: 0.11, ay: 0.11, fa: 2.1, fb: 1.4, da: 1.10, ph: 0.8 },
+    { name: 'PELLOPUBLISH', stat: '60 pieces/mo',   r: 168, g: 85,  b: 247, cx: 0.78, cy: 0.32, ax: 0.10, ay: 0.09, fa: 1.7, fb: 2.3, da: 0.80, ph: 1.6 },
+    { name: 'PELLOSOCIAL',  stat: '3.2k accounts',  r: 192, g: 38,  b: 211, cx: 0.18, cy: 0.60, ax: 0.11, ay: 0.10, fa: 2.5, fb: 1.9, da: 2.30, ph: 2.4 },
+    { name: 'PELLOPITCH',   stat: '8\u201312% CVR',     r: 124, g: 58,  b: 237, cx: 0.45, cy: 0.68, ax: 0.12, ay: 0.09, fa: 1.9, fb: 2.7, da: 1.50, ph: 3.2 },
+    { name: 'PELLOADS',     stat: '2.8x ROAS',      r: 79,  g: 70,  b: 229, cx: 0.68, cy: 0.55, ax: 0.11, ay: 0.10, fa: 3.1, fb: 2.1, da: 0.50, ph: 4.0 },
+    { name: 'PELLOFLOW',    stat: '0 manual steps', r: 147, g: 51,  b: 234, cx: 0.82, cy: 0.70, ax: 0.09, ay: 0.10, fa: 2.3, fb: 3.5, da: 1.90, ph: 4.8 },
+    { name: 'PELLOBUILD',   stat: '<2wk ship',      r: 109, g: 40,  b: 217, cx: 0.50, cy: 0.82, ax: 0.12, ay: 0.08, fa: 1.5, fb: 2.9, da: 3.10, ph: 5.6 },
+  ];
+
+  // ─── Base height field (Perlin + optional mouse peak) ─────────────────────
+  function sampleBaseHeight(
+    gx: number, gy: number, t: number,
+    mouseX: number | null, mouseY: number | null, mouseStr: number,
+    W: number, H: number, scale: number
+  ): number {
+    const nx = gx * scale;
+    const ny = gy * scale;
+    let v = noise2(nx + t * 0.3, ny + t * 0.2) * 0.6
+          + noise2(nx * 2 + t * 0.5, ny * 2 + t * 0.4) * 0.3
+          + noise2(nx * 4 + t * 0.8, ny * 4 + t * 0.7) * 0.1;
+    v = (v + 1) * 0.5;
+    v = Math.max(0, Math.min(1, v));
+    if (mouseX !== null && mouseY !== null && mouseStr > 0) {
+      const dx = gx - mouseX;
+      const dy = gy - mouseY;
+      const sig = Math.min(W, H) * 0.18;
+      v = Math.min(1, v + Math.exp(-(dx * dx + dy * dy) / (2 * sig * sig)) * mouseStr * 0.45);
+    }
+    return v;
+  }
+
+  // ─── Contour line colours ─────────────────────────────────────────────────
+  function contourColor(level: number): [number,number,number,number] {
+    if (level < 0.25)      return [52,  14, 185, 0.08];
+    if (level < 0.45)      return [76,  29, 149, 0.10];
+    if (level < 0.60)      return [99, 102, 241, 0.13];
+    if (level < 0.72)      return [139, 92, 246, 0.17];
+    if (level < 0.82)      return [162, 52, 250, 0.22];
+    if (level < 0.90)      return [180,100, 255, 0.28];
+    return                        [196,181, 254, 0.32];
+  }
+
+  // ─── Marching squares helpers ─────────────────────────────────────────────
+  function edgeMidpoint(
+    edge: number, x0: number, y0: number, step: number,
+    vbl: number, vbr: number, vtr: number, vtl: number, iso: number
+  ): [number,number] {
+    switch (edge) {
+      case 0: { const tt = (iso - vbl) / (vbr - vbl + 1e-12); return [x0 + tt * step, y0]; }
+      case 1: { const tt = (iso - vbr) / (vtr - vbr + 1e-12); return [x0 + step, y0 + tt * step]; }
+      case 2: { const tt = (iso - vtl) / (vtr - vtl + 1e-12); return [x0 + tt * step, y0 + step]; }
+      case 3: { const tt = (iso - vbl) / (vtl - vbl + 1e-12); return [x0, y0 + tt * step]; }
+    }
+    return [x0, y0];
+  }
+
+  // Marching squares lookup: index = 4-bit code (bit3=tl, bit2=tr, bit1=br, bit0=bl)
+  const MS_TABLE: number[][] = [
+    [],           // 0000
+    [3, 0],       // 0001 bl
+    [0, 1],       // 0010 br
+    [3, 1],       // 0011 bl,br
+    [1, 2],       // 0100 tr
+    [3, 0, 1, 2], // 0101 bl,tr saddle
+    [0, 2],       // 0110 br,tr
+    [3, 2],       // 0111 bl,br,tr
+    [2, 3],       // 1000 tl
+    [0, 2],       // 1001 bl,tl
+    [0, 3, 2, 1], // 1010 br,tl saddle
+    [1, 2],       // 1011 bl,br,tl
+    [1, 3],       // 1100 tr,tl
+    [0, 1],       // 1101 bl,tr,tl
+    [3, 0],       // 1110 br,tr,tl
+    [],           // 1111
+  ];
+
+  // ─── Main renderer ────────────────────────────────────────────────────────
+  function createLabeledTerrain(canvas: HTMLCanvasElement, container: HTMLElement) {
+    const dpr = window.devicePixelRatio || 1;
+    let W = 0, H = 0;
+
+    function resizeCanvas() {
+      const rect = container.getBoundingClientRect();
+      W = Math.round(rect.width);
+      H = Math.round(rect.height);
+      canvas.width  = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width  = `${W}px`;
+      canvas.style.height = `${H}px`;
+    }
+
+    resizeCanvas();
+    const ctx = canvas.getContext('2d')!;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    let t = 0;
+    let mouseX: number | null = null;
+    let mouseY: number | null = null;
+    let mouseStrength = 0;
+    let mouseTarget = 0;
+    let rafId = 0;
+
+    const STEP = 4;
+    const NOISE_SCALE = 0.0045;
+
+    function frame() {
+      rafId = requestAnimationFrame(frame);
+      t += 0.0003;
+      mouseStrength += (mouseTarget - mouseStrength) * 0.05;
+
+      // Lissajous time (multiplier controls drift speed — one slow cycle ≈ 12–30s)
+      const tl = t * 22;
+
+      // Compute product peak positions and strengths
+      interface PeakState { x: number; y: number; strength: number; idx: number; }
+      const peaks: PeakState[] = PRODUCTS.map((prod, i) => {
+        const x = Math.max(20, Math.min(W - 20,
+          prod.cx * W + prod.ax * W * Math.sin(prod.fa * tl + prod.da)
+        ));
+        const y = Math.max(20, Math.min(H - 20,
+          prod.cy * H + prod.ay * H * Math.cos(prod.fb * tl)
+        ));
+        // Base strength oscillates so labels pulse gently even without mouse
+        const base = 0.45 + 0.15 * Math.sin(t * 7 + prod.ph);
+        return { x, y, strength: base, idx: i };
+      });
+
+      // Mouse: anonymous peak (handled in sampleBaseHeight) + amplify nearby labeled peaks
+      if (mouseX !== null && mouseY !== null && mouseStrength > 0) {
+        const boostR = Math.min(W, H) * 0.22;
+        for (const pk of peaks) {
+          const dx = pk.x - mouseX;
+          const dy = pk.y - mouseY;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < boostR) {
+            pk.strength = Math.min(0.9, pk.strength + mouseStrength * (1 - dist / boostR) * 0.5);
+          }
+        }
+      }
+
+      const cols = Math.ceil(W / STEP) + 1;
+      const rows = Math.ceil(H / STEP) + 1;
+
+      // Build base Perlin height field
+      const field = new Float32Array(cols * rows);
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          field[r * cols + c] = sampleBaseHeight(
+            c * STEP, r * STEP, t, mouseX, mouseY, mouseStrength, W, H, NOISE_SCALE
+          );
+        }
+      }
+
+      // Add product Gaussian bumps (clipped to 3-sigma bounding box for perf)
+      const sigma = Math.min(W, H) * 0.09;
+      const invSig2 = 1 / (2 * sigma * sigma);
+      const clipR = Math.ceil(3 * sigma / STEP);
+      for (const pk of peaks) {
+        const pc = Math.round(pk.x / STEP);
+        const pr = Math.round(pk.y / STEP);
+        const c0 = Math.max(0, pc - clipR);
+        const c1 = Math.min(cols - 1, pc + clipR);
+        const r0 = Math.max(0, pr - clipR);
+        const r1 = Math.min(rows - 1, pr + clipR);
+        const gs = pk.strength * 0.5;
+        for (let r = r0; r <= r1; r++) {
+          for (let c = c0; c <= c1; c++) {
+            const dx = c * STEP - pk.x;
+            const dy = r * STEP - pk.y;
+            const g = Math.exp(-(dx * dx + dy * dy) * invSig2);
+            const idx = r * cols + c;
+            field[idx] = Math.min(1, (field[idx] ?? 0) + g * gs);
+          }
+        }
+      }
+
+      // ── Draw ──────────────────────────────────────────────────────────────
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+
+      // Contour lines via marching squares
+      const numLevels = W < 768 ? 6 : 11;
+      for (let li = 0; li < numLevels; li++) {
+        const iso = (li + 0.5) / numLevels;
+        const [cr, cg, cb, ca] = contourColor(iso);
+        const lw = iso > 0.75 ? 1.0 : iso > 0.5 ? 0.75 : 0.5;
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(${cr},${cg},${cb},${ca})`;
+        ctx.lineWidth = lw;
+
+        for (let r = 0; r < rows - 1; r++) {
+          for (let c = 0; c < cols - 1; c++) {
+            const x0 = c * STEP;
+            const y0 = r * STEP;
+            const vbl = field[r       * cols + c    ] ?? 0;
+            const vbr = field[r       * cols + c + 1] ?? 0;
+            const vtr = field[(r + 1) * cols + c + 1] ?? 0;
+            const vtl = field[(r + 1) * cols + c    ] ?? 0;
+            const code =
+              ((vbl > iso) ? 1 : 0) |
+              ((vbr > iso) ? 2 : 0) |
+              ((vtr > iso) ? 4 : 0) |
+              ((vtl > iso) ? 8 : 0);
+            const edges = MS_TABLE[code] ?? [];
+            for (let e = 0; e < edges.length; e += 2) {
+              const [x1, y1] = edgeMidpoint(edges[e]!, x0, y0, STEP, vbl, vbr, vtr, vtl, iso);
+              const [x2, y2] = edgeMidpoint(edges[e + 1]!, x0, y0, STEP, vbl, vbr, vtr, vtl, iso);
+              ctx.moveTo(x1, y1);
+              ctx.lineTo(x2, y2);
+            }
+          }
+        }
+        ctx.stroke();
+      }
+
+      // Product labels — drawn on top of contours
+      for (const pk of peaks) {
+        const prod = PRODUCTS[pk.idx]!;
+        // Alpha: maps strength [0.2, 0.75] → [0, 1]
+        const alpha = Math.max(0, Math.min(1, (pk.strength - 0.20) / 0.55));
+        if (alpha < 0.04) continue;
+
+        const px = pk.x;
+        const py = pk.y;
+
+        // Soft glow halo at peak summit
+        const grad = ctx.createRadialGradient(px, py, 0, px, py, 10);
+        grad.addColorStop(0, `rgba(${prod.r},${prod.g},${prod.b},${alpha * 0.35})`);
+        grad.addColorStop(1, `rgba(${prod.r},${prod.g},${prod.b},0)`);
+        ctx.beginPath();
+        ctx.arc(px, py, 10, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // Summit dot
+        ctx.beginPath();
+        ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${prod.r},${prod.g},${prod.b},${alpha})`;
+        ctx.fill();
+
+        // Product name — small caps effect: uppercase 10px monospace bold
+        ctx.shadowColor = `rgba(0,0,0,${alpha * 0.85})`;
+        ctx.shadowBlur = 4;
+        ctx.font = '700 10px "Courier New",Courier,monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillStyle = `rgba(${prod.r},${prod.g},${prod.b},${alpha})`;
+        ctx.fillText(prod.name, px, py - 8);
+
+        // Stat line — 9px lighter
+        ctx.font = '400 9px "Courier New",Courier,monospace';
+        ctx.fillStyle = `rgba(210,195,255,${alpha * 0.80})`;
+        ctx.fillText(prod.stat, px, py + 14);
+
+        ctx.shadowBlur = 0;
+        ctx.shadowColor = 'transparent';
+      }
+    }
+
+    container.addEventListener('mousemove', (e: MouseEvent) => {
+      const rect = container.getBoundingClientRect();
+      mouseX = e.clientX - rect.left;
+      mouseY = e.clientY - rect.top;
+      mouseTarget = 1;
+    });
+    container.addEventListener('mouseleave', () => { mouseTarget = 0; });
+
+    const ro = new ResizeObserver(() => {
+      resizeCanvas();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    });
+    ro.observe(container);
+
+    rafId = requestAnimationFrame(frame);
+    requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+    return { stop: () => cancelAnimationFrame(rafId) };
+  }
+
+  // ─── Instantiate for hero wrap ────────────────────────────────────────────
+  const heroCanvas = document.querySelector<HTMLCanvasElement>('#hero-wrap .bg-canvas')!;
+  const heroWrap   = document.getElementById('hero-wrap')!;
+  if (heroCanvas && heroWrap) {
+    createLabeledTerrain(heroCanvas, heroWrap);
+  }
+
+  const gridTex = heroWrap?.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── Instantiate for final-cta ───────────────────────────────────────────
+  const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+  if (ctaCard) {
+    const ctaCanvas = document.createElement('canvas');
+    ctaCanvas.setAttribute('aria-hidden', 'true');
+    ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+    ctaCard.style.position = 'relative';
+    ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+    createLabeledTerrain(ctaCanvas, ctaCard);
+
+    const gridTexCta = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+    if (gridTexCta) gridTexCta.style.display = 'none';
+  }
+
+  }); // end ric
+</script>
