@@ -1,0 +1,801 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloSocial — Geo Swarm | Pello" description="Geo-targeted social media growth across 23 cities and 6 platforms. PelloSocial deploys accounts exactly where your audience lives.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="social-swarm-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #c026d3 !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,10,30,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(192,38,211,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Data constants ────────────────────────────────────────────────────────
+  interface Platform { name: string; color: [number,number,number]; weight: number; }
+  const PLATFORMS: Platform[] = [
+    { name: "Instagram",  color: [225, 48,  108], weight: 0.30 },
+    { name: "TikTok",     color: [0,   242, 234], weight: 0.25 },
+    { name: "Twitter/X",  color: [139, 92,  246], weight: 0.20 },
+    { name: "YouTube",    color: [255, 0,   0  ], weight: 0.10 },
+    { name: "Facebook",   color: [24,  119, 242], weight: 0.10 },
+    { name: "Reddit",     color: [255, 69,  0  ], weight: 0.05 },
+  ];
+  const PLAT_CUM: number[] = [];
+  { let s = 0; for (const p of PLATFORMS) { s += p.weight; PLAT_CUM.push(s); } }
+
+  const FIRST  = ["Alex","Jordan","Casey","Riley","Morgan","Taylor","Jamie","Quinn","Sage","Blake","Drew","Avery","Dakota","Skyler","Reese","Kai","Nova","Zara","Luna","Phoenix"];
+  const LAST   = ["Rivera","Kim","Santos","Nakamura","Ahmed","Berg","Costa","Johal","Novak","Park","Silva","Tanaka","Volkov","Wu","Zhang"];
+  const NICHES = ["Fitness","Tech Reviews","Food","Travel","Fashion","Gaming","Finance","Wellness","Photography","Music"];
+  const FOLLOWER_COUNTS = ["2.3k","4.7k","8.1k","12.4k","18.9k","24.2k","31.5k","47.8k","63.1k","89.4k"];
+  const DEVICES = ["iPhone 15","iPhone 14 Pro","Samsung S24","Pixel 8","iPhone 13","Samsung S23 Ultra","Pixel 7 Pro","iPhone 15 Pro"];
+
+  // City definitions: [name, pxPct, pyPct, dotCount]
+  const CITY_DEFS: [string, number, number, number][] = [
+    ["London",      0.48, 0.28, 22],
+    ["New York",    0.28, 0.32, 28],
+    ["LA",          0.15, 0.35, 24],
+    ["Tokyo",       0.85, 0.33, 20],
+    ["Berlin",      0.52, 0.27, 16],
+    ["Sydney",      0.87, 0.68, 18],
+    ["Toronto",     0.26, 0.30, 14],
+    ["Dubai",       0.62, 0.38, 20],
+    ["Singapore",   0.76, 0.52, 16],
+    ["São Paulo",   0.32, 0.62, 22],
+    ["Mumbai",      0.67, 0.42, 18],
+    ["Paris",       0.50, 0.29, 14],
+    ["Seoul",       0.82, 0.33, 16],
+    ["Amsterdam",   0.50, 0.27, 10],
+    ["Miami",       0.25, 0.40, 12],
+  ];
+
+  // Simplified continental outlines — [x%, y%] in canvas-percentage coords
+  // These are polyline segments; each sub-array is a separate polyline
+  const CONTINENTS: number[][][] = [
+    // North America
+    [[0.08,0.12],[0.12,0.08],[0.18,0.08],[0.24,0.12],[0.30,0.14],[0.36,0.18],[0.38,0.24],
+     [0.36,0.30],[0.32,0.35],[0.28,0.40],[0.26,0.46],[0.24,0.50],[0.22,0.47],
+     [0.20,0.50],[0.18,0.52],[0.16,0.48],[0.14,0.44],[0.10,0.38],[0.08,0.30],[0.06,0.22],[0.08,0.12]],
+    // South America
+    [[0.22,0.48],[0.28,0.46],[0.34,0.50],[0.36,0.58],[0.34,0.66],
+     [0.30,0.76],[0.26,0.84],[0.22,0.86],[0.18,0.80],[0.18,0.72],[0.20,0.62],[0.22,0.54],[0.22,0.48]],
+    // Europe (rough)
+    [[0.44,0.20],[0.46,0.17],[0.50,0.15],[0.52,0.16],[0.56,0.18],
+     [0.60,0.20],[0.62,0.24],[0.60,0.28],[0.58,0.32],[0.56,0.34],
+     [0.54,0.32],[0.52,0.34],[0.50,0.32],[0.48,0.30],[0.48,0.34],
+     [0.46,0.32],[0.44,0.28],[0.44,0.24],[0.44,0.20]],
+    // Africa
+    [[0.44,0.34],[0.46,0.30],[0.52,0.28],[0.58,0.30],[0.64,0.36],
+     [0.66,0.44],[0.64,0.54],[0.62,0.64],[0.56,0.74],[0.50,0.76],
+     [0.44,0.72],[0.40,0.64],[0.40,0.54],[0.42,0.44],[0.44,0.38],[0.44,0.34]],
+    // Asia
+    [[0.58,0.14],[0.62,0.10],[0.68,0.08],[0.74,0.08],[0.80,0.10],
+     [0.86,0.12],[0.90,0.16],[0.94,0.22],[0.96,0.28],[0.94,0.34],
+     [0.90,0.38],[0.88,0.42],[0.84,0.46],[0.80,0.50],[0.76,0.52],
+     [0.72,0.50],[0.68,0.48],[0.66,0.44],[0.64,0.40],[0.62,0.36],
+     [0.60,0.32],[0.58,0.26],[0.58,0.20],[0.58,0.14]],
+    // Australia
+    [[0.78,0.60],[0.84,0.58],[0.90,0.60],[0.96,0.64],[0.96,0.72],
+     [0.92,0.78],[0.86,0.80],[0.80,0.78],[0.76,0.74],[0.74,0.68],[0.76,0.62],[0.78,0.60]],
+    // Greenland (small)
+    [[0.28,0.06],[0.32,0.04],[0.36,0.06],[0.36,0.12],[0.32,0.14],[0.28,0.12],[0.28,0.06]],
+    // UK (tiny blip)
+    [[0.46,0.21],[0.47,0.20],[0.48,0.21],[0.47,0.23],[0.46,0.22],[0.46,0.21]],
+    // Japan (tiny)
+    [[0.86,0.28],[0.87,0.26],[0.88,0.28],[0.87,0.31],[0.86,0.30],[0.86,0.28]],
+    // New Zealand
+    [[0.94,0.76],[0.95,0.74],[0.96,0.76],[0.95,0.78],[0.94,0.77],[0.94,0.76]],
+  ];
+
+  function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function pickPlat(): number {
+    const r = Math.random();
+    for (let i = 0; i < PLAT_CUM.length; i++) if (r < PLAT_CUM[i]) return i;
+    return PLATFORMS.length - 1;
+  }
+
+  // ─── Dot type ──────────────────────────────────────────────────────────────
+  interface MapDot {
+    // position relative to canvas (absolute pixels, recomputed on resize)
+    ox: number; oy: number; // base position (city center + scatter)
+    x: number;  y: number;  // current position (with drift)
+    platIdx: number;
+    handle: string;
+    niche: string;
+    followers: string;
+    device: string;
+    engagementRate: number;
+    phase: number;
+    postTime: number;     // last "post" timestamp
+    ringRadius: number;   // current ring radius (-1 = no ring)
+    ringAlpha: number;
+  }
+
+  interface CityCluster {
+    name: string;
+    pxPct: number; pyPct: number;
+    dots: MapDot[];
+    cityFlashTime: number;
+  }
+
+  // ─── Connection arc type ───────────────────────────────────────────────────
+  interface Arc {
+    cityA: number; cityB: number;
+    startTime: number;
+    duration: number;
+  }
+
+  // ─── Canvas setup ──────────────────────────────────────────────────────────
+  const canvas = document.querySelector<HTMLCanvasElement>('.social-swarm-canvas')!;
+  const wrap   = document.getElementById('hero-wrap')!;
+  const ctx    = canvas.getContext('2d')!;
+
+  let cities: CityCluster[] = [];
+  let arcs: Arc[]           = [];
+  let mouse: { x: number; y: number } | null = null;
+  let dpr          = 1;
+  let lastPost     = 0;
+  let lastCityFlash = 0;
+  let lastArc       = 0;
+  let hoveredCityIdx = -1;
+  let hoveredDotIdx: [number, number] = [-1, -1]; // [cityIdx, dotIdx]
+
+  const DOT_SCATTER = 30; // px scatter radius per city
+
+  function makeDot(cityX: number, cityY: number): MapDot {
+    const angle  = Math.random() * Math.PI * 2;
+    const radius = Math.random() * DOT_SCATTER;
+    const ox = cityX + Math.cos(angle) * radius;
+    const oy = cityY + Math.sin(angle) * radius;
+    return {
+      ox, oy, x: ox, y: oy,
+      platIdx: pickPlat(),
+      handle: `@${pick(FIRST).toLowerCase()}_${pick(LAST).toLowerCase()}`,
+      niche: pick(NICHES),
+      followers: pick(FOLLOWER_COUNTS),
+      device: pick(DEVICES),
+      engagementRate: parseFloat((1.5 + Math.random() * 6.5).toFixed(1)),
+      phase: Math.random() * Math.PI * 2,
+      postTime: -99,
+      ringRadius: -1,
+      ringAlpha: 0,
+    };
+  }
+
+  function buildScene(W: number, H: number) {
+    cities = CITY_DEFS.map(([name, pxPct, pyPct, count]) => {
+      const cx = pxPct * W;
+      const cy = pyPct * H;
+      const dots: MapDot[] = [];
+      for (let i = 0; i < count; i++) dots.push(makeDot(cx, cy));
+      return { name, pxPct, pyPct, dots, cityFlashTime: -99 };
+    });
+    arcs = [];
+  }
+
+  function reanchorDots(W: number, H: number) {
+    // After resize, update base positions of existing dots
+    for (let ci = 0; ci < cities.length; ci++) {
+      const city = cities[ci];
+      const cx = city.pxPct * W;
+      const cy = city.pyPct * H;
+      for (const dot of city.dots) {
+        const dx = dot.ox - (CITY_DEFS[ci][1] * (canvas.width / dpr));
+        const dy = dot.oy - (CITY_DEFS[ci][2] * (canvas.height / dpr));
+        dot.ox = cx + dx;
+        dot.oy = cy + dy;
+        dot.x  = dot.ox;
+        dot.y  = dot.oy;
+      }
+    }
+  }
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    const w = Math.round(rect.width);
+    const h = Math.round(rect.height);
+    canvas.width  = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width  = `${w}px`;
+    canvas.style.height = `${h}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildScene(w, h);
+  }
+
+  // ─── Rounded rect helper ───────────────────────────────────────────────────
+  function rrect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r);
+    c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r);
+    c.lineTo(x, y + r);
+    c.quadraticCurveTo(x, y, x + r, y);
+    c.closePath();
+  }
+
+  // ─── Draw continental outlines ─────────────────────────────────────────────
+  function drawMap(W: number, H: number, nearMouse: boolean) {
+    for (const continent of CONTINENTS) {
+      if (continent.length < 2) continue;
+      ctx.beginPath();
+      for (let i = 0; i < continent.length; i++) {
+        const px = continent[i][0] * W;
+        const py = continent[i][1] * H;
+        if (i === 0) ctx.moveTo(px, py);
+        else         ctx.lineTo(px, py);
+      }
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = 'rgba(192,38,211,0.04)';
+      ctx.lineWidth   = 0.5;
+      ctx.stroke();
+    }
+
+    // Brighten map lines near cursor
+    if (mouse && nearMouse) {
+      const mx = mouse.x, my = mouse.y;
+      for (const continent of CONTINENTS) {
+        if (continent.length < 2) continue;
+        ctx.beginPath();
+        for (let i = 0; i < continent.length; i++) {
+          const px = continent[i][0] * W;
+          const py = continent[i][1] * H;
+          if (i === 0) ctx.moveTo(px, py);
+          else         ctx.lineTo(px, py);
+        }
+        // Check if any point in this continent is near cursor
+        let closest = Infinity;
+        for (const pt of continent) {
+          const d = Math.sqrt((pt[0] * W - mx) ** 2 + (pt[1] * H - my) ** 2);
+          if (d < closest) closest = d;
+        }
+        if (closest < 80) {
+          const boost = Math.max(0, 1 - closest / 80) * 0.06;
+          ctx.globalAlpha = boost;
+          ctx.strokeStyle = 'rgba(192,38,211,1)';
+          ctx.lineWidth   = 0.8;
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  // ─── Draw city dot tooltip ─────────────────────────────────────────────────
+  function drawDotTooltip(dot: MapDot, cityName: string) {
+    const W = canvas.width / dpr;
+    const H = canvas.height / dpr;
+    const [r, g, b] = PLATFORMS[dot.platIdx].color;
+    const plat = PLATFORMS[dot.platIdx];
+
+    const tooltipW = 220;
+    const tooltipH = 130;
+    const pad      = 14;
+
+    let tx = dot.x + 12;
+    let ty = dot.y - tooltipH / 2;
+    tx = Math.max(8, Math.min(W - tooltipW - 8, tx));
+    ty = Math.max(8, Math.min(H - tooltipH - 8, ty));
+
+    ctx.save();
+
+    // Connector
+    ctx.globalAlpha = 0.22;
+    ctx.strokeStyle = `rgb(${r},${g},${b})`;
+    ctx.lineWidth   = 1;
+    ctx.beginPath();
+    ctx.moveTo(dot.x + 2, dot.y);
+    ctx.lineTo(tx, ty + tooltipH / 2);
+    ctx.stroke();
+
+    ctx.globalAlpha = 1;
+
+    // Shadow
+    ctx.shadowColor = `rgba(${r},${g},${b},0.25)`;
+    ctx.shadowBlur  = 24;
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 10);
+    ctx.fillStyle   = 'rgba(6,7,18,0.82)';
+    ctx.fill();
+    ctx.shadowBlur  = 0;
+    ctx.shadowColor = 'transparent';
+
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 10);
+    ctx.fillStyle = `rgba(${r},${g},${b},0.07)`;
+    ctx.fill();
+
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.30)`;
+    ctx.lineWidth   = 1;
+    ctx.stroke();
+
+    // Top accent
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle   = `rgb(${r},${g},${b})`;
+    rrect(ctx, tx, ty, tooltipW, 3, 3);
+    ctx.fill();
+
+    // Location
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle   = 'rgba(192,38,211,0.9)';
+    ctx.font        = '11px "SF Mono","Fira Code",monospace';
+    ctx.textAlign   = 'left';
+    ctx.fillText(`📍 ${cityName}`, tx + pad, ty + pad + 12);
+
+    // Device
+    ctx.globalAlpha = 0.45;
+    ctx.fillStyle   = '#ffffff';
+    ctx.font        = '9px "SF Mono","Fira Code",monospace';
+    ctx.fillText(dot.device, tx + pad, ty + pad + 26);
+
+    // Handle
+    ctx.globalAlpha = 1;
+    ctx.fillStyle   = '#ffffff';
+    ctx.font        = 'bold 13px -apple-system,system-ui,sans-serif';
+    ctx.fillText(dot.handle, tx + pad, ty + pad + 44);
+
+    // Platform + Niche
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle   = `rgb(${r},${g},${b})`;
+    ctx.font        = '11px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`● ${plat.name} · ${dot.niche}`, tx + pad, ty + pad + 60);
+
+    // Followers
+    ctx.globalAlpha = 1;
+    ctx.fillStyle   = '#ffffff';
+    ctx.font        = '500 12px -apple-system,system-ui,sans-serif';
+    ctx.fillText(`${dot.followers} followers`, tx + pad, ty + pad + 78);
+
+    // Engagement
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle   = 'rgba(74,222,128,0.95)';
+    ctx.font        = '10px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`Engagement: ${dot.engagementRate}%`, tx + pad, ty + pad + 94);
+
+    ctx.restore();
+  }
+
+  // ─── Frame loop ───────────────────────────────────────────────────────────
+  function frame() {
+    requestAnimationFrame(frame);
+
+    const W = canvas.width / dpr;
+    const H = canvas.height / dpr;
+    const t = performance.now() * 0.001;
+    const mx = mouse ? mouse.x : -99999;
+    const my = mouse ? mouse.y : -99999;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Trigger single dot post every ~1s
+    if (t - lastPost > 1 + Math.random() * 0.4) {
+      lastPost = t;
+      if (cities.length > 0) {
+        const ci  = Math.floor(Math.random() * cities.length);
+        const city = cities[ci];
+        if (city.dots.length > 0) {
+          const di = Math.floor(Math.random() * city.dots.length);
+          const dot = city.dots[di];
+          dot.postTime   = t;
+          dot.ringRadius = 0;
+          dot.ringAlpha  = 0.8;
+        }
+      }
+    }
+
+    // Trigger full city flash every ~5s
+    if (t - lastCityFlash > 5 + Math.random() * 1) {
+      lastCityFlash = t;
+      if (cities.length > 0) {
+        const ci = Math.floor(Math.random() * cities.length);
+        cities[ci].cityFlashTime = t;
+        // All dots in city post simultaneously
+        for (const dot of cities[ci].dots) {
+          dot.postTime   = t;
+          dot.ringRadius = 0;
+          dot.ringAlpha  = 0.6;
+        }
+      }
+    }
+
+    // Add connection arc every ~7-10s
+    if (t - lastArc > 7 + Math.random() * 3) {
+      lastArc = t;
+      if (cities.length >= 2) {
+        const a = Math.floor(Math.random() * cities.length);
+        let b = Math.floor(Math.random() * cities.length);
+        if (b === a) b = (a + 1) % cities.length;
+        arcs.push({ cityA: a, cityB: b, startTime: t, duration: 2.0 });
+      }
+    }
+
+    // Clean up old arcs
+    arcs = arcs.filter(arc => t - arc.startTime < arc.duration);
+
+    // Determine hover states
+    hoveredCityIdx = -1;
+    hoveredDotIdx  = [-1, -1];
+
+    for (let ci = 0; ci < cities.length; ci++) {
+      const city = cities[ci];
+      const cxPos = city.pxPct * W;
+      const cyPos = city.pyPct * H;
+      const distToCity = Math.sqrt((cxPos - mx) ** 2 + (cyPos - my) ** 2);
+
+      if (distToCity < DOT_SCATTER + 15) {
+        hoveredCityIdx = ci;
+        // Check individual dots
+        for (let di = 0; di < city.dots.length; di++) {
+          const dot = city.dots[di];
+          const dd  = Math.sqrt((dot.x - mx) ** 2 + (dot.y - my) ** 2);
+          if (dd < 8) { hoveredDotIdx = [ci, di]; break; }
+        }
+        break;
+      }
+    }
+
+    // Draw map
+    drawMap(W, H, true);
+
+    // Draw connection arcs
+    for (const arc of arcs) {
+      const age  = t - arc.startTime;
+      const prog = age / arc.duration;
+      const arcA = prog < 0.2 ? prog / 0.2 : prog > 0.8 ? (1 - prog) / 0.2 : 1;
+      const cityA = cities[arc.cityA];
+      const cityB = cities[arc.cityB];
+      const ax = cityA.pxPct * W, ay = cityA.pyPct * H;
+      const bx = cityB.pxPct * W, by = cityB.pyPct * H;
+      const midX = (ax + bx) / 2;
+      const midY = Math.min(ay, by) - Math.abs(bx - ax) * 0.25;
+
+      ctx.save();
+      ctx.globalAlpha = arcA * 0.07;
+      ctx.strokeStyle = 'rgba(192,38,211,1)';
+      ctx.lineWidth   = 1;
+      ctx.beginPath();
+      ctx.moveTo(ax, ay);
+      ctx.quadraticCurveTo(midX, midY, bx, by);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Draw dots for each city
+    for (let ci = 0; ci < cities.length; ci++) {
+      const city = cities[ci];
+      const cityFlashAge = t - city.cityFlashTime;
+      const cityHovered  = hoveredCityIdx === ci;
+
+      for (let di = 0; di < city.dots.length; di++) {
+        const dot = city.dots[di];
+
+        // Drift away from cursor
+        const driftDx = dot.ox - mx;
+        const driftDy = dot.oy - my;
+        const driftDist = Math.sqrt(driftDx * driftDx + driftDy * driftDy);
+        let targetX = dot.ox, targetY = dot.oy;
+        if (driftDist < 60 && driftDist > 0) {
+          const push = (1 - driftDist / 60) * 4;
+          targetX += (driftDx / driftDist) * push;
+          targetY += (driftDy / driftDist) * push;
+        }
+        dot.x += (targetX - dot.x) * 0.08;
+        dot.y += (targetY - dot.y) * 0.08;
+
+        const [r, g, b] = PLATFORMS[dot.platIdx].color;
+
+        // Determine dot alpha and radius
+        const postAge = t - dot.postTime;
+        const isPosting = postAge >= 0 && postAge < 0.5;
+        const cityFlashing = cityFlashAge >= 0 && cityFlashAge < 0.6;
+
+        let dotAlpha  = 0.35 + Math.sin(t * 0.5 + dot.phase) * 0.08;
+        let dotRadius = 2;
+
+        if (cityHovered)         { dotAlpha = 0.65; dotRadius = 2.5; }
+        if (isPosting)           { const pa = 1 - postAge / 0.5; dotAlpha = 0.35 + pa * 0.55; dotRadius = 2 + pa * 2; }
+        if (cityFlashing)        { const pa = 1 - cityFlashAge / 0.6; dotAlpha = 0.35 + pa * 0.55; dotRadius = 2 + pa * 1.5; }
+
+        if (hoveredDotIdx[0] === ci && hoveredDotIdx[1] === di) {
+          dotAlpha = 0.95; dotRadius = 4;
+        }
+
+        ctx.save();
+        if (isPosting || cityFlashing) {
+          ctx.shadowColor = `rgb(${r},${g},${b})`;
+          ctx.shadowBlur  = 6;
+        }
+        ctx.globalAlpha = dotAlpha;
+        ctx.fillStyle   = `rgb(${r},${g},${b})`;
+        ctx.beginPath();
+        ctx.arc(dot.x, dot.y, dotRadius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // Ring wave
+        if (dot.ringRadius >= 0) {
+          dot.ringRadius += 0.8;
+          dot.ringAlpha  *= 0.92;
+          if (dot.ringAlpha < 0.01) { dot.ringRadius = -1; dot.ringAlpha = 0; }
+          else {
+            ctx.save();
+            ctx.globalAlpha = dot.ringAlpha * 0.5;
+            ctx.strokeStyle = `rgb(${r},${g},${b})`;
+            ctx.lineWidth   = 0.8;
+            ctx.beginPath();
+            ctx.arc(dot.x, dot.y, dot.ringRadius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+          }
+        }
+      }
+
+      // City label
+      const cxPos = city.pxPct * W;
+      const cyPos = city.pyPct * H;
+      const total = city.dots.length;
+      ctx.save();
+      ctx.globalAlpha = cityHovered ? 0.55 : 0.15;
+      ctx.fillStyle   = '#ffffff';
+      ctx.font        = cityHovered
+        ? '8px "SF Mono","Fira Code",monospace'
+        : '7px "SF Mono","Fira Code",monospace';
+      ctx.textAlign   = 'center';
+      ctx.fillText(`${city.name} (${total})`, cxPos, cyPos + DOT_SCATTER + 12);
+      ctx.restore();
+    }
+
+    // Tooltip for hovered dot
+    if (hoveredDotIdx[0] >= 0) {
+      const city = cities[hoveredDotIdx[0]];
+      const dot  = city.dots[hoveredDotIdx[1]];
+      drawDotTooltip(dot, city.name);
+    }
+
+    // Counter (top-right)
+    const totalDots = cities.reduce((sum, c) => sum + c.dots.length, 0);
+    ctx.save();
+    ctx.textAlign   = 'right';
+    ctx.globalAlpha = 1;
+    ctx.fillStyle   = 'rgba(192,38,211,0.6)';
+    ctx.font        = '11px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${totalDots} phones · ${cities.length} cities · ${PLATFORMS.length} platforms`, W - 16, 24);
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle   = '#ffffff';
+    ctx.font        = '9px "SF Mono","Fira Code",monospace';
+    ctx.fillText('geo-targeted · real devices · all platforms', W - 16, 38);
+    ctx.restore();
+  }
+
+  // ─── Mouse tracking ────────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  });
+  wrap.addEventListener('mouseleave', () => {
+    mouse = null;
+    hoveredCityIdx = -1;
+    hoveredDotIdx  = [-1, -1];
+  });
+  wrap.addEventListener('touchstart', () => {
+    mouse = null;
+    hoveredCityIdx = -1;
+    hoveredDotIdx  = [-1, -1];
+  }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── FinalCTA: minimal map + gentle city dots pulse ───────────────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const ctaCanvas = document.createElement('canvas');
+      ctaCanvas.setAttribute('aria-hidden', 'true');
+      ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.style.position = 'relative';
+      ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+
+      const cc = ctaCanvas.getContext('2d')!;
+      interface CtaDot { px: number; py: number; platIdx: number; phase: number; }
+      let ctaDots: CtaDot[] = [];
+      let ctaDpr = 1;
+
+      function buildCtaDots() {
+        ctaDots = [];
+        const W = ctaCanvas.width / ctaDpr;
+        const H = ctaCanvas.height / ctaDpr;
+        for (const [, pxPct, pyPct, count] of CITY_DEFS) {
+          const cx = pxPct * W;
+          const cy = pyPct * H;
+          for (let i = 0; i < Math.min(count, 12); i++) {
+            const angle  = Math.random() * Math.PI * 2;
+            const radius = Math.random() * 20;
+            ctaDots.push({
+              px: cx + Math.cos(angle) * radius,
+              py: cy + Math.sin(angle) * radius,
+              platIdx: pickPlat(),
+              phase: Math.random() * Math.PI * 2,
+            });
+          }
+        }
+      }
+
+      function resizeCta() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        const w = Math.round(rect.width);
+        const h = Math.round(rect.height);
+        ctaCanvas.width  = w * ctaDpr;
+        ctaCanvas.height = h * ctaDpr;
+        ctaCanvas.style.width  = `${w}px`;
+        ctaCanvas.style.height = `${h}px`;
+        cc.setTransform(ctaDpr, 0, 0, ctaDpr, 0, 0);
+        buildCtaDots();
+      }
+
+      function frameCta() {
+        requestAnimationFrame(frameCta);
+        const W = ctaCanvas.width / ctaDpr;
+        const H = ctaCanvas.height / ctaDpr;
+        const t = performance.now() * 0.001;
+        cc.clearRect(0, 0, W, H);
+
+        // Draw minimal map
+        for (const continent of CONTINENTS) {
+          if (continent.length < 2) continue;
+          cc.beginPath();
+          for (let i = 0; i < continent.length; i++) {
+            const px = continent[i][0] * W;
+            const py = continent[i][1] * H;
+            if (i === 0) cc.moveTo(px, py);
+            else         cc.lineTo(px, py);
+          }
+          cc.globalAlpha = 1;
+          cc.strokeStyle = 'rgba(192,38,211,0.04)';
+          cc.lineWidth   = 0.5;
+          cc.stroke();
+        }
+
+        // Draw dots
+        for (const dot of ctaDots) {
+          const [r, g, b] = PLATFORMS[dot.platIdx].color;
+          const alpha = 0.20 + Math.sin(t * 0.7 + dot.phase) * 0.08;
+          cc.globalAlpha = alpha;
+          cc.fillStyle   = `rgb(${r},${g},${b})`;
+          cc.beginPath();
+          cc.arc(dot.px, dot.py, 1.5, 0, Math.PI * 2);
+          cc.fill();
+        }
+        cc.globalAlpha = 1;
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaCard);
+      resizeCta();
+      requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { ctaCanvas.style.opacity = '1'; });
+
+      const ctaGridTex = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGridTex) ctaGridTex.style.display = 'none';
+    }
+  }
+
+  }); // end requestIdleCallback
+</script>
