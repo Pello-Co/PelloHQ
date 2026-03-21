@@ -164,22 +164,23 @@ import Footer from '../../components/layout/Footer.astro';
         </div>
       </section>
 
-      <!-- ── Current Homepage ────────────────────────────────── -->
+      <!-- ── Homepage Experiments ────────────────────────────── -->
       <section class="mb-16">
-        <div class="flex items-center gap-3 mb-6">
-          <h2 class="text-xl font-semibold text-white">Current Homepage</h2>
-          <span class="text-xs text-emerald-400/80 bg-emerald-400/10 px-2 py-0.5 rounded-full">live</span>
+        <div class="flex items-center gap-3 mb-2">
+          <h2 class="text-xl font-semibold text-white">Homepage Experiments</h2>
+          <span class="text-xs text-emerald-400/80 bg-emerald-400/10 px-2 py-0.5 rounded-full">full page</span>
         </div>
+        <p class="text-zinc-500 text-sm mb-6">Complete homepage variations — full production pages with different hero treatments.</p>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <a href="/" class="test-card test-card--live" style="--accent: #10b981;">
-            <span class="test-num">index</span>
+            <span class="test-num">live</span>
             <span class="test-name">Dot Grid + Aurora</span>
-            <span class="test-desc">Interactive particle grid with nebula canvas — promoted from /9</span>
+            <span class="test-desc">Interactive particle grid with nebula canvas — current production</span>
           </a>
-          <a href="/tests/index-old" class="test-card" style="--accent: #525252;">
-            <span class="test-num">old</span>
-            <span class="test-name">Previous Homepage</span>
-            <span class="test-desc">Original hero before the dot grid redesign</span>
+          <a href="/tests/index/1" class="test-card" style="--accent: #6366f1;">
+            <span class="test-num">index/1</span>
+            <span class="test-name">Dot Grid + Aurora</span>
+            <span class="test-desc">Baseline copy of current homepage for experimentation</span>
           </a>
         </div>
       </section>
