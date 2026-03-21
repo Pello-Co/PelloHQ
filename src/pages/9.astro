@@ -154,12 +154,12 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     function strand(t: number, cx: number, cy: number, rx: number, ry: number, angle: number,
                     r: number, g: number, b: number, alpha: number, n: number, wa: number) {
       // Domain-warp the whole strand's anchor point for large-scale organic drift
-      const wx = fbm(cx * 0.012 + t * 0.038, cy * 0.012, 3) * wa;
-      const wy = fbm(cx * 0.012 + 57, cy * 0.012 + t * 0.032, 3) * wa;
+      const wx = fbm(cx * 0.012 + t * 0.15, cy * 0.012, 3) * wa;
+      const wy = fbm(cx * 0.012 + 57, cy * 0.012 + t * 0.13, 3) * wa;
       const px = cx + wx, py = cy + wy;
 
       // Central blob — slightly modulated brightness
-      const ca = alpha * (0.78 + an(t * 0.07, cx * 0.02) * 0.22);
+      const ca = alpha * (0.78 + an(t * 0.25, cx * 0.02) * 0.22);
       blob(px, py, rx, ry, angle, r, g, b, Math.max(0, ca));
       if (n < 2) return;
 
@@ -170,10 +170,10 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
         const bx0 = px + cosA * u * rx * 0.82;
         const by0 = py + sinA * u * rx * 0.82;
         // Off-axis noise displacement — creates wisps extending perpendicular to the band
-        const bwx = an(bx0 * 0.015 + t * 0.048 + i * 1.4, by0 * 0.015 + 30) * wa * 0.40;
-        const bwy = an(bx0 * 0.015 + 80 + i,               by0 * 0.015 + t * 0.042) * wa * 0.40;
+        const bwx = an(bx0 * 0.015 + t * 0.18 + i * 1.4, by0 * 0.015 + 30) * wa * 0.40;
+        const bwy = an(bx0 * 0.015 + 80 + i,               by0 * 0.015 + t * 0.16) * wa * 0.40;
         // Density variation: brighter near centre, further modulated by noise
-        const dn      = (an(i * 1.7 + t * 0.05, 200) + 1) * 0.5;
+        const dn      = (an(i * 1.7 + t * 0.2, 200) + 1) * 0.5;
         const density = (1 - u * u) * (0.42 + dn * 0.30);
         blob(bx0 + bwx, by0 + bwy,
              rx * (0.20 + (an(i * 2.3, t * 0.04) + 1) * 0.13),
@@ -223,13 +223,13 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
       for (const row of AL) {
         const [cxF, cyF, rxF, ryF, ang, r, g, b, alpha, spd, ph, n, waF] = row;
         // Lissajous drift — x and y on slightly different frequencies avoids back-and-forth
-        const cx    = ow * (cxF + Math.sin(t * spd        + ph      ) * 0.055);
-        const cy    = oh * (cyF + Math.sin(t * spd * 0.71  + ph + 1.1) * 0.055);
-        // Radii breathe slightly out of phase
-        const rx    = ow * rxF * (1 + Math.sin(t * spd * 1.4 + ph * 1.8) * 0.07);
-        const ry    = oh * ryF * (1 + Math.sin(t * spd * 0.9 + ph * 1.3) * 0.09);
-        // Slow angle wobble
-        const angle = ang + Math.sin(t * spd * 0.85 + ph) * 0.09;
+        const cx    = ow * (cxF + Math.sin(t * spd * 3        + ph      ) * 0.15);
+        const cy    = oh * (cyF + Math.sin(t * spd * 2.1  + ph + 1.1) * 0.12);
+        // Radii breathe out of phase
+        const rx    = ow * rxF * (1 + Math.sin(t * spd * 4 + ph * 1.8) * 0.15);
+        const ry    = oh * ryF * (1 + Math.sin(t * spd * 2.5 + ph * 1.3) * 0.18);
+        // Angle wobble
+        const angle = ang + Math.sin(t * spd * 2.5 + ph) * 0.2;
         // Warp amplitude in offscreen pixels
         const wa    = ow * waF;
 
