@@ -1,0 +1,619 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloPublish — Voice DNA | Brand-Consistent Content at Scale" description="Every piece of content shares the same brand voice. PelloPublish generates cross-platform content that's always on-brand, every time.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="pub9-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a855f7 !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(168,85,247,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Data ──────────────────────────────────────────────────────────────────
+  const PLATFORMS = [
+    { name: "Instagram", icon: "IG", color: [225, 48, 108] as [number,number,number] },
+    { name: "LinkedIn",  icon: "LI", color: [10, 102, 194] as [number,number,number] },
+    { name: "Twitter/X", icon: "X",  color: [139, 92, 246] as [number,number,number] },
+    { name: "TikTok",    icon: "TT", color: [0, 242, 234] as [number,number,number] },
+    { name: "Blog",      icon: "BL", color: [168, 85, 247] as [number,number,number] },
+    { name: "YouTube",   icon: "YT", color: [255, 0, 0] as [number,number,number] },
+  ];
+  const CONTENT_TYPES = ["Carousel","Reel","Story","Blog Post","Thread","Short","Article","UGC Clip","Infographic","Poll"];
+  const TOPICS = [
+    "5 Ways AI is Changing {industry}",
+    "Behind the Scenes: How We {action}",
+    "Why {topic} Matters More Than Ever",
+    "{number} Tips for Better {goal}",
+    "The Future of {industry} in 2026",
+    "How {company} Grew 3x with {strategy}",
+    "Stop Doing {mistake} — Do This Instead",
+    "We Tested {strategy} for 30 Days",
+  ];
+  const INDUSTRIES = ["SaaS","E-commerce","Healthcare","Finance","Education","Real Estate"];
+  const GOALS = ["Engagement","Conversions","Brand Awareness","Lead Quality"];
+  const STRATEGIES = ["Content Repurposing","AI Writing","Video-First","Community Building"];
+  const ENGAGEMENTS = ["1.2k likes","847 likes","2.3k views","412 shares","156 comments","3.1k reach","967 saves"];
+  const STATUSES = ["Scheduled","Published","Generating","Queued"];
+
+  function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function pickN(n: number): string {
+    return String(Math.floor(Math.random() * 10) + 3);
+  }
+
+  function generateTopic(): string {
+    const t = pick(TOPICS);
+    return t
+      .replace('{industry}', pick(INDUSTRIES))
+      .replace('{action}', 'Automated Content')
+      .replace('{topic}', 'Brand Voice')
+      .replace('{number}', pickN(5))
+      .replace('{goal}', pick(GOALS))
+      .replace('{company}', 'Our Client')
+      .replace('{strategy}', pick(STRATEGIES))
+      .replace('{mistake}', 'Manual Posting');
+  }
+
+  // ─── Node type ─────────────────────────────────────────────────────────────
+  interface HelixNode {
+    strand: number;        // 0 or 1
+    t: number;             // 0..1 position along helix
+    platform: typeof PLATFORMS[number];
+    contentType: string;
+    topic: string;
+    engagement: string;
+    status: string;
+    voiceScore: number;    // 85–99
+    phase: number;
+  }
+
+  // ─── Canvas + state ────────────────────────────────────────────────────────
+  const canvas = document.querySelector<HTMLCanvasElement>('.pub9-canvas')!;
+  const wrap   = document.getElementById('hero-wrap')!;
+  const ctx    = canvas.getContext('2d')!;
+
+  let nodes: HelixNode[] = [];
+  let dpr = 1;
+  let mouse: { x: number; y: number } | null = null;
+  let mouseX = -9999;
+  let hoveredNode = -1;
+  let activeNode = -1;
+  let activeNodeTime = -999;
+  let nextActivateAt = 4;
+
+  function buildNodes() {
+    nodes = [];
+    const count = 36;
+    for (let i = 0; i < count; i++) {
+      nodes.push({
+        strand: i % 2,
+        t: i / count,
+        platform: pick(PLATFORMS),
+        contentType: pick(CONTENT_TYPES),
+        topic: generateTopic(),
+        engagement: pick(ENGAGEMENTS),
+        status: pick(STATUSES),
+        voiceScore: 85 + Math.floor(Math.random() * 15),
+        phase: Math.random() * Math.PI * 2,
+      });
+    }
+  }
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    const w = Math.round(rect.width);
+    const h = Math.round(rect.height);
+    canvas.width  = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width  = `${w}px`;
+    canvas.style.height = `${h}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildNodes();
+  }
+
+  // ─── Helix geometry ────────────────────────────────────────────────────────
+  function strandX(
+    t: number, strand: number, W: number,
+    amplitude: number, time: number
+  ): number {
+    const centerX = W * 0.42;
+    const y = t; // t maps to Y, 0..1
+    const freq = 0.015 * 2 * Math.PI * (1 / 0.15); // cycles per canvas height
+    const phase = strand === 0 ? 0 : Math.PI;
+    return centerX + amplitude * Math.sin(y * freq * 0.6 + time + phase);
+  }
+
+  // Get pixel Y from t
+  function strandY(t: number, H: number): number {
+    return t * H * 0.95 + H * 0.025;
+  }
+
+  // Get node screen position
+  function nodePos(n: HelixNode, W: number, H: number, amplitude: number, time: number): [number, number] {
+    return [
+      strandX(n.t, n.strand, W, amplitude, time),
+      strandY(n.t, H),
+    ];
+  }
+
+  // ─── Tooltip ───────────────────────────────────────────────────────────────
+  function rrect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r);
+    c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r);
+    c.lineTo(x, y + r);
+    c.quadraticCurveTo(x, y, x + r, y);
+    c.closePath();
+  }
+
+  function drawTooltip(n: HelixNode, px: number, py: number, W: number) {
+    const [r, g, b] = n.platform.color;
+    const pad = 14;
+    const tooltipW = 310;
+    const tooltipH = 120;
+
+    let tx = px + 18;
+    let ty = py - tooltipH / 2;
+    if (tx + tooltipW > W - 8) tx = px - tooltipW - 18;
+    ty = Math.max(8, Math.min(W, ty));
+
+    ctx.save();
+
+    // Shadow glow
+    ctx.shadowColor = `rgba(${r},${g},${b},0.25)`;
+    ctx.shadowBlur = 24;
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 10);
+    ctx.fillStyle = 'rgba(6,7,18,0.72)';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 10);
+    ctx.fillStyle = `rgba(${r},${g},${b},0.08)`;
+    ctx.fill();
+
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.35)`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Accent bar
+    ctx.globalAlpha = 0.65;
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    rrect(ctx, tx, ty, tooltipW, 3, 3);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Platform + format
+    ctx.font = 'bold 11px "SF Mono","Fira Code",monospace';
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.textAlign = 'left';
+    ctx.fillText(`${n.platform.name.toUpperCase()} · ${n.contentType.toUpperCase()}`, tx + pad, ty + pad + 12);
+
+    // Topic
+    ctx.font = '500 13px -apple-system,system-ui,BlinkMacSystemFont,sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(tx + pad, ty + pad + 15, tooltipW - pad * 2, 20);
+    ctx.clip();
+    ctx.fillText(n.topic, tx + pad, ty + pad + 29);
+    ctx.restore();
+
+    // Voice score bar
+    const barY = ty + pad + 45;
+    ctx.font = '10px "SF Mono","Fira Code",monospace';
+    ctx.fillStyle = 'rgba(168,85,247,0.8)';
+    ctx.fillText(`Brand Voice Score: ${n.voiceScore}%`, tx + pad, barY);
+    const barX = tx + pad;
+    const barW = tooltipW - pad * 2;
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    rrect(ctx, barX, barY + 4, barW, 4, 2);
+    ctx.fill();
+    ctx.fillStyle = `rgba(168,85,247,0.75)`;
+    rrect(ctx, barX, barY + 4, barW * (n.voiceScore / 100), 4, 2);
+    ctx.fill();
+
+    // Engagement
+    ctx.font = '10px "SF Mono","Fira Code",monospace';
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillText(n.engagement, tx + pad, barY + 20);
+
+    // Status
+    const statusColor = n.status === 'Published' ? 'rgba(74,222,128,0.9)'
+      : n.status === 'Scheduled' ? 'rgba(99,202,241,0.8)'
+      : n.status === 'Generating' ? 'rgba(251,191,36,0.8)'
+      : 'rgba(168,85,247,0.8)';
+    ctx.fillStyle = statusColor;
+    ctx.textAlign = 'right';
+    ctx.fillText(`● ${n.status}`, tx + tooltipW - pad, barY + 20);
+
+    ctx.restore();
+  }
+
+  // ─── Frame loop ────────────────────────────────────────────────────────────
+  function frame() {
+    requestAnimationFrame(frame);
+
+    const W = canvas.width / dpr;
+    const H = canvas.height / dpr;
+    const t = performance.now() * 0.001;
+    const time = t * 0.008 * 60; // helix rotation speed
+
+    // Mouse amplitude modulation
+    const baseAmp = 120;
+    const mouseInfluence = (mouseX > 0 && mouseX < W)
+      ? ((mouseX / W) - 0.5) * 60  // -30 to +30 compression/expansion
+      : 0;
+    const amplitude = baseAmp + mouseInfluence;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // ── Background watermark ────────────────────────────────────────────────
+    ctx.save();
+    ctx.globalAlpha = 0.03;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold 48px -apple-system,system-ui,sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.save();
+    ctx.translate(W * 0.42, H * 0.5);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('BRAND VOICE', 0, 0);
+    ctx.restore();
+    ctx.restore();
+
+    // ── Draw strand dots ────────────────────────────────────────────────────
+    const STRAND_STEP = 4; // px step along Y
+    const totalSteps = Math.floor(H * 0.95 / STRAND_STEP);
+    for (let s = 0; s < 2; s++) {
+      for (let i = 0; i < totalSteps; i++) {
+        const yt = (i * STRAND_STEP + H * 0.025) / H;
+        const sx = strandX(yt, s, W, amplitude, time);
+        const sy = i * STRAND_STEP + H * 0.025;
+
+        ctx.globalAlpha = 0.15;
+        ctx.fillStyle = 'rgba(168,85,247,1)';
+        ctx.beginPath();
+        ctx.arc(sx, sy, 1, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // ── Draw crossover connectors ───────────────────────────────────────────
+    // Find crossover points: where strand0_x ≈ strand1_x
+    {
+      let prevSign = 0;
+      for (let i = 1; i < totalSteps; i++) {
+        const yt = (i * STRAND_STEP + H * 0.025) / H;
+        const x0 = strandX(yt, 0, W, amplitude, time);
+        const x1 = strandX(yt, 1, W, amplitude, time);
+        const diff = x0 - x1;
+        const sign = diff > 0 ? 1 : -1;
+        if (prevSign !== 0 && sign !== prevSign) {
+          // Crossover near here — draw connector
+          const sy = i * STRAND_STEP + H * 0.025;
+          ctx.globalAlpha = 0.08;
+          ctx.strokeStyle = 'rgba(168,85,247,1)';
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(x0, sy);
+          ctx.lineTo(x1, sy);
+          ctx.stroke();
+        }
+        prevSign = sign;
+      }
+    }
+
+    ctx.globalAlpha = 1;
+
+    // ── Auto-activate a node every 4s ──────────────────────────────────────
+    if (t > nextActivateAt && nodes.length > 0) {
+      activeNode = Math.floor(Math.random() * nodes.length);
+      activeNodeTime = t;
+      nextActivateAt = t + 4;
+    }
+
+    // ── Draw nodes ─────────────────────────────────────────────────────────
+    hoveredNode = -1;
+    const mx = mouse ? mouse.x : -9999;
+    const my = mouse ? mouse.y : -9999;
+
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i];
+      const [nx, ny] = nodePos(n, W, H, amplitude, time);
+      const [r, g, b] = n.platform.color;
+
+      const dxm = nx - mx, dym = ny - my;
+      const distToMouse = Math.sqrt(dxm * dxm + dym * dym);
+      const isHovered = distToMouse < 15;
+      if (isHovered) hoveredNode = i;
+
+      // Active node wave propagation
+      let activeBrightness = 0;
+      if (activeNode >= 0) {
+        const elapsed = t - activeNodeTime;
+        const waveSpeed = 0.12; // fraction of nodes per 0.1s
+        const dist = Math.abs(i - activeNode);
+        const waveT = elapsed - dist * waveSpeed;
+        if (waveT > 0 && waveT < 0.6) {
+          activeBrightness = Math.sin((waveT / 0.6) * Math.PI) * 0.55;
+        }
+      }
+
+      let alpha = 0.25 + Math.sin(t * 1.0 + n.phase) * 0.1 + activeBrightness;
+      let radius = 5;
+
+      if (i === activeNode && t - activeNodeTime < 2) {
+        const age = t - activeNodeTime;
+        alpha = 0.8 * Math.max(0, 1 - age * 0.5);
+        radius = 7;
+
+        // Ripple ring
+        const rippleR = age * 40;
+        if (rippleR < 60) {
+          ctx.globalAlpha = (1 - rippleR / 60) * 0.25;
+          ctx.strokeStyle = `rgb(${r},${g},${b})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(nx, ny, rippleR, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
+
+      if (isHovered) {
+        alpha = 0.9;
+        radius = 8;
+        // Strand glow near hover
+        ctx.globalAlpha = 0.12;
+        ctx.strokeStyle = `rgb(${r},${g},${b})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        const glowSteps = 20;
+        for (let gi = 0; gi < glowSteps; gi++) {
+          const gt = n.t + (gi - glowSteps / 2) * (1 / nodes.length) * 0.5;
+          const gx2 = strandX(gt, n.strand, W, amplitude, time);
+          const gy2 = strandY(gt, H);
+          if (gi === 0) ctx.moveTo(gx2, gy2);
+          else ctx.lineTo(gx2, gy2);
+        }
+        ctx.stroke();
+
+        // DNA link connector to opposite strand
+        const oppX = strandX(n.t, 1 - n.strand, W, amplitude, time);
+        ctx.globalAlpha = 0.35;
+        ctx.strokeStyle = `rgb(${r},${g},${b})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(nx, ny);
+        ctx.lineTo(oppX, ny);
+        ctx.stroke();
+      }
+
+      ctx.globalAlpha = Math.min(0.95, Math.max(0.05, alpha));
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.beginPath();
+      ctx.arc(nx, ny, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.globalAlpha = 1;
+
+    // ── Counter ────────────────────────────────────────────────────────────
+    ctx.save();
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(168,85,247,0.6)';
+    ctx.font = '11px "SF Mono","Fira Code",monospace';
+    ctx.fillText('Every piece. One voice. 94% consistency score.', W - 16, 24);
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '9px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${nodes.length} content pieces · ${PLATFORMS.length} platforms`, W - 16, 38);
+    ctx.restore();
+
+    // ── Tooltip ────────────────────────────────────────────────────────────
+    if (hoveredNode >= 0) {
+      const n = nodes[hoveredNode];
+      const [nx, ny] = nodePos(n, W, H, amplitude, time);
+      drawTooltip(n, nx, ny, W);
+    }
+  }
+
+  // ─── Mouse tracking ────────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    mouseX = mouse.x;
+  });
+  wrap.addEventListener('mouseleave', () => { mouse = null; mouseX = -9999; hoveredNode = -1; });
+  wrap.addEventListener('touchstart', () => { mouse = null; mouseX = -9999; hoveredNode = -1; }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── FinalCTA: two undulating strands with dots, no nodes ─────────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const ctaCanvas = document.createElement('canvas');
+      ctaCanvas.setAttribute('aria-hidden', 'true');
+      ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.style.position = 'relative';
+      ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+
+      const cc = ctaCanvas.getContext('2d')!;
+      let ctaDpr = 1;
+
+      function resizeCta() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        const w = Math.round(rect.width), h = Math.round(rect.height);
+        ctaCanvas.width  = w * ctaDpr;
+        ctaCanvas.height = h * ctaDpr;
+        ctaCanvas.style.width  = `${w}px`;
+        ctaCanvas.style.height = `${h}px`;
+        cc.setTransform(ctaDpr, 0, 0, ctaDpr, 0, 0);
+      }
+
+      function frameCta() {
+        requestAnimationFrame(frameCta);
+        const W = ctaCanvas.width / ctaDpr;
+        const H = ctaCanvas.height / ctaDpr;
+        const t = performance.now() * 0.001;
+        const time = t * 0.5;
+        cc.clearRect(0, 0, W, H);
+
+        const amp = 30;
+        const step = 4;
+        const totalS = Math.floor(H * 0.9 / step);
+        const cx = W * 0.5;
+
+        for (let s = 0; s < 2; s++) {
+          const phase = s === 0 ? 0 : Math.PI;
+          for (let i = 0; i < totalS; i++) {
+            const yt = i / totalS;
+            const sy = yt * H * 0.9 + H * 0.05;
+            const sx = cx + amp * Math.sin(yt * 20 + time + phase);
+            const alpha = 0.12 + Math.sin(t * 0.8 + yt * 5) * 0.04;
+            cc.globalAlpha = alpha;
+            cc.fillStyle = 'rgba(168,85,247,1)';
+            cc.beginPath();
+            cc.arc(sx, sy, 1.5, 0, Math.PI * 2);
+            cc.fill();
+          }
+        }
+        cc.globalAlpha = 1;
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaCard);
+      resizeCta();
+      requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { ctaCanvas.style.opacity = '1'; });
+
+      const ctaGridTex = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGridTex) ctaGridTex.style.display = 'none';
+    }
+  }
+
+  }); // end requestIdleCallback
+</script>

@@ -1,0 +1,714 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloPublish — Timeline Cascade | Content Scheduled at Scale" description="See your entire content calendar in motion. PelloPublish schedules, generates and publishes content across all platforms automatically.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="pub10-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  /* Glassmorphism overrides */
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a855f7 !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(168,85,247,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Data ──────────────────────────────────────────────────────────────────
+  const PLATFORMS = [
+    { name: "Instagram", icon: "IG", color: [225, 48, 108] as [number,number,number] },
+    { name: "LinkedIn",  icon: "LI", color: [10, 102, 194] as [number,number,number] },
+    { name: "Twitter/X", icon: "X",  color: [139, 92, 246] as [number,number,number] },
+    { name: "TikTok",    icon: "TT", color: [0, 200, 180] as [number,number,number] },
+    { name: "Blog",      icon: "BL", color: [168, 85, 247] as [number,number,number] },
+    { name: "YouTube",   icon: "YT", color: [220, 60, 60] as [number,number,number] },
+  ];
+  const CONTENT_TYPES = ["Carousel","Reel","Story","Blog Post","Thread","Short","Article","UGC Clip","Infographic","Poll"];
+  const TOPICS = [
+    "5 Ways AI is Changing SaaS",
+    "Behind the Scenes: How We Automate",
+    "Why Brand Voice Matters More Than Ever",
+    "7 Tips for Better Engagement",
+    "The Future of E-commerce in 2026",
+    "How Our Client Grew 3x with AI Writing",
+    "Stop Manual Posting — Do This Instead",
+    "We Tested Video-First for 30 Days",
+  ];
+  const ENGAGEMENTS = ["1.2k likes","847 likes","2.3k views","412 shares","156 comments","3.1k reach","967 saves"];
+  const TIMES_HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+  const TIMES_LABELS = ["8 AM","9 AM","10 AM","11 AM","12 PM","1 PM","2 PM","3 PM","4 PM","5 PM","6 PM","7 PM","8 PM"];
+  const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+
+  function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  // ─── Card type ─────────────────────────────────────────────────────────────
+  interface ScheduledCard {
+    hourIdx: number;     // index into TIMES_HOURS
+    dayIdx: number;      // 0 = today, 1 = tomorrow ...
+    platform: typeof PLATFORMS[number];
+    contentType: string;
+    topic: string;
+    engagement: string;
+    published: boolean;
+    stackPos: number;    // which position in the stack (0 = top/closest to timeline)
+    // Drop animation state
+    dropping: boolean;
+    dropStartTime: number;
+    dropFromY: number;
+    dropToY: number;
+    targetX: number;
+    currentY: number;
+    alpha: number;
+  }
+
+  // ─── Canvas setup ──────────────────────────────────────────────────────────
+  const canvas = document.querySelector<HTMLCanvasElement>('.pub10-canvas')!;
+  const wrap   = document.getElementById('hero-wrap')!;
+  const ctx    = canvas.getContext('2d')!;
+
+  let cards: ScheduledCard[] = [];
+  let dpr = 1;
+  let mouse: { x: number; y: number } | null = null;
+  let hoveredCard = -1;
+  let hoveredTimelineHour = -1;
+  let scrollOffset = 0;
+  let nextDropAt = 1.5;
+  let publishedCount = 0;
+
+  // Layout params (recomputed on resize)
+  let W = 0, H = 0;
+  let timelineY = 0;
+  let slotSpacing = 80;       // px between time slots
+  let timelineStartX = 40;
+  const CARD_W = 24;
+  const CARD_H = 16;
+  const CARD_GAP = 5;
+  const STACK_OFFSET = CARD_H + CARD_GAP;
+
+  function hourX(hourIdx: number): number {
+    return timelineStartX + hourIdx * slotSpacing - scrollOffset;
+  }
+
+  // How many cards per hour slot (for "busy hours")
+  function slotDensity(): number[] {
+    const density = new Array(TIMES_HOURS.length).fill(0);
+    for (const c of cards) {
+      if (!c.dropping) density[c.hourIdx]++;
+    }
+    return density;
+  }
+
+  function buildCards() {
+    cards = [];
+    publishedCount = 0;
+    // Pre-seed the timeline with some cards
+    for (let h = 0; h < TIMES_HOURS.length; h++) {
+      // Peak hours: 9 AM (idx 1), 10 AM (idx 2), 3 PM (idx 7), 6 PM (idx 10)
+      const isPeak = [1, 2, 7, 10].includes(h);
+      const count = isPeak ? 4 + Math.floor(Math.random() * 4) : 1 + Math.floor(Math.random() * 3);
+      const x = hourX(h);
+      for (let s = 0; s < count; s++) {
+        const pub = Math.random() < 0.45;
+        if (pub) publishedCount++;
+        cards.push({
+          hourIdx: h,
+          dayIdx: 0,
+          platform: pick(PLATFORMS),
+          contentType: pick(CONTENT_TYPES),
+          topic: pick(TOPICS),
+          engagement: pick(ENGAGEMENTS),
+          published: pub,
+          stackPos: s,
+          dropping: false,
+          dropStartTime: 0,
+          dropFromY: timelineY,
+          dropToY: timelineY + (s + 1) * STACK_OFFSET + 12,
+          targetX: x,
+          currentY: timelineY + (s + 1) * STACK_OFFSET + 12,
+          alpha: 1,
+        });
+      }
+    }
+  }
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    W = Math.round(rect.width);
+    H = Math.round(rect.height);
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width  = `${W}px`;
+    canvas.style.height = `${H}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    timelineY = H * 0.18;
+    slotSpacing = Math.max(60, Math.min(90, (W - 80) / TIMES_HOURS.length));
+    buildCards();
+  }
+
+  // ─── Tooltip ───────────────────────────────────────────────────────────────
+  function rrect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r);
+    c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r);
+    c.lineTo(x, y + r);
+    c.quadraticCurveTo(x, y, x + r, y);
+    c.closePath();
+  }
+
+  function drawCardTooltip(card: ScheduledCard, cx2: number, cy2: number) {
+    const [r, g, b] = card.platform.color;
+    const pad = 14;
+    const tooltipW = 300;
+    const tooltipH = 110;
+
+    let tx = cx2 + 16;
+    let ty = cy2 - tooltipH - 8;
+    if (tx + tooltipW > W - 8) tx = cx2 - tooltipW - 16;
+    ty = Math.max(8, ty);
+
+    ctx.save();
+    ctx.shadowColor = `rgba(${r},${g},${b},0.25)`;
+    ctx.shadowBlur = 20;
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 10);
+    ctx.fillStyle = 'rgba(6,7,18,0.75)';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 10);
+    ctx.fillStyle = `rgba(${r},${g},${b},0.08)`;
+    ctx.fill();
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.35)`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Accent bar
+    ctx.globalAlpha = 0.65;
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    rrect(ctx, tx, ty, tooltipW, 3, 3);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Day + time
+    const dayLabel = DAYS[card.dayIdx] || 'Mon';
+    const timeLabel = TIMES_LABELS[card.hourIdx] || '';
+    ctx.font = 'bold 12px -apple-system,system-ui,BlinkMacSystemFont,sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'left';
+    ctx.fillText(`${dayLabel} ${timeLabel}`, tx + pad, ty + pad + 14);
+
+    // Platform + format
+    ctx.font = '10px "SF Mono","Fira Code",monospace';
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.fillText(`${card.platform.name.toUpperCase()} · ${card.contentType.toUpperCase()}`, tx + pad, ty + pad + 30);
+
+    // Topic
+    ctx.font = '12px -apple-system,system-ui,BlinkMacSystemFont,sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(tx + pad, ty + pad + 33, tooltipW - pad * 2, 18);
+    ctx.clip();
+    ctx.fillText(card.topic, tx + pad, ty + pad + 47);
+    ctx.restore();
+
+    // Status + engagement
+    const statusColor = card.published ? 'rgba(74,222,128,0.9)' : 'rgba(99,202,241,0.8)';
+    ctx.font = '10px "SF Mono","Fira Code",monospace';
+    ctx.fillStyle = statusColor;
+    ctx.fillText(card.published ? '● Published' : '● Scheduled', tx + pad, ty + pad + 68);
+    if (card.published) {
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.textAlign = 'right';
+      ctx.fillText(card.engagement, tx + tooltipW - pad, ty + pad + 68);
+    }
+
+    ctx.restore();
+  }
+
+  function drawTimelineTooltip(hourIdx: number, x: number) {
+    const density = slotDensity();
+    const count = density[hourIdx] || 0;
+    const label = TIMES_LABELS[hourIdx] || '';
+    const pad = 10;
+    const tooltipW = 140;
+    const tooltipH = 40;
+    let tx = x - tooltipW / 2;
+    let ty = timelineY - tooltipH - 8;
+    tx = Math.max(8, Math.min(W - tooltipW - 8, tx));
+
+    ctx.save();
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 8);
+    ctx.fillStyle = 'rgba(6,7,18,0.85)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(168,85,247,0.35)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.globalAlpha = 0.65;
+    ctx.fillStyle = 'rgba(168,85,247,1)';
+    rrect(ctx, tx, ty, tooltipW, 2.5, 3);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    ctx.font = 'bold 11px -apple-system,system-ui,sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${label} — ${count} post${count !== 1 ? 's' : ''}`, tx + tooltipW / 2, ty + 26);
+    ctx.restore();
+  }
+
+  // ─── Frame loop ────────────────────────────────────────────────────────────
+  function frame() {
+    requestAnimationFrame(frame);
+
+    const t = performance.now() * 0.001;
+
+    // Slow timeline scroll
+    scrollOffset += 0.1;
+    if (scrollOffset > slotSpacing) scrollOffset -= slotSpacing; // wrap
+
+    ctx.clearRect(0, 0, W, H);
+
+    // ── Timeline line ──────────────────────────────────────────────────────
+    ctx.globalAlpha = 0.08;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, timelineY);
+    ctx.lineTo(W, timelineY);
+    ctx.stroke();
+
+    // ── Time markers + ticks ───────────────────────────────────────────────
+    for (let h = -2; h < TIMES_HOURS.length + 4; h++) {
+      const x = hourX(h);
+      const wrappedH = ((h % TIMES_HOURS.length) + TIMES_HOURS.length) % TIMES_HOURS.length;
+      if (x < -80 || x > W + 80) continue;
+
+      // Tick
+      ctx.globalAlpha = 0.12;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, timelineY - 5);
+      ctx.lineTo(x, timelineY + 5);
+      ctx.stroke();
+
+      // Hour label
+      ctx.globalAlpha = 0.22;
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '8px "SF Mono","Fira Code",monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(TIMES_LABELS[wrappedH] || '', x, timelineY - 10);
+    }
+
+    // ── Heat bar below timeline ─────────────────────────────────────────────
+    {
+      const density = slotDensity();
+      const maxD = Math.max(1, ...density);
+      const heatY = timelineY + 4;
+      const heatH = 4;
+      for (let h = 0; h < TIMES_HOURS.length; h++) {
+        const x = hourX(h);
+        if (x < -slotSpacing || x > W + slotSpacing) continue;
+        const intensity = density[h] / maxD;
+        ctx.globalAlpha = intensity * 0.4;
+        const grad = ctx.createLinearGradient(x - slotSpacing / 2, 0, x + slotSpacing / 2, 0);
+        grad.addColorStop(0, 'transparent');
+        grad.addColorStop(0.5, 'rgba(168,85,247,1)');
+        grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.fillRect(x - slotSpacing / 2, heatY, slotSpacing, heatH);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // ── Auto-drop new card every 2s ────────────────────────────────────────
+    if (t > nextDropAt) {
+      nextDropAt = t + 2;
+      const h = Math.floor(Math.random() * TIMES_HOURS.length);
+      const stackCount = cards.filter(c => c.hourIdx === h && !c.dropping).length;
+      const x = hourX(h);
+      const destY = timelineY + (stackCount + 1) * STACK_OFFSET + 12;
+
+      // Purple ripple on timeline
+      const newCard: ScheduledCard = {
+        hourIdx: h,
+        dayIdx: 0,
+        platform: pick(PLATFORMS),
+        contentType: pick(CONTENT_TYPES),
+        topic: pick(TOPICS),
+        engagement: pick(ENGAGEMENTS),
+        published: false,
+        stackPos: stackCount,
+        dropping: true,
+        dropStartTime: t,
+        dropFromY: timelineY,
+        dropToY: destY,
+        targetX: x,
+        currentY: timelineY,
+        alpha: 0,
+      };
+      cards.push(newCard);
+    }
+
+    // ── Hover detection ────────────────────────────────────────────────────
+    hoveredCard = -1;
+    hoveredTimelineHour = -1;
+    if (mouse) {
+      const mx = mouse.x, my = mouse.y;
+      // Check timeline hover
+      if (Math.abs(my - timelineY) < 8) {
+        for (let h = 0; h < TIMES_HOURS.length; h++) {
+          const x = hourX(h);
+          if (Math.abs(mx - x) < slotSpacing / 2) {
+            hoveredTimelineHour = h;
+            break;
+          }
+        }
+      }
+      // Check card hover
+      for (let i = cards.length - 1; i >= 0; i--) {
+        const c = cards[i];
+        if (c.dropping) continue;
+        const cx2 = hourX(c.hourIdx);
+        const cy2 = c.currentY;
+        if (mx >= cx2 - CARD_W / 2 - 2 && mx <= cx2 + CARD_W / 2 + 2
+            && my >= cy2 - CARD_H / 2 - 2 && my <= cy2 + CARD_H / 2 + 2) {
+          hoveredCard = i;
+          break;
+        }
+      }
+    }
+
+    // ── Draw drop ripples ──────────────────────────────────────────────────
+    for (const c of cards) {
+      if (!c.dropping) continue;
+      const age = t - c.dropStartTime;
+      const dur = 0.5;
+      const prog = Math.min(1, age / dur);
+
+      // Timeline ripple
+      if (age < 0.8) {
+        const rippleR = age * 50;
+        const rippleAlpha = Math.max(0, 0.4 - age * 0.5);
+        ctx.globalAlpha = rippleAlpha;
+        ctx.strokeStyle = 'rgba(168,85,247,1)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(c.targetX, timelineY, rippleR, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // Bounce easing: ease-in + slight bounce at end
+      const bounce = prog < 0.8
+        ? prog / 0.8
+        : 1 + Math.sin((prog - 0.8) / 0.2 * Math.PI) * 0.08;
+
+      c.currentY = c.dropFromY + (c.dropToY - c.dropFromY) * bounce;
+      c.alpha = Math.min(1, age * 3);
+
+      if (age >= dur + 0.2) {
+        c.dropping = false;
+        c.currentY = c.dropToY;
+        c.alpha = 1;
+      }
+    }
+
+    ctx.globalAlpha = 1;
+
+    // ── Draw cards ─────────────────────────────────────────────────────────
+    for (let i = 0; i < cards.length; i++) {
+      const c = cards[i];
+      const cx2 = hourX(c.hourIdx);
+      const cy2 = c.currentY;
+      const [r, g, b] = c.platform.color;
+      const isHov = i === hoveredCard;
+      const scale = isHov ? 2 : 1;
+      const cw = CARD_W * scale;
+      const ch = CARD_H * scale;
+
+      // Skip cards scrolled off screen
+      if (cx2 < -60 || cx2 > W + 60) continue;
+
+      ctx.globalAlpha = c.alpha * (isHov ? 0.9 : 0.55);
+      ctx.fillStyle = `rgba(${r},${g},${b},0.04)`;
+      rrect(ctx, cx2 - cw / 2, cy2 - ch / 2, cw, ch, 3);
+      ctx.fill();
+
+      ctx.globalAlpha = c.alpha * (isHov ? 0.55 : 0.15);
+      ctx.strokeStyle = `rgb(${r},${g},${b})`;
+      ctx.lineWidth = 1;
+      rrect(ctx, cx2 - cw / 2, cy2 - ch / 2, cw, ch, 3);
+      ctx.stroke();
+
+      // Tiny platform dot inside card
+      if (scale === 1) {
+        ctx.globalAlpha = c.alpha * 0.5;
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.beginPath();
+        ctx.arc(cx2, cy2, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Published indicator
+      if (c.published && !c.dropping) {
+        ctx.globalAlpha = c.alpha * 0.6;
+        ctx.fillStyle = 'rgba(74,222,128,0.8)';
+        ctx.beginPath();
+        ctx.arc(cx2 + cw / 2 - 3, cy2 - ch / 2 + 3, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Hover: highlight the time slot above
+      if (isHov) {
+        ctx.globalAlpha = 0.35;
+        ctx.strokeStyle = `rgb(${r},${g},${b})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(cx2, timelineY - 8);
+        ctx.lineTo(cx2, cy2 - ch / 2 - 4);
+        ctx.stroke();
+
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.beginPath();
+        ctx.arc(cx2, timelineY, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    ctx.globalAlpha = 1;
+
+    // ── Counter ────────────────────────────────────────────────────────────
+    ctx.save();
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(168,85,247,0.65)';
+    ctx.font = '11px "SF Mono","Fira Code",monospace';
+    const totalCards = cards.filter(c => !c.dropping).length;
+    ctx.fillText(`${totalCards} scheduled · ${publishedCount} published today · peak hour: 3 PM (8 posts)`, W - 16, 24);
+    ctx.globalAlpha = 0.28;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '9px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${PLATFORMS.length} platforms · auto-scheduling active`, W - 16, 38);
+    ctx.restore();
+
+    // ── Tooltips ───────────────────────────────────────────────────────────
+    if (hoveredCard >= 0) {
+      const c = cards[hoveredCard];
+      const cx2 = hourX(c.hourIdx);
+      drawCardTooltip(c, cx2, c.currentY);
+    } else if (hoveredTimelineHour >= 0) {
+      drawTimelineTooltip(hoveredTimelineHour, hourX(hoveredTimelineHour));
+    }
+  }
+
+  // ─── Mouse ─────────────────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  });
+  wrap.addEventListener('mouseleave', () => { mouse = null; hoveredCard = -1; hoveredTimelineHour = -1; });
+  wrap.addEventListener('touchstart', () => { mouse = null; hoveredCard = -1; hoveredTimelineHour = -1; }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── FinalCTA: falling dots rhythm ────────────────────────────────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const ctaCanvas = document.createElement('canvas');
+      ctaCanvas.setAttribute('aria-hidden', 'true');
+      ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.style.position = 'relative';
+      ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+
+      const cc = ctaCanvas.getContext('2d')!;
+      let ctaDpr = 1;
+
+      interface FallingDot { x: number; y: number; vy: number; alpha: number; color: [number,number,number]; }
+      let fallingDots: FallingDot[] = [];
+      let ctaW = 0, ctaH = 0;
+
+      function resizeCta() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        ctaW = Math.round(rect.width);
+        ctaH = Math.round(rect.height);
+        ctaCanvas.width  = ctaW * ctaDpr;
+        ctaCanvas.height = ctaH * ctaDpr;
+        ctaCanvas.style.width  = `${ctaW}px`;
+        ctaCanvas.style.height = `${ctaH}px`;
+        cc.setTransform(ctaDpr, 0, 0, ctaDpr, 0, 0);
+      }
+
+      let lastDrop = 0;
+      function frameCta() {
+        requestAnimationFrame(frameCta);
+        const t = performance.now() * 0.001;
+        cc.clearRect(0, 0, ctaW, ctaH);
+
+        // Spawn dots at regular intervals
+        if (t - lastDrop > 0.25) {
+          lastDrop = t;
+          const platform = PLATFORMS[Math.floor(Math.random() * PLATFORMS.length)];
+          fallingDots.push({
+            x: Math.random() * ctaW,
+            y: 0,
+            vy: 20 + Math.random() * 40,
+            alpha: 0.6,
+            color: platform.color,
+          });
+          if (fallingDots.length > 80) fallingDots.splice(0, 1);
+        }
+
+        const dt = 0.016;
+        for (let i = fallingDots.length - 1; i >= 0; i--) {
+          const d = fallingDots[i];
+          d.y += d.vy * dt;
+          d.alpha -= 0.004;
+          if (d.y > ctaH || d.alpha <= 0) {
+            fallingDots.splice(i, 1);
+            continue;
+          }
+          const [r, g, b] = d.color;
+          cc.globalAlpha = d.alpha * 0.4;
+          cc.fillStyle = `rgb(${r},${g},${b})`;
+          cc.beginPath();
+          cc.arc(d.x, d.y, 2, 0, Math.PI * 2);
+          cc.fill();
+        }
+        cc.globalAlpha = 1;
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaCard);
+      resizeCta();
+      requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { ctaCanvas.style.opacity = '1'; });
+
+      const ctaGridTex = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGridTex) ctaGridTex.style.display = 'none';
+    }
+  }
+
+  }); // end requestIdleCallback
+</script>
