@@ -24,16 +24,56 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     <!-- Section 2: How It Works -->
     <HowItWorks />
 
-    <!-- Sections 3–10: Individual product showcases (alternating layout) -->
-    <div id="products">
-      <ProductSection productIndex={0} flip={false} />
-      <ProductSection productIndex={1} flip={true} />
-      <ProductSection productIndex={2} flip={false} />
-      <ProductSection productIndex={3} flip={true} />
-      <ProductSection productIndex={4} flip={false} />
-      <ProductSection productIndex={5} flip={true} />
-      <ProductSection productIndex={6} flip={false} />
-      <ProductSection productIndex={7} flip={true} />
+    <!-- Sections 3–10: Individual product showcases wrapped in animated cards -->
+    <div id="products" class="flex flex-col gap-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto py-8">
+      <div class="product-card" data-product="0">
+        <canvas class="product-bg" aria-hidden="true"></canvas>
+        <div class="product-card-content">
+          <ProductSection productIndex={0} flip={false} />
+        </div>
+      </div>
+      <div class="product-card" data-product="1">
+        <canvas class="product-bg" aria-hidden="true"></canvas>
+        <div class="product-card-content">
+          <ProductSection productIndex={1} flip={true} />
+        </div>
+      </div>
+      <div class="product-card" data-product="2">
+        <canvas class="product-bg" aria-hidden="true"></canvas>
+        <div class="product-card-content">
+          <ProductSection productIndex={2} flip={false} />
+        </div>
+      </div>
+      <div class="product-card" data-product="3">
+        <canvas class="product-bg" aria-hidden="true"></canvas>
+        <div class="product-card-content">
+          <ProductSection productIndex={3} flip={true} />
+        </div>
+      </div>
+      <div class="product-card" data-product="4">
+        <canvas class="product-bg" aria-hidden="true"></canvas>
+        <div class="product-card-content">
+          <ProductSection productIndex={4} flip={false} />
+        </div>
+      </div>
+      <div class="product-card" data-product="5">
+        <canvas class="product-bg" aria-hidden="true"></canvas>
+        <div class="product-card-content">
+          <ProductSection productIndex={5} flip={true} />
+        </div>
+      </div>
+      <div class="product-card" data-product="6">
+        <canvas class="product-bg" aria-hidden="true"></canvas>
+        <div class="product-card-content">
+          <ProductSection productIndex={6} flip={false} />
+        </div>
+      </div>
+      <div class="product-card" data-product="7">
+        <canvas class="product-bg" aria-hidden="true"></canvas>
+        <div class="product-card-content">
+          <ProductSection productIndex={7} flip={true} />
+        </div>
+      </div>
     </div>
 
     <!-- Section 11: Use Cases -->
@@ -148,22 +188,41 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
   }
 </style>
 
-<!-- Product panel canvas styles -->
+<!-- Product card styles -->
 <style is:global>
-  .pv-canvas {
-    position: absolute !important;
-    inset: 0 !important;
-    z-index: 0 !important;
-    pointer-events: none !important;
+  .product-card {
+    position: relative;
+    border-radius: 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(6, 7, 18, 0.6);
+    overflow: hidden;
+  }
+  .product-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 2s ease-in;
     border-radius: inherit;
   }
-  .product-visual-panel > *:not(.pv-canvas) {
+  .product-card-content {
     position: relative;
     z-index: 1;
   }
-  /* Make panel body transparent so canvas shows through */
-  .product-visual-panel .p-5 {
+  /* Strip the ProductSection's own section chrome so the card provides the container */
+  .product-card .ps-section {
     background: transparent !important;
+    border: none !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  .product-card .section-divider {
+    display: none !important;
+  }
+  /* Soften the accent glow — canvas provides the colour */
+  .product-card .ps-section > .absolute.inset-0 {
+    opacity: 0.5;
   }
 </style>
 
@@ -588,28 +647,30 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
   const gridTexCta=ctaCard.querySelector('.grid-texture') as HTMLElement|null;
   if (gridTexCta) gridTexCta.style.display='none';
 
-  // ─── Product Canvas Animations (single rAF loop) ─────────────────────────
-  // Uses shared noise2 from dot grid section above.
-  // Architecture: one rAF, IntersectionObserver skip, 0.5x DPR, per-product render fns.
+  // ─── Product Card Canvas Animations (single rAF loop) ────────────────────
+  // Canvases are pre-placed as .product-bg inside each .product-card.
+  // ONE requestAnimationFrame loop drives all cards.
+  // IntersectionObserver skips off-screen cards.
+  // Canvases rendered at 0.5× devicePixelRatio for performance.
 
-  // Global mouse in client coords
+  // Global mouse in client coords for per-card hit-testing
   let gMx = -9999, gMy = -9999;
   window.addEventListener('mousemove', (e) => { gMx=e.clientX; gMy=e.clientY; });
   window.addEventListener('mouseleave', () => { gMx=-9999; gMy=-9999; });
 
-  // Per-product accent RGB (spec colors)
+  // Per-product accent RGB
   const PV_RGB: [number,number,number][] = [
-    [99,102,241],  // 0 SEO
-    [139,92,246],  // 1 Reach
-    [168,85,247],  // 2 Publish
-    [192,38,211],  // 3 Social
-    [124,58,237],  // 4 Pitch
-    [79,70,229],   // 5 Ads
-    [147,51,234],  // 6 Flow
-    [109,40,217],  // 7 Build
+    [99,102,241],   // 0 SEO      #6366f1
+    [139,92,246],   // 1 Reach    #8b5cf6
+    [168,85,247],   // 2 Publish  #a855f7
+    [192,38,211],   // 3 Social   #c026d3
+    [124,58,237],   // 4 Pitch    #7c3aed
+    [79,70,229],    // 5 Ads      #4f46e5
+    [147,51,234],   // 6 Flow     #9333ea
+    [109,40,217],   // 7 Build    #6d28d9
   ];
 
-  interface PanelState {
+  interface CardState {
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
     w: number; h: number; dpr: number;
@@ -631,7 +692,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
   function drawSEO(ctx: CanvasRenderingContext2D, w: number, h: number, _t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
     const dots = state.dots as SeoDot[];
     const [r,g,b]=PV_RGB[0];
-    const R=120, PUSH=12, LERP=0.04;
+    const R=180, PUSH=16, LERP=0.04;
     for (const dot of dots) {
       let tx=dot.gx, ty=dot.gy, inf=0;
       if (hasMouse) {
@@ -645,7 +706,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       }
       dot.x+=(tx-dot.x)*LERP;
       dot.y+=(ty-dot.y)*LERP;
-      const alpha=inf>0 ? 0.15+inf*0.3 : 0.15;
+      const alpha=inf>0 ? 0.15+inf*0.3 : 0.12;
       ctx.globalAlpha=alpha;
       ctx.fillStyle=`rgb(${r},${g},${b})`;
       ctx.beginPath(); ctx.arc(dot.x,dot.y,1,0,Math.PI*2); ctx.fill();
@@ -657,20 +718,20 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
   function drawWaves(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, _state: Record<string, unknown>) {
     const [r,g,b]=PV_RGB[1];
     const numWaves=5;
-    const phase=t*1.2; // 0.02/frame * 60fps
+    const phase=t*1.2;
     ctx.lineWidth=0.5;
     for (let wi=0;wi<numWaves;wi++) {
       const yPos=(h/(numWaves+1))*(wi+1);
       const phaseOff=wi*(Math.PI*2/numWaves);
-      let amp=8;
+      let amp=10;
       if (hasMouse) {
         const dy=Math.abs(my-yPos);
         if (dy < h/numWaves) amp*=1+(1-dy/(h/numWaves));
       }
-      ctx.strokeStyle=`rgba(${r},${g},${b},0.12)`;
+      ctx.strokeStyle=`rgba(${r},${g},${b},0.10)`;
       ctx.beginPath();
       for (let x=0;x<=w;x+=2) {
-        const y=yPos+Math.sin(x*0.03+phase+phaseOff)*amp;
+        const y=yPos+Math.sin(x*0.025+phase+phaseOff)*amp;
         if (x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
       }
       ctx.stroke();
@@ -681,13 +742,13 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
   interface RainDash { y:number; alpha:number; speed:number; }
   interface RainColumn { x:number; dashes:RainDash[]; }
   function initRain(w: number, h: number) {
-    const numCols=40, colW=w/numCols;
+    const numCols=50, colW=w/numCols;
     const columns: RainColumn[]=[];
     for (let c=0;c<numCols;c++) {
       const dashes: RainDash[]=[];
       for (let d=0;d<10;d++) dashes.push({
         y: Math.random()*h,
-        alpha: 0.08+Math.random()*0.07,
+        alpha: 0.07+Math.random()*0.06,
         speed: 0.3+Math.random()*0.5,
       });
       columns.push({ x: c*colW+colW/2, dashes });
@@ -698,13 +759,13 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     const { columns } = state as { columns: RainColumn[] };
     const [r,g,b]=PV_RGB[2];
     for (const col of columns) {
-      const near=hasMouse && Math.abs(mx-col.x) < w/40;
+      const near=hasMouse && Math.abs(mx-col.x) < w/50;
       const speedMult=near ? 0.3 : 1;
       const alphaMult=near ? 1.8 : 1;
       for (const dash of col.dashes) {
         dash.y+=dash.speed*speedMult;
-        if (dash.y > h+5) { dash.y=-5; dash.speed=0.3+Math.random()*0.5; dash.alpha=0.08+Math.random()*0.07; }
-        const a=Math.min(0.25, dash.alpha*alphaMult);
+        if (dash.y > h+5) { dash.y=-5; dash.speed=0.3+Math.random()*0.5; dash.alpha=0.07+Math.random()*0.06; }
+        const a=Math.min(0.22, dash.alpha*alphaMult);
         ctx.strokeStyle=`rgba(${r},${g},${b},${a})`;
         ctx.lineWidth=2;
         ctx.beginPath(); ctx.moveTo(col.x-1.5, dash.y); ctx.lineTo(col.x+1.5, dash.y); ctx.stroke();
@@ -730,7 +791,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       n.vx*=0.98; n.vy*=0.98;
       if (hasMouse) {
         const dx=mx-n.x, dy=my-n.y, d=Math.sqrt(dx*dx+dy*dy);
-        if (d<150&&d>0) { n.vx+=(dx/d)*0.04; n.vy+=(dy/d)*0.04; }
+        if (d<200&&d>0) { n.vx+=(dx/d)*0.04; n.vy+=(dy/d)*0.04; }
       }
       n.x+=n.vx; n.y+=n.vy;
       if (n.x<0) n.x+=w; if (n.x>w) n.x-=w;
@@ -739,14 +800,14 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     for (let i=0;i<nodes.length;i++) for (let j=i+1;j<nodes.length;j++) {
       const dx=nodes[i].x-nodes[j].x, dy=nodes[i].y-nodes[j].y;
       const d=Math.sqrt(dx*dx+dy*dy);
-      if (d<80) {
-        ctx.strokeStyle=`rgba(${r},${g},${b},${0.08*(1-d/80)})`;
+      if (d<120) {
+        ctx.strokeStyle=`rgba(${r},${g},${b},${0.10*(1-d/120)})`;
         ctx.lineWidth=1;
         ctx.beginPath(); ctx.moveTo(nodes[i].x,nodes[i].y); ctx.lineTo(nodes[j].x,nodes[j].y); ctx.stroke();
       }
     }
     for (const n of nodes) {
-      ctx.fillStyle=`rgba(${r},${g},${b},0.2)`;
+      ctx.fillStyle=`rgba(${r},${g},${b},0.20)`;
       ctx.beginPath(); ctx.arc(n.x,n.y,2.5,0,Math.PI*2); ctx.fill();
     }
   }
@@ -754,23 +815,23 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
   // ── Product 4: Pitch Topo Contours ───────────────────────────────────────
   function drawTopo(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, _state: Record<string, unknown>) {
     const [r,g,b]=PV_RGB[4];
-    const step=6;
+    const step=8;
     const cols=Math.ceil(w/step)+1, rows=Math.ceil(h/step)+1;
     const grid: number[][]=[];
     for (let row=0;row<rows;row++) {
       grid[row]=[];
       for (let col=0;col<cols;col++) {
         const x=col*step, y=row*step;
-        let v=noise2(x*0.025+t*0.2, y*0.025+t*0.15);
+        let v=noise2(x*0.020+t*0.2, y*0.020+t*0.15);
         if (hasMouse) {
           const dx=x-mx, dy=y-my, d2=dx*dx+dy*dy;
-          v+=Math.exp(-d2/5000)*0.4;
+          v+=Math.exp(-d2/15000)*0.4;
         }
         grid[row][col]=v;
       }
     }
     const levels=[-0.5,-0.3,-0.1,0.1,0.3,0.5];
-    const alphas=[0.06,0.08,0.09,0.11,0.13,0.14];
+    const alphas=[0.05,0.07,0.08,0.10,0.12,0.13];
     for (let li=0;li<levels.length;li++) {
       const level=levels[li];
       ctx.strokeStyle=`rgba(${r},${g},${b},${alphas[li]})`;
@@ -799,19 +860,19 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
   // ── Product 5: Ads Equalizer Bars ────────────────────────────────────────
   function drawBars(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, _state: Record<string, unknown>) {
     const [r,g,b]=PV_RGB[5];
-    const numBars=35, barW=3, barGap=2, totalW=barW+barGap;
+    const numBars=40, barW=3, barGap=2, totalW=barW+barGap;
     const startX=(w-numBars*totalW)/2;
     const centerY=h*0.62;
     for (let i=0;i<numBars;i++) {
       const x=startX+i*totalW;
       const bCx=x+barW/2;
       const n=(noise2(i*0.15+t*0.4, t*0.6+i*0.05)+1)*0.5;
-      let barH=4+n*26;
+      let barH=4+n*30;
       if (hasMouse) {
         const dx=Math.abs(mx-bCx);
-        if (dx<40) barH=Math.max(barH, Math.pow(1-dx/40,2)*30);
+        if (dx<60) barH=Math.max(barH, Math.pow(1-dx/60,2)*35);
       }
-      const alpha=0.06+(barH/30)*0.14;
+      const alpha=0.05+(barH/34)*0.13;
       ctx.fillStyle=`rgba(${r},${g},${b},${alpha})`;
       ctx.fillRect(x, centerY-barH, barW, barH);
     }
@@ -829,7 +890,6 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     const [r,g,b]=PV_RGB[6];
     const s=0.018;
     for (const p of particles) {
-      // Curl noise velocity (finite differences)
       const n_py=noise2(p.x*s, (p.y+1)*s+t*0.1);
       const n_ny=noise2(p.x*s, (p.y-1)*s+t*0.1);
       const n_px=noise2((p.x+1)*s, p.y*s+t*0.1);
@@ -838,23 +898,21 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       let vy=-(n_px-n_nx)/2;
       const vmag=Math.sqrt(vx*vx+vy*vy)||0.001;
       vx=(vx/vmag)*0.5; vy=(vy/vmag)*0.5;
-      // Mouse vortex
       if (hasMouse) {
         const dx=p.x-mx, dy=p.y-my, d=Math.sqrt(dx*dx+dy*dy);
-        if (d<100&&d>0) { const str=(1-d/100)*1.5; vx+=(-dy/d)*str; vy+=(dx/d)*str; }
+        if (d<150&&d>0) { const str=(1-d/150)*1.5; vx+=(-dy/d)*str; vy+=(dx/d)*str; }
       }
       p.trail.push({x:p.x,y:p.y});
       if (p.trail.length>5) p.trail.shift();
       p.x+=vx; p.y+=vy;
       if (p.x<0) p.x+=w; if (p.x>w) p.x-=w;
       if (p.y<0) p.y+=h; if (p.y>h) p.y-=h;
-      // Draw trail
       for (let ti=1;ti<p.trail.length;ti++) {
-        ctx.strokeStyle=`rgba(${r},${g},${b},${(ti/p.trail.length)*0.15})`;
+        ctx.strokeStyle=`rgba(${r},${g},${b},${(ti/p.trail.length)*0.13})`;
         ctx.lineWidth=1;
         ctx.beginPath(); ctx.moveTo(p.trail[ti-1].x,p.trail[ti-1].y); ctx.lineTo(p.trail[ti].x,p.trail[ti].y); ctx.stroke();
       }
-      ctx.fillStyle=`rgba(${r},${g},${b},0.15)`;
+      ctx.fillStyle=`rgba(${r},${g},${b},0.13)`;
       ctx.beginPath(); ctx.arc(p.x,p.y,1,0,Math.PI*2); ctx.fill();
     }
   }
@@ -866,7 +924,6 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     const [r,g,b]=PV_RGB[7];
     const st = state as { builds: BuildAnim[]; lastBuildTime: number };
     const BG=20, now=performance.now();
-    // Spawn builds
     if (now-st.lastBuildTime>800+Math.random()*1500 && st.builds.length<3) {
       const col=Math.floor(Math.random()*Math.floor(w/BG));
       const row=Math.floor(Math.random()*Math.floor(h/BG));
@@ -877,7 +934,6 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       st.lastBuildTime=now;
     }
     st.builds=st.builds.filter((bld:BuildAnim)=>(now-bld.startTime)<1500);
-    // Base grid
     for (let y=0;y<=h;y+=BG) {
       const alpha=hasMouse&&Math.abs(my-y)<BG ? 0.08 : 0.03;
       ctx.strokeStyle=`rgba(${r},${g},${b},${alpha})`; ctx.lineWidth=0.5;
@@ -888,7 +944,6 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       ctx.strokeStyle=`rgba(${r},${g},${b},${alpha})`; ctx.lineWidth=0.5;
       ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke();
     }
-    // Active build animations
     for (const bld of st.builds) {
       const elapsed=(now-bld.startTime)/1000;
       const alpha=elapsed<0.5 ? 0.15 : 0.15*(1-(elapsed-0.5)/1.0);
@@ -902,7 +957,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     }
   }
 
-  // ── Panel system: inject, observe, loop ──────────────────────────────────
+  // ── State initialisation per product ────────────────────────────────────
   function initProdState(idx: number, w: number, h: number): Record<string, unknown> {
     switch(idx) {
       case 0: return initSEO(w,h);
@@ -914,8 +969,8 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     }
   }
 
-  function renderProd(idx: number, ps: PanelState, t: number) {
-    const { ctx, w, h, canvas, state } = ps;
+  function renderProd(idx: number, cs: CardState, t: number) {
+    const { ctx, w, h, canvas, state } = cs;
     const rect=canvas.getBoundingClientRect();
     const lx=gMx-rect.left, ly=gMy-rect.top;
     const hasMouse=lx>=0&&lx<=w&&ly>=0&&ly<=h;
@@ -932,57 +987,65 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     }
   }
 
-  const pvPanels: PanelState[]=[];
-  const pvElems=document.querySelectorAll<HTMLElement>('.product-visual-panel');
-  const pvVisible=new Set<number>();
+  // ── Wire up card canvases ────────────────────────────────────────────────
+  const pvCards: CardState[] = [];
+  const pvCardElems = document.querySelectorAll<HTMLElement>('.product-card');
+  const pvVisible = new Set<number>();
 
-  pvElems.forEach((el, i) => {
-    if (i>=8) return;
-    const pvCanvas=document.createElement('canvas');
-    pvCanvas.className='pv-canvas';
-    pvCanvas.setAttribute('aria-hidden','true');
-    el.prepend(pvCanvas);
-    const pvCtx=pvCanvas.getContext('2d')!;
-    const halfDpr=Math.max(0.5,(window.devicePixelRatio||1)*0.5);
-    const rect=el.getBoundingClientRect();
-    const pw=Math.round(rect.width)||400, ph=Math.round(rect.height)||300;
-    pvCanvas.width=Math.round(pw*halfDpr); pvCanvas.height=Math.round(ph*halfDpr);
-    pvCanvas.style.width=`${pw}px`; pvCanvas.style.height=`${ph}px`;
-    pvCtx.setTransform(halfDpr,0,0,halfDpr,0,0);
-    const pState=initProdState(i,pw,ph);
-    pvPanels.push({ canvas:pvCanvas, ctx:pvCtx, w:pw, h:ph, dpr:halfDpr, visible:false, state:pState });
-    // Handle resize
-    new ResizeObserver(()=>{
-      const nRect=el.getBoundingClientRect();
-      const nw=Math.round(nRect.width)||pw, nh=Math.round(nRect.height)||ph;
-      const ps=pvPanels[i];
-      ps.w=nw; ps.h=nh;
-      pvCanvas.width=Math.round(nw*halfDpr); pvCanvas.height=Math.round(nh*halfDpr);
-      pvCanvas.style.width=`${nw}px`; pvCanvas.style.height=`${nh}px`;
-      pvCtx.setTransform(halfDpr,0,0,halfDpr,0,0);
-      ps.state=initProdState(i,nw,nh);
-    }).observe(el);
+  pvCardElems.forEach((card, i) => {
+    if (i >= 8) return;
+    const bgCanvas = card.querySelector<HTMLCanvasElement>('.product-bg')!;
+    const bgCtx = bgCanvas.getContext('2d')!;
+    const halfDpr = Math.max(0.5, (window.devicePixelRatio||1) * 0.5);
+    const rect = card.getBoundingClientRect();
+    const cw = Math.round(rect.width) || 800;
+    const ch = Math.round(rect.height) || 400;
+    bgCanvas.width = Math.round(cw * halfDpr);
+    bgCanvas.height = Math.round(ch * halfDpr);
+    bgCanvas.style.width = `${cw}px`;
+    bgCanvas.style.height = `${ch}px`;
+    bgCtx.setTransform(halfDpr, 0, 0, halfDpr, 0, 0);
+    const pState = initProdState(i, cw, ch);
+    pvCards.push({ canvas: bgCanvas, ctx: bgCtx, w: cw, h: ch, dpr: halfDpr, visible: false, state: pState });
+
+    // Resize observer — track full card dimensions
+    new ResizeObserver(() => {
+      const nRect = card.getBoundingClientRect();
+      const nw = Math.round(nRect.width) || cw;
+      const nh = Math.round(nRect.height) || ch;
+      const cs = pvCards[i];
+      cs.w = nw; cs.h = nh;
+      bgCanvas.width = Math.round(nw * halfDpr);
+      bgCanvas.height = Math.round(nh * halfDpr);
+      bgCanvas.style.width = `${nw}px`;
+      bgCanvas.style.height = `${nh}px`;
+      bgCtx.setTransform(halfDpr, 0, 0, halfDpr, 0, 0);
+      cs.state = initProdState(i, nw, nh);
+    }).observe(card);
+
+    // Fade in on first intersection
+    requestAnimationFrame(() => { bgCanvas.style.opacity = '1'; });
   });
 
-  // IntersectionObserver — only render visible panels
+  // IntersectionObserver — only render cards within 200px of viewport
   const pvIO = new IntersectionObserver((entries) => {
     for (const entry of entries) {
-      const el=entry.target as HTMLElement;
-      let idx=-1;
-      pvElems.forEach((pv,i)=>{ if (pv===el) idx=i; });
-      if (idx<0||idx>=8) return;
+      const el = entry.target as HTMLElement;
+      let idx = -1;
+      pvCardElems.forEach((c, i) => { if (c === el) idx = i; });
+      if (idx < 0 || idx >= 8) return;
       if (entry.isIntersecting) pvVisible.add(idx);
       else pvVisible.delete(idx);
     }
-  }, { rootMargin:'200px' });
-  pvElems.forEach((el,i)=>{ if (i<8) pvIO.observe(el); });
+  }, { rootMargin: '200px' });
+  pvCardElems.forEach((el, i) => { if (i < 8) pvIO.observe(el); });
 
-  // Single rAF drives ALL product canvases
+  // Single rAF drives ALL product card canvases
   function pvLoop() {
     requestAnimationFrame(pvLoop);
-    const t=performance.now()*0.001;
+    const t = performance.now() * 0.001;
     for (const idx of pvVisible) {
-      if (idx<pvPanels.length) renderProd(idx,pvPanels[idx],t);
+      if (idx < pvCards.length) renderProd(idx, pvCards[idx], t);
     }
   }
   requestAnimationFrame(pvLoop);
