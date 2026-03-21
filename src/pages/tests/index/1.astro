@@ -263,16 +263,22 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
   .product-card[data-product="1"] .ps-visual {
     display: none !important;
   }
-  /* PelloReach: tinted glass box around the description */
-  .product-card[data-product="1"] .ps-info .text-body-lg {
-    background: rgba(139, 92, 246, 0.06) !important;
+  /* Tinted glass box around description text for ALL product cards */
+  .product-card .ps-info .text-body-lg {
     backdrop-filter: blur(12px) saturate(1.2);
     -webkit-backdrop-filter: blur(12px) saturate(1.2);
-    border: 1px solid rgba(139, 92, 246, 0.15) !important;
     border-radius: 1rem;
     padding: 1.25rem 1.5rem !important;
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
+  .product-card[data-product="0"] .ps-info .text-body-lg { background: rgba(99, 102, 241, 0.06) !important; border: 1px solid rgba(99, 102, 241, 0.15) !important; }
+  .product-card[data-product="1"] .ps-info .text-body-lg { background: rgba(139, 92, 246, 0.06) !important; border: 1px solid rgba(139, 92, 246, 0.15) !important; }
+  .product-card[data-product="2"] .ps-info .text-body-lg { background: rgba(168, 85, 247, 0.06) !important; border: 1px solid rgba(168, 85, 247, 0.15) !important; }
+  .product-card[data-product="3"] .ps-info .text-body-lg { background: rgba(192, 38, 211, 0.06) !important; border: 1px solid rgba(192, 38, 211, 0.15) !important; }
+  .product-card[data-product="4"] .ps-info .text-body-lg { background: rgba(217, 70, 239, 0.06) !important; border: 1px solid rgba(217, 70, 239, 0.15) !important; }
+  .product-card[data-product="5"] .ps-info .text-body-lg { background: rgba(124, 58, 237, 0.06) !important; border: 1px solid rgba(124, 58, 237, 0.15) !important; }
+  .product-card[data-product="6"] .ps-info .text-body-lg { background: rgba(79, 70, 229, 0.06) !important; border: 1px solid rgba(79, 70, 229, 0.15) !important; }
+  .product-card[data-product="7"] .ps-info .text-body-lg { background: rgba(99, 102, 241, 0.06) !important; border: 1px solid rgba(99, 102, 241, 0.15) !important; }
   /* Prevent GSAP opacity animation from breaking backdrop-filter on product cards */
   .product-card .ps-visual,
   .product-card .ps-info,
