@@ -419,22 +419,27 @@ import FinalCTA from '../../components/sections/FinalCTA.astro';
     ty=Math.max(8,Math.min(H-tooltipH-8,ty));
 
     ctx.save();
-    ctx.shadowColor='rgba(0,242,234,0.3)'; ctx.shadowBlur=20;
+    // Frosted tinted glass background
+    ctx.shadowColor='rgba(0,242,234,0.25)'; ctx.shadowBlur=30;
     rrect(ctx,tx,ty,tooltipW,tooltipH,8);
-    ctx.fillStyle='rgba(4,12,18,0.95)'; ctx.fill(); ctx.shadowBlur=0;
-    // Scan lines inside tooltip
+    ctx.fillStyle='rgba(4,12,18,0.45)'; ctx.fill(); ctx.shadowBlur=0;
+    // Cyan tint layer
+    rrect(ctx,tx,ty,tooltipW,tooltipH,8);
+    ctx.fillStyle='rgba(0,242,234,0.06)'; ctx.fill();
+    // Scan lines inside tooltip (hologram texture)
     ctx.save(); ctx.beginPath(); ctx.rect(tx,ty,tooltipW,tooltipH); ctx.clip();
     ctx.lineWidth=0.5;
     for (let y=ty;y<ty+tooltipH;y+=3) {
-      ctx.globalAlpha=0.04; ctx.strokeStyle='#00f2ea';
+      ctx.globalAlpha=0.03; ctx.strokeStyle='#00f2ea';
       ctx.beginPath(); ctx.moveTo(tx,y); ctx.lineTo(tx+tooltipW,y); ctx.stroke();
     }
     ctx.restore();
+    // Glass border
     rrect(ctx,tx,ty,tooltipW,tooltipH,8);
-    ctx.fillStyle='rgba(0,242,234,0.05)'; ctx.fill();
-    ctx.strokeStyle='rgba(0,242,234,0.3)'; ctx.lineWidth=1; ctx.stroke();
-    ctx.fillStyle='rgba(0,242,234,0.65)';
-    rrect(ctx,tx,ty,tooltipW,3,3); ctx.fill();
+    ctx.strokeStyle='rgba(0,242,234,0.25)'; ctx.lineWidth=1; ctx.stroke();
+    // Accent top bar
+    ctx.globalAlpha=0.6; ctx.fillStyle='rgba(0,242,234,0.5)';
+    rrect(ctx,tx,ty,tooltipW,3,3); ctx.fill(); ctx.globalAlpha=1;
 
     let cy2=ty+pad+13;
     ctx.globalAlpha=1; ctx.textAlign='left';
