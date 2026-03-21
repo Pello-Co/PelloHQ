@@ -769,40 +769,208 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     state: Record<string, unknown>;
   }
 
-  // ── Product 0: SEO Dot Grid ───────────────────────────────────────────────
-  interface SeoDot { gx:number; gy:number; x:number; y:number; }
+  // ── Product 0: SEO Dot Matrix (seo1 port) ────────────────────────────────
+  interface SeoTemplate { name: string; color: [number,number,number]; weight: number; }
+  const SEO_TMPLS: SeoTemplate[] = [
+    { name: "Best {Service} in {City}",     color: [99, 102,241], weight:0.30 },
+    { name: "{Product} for {Industry}",     color: [139,92, 246], weight:0.20 },
+    { name: "How to {Action} with {Tool}",  color: [168,85, 247], weight:0.15 },
+    { name: "{Competitor} Alternative",     color: [192,38, 211], weight:0.12 },
+    { name: "Top {N} {Category} in {Year}", color: [124,58, 237], weight:0.13 },
+    { name: "{Service} near {Location}",    color: [79, 70, 229], weight:0.10 },
+  ];
+  const SEO_TCUM: number[] = [];
+  { let _s=0; for (const _t of SEO_TMPLS) { _s+=_t.weight; SEO_TCUM.push(_s); } }
+  const SEO_SERVICES   = ["Plumber","Electrician","Personal Trainer","Accountant","Dentist","Lawyer","Photographer","Web Designer","Therapist","Mechanic","Tutor","Cleaner","Landscaper","Roofer","Painter"];
+  const SEO_CITIES     = ["London","Manchester","Birmingham","Leeds","Glasgow","Bristol","Liverpool","Edinburgh","Cardiff","Belfast","Oxford","Cambridge","Brighton","Bath","York"];
+  const SEO_PRODUCTS   = ["CRM Software","Project Management","Email Marketing","Analytics Platform","HR Software","Inventory System","Booking Platform","Payment Gateway"];
+  const SEO_INDUSTRIES = ["SaaS","E-commerce","Healthcare","Finance","Education","Real Estate","Hospitality","Legal"];
+  const SEO_ACTIONS    = ["Grow Revenue","Reduce Churn","Scale Operations","Automate Workflows","Track Metrics","Generate Leads"];
+  const SEO_TOOLS      = ["AI","Automation","Data Analytics","Machine Learning","No-Code","API Integration"];
+  const SEO_COMPS      = ["HubSpot","Mailchimp","Salesforce","Monday.com","Ahrefs","SEMrush","Moz","Shopify"];
+  const SEO_CATS       = ["Marketing Tools","CRM Platforms","SEO Strategies","Content Ideas","Growth Hacks","Automation Tools"];
+  const SEO_LOCS       = ["Central London","Downtown Manchester","East Birmingham","North Leeds","Shoreditch","Canary Wharf","Soho","Camden"];
+  const SEO_TOPS_N     = ["5","7","10","15","20"];
+  const SEO_YEARS      = ["2024","2025","2026"];
+  const SEO_GSZ=10, SEO_INFL=100, SEO_PUSH=4, SEO_LERP=0.035, SEO_HOV_R=15, SEO_PROX_R=40;
+  const SEO_IDX=0, SEO_PUB=1, SEO_GEN=2;
+
+  function seoPick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random()*arr.length)]; }
+  function seoPickTmpl(): number {
+    const rv=Math.random();
+    for (let i=0;i<SEO_TCUM.length;i++) if (rv<SEO_TCUM[i]) return i;
+    return SEO_TMPLS.length-1;
+  }
+  function seoGenTitle(tIdx: number): string {
+    switch(tIdx) {
+      case 0: return `Best ${seoPick(SEO_SERVICES)} in ${seoPick(SEO_CITIES)}`;
+      case 1: return `${seoPick(SEO_PRODUCTS)} for ${seoPick(SEO_INDUSTRIES)}`;
+      case 2: return `How to ${seoPick(SEO_ACTIONS)} with ${seoPick(SEO_TOOLS)}`;
+      case 3: return `${seoPick(SEO_COMPS)} Alternative`;
+      case 4: return `Top ${seoPick(SEO_TOPS_N)} ${seoPick(SEO_CATS)} in ${seoPick(SEO_YEARS)}`;
+      case 5: return `${seoPick(SEO_SERVICES)} near ${seoPick(SEO_LOCS)}`;
+      default: return `Page ${tIdx}`;
+    }
+  }
+  function seoSmooth(x: number): number { x=Math.max(0,Math.min(1,x)); return x*x*(3-2*x); }
+  function rrect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+    c.beginPath();
+    c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.quadraticCurveTo(x+w,y,x+w,y+r);
+    c.lineTo(x+w,y+h-r); c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    c.lineTo(x+r,y+h); c.quadraticCurveTo(x,y+h,x,y+h-r);
+    c.lineTo(x,y+r); c.quadraticCurveTo(x,y,x+r,y);
+    c.closePath();
+  }
+
+  interface SeoDot {
+    gx:number; gy:number; x:number; y:number;
+    templateIdx:number; title:string; status:number;
+    birthTime:number; phase:number;
+  }
+
   function initSEO(w: number, h: number) {
-    const G=12, cols=Math.ceil(w/G)+2, rows=Math.ceil(h/G)+2;
+    const cols=Math.ceil(w/SEO_GSZ)+1, rows=Math.ceil(h/SEO_GSZ)+1;
+    const cx=w/2, cy=h/2;
     const dots: SeoDot[]=[];
     for (let r=0;r<rows;r++) for (let c=0;c<cols;c++) {
-      const gx=c*G, gy=r*G;
-      dots.push({gx,gy,x:gx,y:gy});
+      const gx=c*SEO_GSZ, gy=r*SEO_GSZ;
+      const tIdx=seoPickTmpl();
+      const sr=Math.random();
+      const status=sr<0.10?SEO_PUB:sr<0.30?SEO_GEN:SEO_IDX;
+      const dist=Math.sqrt((gx-cx)**2+(gy-cy)**2);
+      dots.push({ gx,gy,x:gx,y:gy, templateIdx:tIdx, title:seoGenTitle(tIdx),
+                  status, birthTime:dist*0.003, phase:Math.random()*Math.PI*2 });
     }
-    return { dots };
+    return { dots, startTime:performance.now()*0.001, hoveredIdx:-1 };
   }
+
+  function drawSEOTooltip(c: CanvasRenderingContext2D, dot: SeoDot, W: number, H: number) {
+    const px=dot.x, py=dot.y;
+    const tmpl=SEO_TMPLS[dot.templateIdx];
+    const [r,g,b]=tmpl.color;
+    const catLabel=tmpl.name.toUpperCase();
+    const titleText=dot.title;
+    const isPublished=dot.status===SEO_PUB, isIndexed=dot.status===SEO_IDX;
+    const statusDot=isPublished?'●':isIndexed?'●':'○';
+    const statusLabel=isPublished?' published':isIndexed?' indexed':' generating';
+    const statusColor=isPublished?'rgba(74,222,128,0.9)':isIndexed?'rgba(99,202,241,0.8)':'rgba(251,191,36,0.8)';
+    const pad=14;
+    const catFont='bold 10px "SF Mono","Fira Code",monospace';
+    const titleFont='500 15px -apple-system,system-ui,sans-serif';
+    const statusFont='10px "SF Mono","Fira Code",monospace';
+    c.font=titleFont; const tW=c.measureText(titleText).width;
+    c.font=catFont;   const cW=c.measureText(catLabel).width;
+    const tooltipW=Math.max(220,Math.min(Math.max(tW,cW)+pad*2, 360));
+    const tooltipH=82;
+    let tx=px-tooltipW/2, ty=py-tooltipH-16;
+    tx=Math.max(6,Math.min(W-tooltipW-6,tx));
+    if (ty<6) ty=py+14;
+    if (ty+tooltipH>H-6) ty=py-tooltipH-14;
+    c.save();
+    c.globalAlpha=0.18; c.strokeStyle=`rgb(${r},${g},${b})`; c.lineWidth=1;
+    c.beginPath(); c.moveTo(px,py-5); c.lineTo(px,ty<py?ty+tooltipH:ty); c.stroke();
+    c.globalAlpha=1; c.shadowColor=`rgba(${r},${g},${b},0.2)`; c.shadowBlur=24;
+    rrect(c,tx,ty,tooltipW,tooltipH,8); c.fillStyle='rgba(6,7,18,0.65)'; c.fill();
+    c.shadowBlur=0; c.shadowColor='transparent';
+    rrect(c,tx,ty,tooltipW,tooltipH,8); c.fillStyle=`rgba(${r},${g},${b},0.08)`; c.fill();
+    c.strokeStyle=`rgba(${r},${g},${b},0.3)`; c.lineWidth=1; c.stroke();
+    c.globalAlpha=0.6; c.fillStyle=`rgb(${r},${g},${b})`;
+    rrect(c,tx,ty,tooltipW,3,3); c.fill();
+    c.globalAlpha=0.8; c.fillStyle=`rgb(${r},${g},${b})`; c.font=catFont; c.textAlign='left';
+    c.fillText(catLabel,tx+pad,ty+pad+10);
+    c.globalAlpha=1; c.fillStyle='#ffffff'; c.font=titleFont;
+    c.save(); c.beginPath(); c.rect(tx+pad,ty+pad+14,tooltipW-pad*2,22); c.clip();
+    c.fillText(titleText,tx+pad,ty+pad+30); c.restore();
+    c.globalAlpha=0.9; c.fillStyle=statusColor; c.font=statusFont; c.textAlign='left';
+    c.fillText(statusDot+statusLabel,tx+pad,ty+pad+52);
+    c.restore();
+  }
+
   function drawSEO(ctx: CanvasRenderingContext2D, w: number, h: number, _t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
-    const dots = state.dots as SeoDot[];
-    const [r,g,b]=PV_RGB[0];
-    const R=180, PUSH=16, LERP=0.04;
-    for (const dot of dots) {
-      let tx=dot.gx, ty=dot.gy, inf=0;
+    const st = state as { dots:SeoDot[]; startTime:number; hoveredIdx:number };
+    const dots=st.dots;
+    const now=performance.now()*0.001;
+    const elapsed=now-st.startTime;
+    const W=w, H=h;
+    // Update hovered
+    if (hasMouse) {
+      let best=-1, bestD=SEO_HOV_R;
+      for (let i=0;i<dots.length;i++) {
+        const d=dots[i]; if (elapsed-d.birthTime<0) continue;
+        const dx=d.x-mx, dy=d.y-my, dist=Math.sqrt(dx*dx+dy*dy);
+        if (dist<bestD) { bestD=dist; best=i; }
+      }
+      st.hoveredIdx=best;
+    } else { st.hoveredIdx=-1; }
+    let visCount=0;
+    for (let i=0;i<dots.length;i++) {
+      const dot=dots[i];
+      const age=elapsed-dot.birthTime;
+      if (age<0) continue;
+      const fadeIn=Math.min(1,age/0.3);
+      if (fadeIn<0.005) continue;
+      // Pulse ripple every 8s
+      const cx=W/2, cy=H/2;
+      const distC=Math.sqrt((dot.gx-cx)**2+(dot.gy-cy)**2);
+      const pElapsed=elapsed-5;
+      let pulseAlpha=0;
+      if (pElapsed>0) {
+        const cycleT=pElapsed%8;
+        const dca=cycleT-distC*0.003;
+        if (dca>0&&dca<0.6) pulseAlpha=Math.sin((dca/0.6)*Math.PI)*0.3;
+      }
+      visCount++;
+      // Mouse push
+      let targetX=dot.gx, targetY=dot.gy;
       if (hasMouse) {
-        const dx=dot.gx-mx, dy=dot.gy-my;
-        const d=Math.sqrt(dx*dx+dy*dy);
-        if (d < R) {
-          const s=1-d/R; inf=s*s;
-          const mag=inf*PUSH, l=d||1;
-          tx+=(dx/l)*mag; ty+=(dy/l)*mag;
+        const pdx=dot.gx-mx, pdy=dot.gy-my, pdist=Math.sqrt(pdx*pdx+pdy*pdy);
+        if (pdist<SEO_INFL) {
+          const raw=1-pdist/SEO_INFL, s=raw*raw*(3-2*raw), inf=s*s*(3-2*s);
+          const pushMag=Math.pow(inf,3)*SEO_PUSH, len=pdist||1;
+          targetX+=(pdx/len)*pushMag; targetY+=(pdy/len)*pushMag;
         }
       }
-      dot.x+=(tx-dot.x)*LERP;
-      dot.y+=(ty-dot.y)*LERP;
-      const alpha=inf>0 ? 0.40+inf*0.6 : 0.40;
-      ctx.globalAlpha=alpha;
+      dot.x+=(targetX-dot.x)*SEO_LERP; dot.y+=(targetY-dot.y)*SEO_LERP;
+      // Vertical fade
+      const fadeZone=H*0.82;
+      let vFade=1;
+      if (dot.gy>fadeZone) vFade=1-Math.min(1,(dot.gy-fadeZone)/(H-fadeZone));
+      if (vFade<0.005) continue;
+      const [r,g,b]=SEO_TMPLS[dot.templateIdx].color;
+      let alpha: number, radius: number;
+      if (dot.status===SEO_PUB) {
+        alpha=0.30+Math.sin(now*1.2+dot.phase)*0.10; radius=2;
+      } else if (dot.status===SEO_GEN) {
+        alpha=0.12; radius=1.8+Math.sin(now*0.8+dot.phase)*0.2;
+      } else {
+        alpha=0.25; radius=2;
+      }
+      if (st.hoveredIdx===i) { alpha=0.9; radius=5; }
+      // Proximity lens
+      if (st.hoveredIdx!==i && hasMouse) {
+        const ldx=dot.x-mx, ldy=dot.y-my, ldist=Math.sqrt(ldx*ldx+ldy*ldy);
+        if (ldist<SEO_PROX_R) {
+          const pf=seoSmooth(1-ldist/SEO_PROX_R);
+          radius+=pf*0.8;
+          if (st.hoveredIdx<0) alpha+=pf*0.10;
+        }
+      }
+      alpha=Math.min(0.95,alpha+pulseAlpha);
+      ctx.globalAlpha=alpha*fadeIn*vFade;
       ctx.fillStyle=`rgb(${r},${g},${b})`;
-      ctx.beginPath(); ctx.arc(dot.x,dot.y,1,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(dot.x,dot.y,Math.max(0.5,radius),0,Math.PI*2); ctx.fill();
     }
     ctx.globalAlpha=1;
+    // Tooltip
+    if (st.hoveredIdx>=0) {
+      const dot=dots[st.hoveredIdx];
+      if (elapsed-dot.birthTime>=0) drawSEOTooltip(ctx,dot,W,H);
+    }
+    // Page counter
+    ctx.save(); ctx.textAlign='right'; ctx.globalAlpha=0.8;
+    ctx.fillStyle='rgba(99,102,241,0.55)'; ctx.font='9px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${visCount.toLocaleString()} pages`,W-10,16);
+    ctx.restore();
   }
 
   // ── Product 1: Reach Pulse Waves ─────────────────────────────────────────
