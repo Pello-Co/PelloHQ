@@ -45,8 +45,11 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     <!-- Section 13: FAQ -->
     <FAQ />
 
-    <!-- Section 14: Final CTA with Dot Grid (canvas injected into the inner card) -->
-    <FinalCTA />
+    <!-- Section 14: Final CTA with Aurora + Dot Grid -->
+    <div id="cta-aurora-wrap" class="relative">
+      <canvas class="aurora-canvas-cta" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;border-radius:1.5rem;overflow:hidden;"></canvas>
+      <FinalCTA />
+    </div>
   </main>
   <Footer />
 </Layout>
@@ -127,11 +130,30 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
 
   /* ── FinalCTA card — glass treatment ─────────────────────────── */
   .final-cta {
-    background: rgba(20, 15, 40, 0.4) !important;
+    background: rgba(20, 15, 40, 0.35) !important;
     backdrop-filter: blur(24px) saturate(1.4) !important;
     -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
     border-color: rgba(99, 102, 241, 0.15) !important;
     box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+  }
+
+  /* ── CTA aurora wrap — clip aurora to the section ────────────── */
+  #cta-aurora-wrap {
+    overflow: hidden;
+  }
+
+  /* ── CTA section URL input — frosted glass ──────────────────── */
+  #cta-aurora-wrap .url-input-wrap {
+    background: rgba(255, 255, 255, 0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  /* Hide CTA opaque backgrounds so aurora shows through */
+  .final-cta > .absolute.inset-0.pointer-events-none {
+    display: none !important;
   }
 
   /* Hide the opaque backgrounds that would block the aurora */
@@ -476,6 +498,90 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
   // Hide the default grid-texture so dot grid canvas replaces it
   const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
   if (gridTex) gridTex.style.display = 'none';
+
+  // ─── Aurora for CTA section ─────────────────────────────────────────────────
+  {
+    const aCanvasCta = document.querySelector<HTMLCanvasElement>('.aurora-canvas-cta');
+    const aWrapCta = document.getElementById('cta-aurora-wrap');
+    if (aCanvasCta && aWrapCta) {
+      const actxC = aCanvasCta.getContext('2d')!;
+      const offC = document.createElement('canvas');
+      const octxC = offC.getContext('2d')!;
+      let aCW = 0, aCH = 0;
+
+      function resizeAuroraCta() {
+        const dp = window.devicePixelRatio || 1;
+        const rect = aWrapCta!.getBoundingClientRect();
+        aCW = Math.round(rect.width);
+        aCH = Math.round(rect.height);
+        aCanvasCta!.width = aCW * dp;
+        aCanvasCta!.height = aCH * dp;
+        aCanvasCta!.style.width = `${aCW}px`;
+        aCanvasCta!.style.height = `${aCH}px`;
+        offC.width = Math.round(aCW / 4);
+        offC.height = Math.round(aCH / 4);
+      }
+
+      function frameAuroraCta() {
+        requestAnimationFrame(frameAuroraCta);
+        const ow = offC.width, oh = offC.height;
+        const t = performance.now() * 0.001;
+        octxC.clearRect(0, 0, ow, oh);
+        octxC.globalCompositeOperation = 'lighter';
+
+        // Reuse the same AL layer table from the hero aurora
+        // Draw a subset (first 10 layers) for performance in the smaller section
+        const ctaLayers = [
+          [0.50, 0.50, 0.55, 0.30, -0.06,  52, 14, 185, 0.18, 0.08, 0.0],
+          [0.50, 0.50, 0.65, 0.25,  0.04,  38, 10, 165, 0.14, 0.06, 2.6],
+          [0.50, 0.50, 0.45, 0.15, -0.13, 100, 35, 230, 0.35, 0.18, 0.4],
+          [0.50, 0.50, 0.50, 0.12,  0.09, 125, 45, 235, 0.30, 0.22, 1.9],
+          [0.50, 0.50, 0.40, 0.16, -0.07,  75, 28, 215, 0.28, 0.14, 3.4],
+          [0.50, 0.50, 0.48, 0.11,  0.16, 145, 40, 240, 0.26, 0.24, 5.2],
+          [0.50, 0.50, 0.33, 0.09, -0.11, 162, 52, 250, 0.40, 0.30, 1.3],
+          [0.50, 0.50, 0.35, 0.08,  0.13, 188, 56, 235, 0.34, 0.35, 3.9],
+          [0.50, 0.50, 0.18, 0.14,  0.00, 178, 88, 255, 0.45, 0.12, 0.0],
+          [0.50, 0.50, 0.14, 0.11, -0.04, 198, 98, 255, 0.42, 0.15, 1.6],
+        ];
+
+        for (const row of ctaLayers) {
+          const [cxF, cyF, rxF, ryF, ang, r, g, b, alpha, spd, ph] = row;
+          const cx = ow * (cxF + Math.sin(t * spd * 3 + ph) * 0.18);
+          const cy = oh * (cyF + Math.sin(t * spd * 2.1 + ph + 1.1) * 0.15);
+          const rx = ow * rxF * (1 + Math.sin(t * spd * 4 + ph * 1.8) * 0.15);
+          const ry = oh * ryF * (1 + Math.sin(t * spd * 2.5 + ph * 1.3) * 0.18);
+          const angle = ang + Math.sin(t * spd * 2.5 + ph) * 0.2;
+
+          octxC.save();
+          octxC.translate(cx, cy);
+          octxC.rotate(angle);
+          const grad = octxC.createRadialGradient(0, 0, 0, 0, 0, Math.max(rx, 1));
+          grad.addColorStop(0, `rgba(${r},${g},${b},${alpha})`);
+          grad.addColorStop(0.25, `rgba(${r},${g},${b},${alpha * 0.7})`);
+          grad.addColorStop(0.55, `rgba(${r},${g},${b},${alpha * 0.3})`);
+          grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+          octxC.fillStyle = grad;
+          octxC.scale(1, ry / (rx || 1));
+          octxC.beginPath();
+          octxC.arc(0, 0, rx, 0, Math.PI * 2);
+          octxC.fill();
+          octxC.restore();
+        }
+
+        octxC.globalCompositeOperation = 'source-over';
+        const dp = window.devicePixelRatio || 1;
+        actxC.setTransform(1, 0, 0, 1, 0, 0);
+        actxC.clearRect(0, 0, aCanvasCta!.width, aCanvasCta!.height);
+        actxC.drawImage(offC, 0, 0, aCanvasCta!.width, aCanvasCta!.height);
+        actxC.setTransform(dp, 0, 0, dp, 0, 0);
+      }
+
+      const roCta2 = new ResizeObserver(() => resizeAuroraCta());
+      roCta2.observe(aWrapCta);
+      resizeAuroraCta();
+      requestAnimationFrame(frameAuroraCta);
+    }
+  }
 
   // ─── Second Dot Grid instance for CTA section ─────────────────────────────
   // Inject canvas inside the .final-cta rounded card so it's clipped to the card bounds
