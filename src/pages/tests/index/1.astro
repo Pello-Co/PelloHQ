@@ -263,11 +263,15 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
   .product-card[data-product="1"] .ps-visual {
     display: none !important;
   }
-  /* PelloSocial: hide the browser panel so globe fills the card */
+  /* PelloSocial: keep layout grid but make visual panel transparent so globe shows through */
   .product-card[data-product="3"] .product-visual-panel {
-    display: none !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
-  .product-card[data-product="3"] .ps-visual {
+  .product-card[data-product="3"] .product-visual-panel > * {
     display: none !important;
   }
   /* Tinted glass box around description text for ALL product cards */
@@ -1460,8 +1464,8 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
   }
 
   function initSocial(w: number, h: number): Record<string,unknown> {
-    const GLOBE_R=Math.min(w,h)*0.35;
-    const GLOBE_CX=w*0.5, GLOBE_CY=h*0.5;
+    const GLOBE_R=Math.min(w,h)*0.38;
+    const GLOBE_CX=w*0.68, GLOBE_CY=h*0.48;
     // Fibonacci sphere 800 dots
     const globeDots: SocGlobeDot[]=[];
     { const gr2=(1+Math.sqrt(5))/2;
