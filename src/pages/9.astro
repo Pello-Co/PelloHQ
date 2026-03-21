@@ -16,8 +16,8 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
   <main id="main-content">
     <!-- Section 1: Hero with Aurora + Dot Grid Background -->
     <div id="dot-grid-wrap" class="relative">
-      <canvas class="aurora-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;"></canvas>
-      <canvas class="dot-grid-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;"></canvas>
+      <canvas class="aurora-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+      <canvas class="dot-grid-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
       <HeroPello />
     </div>
 
@@ -356,6 +356,11 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     roAurora.observe(auroraWrap);
     resizeAurora();
     requestAnimationFrame(frameAurora);
+
+    // Fade in aurora canvas
+    requestAnimationFrame(() => {
+      auroraCanvas.style.opacity = '1';
+    });
   }
 
   // ─── Dot Grid Background (behind hero) ────────────────────────────────────
@@ -500,6 +505,11 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
   resize();
   rafId = requestAnimationFrame(frame);
 
+  // Fade in dot grid canvas
+  requestAnimationFrame(() => {
+    canvas.style.opacity = '1';
+  });
+
   // Hide the default grid-texture so dot grid canvas replaces it
   const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
   if (gridTex) gridTex.style.display = 'none';
@@ -511,7 +521,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     const aCanvasCta = document.createElement('canvas');
     aCanvasCta.className = 'aurora-canvas-cta';
     aCanvasCta.setAttribute('aria-hidden', 'true');
-    aCanvasCta.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;border-radius:inherit;';
+    aCanvasCta.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
     ctaCardAurora.insertBefore(aCanvasCta, ctaCardAurora.firstChild);
     const aWrapCta = ctaCardAurora;
     if (aCanvasCta && aWrapCta) {
@@ -591,6 +601,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
       roCta2.observe(aWrapCta);
       resizeAuroraCta();
       requestAnimationFrame(frameAuroraCta);
+      requestAnimationFrame(() => { aCanvasCta.style.opacity = '1'; });
     }
   }
 
@@ -600,7 +611,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
   const canvasCta = document.createElement('canvas');
   canvasCta.className = 'dot-grid-canvas-cta';
   canvasCta.setAttribute('aria-hidden', 'true');
-  canvasCta.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;';
+  canvasCta.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
   ctaCard.style.position = 'relative';
   ctaCard.insertBefore(canvasCta, ctaCard.firstChild);
   const wrapCta = ctaCard;
@@ -695,6 +706,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
   roCta.observe(wrapCta);
   resizeCta();
   requestAnimationFrame(frameCta);
+  requestAnimationFrame(() => { canvasCta.style.opacity = '1'; });
 
   // Hide the CTA grid-texture so dot grid replaces it
   const gridTexCta = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
