@@ -1,0 +1,574 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloPublish — Format Mosaic | Content at Scale" description="PelloPublish creates content across every format and platform simultaneously. Watch your content mosaic fill and grow.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="pub3-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+    <HowItWorks />
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute; top: -100%; left: 1rem; z-index: 9999;
+    padding: 0.75rem 1.25rem; background: var(--color-brand-primary); color: white;
+    font-weight: 600; border-radius: 0 0 0.5rem 0.5rem; text-decoration: none; transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+  #hero-wrap .url-input-wrap, .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important; backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3); border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important; border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important; border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3); backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem; padding: 1rem; box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important; backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(168,85,247,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden; position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+  ric(() => {
+
+  // ─── Data ─────────────────────────────────────────────────────────────────
+  const PLATFORMS = [
+    { name: "Instagram", icon: "IG", color: [225, 48, 108] as [number,number,number] },
+    { name: "LinkedIn",  icon: "LI", color: [10, 102, 194] as [number,number,number] },
+    { name: "Twitter/X", icon: "X",  color: [139, 92, 246] as [number,number,number] },
+    { name: "TikTok",    icon: "TT", color: [0, 242, 234] as [number,number,number] },
+    { name: "Blog",      icon: "BL", color: [168, 85, 247] as [number,number,number] },
+    { name: "YouTube",   icon: "YT", color: [255, 0, 0] as [number,number,number] },
+  ];
+  const CONTENT_TYPES = ["Carousel","Reel","Story","Blog Post","Thread","Short","Article","UGC Clip","Infographic","Poll"];
+  const TOPICS = [
+    "5 Ways AI is Changing {industry}",
+    "Behind the Scenes: How We {action}",
+    "Why {topic} Matters More Than Ever",
+    "{number} Tips for Better {goal}",
+    "The Future of {industry} in 2026",
+    "How {company} Grew 3x with {strategy}",
+    "Stop Doing {mistake} — Do This Instead",
+    "We Tested {strategy} for 30 Days",
+  ];
+  const INDUSTRIES   = ["SaaS","E-commerce","Healthcare","Finance","Education","Real Estate"];
+  const ACTIONS      = ["Build Products","Scale Revenue","Hire Remotely","Automate Marketing"];
+  const TOPIC_WORDS  = ["Content Marketing","SEO","Brand Building","Lead Gen","Social Proof"];
+  const GOALS        = ["Engagement","Conversions","Brand Awareness","Lead Quality"];
+  const STRATEGIES   = ["Content Repurposing","AI Writing","Video-First","Community Building"];
+  const MISTAKES     = ["Posting Without Strategy","Ignoring Analytics","One-Size-Fits-All Content"];
+  const COMPANY_NAMES= ["Acme","TechFlow","DataSync","CloudNine","Nexus","Horizon"];
+  const ENGAGEMENTS  = ["1.2k likes","847 likes","2.3k views","412 shares","156 comments","3.1k reach","967 saves"];
+
+  function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function genTopic(): string {
+    const t = pick(TOPICS);
+    return t
+      .replace('{industry}', pick(INDUSTRIES))
+      .replace('{action}', pick(ACTIONS))
+      .replace('{topic}', pick(TOPIC_WORDS))
+      .replace('{number}', String(Math.floor(Math.random() * 8) + 3))
+      .replace('{goal}', pick(GOALS))
+      .replace('{company}', pick(COMPANY_NAMES))
+      .replace('{strategy}', pick(STRATEGIES))
+      .replace('{mistake}', pick(MISTAKES));
+  }
+
+  // ─── Tile definitions (format → grid cols × rows) ─────────────────────────
+  interface TileDef { format: string; cols: number; rows: number; platIdx: number; }
+  const TILE_SHAPES: { format: string; cols: number; rows: number; platIdxs: number[] }[] = [
+    { format: 'Carousel',   cols: 2, rows: 2, platIdxs: [0] },      // IG 2×2
+    { format: 'Reel',       cols: 1, rows: 3, platIdxs: [0,3] },     // IG/TT 1×3 tall
+    { format: 'Story',      cols: 1, rows: 3, platIdxs: [0] },       // IG 1×3 tall
+    { format: 'Blog Post',  cols: 3, rows: 2, platIdxs: [4] },       // Blog 3×2
+    { format: 'Thread',     cols: 2, rows: 1, platIdxs: [2] },       // X 2×1
+    { format: 'Short',      cols: 1, rows: 3, platIdxs: [3] },       // TT 1×3 tall
+    { format: 'Article',    cols: 3, rows: 2, platIdxs: [5] },       // YT 3×2
+    { format: 'LinkedIn',   cols: 2, rows: 2, platIdxs: [1] },       // LI 2×2
+    { format: 'Infographic',cols: 2, rows: 3, platIdxs: [4] },       // Blog 2×3
+    { format: 'Poll',       cols: 2, rows: 1, platIdxs: [2,1] },     // X/LI 2×1
+  ];
+
+  // ─── Tile state ───────────────────────────────────────────────────────────
+  interface Tile {
+    col: number; row: number;
+    cols: number; rows: number;
+    format: string;
+    platIdx: number;
+    topic: string;
+    status: 'published' | 'scheduled';
+    engagement: string;
+    caption: string;
+    // animation state
+    alpha: number;       // current fill alpha (base 0.08)
+    borderAlpha: number; // current border alpha (base 0.12)
+    generating: boolean;
+    genProgress: number; // 0–1 typing progress
+    genStartTime: number;
+    replaceTimer: number; // countdown to replacement
+    // displacement for mouse bulge
+    dx: number; dy: number;
+  }
+
+  // ─── Canvas setup ─────────────────────────────────────────────────────────
+  const canvas = document.querySelector<HTMLCanvasElement>('.pub3-canvas')!;
+  const wrap   = document.getElementById('hero-wrap')!;
+  const ctx    = canvas.getContext('2d')!;
+  let dpr = 1, W = 0, H = 0;
+  let CELL = 40; // cell size in px
+  let COLS = 20, ROWS = 15;
+  let tiles: Tile[] = [];
+  let grid: (number | null)[][] = []; // grid[row][col] = tileIndex or null
+  let hovTileIdx = -1;
+  let mouse: { x: number; y: number } | null = null;
+  let pieceCount = 348;
+  let lastGenTime = 0;
+  let lastReplaceTime = 0;
+  let startTime = 0;
+
+  function genCaption(): string {
+    const caps = [
+      "Here's what we learned after 90 days of testing...",
+      "The results surprised even us. Thread below 👇",
+      "Most people get this completely wrong. Here's why:",
+      "We tried this for 30 days. Here's what happened:",
+      "Stop overthinking it. The answer is simpler than you think.",
+    ];
+    return pick(caps);
+  }
+
+  function makeTile(col: number, row: number, shapeIdx?: number): Tile {
+    const si = shapeIdx !== undefined ? shapeIdx : Math.floor(Math.random() * TILE_SHAPES.length);
+    const shape = TILE_SHAPES[si];
+    const platIdx = pick(shape.platIdxs);
+    const sr = Math.random();
+    return {
+      col, row,
+      cols: shape.cols, rows: shape.rows,
+      format: shape.format,
+      platIdx,
+      topic: genTopic(),
+      status: sr < 0.6 ? 'published' : 'scheduled',
+      engagement: pick(ENGAGEMENTS),
+      caption: genCaption(),
+      alpha: 0.08, borderAlpha: 0.12,
+      generating: false, genProgress: 0, genStartTime: 0,
+      replaceTimer: 6 + Math.random() * 10,
+      dx: 0, dy: 0,
+    };
+  }
+
+  // ─── Pack tiles into grid ─────────────────────────────────────────────────
+  function buildMosaic() {
+    tiles = [];
+    grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        if (grid[row][col] !== null) continue;
+        // Try shapes in random order
+        const order = TILE_SHAPES.map((_, i) => i).sort(() => Math.random() - 0.5);
+        let placed = false;
+        for (const si of order) {
+          const shape = TILE_SHAPES[si];
+          if (col + shape.cols > COLS || row + shape.rows > ROWS) continue;
+          // Check cells free
+          let free = true;
+          for (let dr = 0; dr < shape.rows && free; dr++)
+            for (let dc = 0; dc < shape.cols && free; dc++)
+              if (grid[row + dr][col + dc] !== null) free = false;
+          if (!free) continue;
+          // Place
+          const tIdx = tiles.length;
+          tiles.push(makeTile(col, row, si));
+          for (let dr = 0; dr < shape.rows; dr++)
+            for (let dc = 0; dc < shape.cols; dc++)
+              grid[row + dr][col + dc] = tIdx;
+          placed = true;
+          break;
+        }
+        if (!placed) {
+          // Fill with 1×1
+          const tIdx = tiles.length;
+          const t = makeTile(col, row, 9); // Poll is 2×1; use Thread 2×1 but clamp
+          t.cols = 1; t.rows = 1;
+          tiles.push(t);
+          grid[row][col] = tIdx;
+        }
+      }
+    }
+    startTime = performance.now() * 0.001;
+  }
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    W = Math.round(rect.width); H = Math.round(rect.height);
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = `${W}px`; canvas.style.height = `${H}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    CELL = W < 600 ? 28 : W < 900 ? 34 : 40;
+    COLS = Math.floor(W / CELL);
+    ROWS = Math.floor(H / CELL);
+    buildMosaic();
+  }
+
+  // ─── Rounded rect ─────────────────────────────────────────────────────────
+  function rrect(x: number, y: number, w: number, h: number, r: number) {
+    ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+  }
+
+  // ─── Tooltip ──────────────────────────────────────────────────────────────
+  function drawTooltip(tile: Tile, tx: number, ty: number) {
+    const plat = PLATFORMS[tile.platIdx];
+    const [r,g,b] = plat.color;
+    const TW = 300, TH = 148;
+    let ttx = tx - TW / 2;
+    let tty = ty - TH - 14;
+    ttx = Math.max(8, Math.min(W - TW - 8, ttx));
+    if (tty < 8) tty = ty + 14;
+    const pad = 14;
+
+    ctx.save();
+    ctx.shadowColor = `rgba(${r},${g},${b},0.3)`; ctx.shadowBlur = 24;
+    rrect(ttx, tty, TW, TH, 10); ctx.fillStyle = 'rgba(6,7,18,0.88)'; ctx.fill();
+    ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+    rrect(ttx, tty, TW, TH, 10); ctx.fillStyle = `rgba(${r},${g},${b},0.09)`; ctx.fill();
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.35)`; ctx.lineWidth = 1; ctx.stroke();
+    ctx.globalAlpha = 0.65; rrect(ttx, tty, TW, 3, 3); ctx.fillStyle = `rgb(${r},${g},${b})`; ctx.fill(); ctx.globalAlpha = 1;
+
+    ctx.textAlign = 'left';
+    ctx.font = 'bold 9px "SF Mono","Fira Code",monospace';
+    ctx.fillStyle = `rgba(${r},${g},${b},0.85)`;
+    ctx.fillText(`${plat.name.toUpperCase()} · ${tile.format.toUpperCase()}`, ttx + pad, tty + 17);
+
+    ctx.font = '500 13px -apple-system,system-ui,sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.save(); ctx.beginPath(); ctx.rect(ttx+pad, tty+22, TW-pad*2, 20); ctx.clip();
+    ctx.fillText(tile.topic, ttx+pad, tty+36); ctx.restore();
+
+    const sc = tile.status === 'published' ? '#4ade80' : '#a78bfa';
+    ctx.fillStyle = sc; ctx.font = 'bold 9px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`● ${tile.status.toUpperCase()}`, ttx+pad, tty+58);
+
+    if (tile.status === 'published') {
+      ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.font = '11px -apple-system,system-ui,sans-serif';
+      ctx.fillText(tile.engagement, ttx + pad + 80, tty + 58);
+    }
+
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.font = 'italic 10px -apple-system,system-ui,sans-serif';
+    ctx.save(); ctx.beginPath(); ctx.rect(ttx+pad, tty+66, TW-pad*2, 14); ctx.clip();
+    ctx.fillText('"' + tile.caption.slice(0,55) + '…"', ttx+pad, tty+78); ctx.restore();
+
+    // Connecting line
+    ctx.globalAlpha = 0.2; ctx.strokeStyle = `rgb(${r},${g},${b})`; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(tx, tty > ty ? tty : tty + TH); ctx.lineTo(tx, ty); ctx.stroke();
+    ctx.restore();
+  }
+
+  // ─── Hit test ─────────────────────────────────────────────────────────────
+  function hitTest(mx: number, my: number): number {
+    if (!mouse) return -1;
+    const col = Math.floor(mx / CELL);
+    const row = Math.floor(my / CELL);
+    if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return -1;
+    const idx = grid[row]?.[col];
+    return idx !== null && idx !== undefined ? idx : -1;
+  }
+
+  // ─── Frame loop ───────────────────────────────────────────────────────────
+  function frame() {
+    requestAnimationFrame(frame);
+    const now = performance.now() * 0.001;
+
+    // Trigger generation on a tile every 2 seconds
+    if (now - lastGenTime > 2) {
+      lastGenTime = now;
+      const eligibleIdx = tiles
+        .map((t, i) => i)
+        .filter(i => !tiles[i].generating && tiles[i].alpha <= 0.09);
+      if (eligibleIdx.length > 0) {
+        const t = tiles[pick(eligibleIdx)];
+        t.generating = true;
+        t.genProgress = 0;
+        t.genStartTime = now;
+        pieceCount++;
+      }
+    }
+
+    // Hit test for hover
+    hovTileIdx = mouse ? hitTest(mouse.x, mouse.y) : -1;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Draw tiles
+    const drawnTiles = new Set<number>();
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        const tIdx = grid[row]?.[col];
+        if (tIdx === null || tIdx === undefined) continue;
+        if (drawnTiles.has(tIdx)) continue;
+        drawnTiles.add(tIdx);
+
+        const tile = tiles[tIdx];
+        const isHov = tIdx === hovTileIdx;
+        const [r,g,b] = PLATFORMS[tile.platIdx].color;
+
+        // Update generation animation
+        if (tile.generating) {
+          tile.genProgress = Math.min(1, (now - tile.genStartTime) / 0.4);
+          if (tile.genProgress >= 1) {
+            tile.generating = false;
+            tile.alpha = 0.15;
+            tile.borderAlpha = 0.4;
+            // Settle back
+            setTimeout(() => { tile.alpha = 0.08; tile.borderAlpha = 0.12; }, 600);
+          }
+        }
+
+        // Mouse bulge
+        if (mouse) {
+          const cx = tile.col * CELL + tile.cols * CELL / 2;
+          const cy = tile.row * CELL + tile.rows * CELL / 2;
+          const dx = cx - mouse.x, dy = cy - mouse.y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          const radius = 120;
+          if (dist < radius) {
+            const f = (1 - dist / radius) * 2;
+            const targetDx = (dx / (dist || 1)) * f;
+            const targetDy = (dy / (dist || 1)) * f;
+            tile.dx += (targetDx - tile.dx) * 0.12;
+            tile.dy += (targetDy - tile.dy) * 0.12;
+          } else {
+            tile.dx *= 0.88; tile.dy *= 0.88;
+          }
+        } else {
+          tile.dx *= 0.88; tile.dy *= 0.88;
+        }
+
+        const px = tile.col * CELL + tile.dx + 1;
+        const py = tile.row * CELL + tile.dy + 1;
+        const pw = tile.cols * CELL - 2;
+        const ph = tile.rows * CELL - 2;
+
+        // Glow for hovered
+        if (isHov) {
+          ctx.save();
+          ctx.shadowColor = `rgba(${r},${g},${b},0.4)`;
+          ctx.shadowBlur = 16;
+        }
+
+        const fa = isHov ? 0.18 : tile.generating ? tile.alpha + tile.genProgress * 0.07 : tile.alpha;
+        const ba = isHov ? 0.5 : tile.generating ? tile.borderAlpha + tile.genProgress * 0.28 : tile.borderAlpha;
+
+        rrect(px, py, pw, ph, 4);
+        ctx.fillStyle = `rgba(${r},${g},${b},${fa})`;
+        ctx.fill();
+        ctx.strokeStyle = `rgba(${r},${g},${b},${ba})`;
+        ctx.lineWidth = isHov ? 1.5 : 1;
+        ctx.stroke();
+
+        if (isHov) ctx.restore();
+
+        // Content inside tile
+        const gp = tile.generating ? tile.genProgress : 1;
+        ctx.globalAlpha = 0.15 * gp;
+
+        // Platform dot (top-left)
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.beginPath(); ctx.arc(px + 7, py + 7, 2.5, 0, Math.PI * 2); ctx.fill();
+
+        // Format label
+        ctx.globalAlpha = 0.15 * gp;
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.font = '6px "SF Mono","Fira Code",monospace';
+        ctx.textAlign = 'left';
+        if (pw > 20) ctx.fillText(tile.format.toUpperCase().slice(0,8), px + 13, py + 9);
+
+        // Faux text lines
+        const lineCount = Math.min(3, Math.floor(ph / 12) - 1);
+        const lineAlpha = 0.06 * gp;
+        ctx.globalAlpha = lineAlpha;
+        ctx.fillStyle = `rgba(${r},${g},${b},1)`;
+        for (let li = 0; li < lineCount; li++) {
+          const ly = py + ph - 8 - li * 9;
+          const lw = pw * (0.5 + Math.random() * 0.4) * (li === 0 ? gp : gp * 0.7);
+          ctx.fillRect(px + 5, ly, Math.max(0, lw - 10), 1);
+        }
+
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // Counter top-right
+    ctx.save();
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(168,85,247,0.6)';
+    ctx.font = '11px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${pieceCount} pieces generated this month`, W - 16, 24);
+    ctx.restore();
+
+    // Tooltip for hovered tile
+    if (hovTileIdx >= 0) {
+      const t = tiles[hovTileIdx];
+      const cx = t.col * CELL + t.cols * CELL / 2;
+      const cy = t.row * CELL + t.rows * CELL / 2;
+      drawTooltip(t, cx, cy);
+    }
+  }
+
+  // ─── Events ───────────────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', e => {
+    const rect = wrap.getBoundingClientRect();
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  });
+  wrap.addEventListener('mouseleave', () => { mouse = null; hovTileIdx = -1; });
+  wrap.addEventListener('touchstart', () => { mouse = null; hovTileIdx = -1; }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+  const gt = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gt) gt.style.display = 'none';
+
+  // ─── FinalCTA: coloured mosaic rectangles, gentle pulse ───────────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const cc2 = document.createElement('canvas');
+      cc2.setAttribute('aria-hidden', 'true');
+      cc2.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.style.position = 'relative';
+      ctaCard.insertBefore(cc2, ctaCard.firstChild);
+      const cc = cc2.getContext('2d')!;
+      interface CtaRect { x: number; y: number; w: number; h: number; platIdx: number; phase: number; }
+      let ctaRects: CtaRect[] = [];
+      let ctaDpr = 1, cW = 0, cH = 0;
+
+      function buildCtaRects() {
+        ctaRects = [];
+        const cell = 36;
+        const cols = Math.floor(cW / cell) + 1;
+        const rows = Math.floor(cH / cell) + 1;
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            if (Math.random() > 0.55) continue;
+            const sw = Math.random() < 0.3 ? cell * 2 : cell;
+            const sh = Math.random() < 0.3 ? cell * 2 : Math.random() < 0.4 ? cell * 3 : cell;
+            ctaRects.push({
+              x: c * cell + 1, y: r * cell + 1,
+              w: sw - 2, h: Math.min(sh, cH - r * cell) - 2,
+              platIdx: Math.floor(Math.random() * PLATFORMS.length),
+              phase: Math.random() * Math.PI * 2,
+            });
+          }
+        }
+      }
+
+      function resizeCta() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        cW = Math.round(rect.width); cH = Math.round(rect.height);
+        cc2.width = cW * ctaDpr; cc2.height = cH * ctaDpr;
+        cc2.style.width = `${cW}px`; cc2.style.height = `${cH}px`;
+        cc.setTransform(ctaDpr, 0, 0, ctaDpr, 0, 0);
+        buildCtaRects();
+      }
+
+      function frameCta() {
+        requestAnimationFrame(frameCta);
+        const t = performance.now() * 0.001;
+        cc.clearRect(0, 0, cW, cH);
+        for (const rect of ctaRects) {
+          const [r,g,b] = PLATFORMS[rect.platIdx].color;
+          const a = 0.06 + Math.sin(t * 0.6 + rect.phase) * 0.03;
+          cc.globalAlpha = a;
+          cc.fillStyle = `rgb(${r},${g},${b})`;
+          cc.strokeStyle = `rgba(${r},${g},${b},0.15)`;
+          cc.lineWidth = 1;
+          cc.beginPath();
+          cc.roundRect(rect.x, rect.y, rect.w, rect.h, 3);
+          cc.fill(); cc.stroke();
+        }
+        cc.globalAlpha = 1;
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaCard);
+      resizeCta(); requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { cc2.style.opacity = '1'; });
+      const ctaGt = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGt) ctaGt.style.display = 'none';
+    }
+  }
+
+  }); // end ric
+</script>
