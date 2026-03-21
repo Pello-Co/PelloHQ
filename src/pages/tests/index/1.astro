@@ -1065,7 +1065,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       { label: 'Opened',    status: 'opened',    color: 'rgba(168,85,247,0.6)', x: legX, y: legStartY + 24, w: 150, h: 22 },
       { label: 'Replied',   status: 'replied',   color: 'rgba(74,222,128,0.7)', x: legX, y: legStartY + 48, w: 150, h: 22 },
     ];
-    return { NC, NR, VP_Y, BOT_Y, HALF_W, cells, particles, emailCount: 18283, lastTick: 0, hovCellC: -1, hovCellR: -1, legItems, hoveredLegend: null };
+    return { NC, NR, VP_Y, BOT_Y, HALF_W, cells, particles, emailCount: 18283, lastTick: 0, hovCellC: -1, hovCellR: -1, legItems, hoveredLegend: null, autoC: Math.floor(Math.random()*(NC-1)), autoR: Math.floor(Math.random()*(NR-1)), autoTimer: 0, userActive: false, userLeftAt: 0, stickyC: -1, stickyR: -1 };
   }
 
   function drawReachTooltip(c: CanvasRenderingContext2D, cell: ReachCell, sx: number, sy: number, W: number, H: number) {
@@ -1114,6 +1114,9 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       emailCount: number; lastTick: number;
       hovCellC: number; hovCellR: number;
       legItems: ReachLegItem[]; hoveredLegend: string | null;
+      autoC: number; autoR: number; autoTimer: number;
+      userActive: boolean; userLeftAt: number;
+      stickyC: number; stickyR: number;
     };
     const { NC, NR, cells, particles, legItems } = st;
     const { VP_Y, BOT_Y, HALF_W } = st;
@@ -1135,19 +1138,44 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       ];
     }
 
-    // Hover detection
+    // Hover detection: user mouse > sticky (3s) > auto-rotate (3s cycle)
     if (hasMouse) {
       st.hoveredLegend = null;
+      let foundLeg = false;
       for (const item of legItems) {
-        if (mx >= item.x - 4 && mx <= item.x + item.w + 4 && my >= item.y - 2 && my <= item.y + item.h + 2) {
-          st.hoveredLegend = item.status; st.hovCellC = -1; st.hovCellR = -1; break;
+        if (mx >= item.x - 6 && mx <= item.x + item.w + 6 && my >= item.y - 3 && my <= item.y + item.h + 3) {
+          st.hoveredLegend = item.status; st.hovCellC = -1; st.hovCellR = -1; foundLeg = true; break;
         }
       }
-      if (!st.hoveredLegend) {
-        if (my < VP_Y) { st.hovCellC = -1; st.hovCellR = -1; }
-        else { const [gc, gr] = screenToGrid(mx, my); st.hovCellC = Math.floor(gc); st.hovCellR = Math.floor(gr); }
+      if (!foundLeg) {
+        if (my >= VP_Y) {
+          const [gc, gr] = screenToGrid(mx, my);
+          const cc2 = Math.floor(gc), rr2 = Math.floor(gr);
+          if (cc2 >= 0 && cc2 < NC - 1 && rr2 >= 0 && rr2 < NR - 1) {
+            st.hovCellC = cc2; st.hovCellR = rr2;
+            st.stickyC = cc2; st.stickyR = rr2;
+            st.userActive = true;
+          } else { st.hovCellC = -1; st.hovCellR = -1; }
+        } else { st.hovCellC = -1; st.hovCellR = -1; }
       }
-    } else { st.hovCellC = -1; st.hovCellR = -1; st.hoveredLegend = null; }
+    } else {
+      st.hoveredLegend = null;
+      if (st.userActive) {
+        st.userActive = false;
+        st.userLeftAt = now;
+        st.hovCellC = st.stickyC; st.hovCellR = st.stickyR;
+      } else if (st.stickyC >= 0 && now - st.userLeftAt < 3) {
+        st.hovCellC = st.stickyC; st.hovCellR = st.stickyR;
+      } else {
+        st.stickyC = -1; st.stickyR = -1;
+        if (now - st.autoTimer > 3) {
+          st.autoTimer = now;
+          st.autoC = Math.floor(Math.random() * (NC - 1));
+          st.autoR = 1 + Math.floor(Math.random() * (NR - 3));
+        }
+        st.hovCellC = st.autoC; st.hovCellR = st.autoR;
+      }
+    }
 
     const pulseRow = ((now % 2) / 2) * (NR - 1);
 
