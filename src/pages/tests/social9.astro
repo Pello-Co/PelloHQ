@@ -1,0 +1,547 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/layout/Header.astro';
+import Footer from '../../components/layout/Footer.astro';
+import HeroPello from '../../components/sections/HeroPello.astro';
+import HowItWorks from '../../components/sections/HowItWorks.astro';
+import ProductSection from '../../components/sections/ProductSection.astro';
+import UseCases from '../../components/sections/UseCases.astro';
+import Stats from '../../components/sections/Stats.astro';
+import FAQ from '../../components/sections/FAQ.astro';
+import FinalCTA from '../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloSocial — Activity Heatmap 24/7 Growth" description="PelloSocial runs hundreds of accounts around the clock. Watch the 24/7 activity heatmap — every timezone active, every hour covered, coordinated at server-farm scale.">
+  <Header />
+  <main id="main-content">
+    <div id="hero-wrap" class="relative">
+      <canvas class="social-heatmap-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 1.5s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <HowItWorks />
+
+    <div id="products">
+      <ProductSection productIndex={0} flip={false} />
+      <ProductSection productIndex={1} flip={true} />
+      <ProductSection productIndex={2} flip={false} />
+      <ProductSection productIndex={3} flip={true} />
+      <ProductSection productIndex={4} flip={false} />
+      <ProductSection productIndex={5} flip={true} />
+      <ProductSection productIndex={6} flip={false} />
+      <ProductSection productIndex={7} flip={true} />
+    </div>
+
+    <UseCases />
+    <Stats />
+    <FAQ />
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus { top: 0; }
+
+  #hero-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255,255,255,0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #hero-wrap .hero-panel {
+    background: rgba(6,7,18,0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+  }
+  #hero-wrap .panel-source-row { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .core-inner {
+    background: rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-core-section { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .channel-node {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #hero-wrap .panel-header-bar { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .panel-ready-bar { border-top: 1px solid rgba(255,255,255,0.1) !important; }
+  #hero-wrap .node-stat-text { color: #a78bfa !important; }
+  #hero-wrap .hero-panel-mobile {
+    background: rgba(10,10,20,0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  .final-cta {
+    background: rgba(20,15,40,0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(192,38,211,0.15) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none { display: none !important; }
+  #hero-wrap .grid-texture,
+  #hero-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] { display: none !important; }
+  #hero { background: transparent !important; }
+</style>
+
+<script>
+  const ric = (window as any).requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+
+  ric(() => {
+
+  // ─── Data constants ──────────────────────────────────────────────────────────
+  interface Platform { name: string; color: [number,number,number]; weight: number; }
+  const PLATFORMS_SOCIAL: Platform[] = [
+    { name: "Instagram", color: [225, 48,  108], weight: 0.30 },
+    { name: "TikTok",    color: [0,   242, 234], weight: 0.25 },
+    { name: "Twitter/X", color: [139, 92,  246], weight: 0.20 },
+    { name: "YouTube",   color: [255, 0,   0  ], weight: 0.10 },
+    { name: "Facebook",  color: [24,  119, 242], weight: 0.10 },
+    { name: "Reddit",    color: [255, 69,  0  ], weight: 0.05 },
+  ];
+
+  const PLAT_CUM: number[] = [];
+  { let s = 0; for (const p of PLATFORMS_SOCIAL) { s += p.weight; PLAT_CUM.push(s); } }
+
+  const PERSONA_FIRST = ["Alex","Jordan","Casey","Riley","Morgan","Taylor","Jamie","Quinn","Sage","Blake","Drew","Avery","Dakota","Skyler","Reese","Kai","Nova","Zara","Luna","Phoenix"];
+  const PERSONA_LAST  = ["Rivera","Kim","Santos","Nakamura","Ahmed","Berg","Costa","Johal","Novak","Park","Silva","Tanaka","Volkov","Wu","Zhang"];
+  const CITIES        = ["London","New York","LA","Tokyo","Berlin","Sydney","Toronto","Dubai","Singapore","São Paulo","Mumbai","Paris","Seoul","Amsterdam","Miami"];
+  const NICHES        = ["Fitness","Tech Reviews","Food","Travel","Fashion","Gaming","Finance","Wellness","Photography","Music"];
+  const FOLLOWER_COUNTS = ["2.3k","4.7k","8.1k","12.4k","18.9k","24.2k","31.5k","47.8k"];
+  const TIMES_24H = ["00:00","01:00","02:00","03:00","04:00","05:00","06:00","07:00","08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00","21:00","22:00","23:00"];
+
+  // City timezone offsets (hours from UTC)
+  const CITY_TZ: Record<string,number> = {
+    "London": 0, "Paris": 1, "Berlin": 1, "Amsterdam": 1,
+    "Dubai": 4, "Mumbai": 5.5, "Singapore": 8, "Tokyo": 9, "Seoul": 9,
+    "Sydney": 10, "São Paulo": -3, "New York": -5, "Miami": -5,
+    "Toronto": -5, "LA": -8,
+  };
+
+  function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+  function pickW(cum: number[]): number {
+    const r = Math.random();
+    for (let i = 0; i < cum.length; i++) if (r < cum[i]) return i;
+    return cum.length - 1;
+  }
+
+  // ─── Account data ────────────────────────────────────────────────────────────
+  interface Account {
+    handle: string;
+    city: string;
+    tzOffset: number; // hours UTC
+    platIdx: number;
+    niche: string;
+    followers: string;
+    // base activity per hour (0-1), shaped by timezone
+    hourActivity: Float32Array; // length 24
+  }
+
+  function buildAccount(): Account {
+    const city = pick(CITIES);
+    const tzOff = CITY_TZ[city] ?? 0;
+    const fn    = pick(PERSONA_FIRST).toLowerCase();
+    const ln    = pick(PERSONA_LAST).toLowerCase();
+    const platIdx = pickW(PLAT_CUM);
+
+    // Build activity curve: peak around local 9-22h, quiet 01-06h
+    const hourActivity = new Float32Array(24);
+    for (let h = 0; h < 24; h++) {
+      const localH = ((h + tzOff) % 24 + 24) % 24;
+      let act = 0;
+      if (localH >= 9  && localH <= 12) act = 0.55 + Math.random() * 0.35;
+      else if (localH >= 13 && localH <= 15) act = 0.30 + Math.random() * 0.30;
+      else if (localH >= 16 && localH <= 22) act = 0.60 + Math.random() * 0.35;
+      else if (localH >= 7  && localH <= 8)  act = 0.20 + Math.random() * 0.20;
+      else if (localH >= 23 || localH <= 0)  act = 0.10 + Math.random() * 0.12;
+      else                                    act = 0.01 + Math.random() * 0.06;
+      hourActivity[h] = act;
+    }
+
+    return {
+      handle: `@${fn}_${ln}`,
+      city, tzOffset: tzOff, platIdx,
+      niche: pick(NICHES),
+      followers: pick(FOLLOWER_COUNTS),
+      hourActivity,
+    };
+  }
+
+  // ─── Canvas / grid state ─────────────────────────────────────────────────────
+  const canvas = document.querySelector<HTMLCanvasElement>('.social-heatmap-canvas')!;
+  const wrap   = document.getElementById('hero-wrap')!;
+  const ctx    = canvas.getContext('2d')!;
+
+  const CELL_W  = 12;
+  const CELL_H  = 4;
+  const CELL_GAP = 1;
+  const COL_STEP = CELL_W + CELL_GAP;
+  const ROW_STEP = CELL_H + CELL_GAP;
+  const HOURS    = 24;
+  const LABEL_H  = 18; // top label area
+  const MARGIN_L = 8;
+  const MARGIN_R = 20;
+  const MARGIN_T = 8;
+
+  let accounts: Account[] = [];
+  let numRows  = 0;
+  let gridX    = 0;
+  let gridY    = 0;
+  let dpr      = 1;
+  let mouse: { x: number; y: number } | null = null;
+  let hoverRow = -1;
+  let hoverCol = -1;
+  // "now" scanner position (0-1 across HOURS columns), cycles every 30s
+  let scanStart = 0;
+
+  function buildAccounts() {
+    const W = canvas.width / dpr;
+    const H = canvas.height / dpr;
+    const usableH = H - MARGIN_T - LABEL_H - MARGIN_R;
+    numRows = Math.max(20, Math.min(80, Math.floor(usableH / ROW_STEP)));
+    accounts = [];
+    for (let i = 0; i < numRows; i++) accounts.push(buildAccount());
+
+    const gridW = HOURS * COL_STEP - CELL_GAP;
+    gridX = Math.round((W - gridW) / 2);
+    gridY = MARGIN_T + LABEL_H;
+    scanStart = performance.now() * 0.001;
+  }
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    const w = Math.round(rect.width);
+    const h = Math.round(rect.height);
+    canvas.width  = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width  = `${w}px`;
+    canvas.style.height = `${h}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildAccounts();
+  }
+
+  // ─── Tooltip ─────────────────────────────────────────────────────────────────
+  function rrect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+    c.beginPath();
+    c.moveTo(x+r,y); c.lineTo(x+w-r,y);
+    c.quadraticCurveTo(x+w,y,x+w,y+r); c.lineTo(x+w,y+h-r);
+    c.quadraticCurveTo(x+w,y+h,x+w-r,y+h); c.lineTo(x+r,y+h);
+    c.quadraticCurveTo(x,y+h,x,y+h-r); c.lineTo(x,y+r);
+    c.quadraticCurveTo(x,y,x+r,y); c.closePath();
+  }
+
+  function drawTooltip(row: number, col: number) {
+    const W = canvas.width / dpr;
+    const acc = accounts[row];
+    const plat = PLATFORMS_SOCIAL[acc.platIdx];
+    const [pr,pg,pb] = plat.color;
+    const hour = TIMES_24H[col];
+    const act  = acc.hourActivity[col];
+    const actLevel = act < 0.08 ? 'none' : act < 0.18 ? 'low' : act < 0.35 ? 'medium' : act < 0.50 ? 'high' : 'peak';
+    const actColor = act < 0.08 ? 'rgba(255,255,255,0.25)'
+      : act < 0.18 ? 'rgba(192,38,211,0.55)'
+      : act < 0.35 ? 'rgba(192,38,211,0.75)'
+      : act < 0.50 ? 'rgba(192,38,211,0.90)'
+      : 'rgba(255,120,255,1)';
+
+    const cx  = gridX + col * COL_STEP + CELL_W / 2;
+    const cy  = gridY + row * ROW_STEP + CELL_H / 2;
+    const tooltipW = 256;
+    const tooltipH = 122;
+    const pad = 12;
+
+    let tx = cx - tooltipW / 2;
+    let ty = cy - tooltipH - 14;
+    tx = Math.max(8, Math.min(W - tooltipW - 8, tx));
+    if (ty < 8) ty = cy + 14;
+
+    ctx.save();
+
+    // Connector line
+    ctx.globalAlpha = 0.15;
+    ctx.strokeStyle = `rgb(${pr},${pg},${pb})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cx, ty < cy ? ty + tooltipH : ty);
+    ctx.lineTo(cx, cy);
+    ctx.stroke();
+
+    ctx.globalAlpha = 1;
+    ctx.shadowColor = `rgba(192,38,211,0.25)`;
+    ctx.shadowBlur  = 28;
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 10);
+    ctx.fillStyle = 'rgba(6,7,18,0.72)';
+    ctx.fill();
+    ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+
+    rrect(ctx, tx, ty, tooltipW, tooltipH, 10);
+    ctx.fillStyle = `rgba(${pr},${pg},${pb},0.07)`;
+    ctx.fill();
+    ctx.strokeStyle = `rgba(${pr},${pg},${pb},0.28)`;
+    ctx.lineWidth = 1; ctx.stroke();
+
+    // Accent bar
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle = `rgb(${pr},${pg},${pb})`;
+    rrect(ctx, tx, ty, tooltipW, 3, 3);
+    ctx.fill();
+
+    ctx.textAlign = 'left';
+    let ly = ty + 3 + pad;
+
+    ctx.globalAlpha = 0.75;
+    ctx.fillStyle = `rgb(${pr},${pg},${pb})`;
+    ctx.font = '10px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${plat.name} · ${acc.city}`, tx + pad, ly + 9);
+    ly += 16;
+
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 14px -apple-system,system-ui,BlinkMacSystemFont,sans-serif';
+    ctx.fillText(acc.handle, tx + pad, ly + 12);
+    ly += 17;
+
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.font = '11px -apple-system,system-ui,BlinkMacSystemFont,sans-serif';
+    ctx.fillText(`${acc.niche} · ${acc.followers} followers`, tx + pad, ly + 9);
+    ly += 15;
+
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.font = '10px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${hour} UTC`, tx + pad, ly + 8);
+    ly += 14;
+
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = actColor;
+    ctx.font = '11px "SF Mono","Fira Code",monospace';
+    const pct = Math.round(act * 100);
+    ctx.fillText(`● ${actLevel}  ${pct}% activity`, tx + pad, ly + 8);
+
+    ctx.restore();
+  }
+
+  // ─── Frame loop ───────────────────────────────────────────────────────────────
+  function frame() {
+    requestAnimationFrame(frame);
+
+    const W = canvas.width / dpr;
+    const H = canvas.height / dpr;
+    const t = performance.now() * 0.001;
+    ctx.clearRect(0, 0, W, H);
+
+    // Scan position 0-24 (columns), period 30s
+    const scanPos = ((t - scanStart) % 30) / 30 * HOURS;
+
+    // Hover detection
+    if (mouse) {
+      const relX = mouse.x - gridX;
+      const relY = mouse.y - gridY;
+      const c = Math.floor(relX / COL_STEP);
+      const r = Math.floor(relY / ROW_STEP);
+      hoverCol = (c >= 0 && c < HOURS && relX >= 0) ? c : -1;
+      hoverRow = (r >= 0 && r < numRows && relY >= 0) ? r : -1;
+    } else {
+      hoverRow = -1; hoverCol = -1;
+    }
+
+    // Hour labels
+    const labelHours = [0, 6, 12, 18, 23];
+    ctx.save();
+    ctx.font = '8px "SF Mono","Fira Code",monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    for (const lh of labelHours) {
+      const lx = gridX + lh * COL_STEP + CELL_W / 2;
+      ctx.fillText(lh.toString().padStart(2,'0'), lx, gridY - 5);
+    }
+    ctx.restore();
+
+    // Draw cells
+    for (let r = 0; r < numRows; r++) {
+      const acc = accounts[r];
+      const [pr, pg, pb] = PLATFORMS_SOCIAL[acc.platIdx].color;
+      const rowY = gridY + r * ROW_STEP;
+
+      for (let c = 0; c < HOURS; c++) {
+        const colX = gridX + c * COL_STEP;
+        let act = acc.hourActivity[c];
+
+        // Scan wave: boost as scanner passes
+        const scanDist = Math.abs(c - scanPos);
+        if (scanDist < 0.8) {
+          const boost = (1 - scanDist / 0.8) * 0.35;
+          act = Math.min(1, act + boost);
+        }
+
+        // Crosshair highlight
+        const isHoverRow = r === hoverRow;
+        const isHoverCol = c === hoverCol;
+        let alpha: number;
+        if (isHoverRow && isHoverCol) {
+          alpha = 0.85;
+        } else if (isHoverRow || isHoverCol) {
+          alpha = Math.min(0.55, act + 0.22);
+        } else {
+          // Map activity to alpha bands
+          alpha = act < 0.08 ? 0.025
+               : act < 0.18 ? 0.08
+               : act < 0.35 ? 0.18
+               : act < 0.50 ? 0.30
+               : 0.45;
+        }
+
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = `rgb(${pr},${pg},${pb})`;
+        ctx.fillRect(colX, rowY, CELL_W, CELL_H);
+      }
+    }
+
+    ctx.globalAlpha = 1;
+
+    // "Now" scan line
+    const scanX = gridX + scanPos * COL_STEP;
+    ctx.save();
+    ctx.globalAlpha = 0.28;
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(scanX, gridY - 4);
+    ctx.lineTo(scanX, gridY + numRows * ROW_STEP);
+    ctx.stroke();
+    ctx.restore();
+
+    // Counter
+    const counterX = W - 16;
+    ctx.save();
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(192,38,211,0.55)';
+    ctx.font = '11px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${numRows} accounts · 24/7 · peak hour: 14:00`, counterX, 24);
+    ctx.globalAlpha = 0.28;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '9px "SF Mono","Fira Code",monospace';
+    ctx.fillText('6 platforms · 15 cities · AI-managed', counterX, 38);
+    ctx.restore();
+
+    // Tooltip
+    if (hoverRow >= 0 && hoverCol >= 0) {
+      drawTooltip(hoverRow, hoverCol);
+    }
+  }
+
+  // ─── Mouse tracking ───────────────────────────────────────────────────────────
+  wrap.addEventListener('mousemove', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  });
+  wrap.addEventListener('mouseleave', () => { mouse = null; hoverRow = -1; hoverCol = -1; });
+  wrap.addEventListener('touchstart', () => { mouse = null; hoverRow = -1; hoverCol = -1; }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+
+  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement | null;
+  if (gridTex) gridTex.style.display = 'none';
+
+  // ─── FinalCTA: simplified heatmap, no labels ──────────────────────────────────
+  {
+    const ctaCard = document.querySelector('.final-cta') as HTMLElement | null;
+    if (ctaCard) {
+      const ctaCanvas = document.createElement('canvas');
+      ctaCanvas.setAttribute('aria-hidden', 'true');
+      ctaCanvas.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+      ctaCard.style.position = 'relative';
+      ctaCard.insertBefore(ctaCanvas, ctaCard.firstChild);
+
+      const cc = ctaCanvas.getContext('2d')!;
+      const CW2 = 10, CH2 = 3, CG2 = 1, CS_W = CW2+CG2, CS_H = CH2+CG2;
+      interface CtaCell { col: number; row: number; act: number; phase: number; platIdx: number; }
+      let ctaCells: CtaCell[] = [];
+      let ctaDpr = 1;
+
+      function buildCtaGrid() {
+        ctaCells = [];
+        const W2 = ctaCanvas.width / ctaDpr;
+        const H2 = ctaCanvas.height / ctaDpr;
+        const cols2 = Math.floor(W2 / CS_W);
+        const rows2 = Math.floor(H2 / CS_H);
+        for (let r = 0; r < rows2; r++)
+          for (let c = 0; c < cols2; c++)
+            ctaCells.push({ col: c, row: r, act: 0.05 + Math.random() * 0.55, phase: Math.random() * Math.PI * 2, platIdx: pickW(PLAT_CUM) });
+      }
+
+      function resizeCta() {
+        ctaDpr = window.devicePixelRatio || 1;
+        const rect = ctaCard!.getBoundingClientRect();
+        const w = Math.round(rect.width), h = Math.round(rect.height);
+        ctaCanvas.width = w * ctaDpr; ctaCanvas.height = h * ctaDpr;
+        ctaCanvas.style.width = `${w}px`; ctaCanvas.style.height = `${h}px`;
+        cc.setTransform(ctaDpr, 0, 0, ctaDpr, 0, 0);
+        buildCtaGrid();
+      }
+
+      function frameCta() {
+        requestAnimationFrame(frameCta);
+        const W2 = ctaCanvas.width / ctaDpr;
+        const H2 = ctaCanvas.height / ctaDpr;
+        const t = performance.now() * 0.001;
+        cc.clearRect(0, 0, W2, H2);
+        for (const cell of ctaCells) {
+          const [pr,pg,pb] = PLATFORMS_SOCIAL[cell.platIdx].color;
+          const a = cell.act * (0.6 + Math.sin(t * 0.5 + cell.phase) * 0.3);
+          const alpha = Math.max(0.02, Math.min(0.40, a * 0.55));
+          cc.globalAlpha = alpha;
+          cc.fillStyle = `rgb(${pr},${pg},${pb})`;
+          cc.fillRect(cell.col * CS_W, cell.row * CS_H, CW2, CH2);
+        }
+        cc.globalAlpha = 1;
+      }
+
+      const roCta = new ResizeObserver(() => resizeCta());
+      roCta.observe(ctaCard);
+      resizeCta();
+      requestAnimationFrame(frameCta);
+      requestAnimationFrame(() => { ctaCanvas.style.opacity = '1'; });
+
+      const ctaGridTex = ctaCard.querySelector('.grid-texture') as HTMLElement | null;
+      if (ctaGridTex) ctaGridTex.style.display = 'none';
+    }
+  }
+
+  }); // end requestIdleCallback
+</script>
