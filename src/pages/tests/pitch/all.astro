@@ -1884,11 +1884,9 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
               </div>
               <div class="px-5 py-4 border-t" style="border-color:rgba(255,255,255,.06);background:rgba(0,0,0,.15);">
                 <div class="flex gap-6 text-xs font-mono">
-                  <span style="color:#d946ef;">4.2s avg build</span>
+                  <span id="v31-metric-ai" style="color:#a78bfa;">AI calls: —</span>
                   <span class="text-zinc-600">|</span>
-                  <span class="text-zinc-400">7 AI calls</span>
-                  <span class="text-zinc-600">|</span>
-                  <span class="text-zinc-400">20+ verticals</span>
+                  <span id="v31-metric-vars" style="color:#fbbf24;">Variables: —</span>
                 </div>
               </div>
             </div>
@@ -5934,9 +5932,69 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
   if (!urlPhase || !loadingPhase || !term) return;
 
   const visitors = [
-    { url:'acmegrowth.co', vertical:'marketing-agency', conf:'0.94', stage1:'Prospect Intelligence', stage2:'Market Projections x3', stage3:'Business Impact', href:'pellopitch.com/demo/acmegrowth.co', time:'4.2s', cvr:'11.4%' },
-    { url:'vaultshield.com', vertical:'cybersecurity', conf:'0.97', stage1:'Risk Intelligence', stage2:'Threat Landscape', stage3:'Security Impact', href:'pellopitch.com/demo/vaultshield.com', time:'3.9s', cvr:'9.8%' },
-    { url:'peakconsult.io', vertical:'consultancy', conf:'0.96', stage1:'Client Intelligence', stage2:'Competitive Landscape', stage3:'Business Case', href:'pellopitch.com/demo/peakconsult.io', time:'4.5s', cvr:'10.2%' },
+    {
+      url:'acmegrowth.co', vertical:'marketing-agency', conf:'0.94',
+      href:'pellopitch.com/demo/acmegrowth.co', time:'4.2s', cvr:'11.4%',
+      words:'9,847', pages:'14', aiCalls: Math.floor(Math.random()*13)+18,
+      vars: Math.floor(Math.random()*75)+76,
+      analysis: [
+        { k:'Company', v:'Acme Growth Co.' },
+        { k:'Services', v:'SEO · Content · PPC · Email' },
+        { k:'Target', v:'B2B SaaS, Series A+' },
+        { k:'Tone', v:'Data-driven, authoritative' },
+      ],
+      pipeline: [
+        { label:'Prospect Intelligence', ms:'67' },
+        { label:'Keyword Gap Analysis', ms:'89' },
+        { label:'Backlink Opportunity Map', ms:'112' },
+        { label:'Content Strategy Engine', ms:'94' },
+        { label:'Social Signal Audit', ms:'58' },
+        { label:'Business Impact Model', ms:'45' },
+      ],
+      sections: ['FirmHeroSection','NarrativeSection','ShowcaseSection — SEO Dashboard','ShowcaseSection — Social Proof','ImpactSection','SetupSection'],
+    },
+    {
+      url:'vaultshield.com', vertical:'cybersecurity', conf:'0.97',
+      href:'pellopitch.com/demo/vaultshield.com', time:'3.9s', cvr:'9.8%',
+      words:'11,203', pages:'18', aiCalls: Math.floor(Math.random()*13)+18,
+      vars: Math.floor(Math.random()*75)+76,
+      analysis: [
+        { k:'Company', v:'VaultShield Security' },
+        { k:'Services', v:'EDR · SIEM · Zero Trust · SOC' },
+        { k:'Target', v:'Enterprise, CISO-level buyers' },
+        { k:'Tone', v:'Authoritative, urgent, precise' },
+      ],
+      pipeline: [
+        { label:'Risk Intelligence Profile', ms:'71' },
+        { label:'Threat Landscape Analysis', ms:'134' },
+        { label:'Compliance Gap Scanner', ms:'88' },
+        { label:'FAQ & Objection Extractor', ms:'62' },
+        { label:'Social Proof Aggregator', ms:'49' },
+        { label:'Security Impact Model', ms:'45' },
+      ],
+      sections: ['FirmHeroSection','NarrativeSection — Threat Brief','ShowcaseSection — Threat Dashboard','ShowcaseSection — Compliance Map','ImpactSection','SetupSection'],
+    },
+    {
+      url:'peakconsult.io', vertical:'consultancy', conf:'0.96',
+      href:'pellopitch.com/demo/peakconsult.io', time:'4.5s', cvr:'10.2%',
+      words:'8,129', pages:'11', aiCalls: Math.floor(Math.random()*13)+18,
+      vars: Math.floor(Math.random()*75)+76,
+      analysis: [
+        { k:'Company', v:'Peak Consulting Group' },
+        { k:'Services', v:'Strategy · M&A · Transformation' },
+        { k:'Target', v:'C-suite, PE-backed businesses' },
+        { k:'Tone', v:'Credible, precise, results-first' },
+      ],
+      pipeline: [
+        { label:'Client Intelligence Extraction', ms:'78' },
+        { label:'Competitive Landscape Map', ms:'102' },
+        { label:'Case Study & Proof Mining', ms:'91' },
+        { label:'FAQ & Objection Modelling', ms:'67' },
+        { label:'SEO Signal Analysis', ms:'54' },
+        { label:'Business Case Generator', ms:'45' },
+      ],
+      sections: ['FirmHeroSection','NarrativeSection — Pain Brief','ShowcaseSection — Case Studies','ShowcaseSection — Impact Stats','ImpactSection','SetupSection'],
+    },
   ];
   let idx = 0;
   let started = false;
@@ -5962,65 +6020,82 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
   }
 
   async function runTerminal(v) {
-    // Show terminal phase
     loadingPhase.style.display = 'none';
     term.style.display = 'block';
     term.innerHTML = '';
-    await sleep(200);
+    const aiCalls = v.aiCalls || (Math.floor(Math.random()*13)+18);
+    const vars = v.vars || (Math.floor(Math.random()*75)+76);
+    async function bar(label, speed) {
+      const el = document.createElement('div'); el.style.minHeight='1.8em'; term.appendChild(el);
+      for (let i = 0; i <= 10; i++) {
+        el.innerHTML = '  <span style="color:#a78bfa;">' + label + '</span> <span style="color:#d946ef;">[' + '\u2588'.repeat(i) + '\u2591'.repeat(10-i) + ']</span> <span style="color:rgba(255,255,255,0.35);">' + (i*10) + '%</span>';
+        term.scrollTop = term.scrollHeight; await sleep(speed);
+      }
+    }
+    await sleep(150);
     await typeChar('<span style="color:#d946ef;">$</span> <span style="color:white;">pitch new --url=' + v.url + '</span>', 25);
     addLine('');
-    await sleep(150);
+    await sleep(100);
     addLine('  <span style="color:#60a5fa;">&darr; Normalising...</span>  <span style="color:rgba(255,255,255,0.5);">' + v.url + '</span> <span style="color:#34d399;">&#10003;</span>');
-    await sleep(140);
+    await sleep(90);
     addLine('  <span style="color:#60a5fa;">&darr; Cache check...</span>   <span style="color:#fbbf24;">MISS &mdash; building fresh</span>');
-    await sleep(160);
-    addLine('  <span style="color:#60a5fa;">&darr; Crawling...</span>      <span style="color:rgba(255,255,255,0.3);">Firecrawl v4.13</span>');
-    await sleep(220); addLine('');
-    const crawlBar = document.createElement('div'); crawlBar.style.minHeight='1.8em'; term.appendChild(crawlBar);
-    for (let i = 0; i <= 10; i++) {
-      crawlBar.innerHTML = '  <span style="color:#a78bfa;">CRAWL</span> <span style="color:#d946ef;">[' + '█'.repeat(i) + '░'.repeat(10-i) + ']</span> <span style="color:rgba(255,255,255,0.35);">' + (i*10) + '%</span>';
-      term.scrollTop = term.scrollHeight; await sleep(70);
-    }
-    await sleep(120);
-    addLine('  <span style="color:#34d399;">&darr; Words extracted:</span> <span style="color:white;">8,432</span> <span style="color:#34d399;">&#10003;</span>');
-    await sleep(150); addLine('');
-    const anaBar = document.createElement('div'); anaBar.style.minHeight='1.8em'; term.appendChild(anaBar);
-    for (let i = 0; i <= 10; i++) {
-      anaBar.innerHTML = '  <span style="color:#a78bfa;">ANALYSE</span> <span style="color:#d946ef;">[' + '█'.repeat(i) + '░'.repeat(10-i) + ']</span> <span style="color:rgba(255,255,255,0.35);">' + (i*10) + '%</span>';
-      term.scrollTop = term.scrollHeight; await sleep(60);
-    }
-    await sleep(120);
-    addLine('  <span style="color:#60a5fa;">&darr; Vertical:</span>         <span style="color:#d946ef;font-weight:700;">' + v.vertical + '</span> <span style="color:#34d399;">&#10003;</span> <span style="color:rgba(255,255,255,0.25);">(conf: ' + v.conf + ')</span>');
-    await sleep(180); addLine('');
-    const pipBar = document.createElement('div'); pipBar.style.minHeight='1.8em'; term.appendChild(pipBar);
-    for (let i = 0; i <= 10; i++) {
-      pipBar.innerHTML = '  <span style="color:#a78bfa;">PIPELINE</span> <span style="color:#d946ef;">[' + '█'.repeat(i) + '░'.repeat(10-i) + ']</span> <span style="color:rgba(255,255,255,0.35);">' + (i*10) + '%</span>';
-      term.scrollTop = term.scrollHeight; await sleep(65);
-    }
     await sleep(100);
-    addLine('  <span style="color:#60a5fa;">&darr; Stage 1</span> <span style="color:rgba(255,255,255,0.4);">' + v.stage1 + '...</span> <span style="color:#34d399;">&#10003;</span> <span style="color:rgba(255,255,255,0.2);">(67ms)</span>');
-    await sleep(100);
-    addLine('  <span style="color:#60a5fa;">&darr; Stage 2</span> <span style="color:rgba(255,255,255,0.4);">' + v.stage2 + '...</span> <span style="color:#34d399;">&#10003;</span> <span style="color:rgba(255,255,255,0.2);">(112ms)</span>');
-    await sleep(100);
-    addLine('  <span style="color:#60a5fa;">&darr; Stage 3</span> <span style="color:rgba(255,255,255,0.4);">' + v.stage3 + '...</span> <span style="color:#34d399;">&#10003;</span> <span style="color:rgba(255,255,255,0.2);">(45ms)</span>');
-    await sleep(180); addLine('');
-    const renBar = document.createElement('div'); renBar.style.minHeight='1.8em'; term.appendChild(renBar);
-    for (let i = 0; i <= 10; i++) {
-      renBar.innerHTML = '  <span style="color:#a78bfa;">RENDER</span> <span style="color:#d946ef;">[' + '█'.repeat(i) + '░'.repeat(10-i) + ']</span> <span style="color:rgba(255,255,255,0.35);">' + (i*10) + '%</span>';
-      term.scrollTop = term.scrollHeight; await sleep(55);
+    addLine('  <span style="color:#60a5fa;">&darr; Spawning crawler...</span> <span style="color:rgba(255,255,255,0.3);">Firecrawl v4.13</span>');
+    await sleep(160); addLine('');
+    await bar('CRAWL    ', 55);
+    await sleep(70);
+    addLine('  <span style="color:#34d399;">&darr; Pages crawled:</span>     <span style="color:white;">' + v.pages + '</span> <span style="color:#34d399;">&#10003;</span>');
+    await sleep(50);
+    addLine('  <span style="color:#34d399;">&darr; Words extracted:</span>   <span style="color:white;">' + v.words + '</span> <span style="color:#34d399;">&#10003;</span>');
+    await sleep(50);
+    addLine('  <span style="color:#34d399;">&darr; Images indexed:</span>    <span style="color:white;">' + (Math.floor(Math.random()*40)+20) + '</span> <span style="color:#34d399;">&#10003;</span>');
+    await sleep(50);
+    addLine('  <span style="color:#34d399;">&darr; Backlinks found:</span>   <span style="color:white;">' + (Math.floor(Math.random()*2000)+500).toLocaleString() + '</span> <span style="color:#34d399;">&#10003;</span>');
+    await sleep(50);
+    addLine('  <span style="color:#34d399;">&darr; Social signals:</span>    <span style="color:white;">Twitter &middot; LinkedIn &middot; Reddit</span> <span style="color:#34d399;">&#10003;</span>');
+    await sleep(50);
+    addLine('  <span style="color:#34d399;">&darr; FAQ clusters:</span>      <span style="color:white;">' + (Math.floor(Math.random()*12)+6) + ' topics mapped</span> <span style="color:#34d399;">&#10003;</span>');
+    await sleep(130); addLine('');
+    await bar('ANALYSE  ', 45);
+    await sleep(70);
+    for (const item of v.analysis) {
+      addLine('  <span style="color:#60a5fa;">&darr; ' + item.k + ':</span> <span style="color:rgba(255,255,255,0.65);">' + item.v + '</span>');
+      await sleep(50);
     }
-    await sleep(100);
-    for (const sec of ['FirmHeroSection','NarrativeSection','ShowcaseSection','ImpactSection','SetupSection']) {
+    addLine('  <span style="color:#d946ef;font-weight:700;">&darr; Vertical: ' + v.vertical + '</span> <span style="color:#34d399;">&#10003;</span> <span style="color:rgba(255,255,255,0.2);">(conf: ' + v.conf + ')</span>');
+    await sleep(130); addLine('');
+    await bar('PIPELINE ', 50);
+    await sleep(70);
+    for (const stage of v.pipeline) {
+      addLine('  <span style="color:#60a5fa;">&darr; ' + stage.label + '...</span> <span style="color:#34d399;">&#10003;</span> <span style="color:rgba(255,255,255,0.2);">(' + stage.ms + 'ms)</span>');
+      await sleep(60);
+    }
+    addLine('  <span style="color:rgba(255,255,255,0.3);">&darr; AI calls:</span> <span style="color:#a78bfa;">' + aiCalls + '</span>');
+    await sleep(120); addLine('');
+    await bar('GENERATE ', 44);
+    await sleep(70);
+    addLine('  <span style="color:#34d399;">&darr; Copy variants generated:</span>  <span style="color:white;">' + vars + '</span> <span style="color:#34d399;">&#10003;</span>');
+    await sleep(50);
+    addLine('  <span style="color:#34d399;">&darr; Best variant selected:</span>    <span style="color:#d946ef;">variant #' + (Math.floor(Math.random()*vars)+1) + '</span> <span style="color:rgba(255,255,255,0.2);">(highest CVR)</span>');
+    await sleep(50);
+    addLine('  <span style="color:#34d399;">&darr; SEO metadata:</span>             <span style="color:white;">title &middot; og &middot; schema &middot; canonical</span> <span style="color:#34d399;">&#10003;</span>');
+    await sleep(50);
+    addLine('  <span style="color:#34d399;">&darr; Social proof:</span>             <span style="color:white;">' + (Math.floor(Math.random()*4)+2) + ' blocks embedded</span> <span style="color:#34d399;">&#10003;</span>');
+    await sleep(50);
+    addLine('  <span style="color:#34d399;">&darr; FAQ section:</span>              <span style="color:white;">' + (Math.floor(Math.random()*5)+4) + ' questions generated</span> <span style="color:#34d399;">&#10003;</span>');
+    await sleep(120); addLine('');
+    await bar('RENDER   ', 42);
+    await sleep(60);
+    for (const sec of v.sections) {
       addLine('  <span style="color:#60a5fa;">&darr; ' + sec + '</span> <span style="color:#34d399;">&#10003;</span>');
-      await sleep(80);
+      await sleep(60);
     }
-    await sleep(250); addLine('');
-    addLine('  <span style="color:rgba(255,255,255,0.12);">+--------------------------------------+</span>');
-    addLine('  <span style="color:rgba(255,255,255,0.12);">|</span>  <span style="color:#d946ef;font-weight:700;">DEMO LIVE</span> &rarr; <span style="color:rgba(255,255,255,0.5);">' + v.href + '</span>');
-    addLine('  <span style="color:rgba(255,255,255,0.12);">|</span>  <span style="color:rgba(255,255,255,0.35);">Build time:</span> <span style="color:#34d399;">' + v.time + '</span>  <span style="color:rgba(255,255,255,0.35);">CVR:</span> <span style="color:#d946ef;font-weight:700;">' + v.cvr + '</span>');
-    addLine('  <span style="color:rgba(255,255,255,0.12);">+--------------------------------------+</span>');
-    addLine(''); addLine('<span style="color:#d946ef;">$ </span><span style="color:#d946ef;">|</span>');
-    // Transition to website reveal
+    await sleep(180); addLine('');
+    addLine('  <span style="color:rgba(255,255,255,0.1);">\u250c' + '\u2500'.repeat(46) + '\u2510</span>');
+    addLine('  <span style="color:rgba(255,255,255,0.1);">\u2502</span>  <span style="color:#d946ef;font-weight:700;letter-spacing:0.05em;">DEMO LIVE</span>  \u2192  <span style="color:rgba(255,255,255,0.5);">' + v.href + '</span>');
+    addLine('  <span style="color:rgba(255,255,255,0.1);">\u2502</span>  <span style="color:rgba(255,255,255,0.3);">Build:</span> <span style="color:#34d399;">' + v.time + '</span>  <span style="color:rgba(255,255,255,0.3);">AI:</span> <span style="color:#a78bfa;">' + aiCalls + '</span>  <span style="color:rgba(255,255,255,0.3);">Vars:</span> <span style="color:#fbbf24;">' + vars + '</span>  <span style="color:rgba(255,255,255,0.3);">CVR:</span> <span style="color:#d946ef;font-weight:700;">' + v.cvr + '</span>');
+    addLine('  <span style="color:rgba(255,255,255,0.1);">\u2514' + '\u2500'.repeat(46) + '\u2518</span>');
+    addLine(''); addLine('<span style="color:#d946ef;">$</span> <span style="color:#d946ef;opacity:0.5;">|</span>');
     await sleep(1200);
     runRevealPhase(v);
   }
@@ -6248,6 +6323,13 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
 
   async function runCycle() {
     const v = visitors[idx % visitors.length]; idx++;
+    // Recalculate random vals per cycle
+    v.aiCalls = Math.floor(Math.random()*13)+18;
+    v.vars = Math.floor(Math.random()*75)+76;
+    const mAi = document.getElementById('v31-metric-ai');
+    const mVars = document.getElementById('v31-metric-vars');
+    if (mAi) mAi.textContent = 'AI calls: ' + v.aiCalls;
+    if (mVars) mVars.textContent = 'Variables: ' + v.vars;
     await runUrlPhase(v);
   }
 
