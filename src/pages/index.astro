@@ -561,27 +561,34 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     -webkit-backdrop-filter: blur(6px);
   }
 
-  /* Mobile: fix PelloReach and PelloSocial — hide bg canvas, show standard visual panel */
+  /* Mobile: PelloReach + PelloSocial — reflow canvas below text */
   @media (max-width: 1023px) {
-    /* Hide floating Social HUD */
     #soc-hud-glass { display: none !important; }
 
-    /* PelloReach: hide bg canvas animation, restore visual panel */
-    .product-card[data-product="1"] .product-bg { display: none !important; }
-    .product-card[data-product="1"] .ps-visual { display: block !important; }
-    .product-card[data-product="1"] .product-visual-panel { display: block !important; }
-
-    /* PelloSocial: hide bg canvas animation, restore visual panel */
-    .product-card[data-product="3"] .product-bg { display: none !important; }
-    .product-card[data-product="3"] .ps-visual { display: block !important; }
-    .product-card[data-product="3"] .product-visual-panel {
-      display: block !important;
-      background: rgba(6,7,18,0.10) !important;
-      border: 1px solid rgba(255,255,255,0.08) !important;
-      backdrop-filter: blur(8px) saturate(1.1) !important;
-      -webkit-backdrop-filter: blur(8px) saturate(1.1) !important;
+    /* Make these cards flex column so canvas flows below text */
+    .product-card[data-product="1"],
+    .product-card[data-product="3"] {
+      display: flex;
+      flex-direction: column;
     }
-    .product-card[data-product="3"] .product-visual-panel > * { display: block !important; }
+    /* Text content first */
+    .product-card[data-product="1"] .product-card-content,
+    .product-card[data-product="3"] .product-card-content {
+      order: 1;
+      position: relative;
+      z-index: 1;
+    }
+    /* Canvas second — remove absolute positioning, give it height */
+    .product-card[data-product="1"] .product-bg,
+    .product-card[data-product="3"] .product-bg {
+      order: 2;
+      position: relative !important;
+      inset: auto !important;
+      width: 100% !important;
+      height: 280px !important;
+      opacity: 1 !important;
+      border-radius: 0 0 1.25rem 1.25rem;
+    }
   }
 </style>
 
