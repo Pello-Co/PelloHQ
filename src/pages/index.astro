@@ -561,21 +561,27 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     -webkit-backdrop-filter: blur(6px);
   }
 
-  /* Mobile: fix PelloReach and PelloSocial canvas overflow */
+  /* Mobile: fix PelloReach and PelloSocial — hide bg canvas, show standard visual panel */
   @media (max-width: 1023px) {
-    /* Hide the floating Social HUD glass — it overflows on mobile */
-    #soc-hud-glass {
-      display: none !important;
+    /* Hide floating Social HUD */
+    #soc-hud-glass { display: none !important; }
+
+    /* PelloReach: hide bg canvas animation, restore visual panel */
+    .product-card[data-product="1"] .product-bg { display: none !important; }
+    .product-card[data-product="1"] .ps-visual { display: block !important; }
+    .product-card[data-product="1"] .product-visual-panel { display: block !important; }
+
+    /* PelloSocial: hide bg canvas animation, restore visual panel */
+    .product-card[data-product="3"] .product-bg { display: none !important; }
+    .product-card[data-product="3"] .ps-visual { display: block !important; }
+    .product-card[data-product="3"] .product-visual-panel {
+      display: block !important;
+      background: rgba(6,7,18,0.10) !important;
+      border: 1px solid rgba(255,255,255,0.08) !important;
+      backdrop-filter: blur(8px) saturate(1.1) !important;
+      -webkit-backdrop-filter: blur(8px) saturate(1.1) !important;
     }
-    /* Clip bg canvases tightly to card bounds */
-    .product-card[data-product="1"] .product-bg,
-    .product-card[data-product="3"] .product-bg {
-      clip-path: inset(0 round 1.25rem);
-    }
-    /* Prevent canvas tooltip overlays escaping product card */
-    .product-card {
-      isolation: isolate;
-    }
+    .product-card[data-product="3"] .product-visual-panel > * { display: block !important; }
   }
 </style>
 
