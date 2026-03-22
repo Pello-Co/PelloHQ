@@ -1872,21 +1872,32 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
                       </div>
                     </div>
                     <!-- CVR counter + proof -->
-                    <div id="v31-r5" style="opacity:0;transform:translateY(10px);transition:all 0.45s cubic-bezier(0.34,1.2,0.64,1) 0.38s;display:flex;align-items:center;gap:1rem;padding-top:0.4rem;border-top:1px solid rgba(255,255,255,0.05);">
-                      <div>
-                        <span style="font-size:0.6rem;color:rgba(255,255,255,0.2);font-family:monospace;">CVR</span>
-                        <span id="v31-cvr-counter" style="font-size:0.85rem;font-weight:800;margin-left:0.3rem;font-family:monospace;"></span>
+                    <div id="v31-r5" style="opacity:0;transform:translateY(10px);transition:all 0.45s cubic-bezier(0.34,1.2,0.64,1) 0.38s;display:flex;align-items:center;gap:1rem;padding-top:0.35rem;border-top:1px solid rgba(255,255,255,0.05);">
+                      <div style="display:flex;align-items:baseline;gap:0.3rem;">
+                        <span style="font-size:0.55rem;color:rgba(255,255,255,0.2);font-family:monospace;letter-spacing:0.05em;">CVR</span>
+                        <span id="v31-cvr-counter" style="font-size:0.9rem;font-weight:800;font-family:monospace;"></span>
                       </div>
-                      <div id="v31-site-proof" style="font-size:0.6rem;color:rgba(255,255,255,0.2);font-family:monospace;flex:1;text-align:right;"></div>
+                      <div id="v31-site-proof" style="font-size:0.58rem;color:rgba(255,255,255,0.18);font-family:monospace;flex:1;text-align:right;"></div>
+                    </div>
+                    <!-- Social proof avatars row -->
+                    <div id="v31-r6" style="opacity:0;transform:translateY(10px);transition:all 0.45s cubic-bezier(0.34,1.2,0.64,1) 0.46s;display:flex;align-items:center;justify-content:space-between;padding-top:0.3rem;">
+                      <div style="display:flex;align-items:center;gap:0;">
+                        <div style="width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(0,0,0,0.4);background:linear-gradient(135deg,#6366f1,#8b5cf6);margin-left:-4px;font-size:0.5rem;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;">J</div>
+                        <div style="width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(0,0,0,0.4);background:linear-gradient(135deg,#ec4899,#f43f5e);margin-left:-4px;font-size:0.5rem;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;">S</div>
+                        <div style="width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(0,0,0,0.4);background:linear-gradient(135deg,#14b8a6,#06b6d4);margin-left:-4px;font-size:0.5rem;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;">M</div>
+                        <div style="width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(0,0,0,0.4);background:linear-gradient(135deg,#f59e0b,#ef4444);margin-left:-4px;font-size:0.5rem;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;">A</div>
+                        <div style="width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(0,0,0,0.4);background:rgba(255,255,255,0.08);margin-left:-4px;font-size:0.48rem;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5);font-weight:700;">+47</div>
+                      </div>
+                      <div id="v31-trust-line" style="font-size:0.58rem;color:rgba(255,255,255,0.2);font-family:monospace;"></div>
                     </div>
                   </div>
                 </div>
               </div>
               <div class="px-5 py-4 border-t" style="border-color:rgba(255,255,255,.06);background:rgba(0,0,0,.15);">
                 <div class="flex gap-6 text-xs font-mono">
-                  <span id="v31-metric-ai" style="color:#a78bfa;">AI calls: —</span>
-                  <span class="text-zinc-600">|</span>
-                  <span id="v31-metric-vars" style="color:#fbbf24;">Variables: —</span>
+                  <span id="v31-metric-ai" style="color:#a78bfa;opacity:0;transition:opacity 0.6s ease;">AI calls: —</span>
+                  <span class="text-zinc-600" id="v31-metric-sep" style="opacity:0;transition:opacity 0.6s ease;">|</span>
+                  <span id="v31-metric-vars" style="color:#fbbf24;opacity:0;transition:opacity 0.6s ease;">Variables: —</span>
                 </div>
               </div>
             </div>
@@ -6096,6 +6107,13 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     addLine('  <span style="color:rgba(255,255,255,0.1);">\u2502</span>  <span style="color:rgba(255,255,255,0.3);">Build:</span> <span style="color:#34d399;">' + v.time + '</span>  <span style="color:rgba(255,255,255,0.3);">AI:</span> <span style="color:#a78bfa;">' + aiCalls + '</span>  <span style="color:rgba(255,255,255,0.3);">Vars:</span> <span style="color:#fbbf24;">' + vars + '</span>  <span style="color:rgba(255,255,255,0.3);">CVR:</span> <span style="color:#d946ef;font-weight:700;">' + v.cvr + '</span>');
     addLine('  <span style="color:rgba(255,255,255,0.1);">\u2514' + '\u2500'.repeat(46) + '\u2518</span>');
     addLine(''); addLine('<span style="color:#d946ef;">$</span> <span style="color:#d946ef;opacity:0.5;">|</span>');
+    // Reveal metrics footer now that we have real values
+    const mAi2 = document.getElementById('v31-metric-ai');
+    const mVars2 = document.getElementById('v31-metric-vars');
+    const mSep2 = document.getElementById('v31-metric-sep');
+    if (mAi2) { mAi2.textContent = 'AI calls: ' + aiCalls; mAi2.style.opacity='1'; }
+    if (mVars2) { mVars2.textContent = 'Variables: ' + vars; mVars2.style.opacity='1'; }
+    if (mSep2) { mSep2.style.opacity='1'; }
     await sleep(1200);
     runRevealPhase(v);
   }
@@ -6108,7 +6126,8 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       cta: 'Get Your Growth Audit →',
       proof: 'Avg. 340% organic traffic lift in 6 months',
       color: '#60a5fa', badge: 'marketing-agency',
-      feat1: 'SEO & Content', feat2: 'Paid Acquisition', feat3: 'CRO'
+      feat1: 'SEO & Content', feat2: 'Paid Acquisition', feat3: 'CRO',
+      trust: '51 teams booked demos this week'
     },
     'cybersecurity': {
       company: 'VaultShield',
@@ -6117,7 +6136,8 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       cta: 'Run Free Threat Scan →',
       proof: 'Zero breaches across 1,200+ protected clients',
       color: '#ef4444', badge: 'cybersecurity',
-      feat1: 'Threat Detection', feat2: 'Zero Trust', feat3: 'Compliance'
+      feat1: 'Threat Detection', feat2: 'Zero Trust', feat3: 'Compliance',
+      trust: '34 CISOs reviewed this demo today'
     },
     'consultancy': {
       company: 'Peak Consulting',
@@ -6126,7 +6146,8 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       cta: 'Book a Strategy Call →',
       proof: 'Avg. 2.4x revenue growth within 12 months',
       color: '#34d399', badge: 'consultancy',
-      feat1: 'Strategy', feat2: 'Transformation', feat3: 'Execution'
+      feat1: 'Strategy', feat2: 'Transformation', feat3: 'Execution',
+      trust: '28 executives booked a call this week'
     },
   };
 
@@ -6171,7 +6192,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     if (f3) f3.textContent = rd.feat3;
 
     // Reset rows
-    for (let i = 0; i <= 5; i++) {
+    for (let i = 0; i <= 6; i++) {
       const r = document.getElementById('v31-r' + i);
       if (r) { r.style.opacity = '0'; r.style.transform = 'translateY(10px)'; }
     }
@@ -6203,6 +6224,12 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     for (let i = 0; i <= 5; i++) {
       const r = document.getElementById('v31-r' + i);
       if (r) { r.style.opacity='1'; r.style.transform='translateY(0)'; }
+      if (i === 0) {
+        const trustLine = document.getElementById('v31-trust-line');
+        if (trustLine) trustLine.textContent = rd.trust || '';
+        const r6 = document.getElementById('v31-r6');
+        if (r6) { r6.style.opacity='0'; r6.style.transform='translateY(10px)'; }
+      }
       if (i === 1) {
         // Typewriter the headline
         await sleep(50);
@@ -6219,6 +6246,9 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       }
     }
 
+    // Also reveal r6 (avatars + trust)
+    const r6 = document.getElementById('v31-r6');
+    if (r6) { await sleep(80); r6.style.opacity='1'; r6.style.transform='translateY(0)'; }
     // Step 5: CVR badge fades in
     if (cvrBadge) cvrBadge.style.opacity = '1';
 
@@ -6323,13 +6353,15 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
 
   async function runCycle() {
     const v = visitors[idx % visitors.length]; idx++;
-    // Recalculate random vals per cycle
     v.aiCalls = Math.floor(Math.random()*13)+18;
     v.vars = Math.floor(Math.random()*75)+76;
+    // Hide metrics until terminal runs
     const mAi = document.getElementById('v31-metric-ai');
     const mVars = document.getElementById('v31-metric-vars');
-    if (mAi) mAi.textContent = 'AI calls: ' + v.aiCalls;
-    if (mVars) mVars.textContent = 'Variables: ' + v.vars;
+    const mSep = document.getElementById('v31-metric-sep');
+    if (mAi) { mAi.style.opacity='0'; }
+    if (mVars) { mVars.style.opacity='0'; }
+    if (mSep) { mSep.style.opacity='0'; }
     await runUrlPhase(v);
   }
 
