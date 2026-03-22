@@ -102,7 +102,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
                       <span class="text-xs font-medium px-2 py-0.5 rounded-full" style="background:#d946ef15;color:#d946ef;border:1px solid #d946ef28;">Live</span>
                     </div>
                     <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
-                      <canvas id="helix-canvas" width="380" height="260" style="max-width:100%;display:block;" aria-label="Page DNA helix animation"></canvas>
+                      <canvas id="helix-canvas" style="display:block;width:100%;height:300px;" aria-label="Page DNA helix animation"></canvas>
                       <div style="padding:0.5rem 1.25rem 0.75rem;text-align:center;">
                         <span style="font-size:0.68rem;color:rgba(255,255,255,0.4);font-family:monospace;">Every page has unique DNA</span>
                       </div>
@@ -544,7 +544,15 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
   const canvas = document.getElementById('helix-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
+  let W = 0, H = 0;
+  function resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    W = canvas.offsetWidth; H = canvas.offsetHeight;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    ctx.scale(dpr, dpr);
+  }
+  new ResizeObserver(resizeCanvas).observe(canvas);
+  resizeCanvas();
   const cx = W/2;
   const rungLabels = ['Headline','Subheadline','CTA','Social proof','Hero image','Trust badge'];
   let rotation = 0, hovered = false;

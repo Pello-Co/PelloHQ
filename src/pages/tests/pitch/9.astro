@@ -104,12 +104,12 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;padding:0.75rem;padding-bottom:0.5rem;">
                       <div style="display:flex;flex-direction:column;gap:0.4rem;">
                         <span style="font-size:0.62rem;color:rgba(255,255,255,0.3);font-family:monospace;font-weight:700;text-align:center;">Generic Page</span>
-                        <canvas id="heatmap-left" width="170" height="220" style="width:100%;border-radius:0.5rem;border:1px solid rgba(255,255,255,0.06);"></canvas>
+                        <canvas id="heatmap-left" style="display:block;width:100%;height:260px;border-radius:0.5rem;border:1px solid rgba(255,255,255,0.06);"></canvas>
                         <span style="font-size:0.68rem;color:rgba(255,255,255,0.3);font-family:monospace;text-align:center;">2.1% CTR</span>
                       </div>
                       <div style="display:flex;flex-direction:column;gap:0.4rem;">
                         <span style="font-size:0.62rem;color:#d946ef;font-family:monospace;font-weight:700;text-align:center;">PelloPitch</span>
-                        <canvas id="heatmap-right" width="170" height="220" style="width:100%;border-radius:0.5rem;border:1px solid rgba(217,70,239,0.2);"></canvas>
+                        <canvas id="heatmap-right" style="display:block;width:100%;height:260px;border-radius:0.5rem;border:1px solid rgba(217,70,239,0.2);"></canvas>
                         <span style="font-size:0.68rem;color:#d946ef;font-family:monospace;text-align:center;">11.4% CTR</span>
                       </div>
                     </div>
@@ -570,8 +570,11 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
       ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(hs.x, hs.y, hs.r, 0, Math.PI*2); ctx.fill();
     });
   }
-  const WL = leftCanvas.width, HL = leftCanvas.height;
+  const dpr = window.devicePixelRatio || 1;
+  const WL = leftCanvas.offsetWidth, HL = leftCanvas.offsetHeight;
+  leftCanvas.width = WL * dpr; leftCanvas.height = HL * dpr;
   const ctxL = leftCanvas.getContext('2d');
+  ctxL.scale(dpr, dpr);
   drawWireframe(ctxL, WL, HL);
   const leftHotspots = [
     { x:WL*0.3, y:HL*0.15, r:40, rgb:'0,100,255', alpha:0.15 },
@@ -580,8 +583,10 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     { x:WL*0.5, y:HL*0.45, r:20, rgb:'0,120,255', alpha:0.07 },
   ];
   drawHeatmapOverlay(ctxL, WL, HL, leftHotspots);
-  const WR = rightCanvas.width, HR = rightCanvas.height;
+  const WR = rightCanvas.offsetWidth, HR = rightCanvas.offsetHeight;
+  rightCanvas.width = WR * dpr; rightCanvas.height = HR * dpr;
   const ctxR = rightCanvas.getContext('2d');
+  ctxR.scale(dpr, dpr);
   drawWireframe(ctxR, WR, HR);
   const rightHotspots = [
     { x:WR*0.35, y:HR*0.22, r:50, rgb:'255,80,0',   alpha:0.5  },

@@ -105,7 +105,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
                       <span style="font-size:0.68rem;color:rgba(255,255,255,0.5);font-family:monospace;">1,000 visitors</span>
                       <span style="font-size:0.68rem;color:rgba(255,255,255,0.3);font-family:monospace;font-style:italic;">per month</span>
                     </div>
-                    <canvas id="funnel-canvas" width="380" height="260" style="max-width:100%;display:block;"></canvas>
+                    <canvas id="funnel-canvas" style="display:block;width:100%;height:300px;"></canvas>
                     <div style="display:flex;justify-content:space-around;padding:0.5rem 1rem 0.75rem;border-top:1px solid rgba(255,255,255,0.05);">
                       <div style="text-align:center;"><div style="font-size:1rem;font-weight:700;color:rgba(255,255,255,0.35);font-family:monospace;">21</div><div style="font-size:0.6rem;color:rgba(255,255,255,0.25);">generic leads</div></div>
                       <div style="text-align:center;"><div id="funnel-plus" style="font-size:1rem;font-weight:700;color:#34d399;font-family:monospace;">+93 leads/mo</div><div style="font-size:0.6rem;color:#34d399;opacity:0.7;">with PelloPitch</div></div>
@@ -548,7 +548,15 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
   const canvas = document.getElementById('funnel-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
+  let W = 0, H = 0;
+  function resizeFunnel() {
+    const dpr = window.devicePixelRatio || 1;
+    W = canvas.offsetWidth; H = canvas.offsetHeight;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    ctx.scale(dpr, dpr);
+  }
+  new ResizeObserver(resizeFunnel).observe(canvas);
+  resizeFunnel();
   const particles = [];
   const PARTICLE_COUNT = 60;
   class Particle {
