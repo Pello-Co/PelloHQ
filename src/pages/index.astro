@@ -563,36 +563,35 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     -webkit-backdrop-filter: blur(6px);
   }
 
-  /* Mobile: PelloReach + PelloSocial */
+  /* Mobile: PelloReach + PelloSocial — canvas below text */
   @media (max-width: 1023px) {
-    /* Hide floating Social HUD */
     #soc-hud-glass { display: none !important; }
 
-    /* Hide bg canvas animations — they overlap text on mobile */
+    /* Stack card contents vertically */
+    .product-card[data-product="1"],
+    .product-card[data-product="3"] {
+      display: flex;
+      flex-direction: column;
+    }
+    /* Text on top */
+    .product-card[data-product="1"] .product-card-content,
+    .product-card[data-product="3"] .product-card-content {
+      order: 1;
+      position: relative;
+      z-index: 2;
+      background: transparent;
+    }
+    /* Canvas below text — pull out of absolute positioning */
     .product-card[data-product="1"] .product-bg,
     .product-card[data-product="3"] .product-bg {
-      display: none !important;
-    }
-
-    /* PelloReach: restore the standard visual panel */
-    .product-card[data-product="1"] .ps-visual,
-    .product-card[data-product="1"] .product-visual-panel {
-      display: block !important;
-    }
-
-    /* PelloSocial: restore the standard visual panel */
-    .product-card[data-product="3"] .ps-visual {
-      display: block !important;
-    }
-    .product-card[data-product="3"] .product-visual-panel {
-      display: block !important;
-      background: rgba(6,7,18,0.10) !important;
-      border: 1px solid rgba(255,255,255,0.08) !important;
-      backdrop-filter: blur(8px) !important;
-      -webkit-backdrop-filter: blur(8px) !important;
-    }
-    .product-card[data-product="3"] .product-visual-panel > * {
-      display: block !important;
+      order: 2;
+      position: relative !important;
+      inset: auto !important;
+      width: 100% !important;
+      height: 300px !important;
+      opacity: 1 !important;
+      flex-shrink: 0;
+      border-radius: 0 0 1.1rem 1.1rem;
     }
   }
 </style>
