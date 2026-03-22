@@ -657,10 +657,11 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
       position: relative !important;
       inset: auto !important;
       width: 100% !important;
-      height: 300px !important;
+      height: 380px !important;
       opacity: 1 !important;
       flex-shrink: 0;
       border-radius: 0 0 1.1rem 1.1rem;
+      display: block !important;
     }
     /* Keep standard ps-visual panels hidden — globe/reach canvas IS the visual */
     .product-card[data-product="1"] .ps-visual,
@@ -2338,9 +2339,10 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     card.style.background = `linear-gradient(135deg, ${color}08 0%, rgba(6, 7, 18, 0.75) 50%, ${color}05 100%)`;
     card.style.borderColor = `${color}15`;
 
-    // Resize observer — track full card dimensions
+    // Resize observer — use canvas dimensions for products 1+3 on mobile (canvas is explicit height)
     new ResizeObserver(() => {
-      const nRect = card.getBoundingClientRect();
+      const targetEl = (i === 1 || i === 3) ? bgCanvas : card;
+      const nRect = targetEl.getBoundingClientRect();
       const nw = Math.round(nRect.width) || cw;
       const nh = Math.round(nRect.height) || ch;
       const cs = pvCards[i];
@@ -2351,7 +2353,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
       bgCanvas.style.height = `${nh}px`;
       bgCtx.setTransform(halfDpr, 0, 0, halfDpr, 0, 0);
       cs.state = initProdState(i, nw, nh);
-    }).observe(card);
+    }).observe(i === 1 || i === 3 ? bgCanvas : card);
 
     // Fade in on first intersection
     requestAnimationFrame(() => { bgCanvas.style.opacity = '1'; });
