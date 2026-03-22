@@ -402,23 +402,25 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     -webkit-backdrop-filter: blur(8px) saturate(1.1);
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
   }
-  /* PelloReach: hide the browser panel, keep 2-column grid with text on right */
-  .product-card[data-product="1"] .product-visual-panel {
-    display: none !important;
-  }
-  .product-card[data-product="1"] .ps-visual {
-    display: none !important;
-  }
-  /* PelloSocial: keep layout grid but make visual panel transparent so globe shows through */
-  .product-card[data-product="3"] .product-visual-panel {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-  .product-card[data-product="3"] .product-visual-panel > * {
-    display: none !important;
+  /* PelloReach desktop: hide the browser panel (canvas is the visual) */
+  @media (min-width: 1024px) {
+    .product-card[data-product="1"] .product-visual-panel {
+      display: none !important;
+    }
+    .product-card[data-product="1"] .ps-visual {
+      display: none !important;
+    }
+    /* PelloSocial desktop: transparent panel so globe shows through */
+    .product-card[data-product="3"] .product-visual-panel {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+    .product-card[data-product="3"] .product-visual-panel > * {
+      display: none !important;
+    }
   }
   /* Tinted glass box around description text for ALL product cards */
   .product-card .ps-info .text-body-lg {
@@ -561,33 +563,36 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     -webkit-backdrop-filter: blur(6px);
   }
 
-  /* Mobile: PelloReach + PelloSocial — reflow canvas below text */
+  /* Mobile: PelloReach + PelloSocial */
   @media (max-width: 1023px) {
+    /* Hide floating Social HUD */
     #soc-hud-glass { display: none !important; }
 
-    /* Make these cards flex column so canvas flows below text */
-    .product-card[data-product="1"],
-    .product-card[data-product="3"] {
-      display: flex;
-      flex-direction: column;
-    }
-    /* Text content first */
-    .product-card[data-product="1"] .product-card-content,
-    .product-card[data-product="3"] .product-card-content {
-      order: 1;
-      position: relative;
-      z-index: 1;
-    }
-    /* Canvas second — remove absolute positioning, give it height */
+    /* Hide bg canvas animations — they overlap text on mobile */
     .product-card[data-product="1"] .product-bg,
     .product-card[data-product="3"] .product-bg {
-      order: 2;
-      position: relative !important;
-      inset: auto !important;
-      width: 100% !important;
-      height: 280px !important;
-      opacity: 1 !important;
-      border-radius: 0 0 1.25rem 1.25rem;
+      display: none !important;
+    }
+
+    /* PelloReach: restore the standard visual panel */
+    .product-card[data-product="1"] .ps-visual,
+    .product-card[data-product="1"] .product-visual-panel {
+      display: block !important;
+    }
+
+    /* PelloSocial: restore the standard visual panel */
+    .product-card[data-product="3"] .ps-visual {
+      display: block !important;
+    }
+    .product-card[data-product="3"] .product-visual-panel {
+      display: block !important;
+      background: rgba(6,7,18,0.10) !important;
+      border: 1px solid rgba(255,255,255,0.08) !important;
+      backdrop-filter: blur(8px) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
+    }
+    .product-card[data-product="3"] .product-visual-panel > * {
+      display: block !important;
     }
   }
 </style>
