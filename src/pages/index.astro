@@ -2636,7 +2636,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     await runUrlPhase(v);
   }
 
-  const section = document.getElementById('pitch-variant-31');
+  const section = document.getElementById('product-pitch');
   if (section) {
     const observer = new IntersectionObserver(entries => {
       entries.forEach(e => { if (e.isIntersecting && !started) { started=true; observer.disconnect(); runCycle(); } });
