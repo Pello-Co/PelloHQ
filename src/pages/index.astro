@@ -1831,6 +1831,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     const tooltipW=280, tooltipH=pad*2+lineH*(phone.accounts.length+3)+10;
     let tx=sx+16, ty=sy-tooltipH/2;
     if (tx+tooltipW>W-8) tx=sx-tooltipW-16;
+    tx=Math.max(8,Math.min(W-tooltipW-8,tx));
     ty=Math.max(8,Math.min(H-tooltipH-8,ty));
     c.save();
     c.shadowColor='rgba(0,242,234,0.25)'; c.shadowBlur=24;
@@ -2357,6 +2358,24 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
 
     // Fade in on first intersection
     requestAnimationFrame(() => { bgCanvas.style.opacity = '1'; });
+
+    // On mobile, products 1+3 canvas reflows to relative position after paint.
+    // Force a resize re-init after layout settles so W/H match actual canvas size.
+    if (i === 1 || i === 3) {
+      setTimeout(() => {
+        const r2 = bgCanvas.getBoundingClientRect();
+        const nw2 = Math.round(r2.width) || cw;
+        const nh2 = Math.round(r2.height) || ch;
+        const cs = pvCards[i];
+        cs.w = nw2; cs.h = nh2;
+        bgCanvas.width = Math.round(nw2 * halfDpr);
+        bgCanvas.height = Math.round(nh2 * halfDpr);
+        bgCanvas.style.width = `${nw2}px`;
+        bgCanvas.style.height = `${nh2}px`;
+        bgCtx.setTransform(halfDpr, 0, 0, halfDpr, 0, 0);
+        cs.state = initProdState(i, nw2, nh2);
+      }, 300);
+    }
   });
 
   // IntersectionObserver — only render cards within 200px of viewport
