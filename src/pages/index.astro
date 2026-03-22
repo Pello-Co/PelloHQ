@@ -1381,7 +1381,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
   function initReach(w: number, h: number): Record<string, unknown> {
     const NC = 15, NR = 12;
     const VP_Y = h * 0.12, BOT_Y = h * 0.96, HALF_W = w * 0.32;
-    const GRID_CX = w * 0.72; // center of grid — right half of the card
+    const GRID_CX = w < 600 ? w * 0.50 : w * 0.72; // center of grid — right half on desktop, centred on mobile
     const total = (NC - 1) * (NR - 1);
     const cells: ReachCell[] = Array.from({ length: total }, reachGenCell);
     const particles: ReachParticle[] = Array.from({ length: 22 }, () => ({
@@ -1784,8 +1784,8 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
   }
 
   function initSocial(w: number, h: number): Record<string,unknown> {
-    const GLOBE_R=Math.min(w,h)*0.38;
-    const GLOBE_CX=w*0.32, GLOBE_CY=h*0.50;
+    const GLOBE_R=Math.min(w,h)*(w<600?0.42:0.38);
+    const GLOBE_CX=w<600?w*0.50:w*0.32, GLOBE_CY=h*0.50;
     // Fibonacci sphere 800 dots
     const globeDots: SocGlobeDot[]=[];
     { const gr2=(1+Math.sqrt(5))/2;
