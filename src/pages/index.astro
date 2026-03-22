@@ -2379,13 +2379,13 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
 
   function makeUserStage(label) {
     const el = document.createElement('div');
-    el.style.cssText = 'display:flex;align-items:center;gap:0.65rem;color:rgba(255,255,255,0.35);font-size:0.85rem;transition:color 0.3s;';
-    el.innerHTML = '<span style="width:16px;height:16px;border:1.5px solid #d946ef;border-top-color:transparent;border-radius:50%;animation:wow1-spin 0.7s linear infinite;flex-shrink:0;display:inline-block;"></span><span>' + label + '</span>';
+    el.style.cssText = 'display:flex;align-items:flex-start;gap:0.5rem;color:rgba(255,255,255,0.35);font-size:0.72rem;line-height:1.3;transition:color 0.3s;';
+    el.innerHTML = '<span style="width:13px;height:13px;min-width:13px;border:1.5px solid #d946ef;border-top-color:transparent;border-radius:50%;animation:wow1-spin 0.7s linear infinite;display:inline-block;margin-top:1px;"></span><span>' + label + '</span>';
     return el;
   }
   function doneUserStage(el, text) {
-    el.style.color = 'rgba(255,255,255,0.75)';
-    el.innerHTML = '<span style="color:#34d399;font-size:1rem;flex-shrink:0;line-height:1;">&#10003;</span><span>' + text + '</span>';
+    el.style.color = 'rgba(255,255,255,0.8)';
+    el.innerHTML = '<span style="color:#34d399;font-size:0.85rem;flex-shrink:0;min-width:13px;line-height:1.3;">&#10003;</span><span>' + text + '</span>';
   }
 
   // ── Terminal helpers ───────────────────────────────────────────────────
