@@ -35,7 +35,41 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
       <div class="product-card" data-product="1">
         <canvas class="product-bg" aria-hidden="true"></canvas>
         <div class="product-card-content">
-          <ProductSection productIndex={1} flip={true} />
+          <section class="section ps-section relative overflow-hidden" style="--product-color: #8b5cf6;">
+            <div class="absolute inset-0 pointer-events-none" style="background: radial-gradient(ellipse 60% 50% at 20% 50%, #8b5cf60d 0%, transparent 70%);" aria-hidden="true"></div>
+            <div class="section-divider absolute top-0 left-0 right-0" aria-hidden="true"></div>
+            <div class="container relative z-10">
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 xl:gap-20 items-center">
+                <div class="ps-info flex flex-col order-1 lg:order-2">
+                  <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: #8b5cf618; border: 1px solid #8b5cf628; color: #8b5cf6;" aria-hidden="true">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M2 6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1l-8 5.5L2 6Z" fill="currentColor" opacity="0.25"/>
+                        <path d="M2 6.5V16a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V6.5L9 12 2 6.5Z" fill="currentColor" opacity="0.1"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <p class="text-xs font-semibold uppercase tracking-widest" style="color: #8b5cf6;">PelloReach</p>
+                      <p class="text-xs text-zinc-500">Email outreach at massive scale</p>
+                    </div>
+                  </div>
+                  <h2 class="text-headline text-white mb-5" style="white-space: pre-line;">Land in the inbox.&#10;Not spam.</h2>
+                  <p class="text-body-lg text-zinc-400 mb-8 leading-relaxed">Cold outreach fails because of deliverability. PelloReach solves that with 500+ warmed domains, intelligent lead finding, and AI-personalised sequences that actually get replies. No blacklists. No spam folders. Just conversations with the right people.</p>
+                  <ul class="flex flex-wrap gap-2 mb-10 list-none m-0 p-0" role="list">
+                    <li class="feature-pill" style="background: #8b5cf60d; color: #8b5cf6; border-color: #8b5cf625;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>500+ pre-warmed domains</li>
+                    <li class="feature-pill" style="background: #8b5cf60d; color: #8b5cf6; border-color: #8b5cf625;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>AI-personalised sequences</li>
+                    <li class="feature-pill" style="background: #8b5cf60d; color: #8b5cf6; border-color: #8b5cf625;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Inbox placement technology</li>
+                    <li class="feature-pill" style="background: #8b5cf60d; color: #8b5cf6; border-color: #8b5cf625;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Automated lead discovery</li>
+                  </ul>
+                  <a href="https://pelloreach.com" target="_blank" rel="noopener noreferrer" class="btn-primary self-start" style="background: linear-gradient(135deg, #8b5cf6 0%, #8b5cf6cc 100%);">
+                    Explore PelloReach
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </a>
+                </div>
+                <!-- No ps-visual — reach canvas IS the visual -->
+              </div>
+            </div>
+          </section>
         </div>
       </div>
       <div class="product-card" data-product="2">
@@ -48,7 +82,43 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
         <canvas class="product-bg" aria-hidden="true"></canvas>
         <div id="soc-hud-glass" aria-hidden="true"></div>
         <div class="product-card-content">
-          <ProductSection productIndex={3} flip={true} />
+          <section class="section ps-section relative overflow-hidden" style="--product-color: #c026d3;">
+            <div class="absolute inset-0 pointer-events-none" style="background: radial-gradient(ellipse 60% 50% at 20% 50%, #c026d30d 0%, transparent 70%);" aria-hidden="true"></div>
+            <div class="section-divider absolute top-0 left-0 right-0" aria-hidden="true"></div>
+            <div class="container relative z-10">
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 xl:gap-20 items-center">
+                <div class="ps-info flex flex-col order-1 lg:order-2">
+                  <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: #c026d318; border: 1px solid #c026d328; color: #c026d3;" aria-hidden="true">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <circle cx="9" cy="9" r="3" fill="currentColor" opacity="0.3"/>
+                        <circle cx="16" cy="5" r="2" fill="currentColor" opacity="0.3"/>
+                        <circle cx="16" cy="15" r="2" fill="currentColor" opacity="0.3"/>
+                        <path d="M12 9.5l3-3M12 10l3 3" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <p class="text-xs font-semibold uppercase tracking-widest" style="color: #c026d3;">PelloSocial</p>
+                      <p class="text-xs text-zinc-500">Social growth infrastructure</p>
+                    </div>
+                  </div>
+                  <h2 class="text-headline text-white mb-5" style="white-space: pre-line;">Growth at&#10;server-farm scale.</h2>
+                  <p class="text-body-lg text-zinc-400 mb-8 leading-relaxed">PelloSocial is social media growth infrastructure that most agencies don&apos;t know exists. AI-powered personas, geo-targeted accounts, and automated engagement — running on dedicated hardware across target markets. Platform-native content, real engagement patterns, measurable growth.</p>
+                  <ul class="flex flex-wrap gap-2 mb-10 list-none m-0 p-0" role="list">
+                    <li class="feature-pill" style="background: #c026d30d; color: #c026d3; border-color: #c026d325;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>AI-powered personas</li>
+                    <li class="feature-pill" style="background: #c026d30d; color: #c026d3; border-color: #c026d325;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Geo-targeted accounts</li>
+                    <li class="feature-pill" style="background: #c026d30d; color: #c026d3; border-color: #c026d325;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Dedicated hardware</li>
+                    <li class="feature-pill" style="background: #c026d30d; color: #c026d3; border-color: #c026d325;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Multi-platform growth</li>
+                  </ul>
+                  <a href="#contact" class="btn-secondary self-start">
+                    Learn More
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </a>
+                </div>
+                <!-- No ps-visual — globe canvas IS the visual -->
+              </div>
+            </div>
+          </section>
         </div>
       </div>
       <div class="product-card" data-product="4">
