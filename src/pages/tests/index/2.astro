@@ -1,0 +1,2591 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+import HeroPello from '../../../components/sections/HeroPello.astro';
+import HowItWorks from '../../../components/sections/HowItWorks.astro';
+import ProductSection from '../../../components/sections/ProductSection.astro';
+import UseCases from '../../../components/sections/UseCases.astro';
+import Stats from '../../../components/sections/Stats.astro';
+import FAQ from '../../../components/sections/FAQ.astro';
+import FinalCTA from '../../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="Pello — AI-Powered Full Stack Marketing Agency" description="Pello propels business growth with AI-powered marketing across SEO, outreach, content, social, ads, and custom automations. Enter your website to see what Pello can do for you.">
+  <Header />
+  <main id="main-content">
+    <!-- Section 1: Hero with Aurora + Dot Grid Background -->
+    <div id="dot-grid-wrap" class="relative">
+      <canvas class="aurora-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+      <canvas class="dot-grid-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <!-- Section 2: How It Works -->
+    <HowItWorks />
+
+    <!-- Sections 3–10: Individual product showcases wrapped in animated cards -->
+    <div id="products" class="flex flex-col gap-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto py-8">
+      <div class="product-card" data-product="0">
+        <canvas class="product-bg" aria-hidden="true"></canvas>
+        <div class="product-card-content">
+          <ProductSection productIndex={0} flip={false} />
+        </div>
+      </div>
+      <div class="product-card" data-product="1">
+        <canvas class="product-bg" aria-hidden="true"></canvas>
+        <div class="product-card-content">
+          <ProductSection productIndex={1} flip={true} />
+        </div>
+      </div>
+      <div class="product-card" data-product="2">
+        <canvas class="product-bg" aria-hidden="true"></canvas>
+        <div class="product-card-content">
+          <ProductSection productIndex={2} flip={false} />
+        </div>
+      </div>
+      <div class="product-card" data-product="3">
+        <canvas class="product-bg" aria-hidden="true"></canvas>
+        <div id="soc-hud-glass" aria-hidden="true"></div>
+        <div class="product-card-content">
+          <ProductSection productIndex={3} flip={true} />
+        </div>
+      </div>
+      <div class="product-card" data-product="4">
+        <canvas class="product-bg" aria-hidden="true"></canvas>
+        <div class="product-card-content">
+          <!-- PelloPitch — custom Live Page Preview (tests/index/2) -->
+          <section
+            id="product-pitch"
+            class="section ps-section relative overflow-hidden"
+            aria-labelledby="product-pitch-headline"
+            style="--product-color: #d946ef;"
+          >
+            <div
+              class="absolute inset-0 pointer-events-none"
+              style="background: radial-gradient(ellipse 60% 50% at 80% 50%, #d946ef0d 0%, transparent 70%);"
+              aria-hidden="true"
+            ></div>
+            <div class="section-divider absolute top-0 left-0 right-0" aria-hidden="true"></div>
+            <div class="container relative z-10">
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 xl:gap-20 items-center">
+
+                <!-- Info side -->
+                <div class="ps-info flex flex-col lg:order-1">
+                  <div class="flex items-center gap-3 mb-6">
+                    <div
+                      class="w-10 h-10 rounded-xl flex items-center justify-center"
+                      style="background: #d946ef18; border: 1px solid #d946ef28; color: #d946ef;"
+                      aria-hidden="true"
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <rect x="3" y="3" width="18" height="13" rx="2" fill="currentColor" opacity="0.15"/>
+                        <rect x="3" y="3" width="18" height="4" rx="1" fill="currentColor" opacity="0.25"/>
+                        <path d="M7 13h6M7 10h10" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <p class="text-xs font-semibold uppercase tracking-widest" style="color: #d946ef;">PelloPitch</p>
+                      <p class="text-xs text-zinc-500">Landing pages that know your visitor</p>
+                    </div>
+                  </div>
+
+                  <h2 id="product-pitch-headline" class="text-headline text-white mb-5" style="white-space: pre-line;">Your page, built&#10;for every visitor.</h2>
+
+                  <p class="text-body-lg text-zinc-400 mb-8 leading-relaxed">
+                    PelloPitch reads the visitor — their source, industry, and intent — and builds a unique landing page for them in real time. The headline changes. The offer shifts. The copy speaks directly to them. No templates. No A/B tests. Just pages that convert.
+                  </p>
+
+                  <ul class="flex flex-wrap gap-2 mb-10 list-none m-0 p-0" role="list">
+                    <li class="feature-pill" style="background: #d946ef0d; color: #d946ef; border-color: #d946ef25;">
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      Real-time page generation
+                    </li>
+                    <li class="feature-pill" style="background: #d946ef0d; color: #d946ef; border-color: #d946ef25;">
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      Per-visitor personalisation
+                    </li>
+                    <li class="feature-pill" style="background: #d946ef0d; color: #d946ef; border-color: #d946ef25;">
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      Source &amp; intent detection
+                    </li>
+                    <li class="feature-pill" style="background: #d946ef0d; color: #d946ef; border-color: #d946ef25;">
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      8–12% conversion rates
+                    </li>
+                  </ul>
+
+                  <a
+                    href="https://pellopitch.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="btn-primary self-start"
+                    style="background: linear-gradient(135deg, #d946ef 0%, #d946efcc 100%);"
+                  >
+                    Explore PelloPitch
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                      <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </a>
+                </div>
+
+                <!-- Visual side: Live Page Preview -->
+                <div class="ps-visual lg:order-2">
+                  <div class="pitch-browser-panel">
+                    <!-- Browser chrome bar -->
+                    <div class="pitch-chrome-bar">
+                      <div class="flex items-center gap-1.5" aria-hidden="true">
+                        <span class="pitch-dot pitch-dot-red"></span>
+                        <span class="pitch-dot pitch-dot-yellow"></span>
+                        <span class="pitch-dot pitch-dot-green"></span>
+                      </div>
+                      <div class="pitch-url-bar">
+                        <span class="pitch-url-text" id="pitch-url-text">acme.com/lp?src=google-ads&amp;industry=saas</span>
+                      </div>
+                      <div class="flex items-center gap-2 flex-shrink-0">
+                        <span class="text-xs font-mono text-zinc-600">PelloPitch</span>
+                        <span class="pitch-live-badge">Live</span>
+                      </div>
+                    </div>
+
+                    <!-- Content area with cycling scenarios -->
+                    <div class="pitch-content-area">
+                      <!-- Loading overlay -->
+                      <div class="pitch-loading-overlay" id="pitch-loading" aria-hidden="true">
+                        <div class="pitch-spinner"></div>
+                        <p class="pitch-loading-text">PelloPitch AI is personalising your page...</p>
+                      </div>
+
+                      <!-- Scenario content -->
+                      <div class="pitch-scenario" id="pitch-scenario">
+                        <div
+                          class="pitch-source-badge"
+                          id="pitch-source-badge"
+                          style="color: #60a5fa; background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.25);"
+                        >
+                          <span class="pitch-source-dot"></span>
+                          <span id="pitch-source-label">Google Ads → SaaS</span>
+                        </div>
+                        <h3 class="pitch-page-headline" id="pitch-headline">Scale your SaaS faster with AI marketing</h3>
+                        <p class="pitch-page-sub" id="pitch-sub">Built for Series A+ startups like yours</p>
+                        <div
+                          class="pitch-mock-cta"
+                          id="pitch-mock-cta"
+                          style="color: #60a5fa; background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.3);"
+                        >Get Started Free →</div>
+                        <div class="pitch-cvr-badge">
+                          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                            <path d="M2 8l2.5-4L6 6l2-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                          </svg>
+                          <span id="pitch-cvr-val">11.4% CVR</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Bottom metrics strip -->
+                    <div class="pitch-metrics-strip">
+                      <div class="pitch-metric">
+                        <span class="pitch-metric-val">8–12%</span>
+                        <span class="pitch-metric-lbl">avg CVR</span>
+                      </div>
+                      <div class="pitch-metric-sep" aria-hidden="true"></div>
+                      <div class="pitch-metric">
+                        <span class="pitch-metric-val">∞</span>
+                        <span class="pitch-metric-lbl">variants</span>
+                      </div>
+                      <div class="pitch-metric-sep" aria-hidden="true"></div>
+                      <div class="pitch-metric">
+                        <span class="pitch-metric-val">&lt;200ms</span>
+                        <span class="pitch-metric-lbl">load time</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p class="pitch-caption">Every visitor gets a unique page — built in real-time by AI</p>
+                </div>
+
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+      <div class="product-card" data-product="5">
+        <canvas class="product-bg" aria-hidden="true"></canvas>
+        <div class="product-card-content">
+          <ProductSection productIndex={5} flip={true} />
+        </div>
+      </div>
+      <div class="product-card" data-product="6">
+        <canvas class="product-bg" aria-hidden="true"></canvas>
+        <div class="product-card-content">
+          <ProductSection productIndex={6} flip={false} />
+        </div>
+      </div>
+      <div class="product-card" data-product="7">
+        <canvas class="product-bg" aria-hidden="true"></canvas>
+        <div class="product-card-content">
+          <ProductSection productIndex={7} flip={true} />
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 11: Use Cases -->
+    <UseCases />
+
+    <!-- Section 12: Stats -->
+    <Stats />
+
+    <!-- Section 13: FAQ -->
+    <FAQ />
+
+    <!-- Section 14: Final CTA with Aurora + Dot Grid -->
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<!-- Skip to main content link (accessibility) -->
+<style is:global>
+  #skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-decoration: none;
+    transition: top 0.1s;
+  }
+  #skip-link:focus {
+    top: 0;
+  }
+</style>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<!-- Glassmorphism overrides -->
+<style is:global>
+  #dot-grid-wrap .url-input-wrap,
+  .final-cta .url-input-wrap {
+    background: rgba(255, 255, 255, 0.06) !important;
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+  #dot-grid-wrap .hero-panel {
+    background: rgba(6, 7, 18, 0.55) !important;
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  }
+  #dot-grid-wrap .panel-source-row {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+  #dot-grid-wrap .core-inner {
+    background: rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #dot-grid-wrap .panel-core-section {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+  #dot-grid-wrap .channel-node {
+    background: rgba(255, 255, 255, 0.015) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #dot-grid-wrap .panel-header-bar {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+  #dot-grid-wrap .panel-ready-bar {
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+  #dot-grid-wrap .node-stat-text {
+    color: #a78bfa !important;
+  }
+  #dot-grid-wrap .hero-panel-mobile {
+    background: rgba(10, 10, 20, 0.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1.25rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+  .final-cta {
+    background: rgba(20, 15, 40, 0.35) !important;
+    backdrop-filter: blur(24px) saturate(1.4) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+    border-color: rgba(99, 102, 241, 0.15) !important;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+  }
+  .final-cta {
+    overflow: hidden;
+    position: relative;
+  }
+  .final-cta > .absolute.inset-0.pointer-events-none {
+    display: none !important;
+  }
+  #dot-grid-wrap .grid-texture,
+  #dot-grid-wrap .absolute.inset-0.pointer-events-none[style*="radial-gradient"] {
+    display: none !important;
+  }
+  #hero {
+    background: transparent !important;
+  }
+</style>
+
+<!-- Product card styles -->
+<style is:global>
+  .product-card {
+    position: relative;
+    border-radius: 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(6, 7, 18, 0.7);
+    overflow: hidden;
+  }
+  .product-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    pointer-events: none;
+  }
+  .product-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 2s ease-in;
+    border-radius: inherit;
+  }
+  .product-card-content {
+    position: relative;
+    z-index: 1;
+    padding: 1.5rem 1rem;
+  }
+  @media (min-width: 768px) {
+    .product-card-content {
+      padding: 2.5rem 2rem;
+    }
+  }
+  /* Strip the ProductSection's own section chrome so the card provides the container */
+  .product-card .ps-section {
+    background: transparent !important;
+    border: none !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  .product-card .container {
+    max-width: none;
+    padding: 0;
+  }
+  .product-card .ps-section .grid {
+    gap: 2.5rem;
+  }
+  .product-card .section-divider {
+    display: none !important;
+  }
+  /* Soften the accent glow — canvas provides the colour */
+  .product-card .ps-section > .absolute.inset-0 {
+    opacity: 0.5;
+  }
+</style>
+
+<!-- Product card sub-component glassmorphism -->
+<style is:global>
+  /* The visual panel (browser-style box on the left/right) */
+  .product-card .product-visual-panel {
+    background: rgba(6, 7, 18, 0.10) !important;
+    backdrop-filter: blur(8px) saturate(1.1);
+    -webkit-backdrop-filter: blur(8px) saturate(1.1);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+  /* PelloReach: hide the browser panel, keep 2-column grid with text on right */
+  .product-card[data-product="1"] .product-visual-panel {
+    display: none !important;
+  }
+  .product-card[data-product="1"] .ps-visual {
+    display: none !important;
+  }
+  /* PelloSocial: keep layout grid but make visual panel transparent so globe shows through */
+  .product-card[data-product="3"] .product-visual-panel {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .product-card[data-product="3"] .product-visual-panel > * {
+    display: none !important;
+  }
+  /* Tinted glass box around description text for ALL product cards */
+  .product-card .ps-info .text-body-lg {
+    backdrop-filter: blur(12px) saturate(1.2);
+    -webkit-backdrop-filter: blur(12px) saturate(1.2);
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem !important;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+  .product-card[data-product="0"] .ps-info .text-body-lg { background: rgba(99, 102, 241, 0.06) !important; border: 1px solid rgba(99, 102, 241, 0.15) !important; }
+  .product-card[data-product="1"] .ps-info .text-body-lg { background: rgba(139, 92, 246, 0.06) !important; border: 1px solid rgba(139, 92, 246, 0.15) !important; }
+  .product-card[data-product="2"] .ps-info .text-body-lg { background: rgba(168, 85, 247, 0.06) !important; border: 1px solid rgba(168, 85, 247, 0.15) !important; }
+  .product-card[data-product="3"] .ps-info .text-body-lg { background: rgba(0, 242, 234, 0.05) !important; border: 1px solid rgba(0, 242, 234, 0.12) !important; }
+  .product-card[data-product="3"] { background: linear-gradient(135deg, rgba(0,242,234,0.04) 0%, rgba(6,7,18,0.75) 50%, rgba(0,242,234,0.03) 100%) !important; border-color: rgba(0,242,234,0.10) !important; }
+  .product-card[data-product="3"] .btn-primary,
+  .product-card[data-product="3"] .btn-secondary { border-color: rgba(0,242,234,0.15) !important; }
+  .product-card[data-product="3"] .feature-pill { border-color: rgba(0,242,234,0.08) !important; }
+  /* Override all magenta/pink text to cyan */
+  .product-card[data-product="3"] .ps-section { --product-color: #00f2ea !important; }
+  .product-card[data-product="3"] [style*="color: #c026d3"],
+  .product-card[data-product="3"] [style*="color:#c026d3"] { color: #00f2ea !important; }
+  .product-card[data-product="3"] .gradient-text { background-image: linear-gradient(135deg, #00f2ea, #80fff8) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; }
+  .product-card[data-product="3"] .feature-pill svg { color: #00f2ea !important; }
+  .product-card[data-product="3"] .badge { background: rgba(0,242,234,0.08) !important; color: #00f2ea !important; border-color: rgba(0,242,234,0.15) !important; }
+  .product-card[data-product="3"] .badge .badge-dot { background: #00f2ea !important; }
+  .product-card[data-product="3"] .ps-info h2 span { color: #00f2ea !important; -webkit-text-fill-color: #00f2ea !important; }
+  .product-card[data-product="3"] .feature-pill .text-current { color: #00f2ea !important; }
+  #soc-hud-glass {
+    position: absolute;
+    z-index: 2;
+    pointer-events: none;
+    border-radius: 12px;
+    background: rgba(0, 12, 14, 0.35);
+    backdrop-filter: blur(16px) saturate(1.3);
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
+    border: 1px solid rgba(0, 242, 234, 0.12);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(0, 242, 234, 0.06);
+    opacity: 1 !important;
+    display: none;
+    padding: 10px 12px;
+    font-family: "SF Mono","Fira Code",monospace;
+  }
+  .soc-hud-section { margin-bottom: 8px; }
+  .soc-hud-title {
+    font-size: 9px;
+    font-weight: bold;
+    color: #80fff8;
+    text-align: center;
+    opacity: 0.8;
+    letter-spacing: 0.5px;
+  }
+  .soc-hud-sep {
+    height: 1px;
+    background: rgba(0, 242, 234, 0.2);
+    margin: 4px 0 6px;
+  }
+  .soc-hud-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    line-height: 1.55;
+  }
+  .soc-hud-label {
+    color: #00f2ea;
+    opacity: 0.5;
+  }
+  .soc-hud-val {
+    color: #b0fffc;
+    opacity: 0.7;
+  }
+  .soc-hud-status {
+    text-align: center;
+    font-size: 8px;
+    color: #80fff8;
+    opacity: 0.45;
+    margin-top: 6px;
+    letter-spacing: 0.3px;
+  }
+  .product-card[data-product="4"] .ps-info .text-body-lg { background: rgba(217, 70, 239, 0.06) !important; border: 1px solid rgba(217, 70, 239, 0.15) !important; }
+  .product-card[data-product="5"] .ps-info .text-body-lg { background: rgba(124, 58, 237, 0.06) !important; border: 1px solid rgba(124, 58, 237, 0.15) !important; }
+  .product-card[data-product="6"] .ps-info .text-body-lg { background: rgba(79, 70, 229, 0.06) !important; border: 1px solid rgba(79, 70, 229, 0.15) !important; }
+  .product-card[data-product="7"] .ps-info .text-body-lg { background: rgba(99, 102, 241, 0.06) !important; border: 1px solid rgba(99, 102, 241, 0.15) !important; }
+  /* Prevent GSAP opacity animation from breaking backdrop-filter on product cards */
+  .product-card .ps-visual,
+  .product-card .ps-info,
+  .product-card .ps-section {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* Panel header bar */
+  .product-card .product-visual-panel > div:first-child {
+    background: rgba(0, 0, 0, 0.05) !important;
+  }
+
+  /* Data rows inside the panel */
+  .product-card .product-visual-panel [style*="background: rgba(255,255,255,0.03)"] {
+    background: rgba(255, 255, 255, 0.015) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  }
+
+  /* Feature pills / checkmark items */
+  .product-card .feature-pill {
+    background: rgba(255, 255, 255, 0.02) !important;
+    backdrop-filter: blur(6px) saturate(1.1);
+    -webkit-backdrop-filter: blur(6px) saturate(1.1);
+    border: 1px solid rgba(255, 255, 255, 0.04) !important;
+  }
+
+  /* CTA buttons — frosted glass */
+  .product-card .btn-primary,
+  .product-card .btn-secondary {
+    background: rgba(255, 255, 255, 0.04) !important;
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+  .product-card .btn-primary:hover,
+  .product-card .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.07) !important;
+  }
+
+  /* Product icon badge container */
+  .product-card .ps-info > div:first-child > div:first-child {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  /* Metrics strip at bottom of visual panel */
+  .product-card .product-visual-panel [style*="border-color: rgba(255,255,255,0.055)"] {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  /* Status badges (Ready, Active, Queued) */
+  .product-card .product-visual-panel span[class*="rounded-full"] {
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+</style>
+
+<!-- PelloPitch Live Preview styles -->
+<style is:global>
+  .pitch-browser-panel {
+    background: rgba(6, 7, 18, 0.10);
+    backdrop-filter: blur(8px) saturate(1.1);
+    -webkit-backdrop-filter: blur(8px) saturate(1.1);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1rem;
+    overflow: hidden;
+  }
+  .pitch-chrome-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    background: rgba(0,0,0,0.15);
+  }
+  .pitch-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .pitch-dot-red    { background: rgba(255,95,86,0.7); }
+  .pitch-dot-yellow { background: rgba(255,189,68,0.7); }
+  .pitch-dot-green  { background: rgba(38,201,63,0.7); }
+  .pitch-url-bar {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 0.375rem;
+    padding: 0.3rem 0.75rem;
+  }
+  .pitch-url-text {
+    font-family: "SF Mono","Fira Code",monospace;
+    font-size: 0.68rem;
+    color: rgba(255,255,255,0.38);
+    white-space: nowrap;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pitch-live-badge {
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 0.2rem 0.5rem;
+    border-radius: 9999px;
+    background: rgba(217,70,239,0.15);
+    color: #d946ef;
+    border: 1px solid rgba(217,70,239,0.28);
+    flex-shrink: 0;
+  }
+  .pitch-content-area {
+    padding: 1.5rem 1.25rem;
+    min-height: 210px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .pitch-loading-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    background: rgba(6,7,18,0.88);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 2;
+  }
+  .pitch-loading-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .pitch-spinner {
+    width: 28px;
+    height: 28px;
+    border: 2px solid rgba(217,70,239,0.15);
+    border-top-color: #d946ef;
+    border-radius: 50%;
+    animation: pitch-spin 0.7s linear infinite;
+  }
+  @keyframes pitch-spin { to { transform: rotate(360deg); } }
+  .pitch-loading-text {
+    font-size: 0.72rem;
+    color: rgba(217,70,239,0.7);
+    font-family: "SF Mono","Fira Code",monospace;
+    text-align: center;
+  }
+  .pitch-scenario {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    transition: opacity 0.3s ease;
+  }
+  .pitch-scenario.fade-out { opacity: 0; }
+  .pitch-source-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    align-self: flex-start;
+    transition: color 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+  }
+  .pitch-source-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+  }
+  .pitch-page-headline {
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.35;
+    margin: 0;
+  }
+  .pitch-page-sub {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.4);
+    margin: 0;
+  }
+  .pitch-mock-cta {
+    display: inline-block;
+    padding: 0.45rem 0.9rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    align-self: flex-start;
+    transition: color 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+    border: 1px solid;
+    cursor: default;
+  }
+  .pitch-cvr-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 9999px;
+    background: rgba(52,211,153,0.1);
+    color: #34d399;
+    font-size: 0.7rem;
+    font-weight: 600;
+    border: 1px solid rgba(52,211,153,0.2);
+    align-self: flex-start;
+  }
+  .pitch-metrics-strip {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1rem 1.25rem;
+    border-top: 1px solid rgba(255,255,255,0.055);
+  }
+  .pitch-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+  .pitch-metric-val {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #ffffff;
+  }
+  .pitch-metric-lbl {
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.3);
+  }
+  .pitch-metric-sep {
+    width: 1px;
+    height: 24px;
+    background: rgba(255,255,255,0.07);
+  }
+  .pitch-caption {
+    margin-top: 0.75rem;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.3);
+    text-align: center;
+    font-style: italic;
+  }
+  /* Prevent glassmorphism overrides from touching pitch panel */
+  .product-card[data-product="4"] .pitch-browser-panel {
+    background: rgba(6, 7, 18, 0.10) !important;
+  }
+</style>
+
+<script>
+  // Polyfill requestIdleCallback for Safari
+  const ric = window.requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+  ric(() => {
+
+  // ─── Aurora Waves (behind dot grid) ─────────────────────────────────────────
+  {
+    const AP = new Uint8Array(512);
+    { const p = new Uint8Array(256); for (let i = 0; i < 256; i++) p[i] = i;
+      for (let i = 255; i > 0; i--) { const j = ((i * 2654435761) >>> 0) % (i + 1); const t = p[i]; p[i] = p[j]; p[j] = t; }
+      for (let i = 0; i < 512; i++) AP[i] = p[i & 255]; }
+    const AG: [number,number][] = [[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+    function af(t: number) { return t*t*t*(t*(t*6-15)+10); }
+    function al(a: number, b: number, t: number) { return a+t*(b-a); }
+    function ag(h: number, x: number, y: number) { const [a,b]=AG[h&7]; return a*x+b*y; }
+    function an(x: number, y: number): number {
+      const X=Math.floor(x)&255, Y=Math.floor(y)&255, xf=x-Math.floor(x), yf=y-Math.floor(y);
+      const u=af(xf), v=af(yf);
+      return al(al(ag(AP[AP[X]+Y],xf,yf), ag(AP[AP[X+1]+Y],xf-1,yf), u),
+               al(ag(AP[AP[X]+Y+1],xf,yf-1), ag(AP[AP[X+1]+Y+1],xf-1,yf-1), u), v);
+    }
+    function fbm(x: number, y: number, oct: number): number {
+      let v = 0, amp = 0.5, freq = 1.0;
+      for (let i = 0; i < oct; i++) { v += amp * an(x * freq, y * freq); amp *= 0.5; freq *= 2.0; }
+      return v;
+    }
+
+    const auroraCanvas = document.querySelector<HTMLCanvasElement>('.aurora-canvas')!;
+    const auroraWrap = document.getElementById('dot-grid-wrap')!;
+    const actx = auroraCanvas.getContext('2d')!;
+    let aW = 0, aH = 0, aDpr = 1;
+    const offscreen = document.createElement('canvas');
+    const octx = offscreen.getContext('2d')!;
+
+    function resizeAurora() {
+      aDpr = window.devicePixelRatio || 1;
+      const rect = auroraWrap.getBoundingClientRect();
+      aW = Math.round(rect.width); aH = Math.round(rect.height);
+      auroraCanvas.width = aW * aDpr; auroraCanvas.height = aH * aDpr;
+      auroraCanvas.style.width = `${aW}px`; auroraCanvas.style.height = `${aH}px`;
+      offscreen.width = Math.round(aW / 3); offscreen.height = Math.round(aH / 3);
+    }
+
+    function blob(cx: number, cy: number, rx: number, ry: number, angle: number,
+                  r: number, g: number, b: number, alpha: number) {
+      if (alpha < 0.004 || rx < 0.5) return;
+      octx.save(); octx.translate(cx, cy); octx.rotate(angle);
+      octx.scale(1.0, ry / Math.max(rx, 0.5));
+      const gr = octx.createRadialGradient(0, 0, 0, 0, 0, rx);
+      gr.addColorStop(0, `rgba(${r},${g},${b},${alpha.toFixed(3)})`);
+      gr.addColorStop(0.28, `rgba(${r},${g},${b},${(alpha*0.68).toFixed(3)})`);
+      gr.addColorStop(0.62, `rgba(${r},${g},${b},${(alpha*0.22).toFixed(3)})`);
+      gr.addColorStop(1, `rgba(${r},${g},${b},0)`);
+      octx.fillStyle = gr; octx.beginPath(); octx.arc(0,0,rx,0,Math.PI*2); octx.fill(); octx.restore();
+    }
+
+    function strand(t: number, cx: number, cy: number, rx: number, ry: number, angle: number,
+                    r: number, g: number, b: number, alpha: number, n: number, wa: number) {
+      const wx = fbm(cx*0.012+t*0.15, cy*0.012, 3)*wa, wy = fbm(cx*0.012+57, cy*0.012+t*0.13, 3)*wa;
+      const px = cx+wx, py = cy+wy;
+      const ca = alpha*(0.78+an(t*0.25, cx*0.02)*0.22);
+      blob(px, py, rx, ry, angle, r, g, b, Math.max(0,ca));
+      if (n < 2) return;
+      const cosA = Math.cos(angle), sinA = Math.sin(angle);
+      for (let i = 0; i < n; i++) {
+        const u = (i/(n-1))*2-1;
+        const bx0 = px+cosA*u*rx*0.82, by0 = py+sinA*u*rx*0.82;
+        const bwx = an(bx0*0.015+t*0.18+i*1.4, by0*0.015+30)*wa*0.40;
+        const bwy = an(bx0*0.015+80+i, by0*0.015+t*0.16)*wa*0.40;
+        const dn = (an(i*1.7+t*0.2, 200)+1)*0.5;
+        const density = (1-u*u)*(0.42+dn*0.30);
+        blob(bx0+bwx, by0+bwy, rx*(0.20+(an(i*2.3,t*0.04)+1)*0.13),
+             ry*(0.48+density*0.52), angle, r, g, b, Math.max(0, alpha*0.52*density));
+      }
+    }
+
+    const AL = [
+      [0.35,0.48,0.62,0.26,-0.06, 52,14,185,0.16,0.055,0.0, 0,0.14],
+      [0.65,0.55,0.72,0.22, 0.04, 38,10,165,0.12,0.045,2.6, 0,0.12],
+      [0.40,0.62,0.78,0.24,-0.03, 28, 7,148,0.10,0.038,5.1, 0,0.13],
+      [0.35,0.48,0.44,0.12,-0.13,100,35,230,0.32,0.140,0.4, 7,0.09],
+      [0.65,0.44,0.50,0.10, 0.09,125,45,235,0.28,0.170,1.9, 6,0.08],
+      [0.30,0.58,0.40,0.13,-0.07, 75,28,215,0.26,0.110,3.4, 6,0.10],
+      [0.70,0.46,0.48,0.09, 0.16,145,40,240,0.24,0.190,5.2, 5,0.07],
+      [0.25,0.54,0.38,0.12,-0.19, 55,45,205,0.22,0.130,2.7, 5,0.09],
+      [0.72,0.52,0.43,0.11, 0.11,108,28,220,0.24,0.150,4.2, 6,0.08],
+      [0.28,0.42,0.33,0.07,-0.11,162,52,250,0.38,0.250,1.3, 5,0.06],
+      [0.72,0.56,0.35,0.06, 0.13,188,56,235,0.32,0.280,3.9, 4,0.05],
+      [0.38,0.60,0.30,0.08,-0.08,138,44,245,0.30,0.220,6.4, 5,0.07],
+      [0.62,0.40,0.27,0.07, 0.09,172,60,240,0.28,0.300,0.8, 4,0.05],
+      [0.42,0.48,0.18,0.11, 0.00,178,88,255,0.44,0.100,0.0, 3,0.04],
+      [0.58,0.52,0.14,0.09,-0.04,198,98,255,0.40,0.120,1.6, 0,0.03],
+      [0.45,0.55,0.21,0.10, 0.05,158,70,250,0.38,0.090,3.1, 3,0.04],
+    ];
+
+    function frameAurora() {
+      requestAnimationFrame(frameAurora);
+      const ow = offscreen.width, oh = offscreen.height;
+      const t = performance.now() * 0.001;
+      octx.clearRect(0, 0, ow, oh);
+      octx.globalCompositeOperation = 'lighter';
+      for (const row of AL) {
+        const [cxF,cyF,rxF,ryF,ang,r,g,b,alpha,spd,ph,n,waF] = row;
+        const cx = ow*(cxF+Math.sin(t*spd*3+ph)*0.15);
+        const cy = oh*(cyF+Math.sin(t*spd*2.1+ph+1.1)*0.12);
+        const rx = ow*rxF*(1+Math.sin(t*spd*4+ph*1.8)*0.15);
+        const ry = oh*ryF*(1+Math.sin(t*spd*2.5+ph*1.3)*0.18);
+        const angle = ang+Math.sin(t*spd*2.5+ph)*0.2;
+        const wa = ow*waF;
+        if (n === 0) {
+          const wx=fbm(cx*0.010+t*0.036,cy*0.010,2)*wa, wy=fbm(cx*0.010+63,cy*0.010+t*0.030,2)*wa;
+          blob(cx+wx,cy+wy,rx,ry,angle,r,g,b,alpha);
+        } else { strand(t,cx,cy,rx,ry,angle,r,g,b,alpha,n,wa); }
+      }
+      octx.globalCompositeOperation = 'source-over';
+      actx.setTransform(1,0,0,1,0,0); actx.clearRect(0,0,auroraCanvas.width,auroraCanvas.height);
+      actx.drawImage(offscreen,0,0,auroraCanvas.width,auroraCanvas.height);
+      actx.setTransform(aDpr,0,0,aDpr,0,0);
+    }
+
+    const roAurora = new ResizeObserver(() => resizeAurora());
+    roAurora.observe(auroraWrap);
+    resizeAurora();
+    requestAnimationFrame(frameAurora);
+    requestAnimationFrame(() => { auroraCanvas.style.opacity = '1'; });
+  }
+
+  // ─── Dot Grid Background (behind hero) ────────────────────────────────────
+  const PERM = new Uint8Array(512);
+  {
+    const p = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) p[i] = i;
+    for (let i = 255; i > 0; i--) {
+      const j = ((i * 2654435761) >>> 0) % (i + 1);
+      const tmp = p[i]; p[i] = p[j]; p[j] = tmp;
+    }
+    for (let i = 0; i < 512; i++) PERM[i] = p[i & 255];
+  }
+  const GRADS: [number,number][] = [[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+  function fade(t: number) { return t*t*t*(t*(t*6-15)+10); }
+  function nlerp(a: number, b: number, t: number) { return a+t*(b-a); }
+  function grad(h: number, x: number, y: number) { const [gx,gy]=GRADS[h&7]; return gx*x+gy*y; }
+  function noise2(x: number, y: number): number {
+    const X=Math.floor(x)&255, Y=Math.floor(y)&255;
+    const xf=x-Math.floor(x), yf=y-Math.floor(y);
+    const u=fade(xf), v=fade(yf);
+    const aa=PERM[PERM[X]+Y], ab=PERM[PERM[X]+Y+1], ba=PERM[PERM[X+1]+Y], bb=PERM[PERM[X+1]+Y+1];
+    return nlerp(nlerp(grad(aa,xf,yf),grad(ba,xf-1,yf),u),nlerp(grad(ab,xf,yf-1),grad(bb,xf-1,yf-1),u),v);
+  }
+
+  const GRID = 16;
+  const INFLUENCE_RADIUS = 575;
+  const PUSH_STRENGTH = 28;
+  const LERP_SPEED = 0.035;
+  const NOISE_SCALE = 0.04;
+  const NOISE_SPEED = 0.0008;
+  const NOISE_STRENGTH = 6;
+  const ACCENT1: [number,number,number] = [60,130,255];
+  const ACCENT2: [number,number,number] = [100,180,255];
+  const BASE_RGB: [number,number,number] = [90,90,105];
+
+  interface Dot { gx: number; gy: number; x: number; y: number; }
+
+  const canvas = document.querySelector<HTMLCanvasElement>('.dot-grid-canvas')!;
+  const wrap = document.getElementById('dot-grid-wrap')!;
+  const ctx = canvas.getContext('2d')!;
+  let dots: Dot[] = [];
+  let mouse: { x: number; y: number } | null = null;
+  let dpr = 1;
+
+  function buildGrid() {
+    dots = [];
+    const W = canvas.width/dpr, H = canvas.height/dpr;
+    const cols = Math.ceil(W/GRID)+2, rows = Math.ceil(H/GRID)+2;
+    for (let r = 0; r < rows; r++)
+      for (let c = 0; c < cols; c++) {
+        const gx=c*GRID, gy=r*GRID;
+        dots.push({ gx, gy, x: gx, y: gy });
+      }
+  }
+
+  function resize() {
+    dpr = window.devicePixelRatio||1;
+    const rect = wrap.getBoundingClientRect();
+    const w=Math.round(rect.width), h=Math.round(rect.height);
+    canvas.width=w*dpr; canvas.height=h*dpr;
+    canvas.style.width=`${w}px`; canvas.style.height=`${h}px`;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    buildGrid();
+  }
+
+  function lerpRGB(a: [number,number,number], b: [number,number,number], t: number): [number,number,number] {
+    return [Math.round(a[0]+(b[0]-a[0])*t),Math.round(a[1]+(b[1]-a[1])*t),Math.round(a[2]+(b[2]-a[2])*t)];
+  }
+  function rgbStr(c: [number,number,number]) { return `rgb(${c[0]},${c[1]},${c[2]})`; }
+
+  function frame() {
+    requestAnimationFrame(frame);
+    const W=canvas.width/dpr, H=canvas.height/dpr;
+    const t=performance.now()*NOISE_SPEED;
+    ctx.clearRect(0,0,W,H);
+    const fadeZone=H*0.75;
+    for (const dot of dots) {
+      let targetX=dot.gx, targetY=dot.gy, influence=0, angleToMouse=0;
+      if (mouse) {
+        const dx=dot.gx-mouse.x, dy=dot.gy-mouse.y;
+        const dist=Math.sqrt(dx*dx+dy*dy);
+        if (dist < INFLUENCE_RADIUS) {
+          const raw=1-dist/INFLUENCE_RADIUS;
+          const s=raw*raw*(3-2*raw);
+          influence=s*s*(3-2*s);
+          const pushMag=Math.pow(influence,3)*PUSH_STRENGTH;
+          const len=dist||1;
+          targetX+=(dx/len)*pushMag; targetY+=(dy/len)*pushMag;
+          const noiseX=noise2(dot.gx*NOISE_SCALE, dot.gy*NOISE_SCALE+t);
+          const noiseY=noise2(dot.gx*NOISE_SCALE+100, dot.gy*NOISE_SCALE+t);
+          const noiseMag=influence*influence*NOISE_STRENGTH;
+          targetX+=noiseX*noiseMag; targetY+=noiseY*noiseMag;
+          angleToMouse=Math.atan2(dy,dx);
+        }
+      }
+      dot.x+=(targetX-dot.x)*LERP_SPEED;
+      dot.y+=(targetY-dot.y)*LERP_SPEED;
+      let opacity=1;
+      if (dot.gy > fadeZone) opacity*=1-Math.min(1,(dot.gy-fadeZone)/(H-fadeZone));
+      if (opacity < 0.01) continue;
+      let color=rgbStr(BASE_RGB);
+      if (influence > 0) {
+        const inf3=influence*influence*influence;
+        const blendFactor=(Math.sin(angleToMouse*2+t*3)+1)*0.5;
+        const accent=lerpRGB(ACCENT1,ACCENT2,blendFactor);
+        color=rgbStr(lerpRGB(BASE_RGB,accent,inf3));
+        opacity*=1-influence*influence*0.85;
+      }
+      ctx.globalAlpha=opacity; ctx.fillStyle=color;
+      ctx.beginPath();
+      ctx.arc(dot.x, dot.y, 1+influence*0.5, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha=1;
+  }
+
+  window.addEventListener('mousemove', (e) => {
+    const rect=wrap.getBoundingClientRect();
+    mouse={ x: e.clientX-rect.left, y: e.clientY-rect.top };
+  });
+  window.addEventListener('mouseleave', () => { mouse=null; });
+  window.addEventListener('touchstart', () => { mouse=null; }, { passive: true });
+
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity='1'; });
+
+  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement|null;
+  if (gridTex) gridTex.style.display='none';
+
+  // ─── Aurora for CTA section ──────────────────────────────────────────────
+  {
+    const ctaCardAurora = document.querySelector('.final-cta') as HTMLElement;
+    const aCanvasCta = document.createElement('canvas');
+    aCanvasCta.className = 'aurora-canvas-cta';
+    aCanvasCta.setAttribute('aria-hidden','true');
+    aCanvasCta.style.cssText='position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+    ctaCardAurora.insertBefore(aCanvasCta, ctaCardAurora.firstChild);
+    const actxC=aCanvasCta.getContext('2d')!;
+    const offC=document.createElement('canvas');
+    const octxC=offC.getContext('2d')!;
+    let aCW=0, aCH=0;
+
+    function resizeAuroraCta() {
+      const dp=window.devicePixelRatio||1;
+      const rect=ctaCardAurora.getBoundingClientRect();
+      aCW=Math.round(rect.width); aCH=Math.round(rect.height);
+      aCanvasCta.width=aCW*dp; aCanvasCta.height=aCH*dp;
+      aCanvasCta.style.width=`${aCW}px`; aCanvasCta.style.height=`${aCH}px`;
+      offC.width=Math.round(aCW/4); offC.height=Math.round(aCH/4);
+    }
+
+    function frameAuroraCta() {
+      requestAnimationFrame(frameAuroraCta);
+      const ow=offC.width, oh=offC.height;
+      const t=performance.now()*0.001;
+      octxC.clearRect(0,0,ow,oh);
+      octxC.globalCompositeOperation='lighter';
+      const ctaLayers = [
+        [0.50,0.50,0.55,0.30,-0.06, 52,14,185,0.18,0.08,0.0],
+        [0.50,0.50,0.65,0.25, 0.04, 38,10,165,0.14,0.06,2.6],
+        [0.50,0.50,0.45,0.15,-0.13,100,35,230,0.35,0.18,0.4],
+        [0.50,0.50,0.50,0.12, 0.09,125,45,235,0.30,0.22,1.9],
+        [0.50,0.50,0.40,0.16,-0.07, 75,28,215,0.28,0.14,3.4],
+        [0.50,0.50,0.48,0.11, 0.16,145,40,240,0.26,0.24,5.2],
+        [0.50,0.50,0.33,0.09,-0.11,162,52,250,0.40,0.30,1.3],
+        [0.50,0.50,0.35,0.08, 0.13,188,56,235,0.34,0.35,3.9],
+        [0.50,0.50,0.18,0.14, 0.00,178,88,255,0.45,0.12,0.0],
+        [0.50,0.50,0.14,0.11,-0.04,198,98,255,0.42,0.15,1.6],
+      ];
+      for (const row of ctaLayers) {
+        const [cxF,cyF,rxF,ryF,ang,r,g,b,alpha,spd,ph]=row;
+        const cx=ow*(cxF+Math.sin(t*spd*3+ph)*0.18);
+        const cy=oh*(cyF+Math.sin(t*spd*2.1+ph+1.1)*0.15);
+        const rx=ow*rxF*(1+Math.sin(t*spd*4+ph*1.8)*0.15);
+        const ry=oh*ryF*(1+Math.sin(t*spd*2.5+ph*1.3)*0.18);
+        const angle=ang+Math.sin(t*spd*2.5+ph)*0.2;
+        octxC.save(); octxC.translate(cx,cy); octxC.rotate(angle);
+        const gr=octxC.createRadialGradient(0,0,0,0,0,Math.max(rx,1));
+        gr.addColorStop(0,`rgba(${r},${g},${b},${alpha})`);
+        gr.addColorStop(0.25,`rgba(${r},${g},${b},${alpha*0.7})`);
+        gr.addColorStop(0.55,`rgba(${r},${g},${b},${alpha*0.3})`);
+        gr.addColorStop(1,`rgba(${r},${g},${b},0)`);
+        octxC.fillStyle=gr; octxC.scale(1,ry/(rx||1));
+        octxC.beginPath(); octxC.arc(0,0,rx,0,Math.PI*2); octxC.fill(); octxC.restore();
+      }
+      octxC.globalCompositeOperation='source-over';
+      const dp=window.devicePixelRatio||1;
+      actxC.setTransform(1,0,0,1,0,0); actxC.clearRect(0,0,aCanvasCta.width,aCanvasCta.height);
+      actxC.drawImage(offC,0,0,aCanvasCta.width,aCanvasCta.height);
+      actxC.setTransform(dp,0,0,dp,0,0);
+    }
+
+    const roCta2=new ResizeObserver(()=>resizeAuroraCta());
+    roCta2.observe(ctaCardAurora);
+    resizeAuroraCta();
+    requestAnimationFrame(frameAuroraCta);
+    requestAnimationFrame(()=>{ aCanvasCta.style.opacity='1'; });
+  }
+
+  // ─── CTA Dot Grid ────────────────────────────────────────────────────────
+  const ctaCard = document.querySelector('.final-cta') as HTMLElement;
+  const canvasCta = document.createElement('canvas');
+  canvasCta.className='dot-grid-canvas-cta';
+  canvasCta.setAttribute('aria-hidden','true');
+  canvasCta.style.cssText='position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+  ctaCard.style.position='relative';
+  ctaCard.insertBefore(canvasCta, ctaCard.firstChild);
+  const ctxCta=canvasCta.getContext('2d')!;
+  let dotsCta: Dot[]=[];
+  let mouseCta: { x: number; y: number }|null=null;
+  let dprCta=1;
+
+  function buildGridCta() {
+    dotsCta=[];
+    const W=canvasCta.width/dprCta, H=canvasCta.height/dprCta;
+    const cols=Math.ceil(W/GRID)+2, rows=Math.ceil(H/GRID)+2;
+    for (let r=0;r<rows;r++) for (let c=0;c<cols;c++) {
+      const gx=c*GRID, gy=r*GRID;
+      dotsCta.push({gx,gy,x:gx,y:gy});
+    }
+  }
+
+  function resizeCta() {
+    dprCta=window.devicePixelRatio||1;
+    const rect=ctaCard.getBoundingClientRect();
+    const w=Math.round(rect.width), h=Math.round(rect.height);
+    canvasCta.width=w*dprCta; canvasCta.height=h*dprCta;
+    canvasCta.style.width=`${w}px`; canvasCta.style.height=`${h}px`;
+    ctxCta.setTransform(dprCta,0,0,dprCta,0,0);
+    buildGridCta();
+  }
+
+  function frameCta() {
+    requestAnimationFrame(frameCta);
+    const W=canvasCta.width/dprCta, H=canvasCta.height/dprCta;
+    const t=performance.now()*NOISE_SPEED;
+    ctxCta.clearRect(0,0,W,H);
+    for (const dot of dotsCta) {
+      let targetX=dot.gx, targetY=dot.gy, influence=0, angleToMouse=0;
+      if (mouseCta) {
+        const dx=dot.gx-mouseCta.x, dy=dot.gy-mouseCta.y;
+        const dist=Math.sqrt(dx*dx+dy*dy);
+        if (dist < INFLUENCE_RADIUS) {
+          const raw=1-dist/INFLUENCE_RADIUS;
+          const s=raw*raw*(3-2*raw);
+          influence=s*s*(3-2*s);
+          const pushMag=Math.pow(influence,3)*PUSH_STRENGTH;
+          const len=dist||1;
+          targetX+=(dx/len)*pushMag; targetY+=(dy/len)*pushMag;
+          const noiseX=noise2(dot.gx*NOISE_SCALE, dot.gy*NOISE_SCALE+t);
+          const noiseY=noise2(dot.gx*NOISE_SCALE+100, dot.gy*NOISE_SCALE+t);
+          const noiseMag=influence*influence*NOISE_STRENGTH;
+          targetX+=noiseX*noiseMag; targetY+=noiseY*noiseMag;
+          angleToMouse=Math.atan2(dy,dx);
+        }
+      }
+      dot.x+=(targetX-dot.x)*LERP_SPEED;
+      dot.y+=(targetY-dot.y)*LERP_SPEED;
+      let opacity=1;
+      if (opacity < 0.01) continue;
+      let color=rgbStr(BASE_RGB);
+      if (influence > 0) {
+        const inf3=influence*influence*influence;
+        const blendFactor=(Math.sin(angleToMouse*2+t*3)+1)*0.5;
+        const accent=lerpRGB(ACCENT1,ACCENT2,blendFactor);
+        color=rgbStr(lerpRGB(BASE_RGB,accent,inf3));
+        opacity*=1-influence*influence*0.85;
+      }
+      ctxCta.globalAlpha=opacity; ctxCta.fillStyle=color;
+      ctxCta.beginPath();
+      ctxCta.arc(dot.x, dot.y, 1+influence*0.5, 0, Math.PI*2);
+      ctxCta.fill();
+    }
+    ctxCta.globalAlpha=1;
+  }
+
+  window.addEventListener('mousemove', (e) => {
+    const rect=ctaCard.getBoundingClientRect();
+    const x=e.clientX-rect.left, y=e.clientY-rect.top;
+    if (x>=0&&x<=rect.width&&y>=0&&y<=rect.height) mouseCta={x,y};
+    else mouseCta=null;
+  });
+
+  const roCta=new ResizeObserver(()=>resizeCta());
+  roCta.observe(ctaCard);
+  resizeCta();
+  requestAnimationFrame(frameCta);
+  requestAnimationFrame(()=>{ canvasCta.style.opacity='1'; });
+
+  const gridTexCta=ctaCard.querySelector('.grid-texture') as HTMLElement|null;
+  if (gridTexCta) gridTexCta.style.display='none';
+
+  // ─── Product Card Canvas Animations (single rAF loop) ────────────────────
+  // Canvases are pre-placed as .product-bg inside each .product-card.
+  // ONE requestAnimationFrame loop drives all cards.
+  // IntersectionObserver skips off-screen cards.
+  // Canvases rendered at 0.5× devicePixelRatio for performance.
+
+  // Global mouse in client coords for per-card hit-testing
+  let gMx = -9999, gMy = -9999;
+  window.addEventListener('mousemove', (e) => { gMx=e.clientX; gMy=e.clientY; });
+  window.addEventListener('mouseleave', () => { gMx=-9999; gMy=-9999; });
+
+  // Per-product accent RGB
+  const PV_RGB: [number,number,number][] = [
+    [99,102,241],   // 0 SEO      #6366f1
+    [139,92,246],   // 1 Reach    #8b5cf6
+    [168,85,247],   // 2 Publish  #a855f7
+    [192,38,211],   // 3 Social   #c026d3
+    [124,58,237],   // 4 Pitch    #7c3aed
+    [79,70,229],    // 5 Ads      #4f46e5
+    [147,51,234],   // 6 Flow     #9333ea
+    [109,40,217],   // 7 Build    #6d28d9
+  ];
+
+  interface CardState {
+    canvas: HTMLCanvasElement;
+    ctx: CanvasRenderingContext2D;
+    w: number; h: number; dpr: number;
+    visible: boolean;
+    state: Record<string, unknown>;
+  }
+
+  // ── Product 0: SEO Dot Matrix (seo1 port) ────────────────────────────────
+  interface SeoTemplate { name: string; color: [number,number,number]; weight: number; }
+  const SEO_TMPLS: SeoTemplate[] = [
+    { name: "Best {Service} in {City}",     color: [99, 102,241], weight:0.30 },
+    { name: "{Product} for {Industry}",     color: [139,92, 246], weight:0.20 },
+    { name: "How to {Action} with {Tool}",  color: [168,85, 247], weight:0.15 },
+    { name: "{Competitor} Alternative",     color: [192,38, 211], weight:0.12 },
+    { name: "Top {N} {Category} in {Year}", color: [124,58, 237], weight:0.13 },
+    { name: "{Service} near {Location}",    color: [79, 70, 229], weight:0.10 },
+  ];
+  const SEO_TCUM: number[] = [];
+  { let _s=0; for (const _t of SEO_TMPLS) { _s+=_t.weight; SEO_TCUM.push(_s); } }
+  const SEO_SERVICES   = ["Plumber","Electrician","Personal Trainer","Accountant","Dentist","Lawyer","Photographer","Web Designer","Therapist","Mechanic","Tutor","Cleaner","Landscaper","Roofer","Painter"];
+  const SEO_CITIES     = ["London","Manchester","Birmingham","Leeds","Glasgow","Bristol","Liverpool","Edinburgh","Cardiff","Belfast","Oxford","Cambridge","Brighton","Bath","York"];
+  const SEO_PRODUCTS   = ["CRM Software","Project Management","Email Marketing","Analytics Platform","HR Software","Inventory System","Booking Platform","Payment Gateway"];
+  const SEO_INDUSTRIES = ["SaaS","E-commerce","Healthcare","Finance","Education","Real Estate","Hospitality","Legal"];
+  const SEO_ACTIONS    = ["Grow Revenue","Reduce Churn","Scale Operations","Automate Workflows","Track Metrics","Generate Leads"];
+  const SEO_TOOLS      = ["AI","Automation","Data Analytics","Machine Learning","No-Code","API Integration"];
+  const SEO_COMPS      = ["HubSpot","Mailchimp","Salesforce","Monday.com","Ahrefs","SEMrush","Moz","Shopify"];
+  const SEO_CATS       = ["Marketing Tools","CRM Platforms","SEO Strategies","Content Ideas","Growth Hacks","Automation Tools"];
+  const SEO_LOCS       = ["Central London","Downtown Manchester","East Birmingham","North Leeds","Shoreditch","Canary Wharf","Soho","Camden"];
+  const SEO_TOPS_N     = ["5","7","10","15","20"];
+  const SEO_YEARS      = ["2024","2025","2026"];
+  const SEO_GSZ=10, SEO_INFL=100, SEO_PUSH=4, SEO_LERP=0.035, SEO_HOV_R=15, SEO_PROX_R=40;
+  const SEO_IDX=0, SEO_PUB=1, SEO_GEN=2;
+
+  function seoPick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random()*arr.length)]; }
+  function seoPickTmpl(): number {
+    const rv=Math.random();
+    for (let i=0;i<SEO_TCUM.length;i++) if (rv<SEO_TCUM[i]) return i;
+    return SEO_TMPLS.length-1;
+  }
+  function seoGenTitle(tIdx: number): string {
+    switch(tIdx) {
+      case 0: return `Best ${seoPick(SEO_SERVICES)} in ${seoPick(SEO_CITIES)}`;
+      case 1: return `${seoPick(SEO_PRODUCTS)} for ${seoPick(SEO_INDUSTRIES)}`;
+      case 2: return `How to ${seoPick(SEO_ACTIONS)} with ${seoPick(SEO_TOOLS)}`;
+      case 3: return `${seoPick(SEO_COMPS)} Alternative`;
+      case 4: return `Top ${seoPick(SEO_TOPS_N)} ${seoPick(SEO_CATS)} in ${seoPick(SEO_YEARS)}`;
+      case 5: return `${seoPick(SEO_SERVICES)} near ${seoPick(SEO_LOCS)}`;
+      default: return `Page ${tIdx}`;
+    }
+  }
+  function seoSmooth(x: number): number { x=Math.max(0,Math.min(1,x)); return x*x*(3-2*x); }
+  function rrect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+    c.beginPath();
+    c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.quadraticCurveTo(x+w,y,x+w,y+r);
+    c.lineTo(x+w,y+h-r); c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    c.lineTo(x+r,y+h); c.quadraticCurveTo(x,y+h,x,y+h-r);
+    c.lineTo(x,y+r); c.quadraticCurveTo(x,y,x+r,y);
+    c.closePath();
+  }
+
+  interface SeoDot {
+    gx:number; gy:number; x:number; y:number;
+    templateIdx:number; title:string; status:number;
+    birthTime:number; phase:number;
+  }
+
+  function initSEO(w: number, h: number) {
+    const cols=Math.ceil(w/SEO_GSZ)+1, rows=Math.ceil(h/SEO_GSZ)+1;
+    const cx=w/2, cy=h/2;
+    const dots: SeoDot[]=[];
+    for (let r=0;r<rows;r++) for (let c=0;c<cols;c++) {
+      const gx=c*SEO_GSZ, gy=r*SEO_GSZ;
+      const tIdx=seoPickTmpl();
+      const sr=Math.random();
+      const status=sr<0.10?SEO_PUB:sr<0.30?SEO_GEN:SEO_IDX;
+      const dist=Math.sqrt((gx-cx)**2+(gy-cy)**2);
+      dots.push({ gx,gy,x:gx,y:gy, templateIdx:tIdx, title:seoGenTitle(tIdx),
+                  status, birthTime:dist*0.003, phase:Math.random()*Math.PI*2 });
+    }
+    return { dots, startTime:performance.now()*0.001, hoveredIdx:-1 };
+  }
+
+  function drawSEOTooltip(c: CanvasRenderingContext2D, dot: SeoDot, W: number, H: number) {
+    const px=dot.x, py=dot.y;
+    const tmpl=SEO_TMPLS[dot.templateIdx];
+    const [r,g,b]=tmpl.color;
+    const catLabel=tmpl.name.toUpperCase();
+    const titleText=dot.title;
+    const isPublished=dot.status===SEO_PUB, isIndexed=dot.status===SEO_IDX;
+    const statusDot=isPublished?'●':isIndexed?'●':'○';
+    const statusLabel=isPublished?' published':isIndexed?' indexed':' generating';
+    const statusColor=isPublished?'rgba(74,222,128,0.9)':isIndexed?'rgba(99,202,241,0.8)':'rgba(251,191,36,0.8)';
+    const pad=14;
+    const catFont='bold 10px "SF Mono","Fira Code",monospace';
+    const titleFont='500 15px -apple-system,system-ui,sans-serif';
+    const statusFont='10px "SF Mono","Fira Code",monospace';
+    c.font=titleFont; const tW=c.measureText(titleText).width;
+    c.font=catFont;   const cW=c.measureText(catLabel).width;
+    const tooltipW=Math.max(220,Math.min(Math.max(tW,cW)+pad*2, 360));
+    const tooltipH=82;
+    let tx=px-tooltipW/2, ty=py-tooltipH-16;
+    tx=Math.max(6,Math.min(W-tooltipW-6,tx));
+    if (ty<6) ty=py+14;
+    if (ty+tooltipH>H-6) ty=py-tooltipH-14;
+    c.save();
+    c.globalAlpha=0.18; c.strokeStyle=`rgb(${r},${g},${b})`; c.lineWidth=1;
+    c.beginPath(); c.moveTo(px,py-5); c.lineTo(px,ty<py?ty+tooltipH:ty); c.stroke();
+    c.globalAlpha=1; c.shadowColor=`rgba(${r},${g},${b},0.2)`; c.shadowBlur=24;
+    rrect(c,tx,ty,tooltipW,tooltipH,8); c.fillStyle='rgba(6,7,18,0.65)'; c.fill();
+    c.shadowBlur=0; c.shadowColor='transparent';
+    rrect(c,tx,ty,tooltipW,tooltipH,8); c.fillStyle=`rgba(${r},${g},${b},0.08)`; c.fill();
+    c.strokeStyle=`rgba(${r},${g},${b},0.3)`; c.lineWidth=1; c.stroke();
+    c.globalAlpha=0.6; c.fillStyle=`rgb(${r},${g},${b})`;
+    rrect(c,tx,ty,tooltipW,3,3); c.fill();
+    c.globalAlpha=0.8; c.fillStyle=`rgb(${r},${g},${b})`; c.font=catFont; c.textAlign='left';
+    c.fillText(catLabel,tx+pad,ty+pad+10);
+    c.globalAlpha=1; c.fillStyle='#ffffff'; c.font=titleFont;
+    c.save(); c.beginPath(); c.rect(tx+pad,ty+pad+14,tooltipW-pad*2,22); c.clip();
+    c.fillText(titleText,tx+pad,ty+pad+30); c.restore();
+    c.globalAlpha=0.9; c.fillStyle=statusColor; c.font=statusFont; c.textAlign='left';
+    c.fillText(statusDot+statusLabel,tx+pad,ty+pad+52);
+    c.restore();
+  }
+
+  function drawSEO(ctx: CanvasRenderingContext2D, w: number, h: number, _t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
+    const st = state as { dots:SeoDot[]; startTime:number; hoveredIdx:number };
+    const dots=st.dots;
+    const now=performance.now()*0.001;
+    const elapsed=now-st.startTime;
+    const W=w, H=h;
+    // Update hovered
+    if (hasMouse) {
+      let best=-1, bestD=SEO_HOV_R;
+      for (let i=0;i<dots.length;i++) {
+        const d=dots[i]; if (elapsed-d.birthTime<0) continue;
+        const dx=d.x-mx, dy=d.y-my, dist=Math.sqrt(dx*dx+dy*dy);
+        if (dist<bestD) { bestD=dist; best=i; }
+      }
+      st.hoveredIdx=best;
+    } else { st.hoveredIdx=-1; }
+    let visCount=0;
+    for (let i=0;i<dots.length;i++) {
+      const dot=dots[i];
+      const age=elapsed-dot.birthTime;
+      if (age<0) continue;
+      const fadeIn=Math.min(1,age/0.3);
+      if (fadeIn<0.005) continue;
+      // Pulse ripple every 8s
+      const cx=W/2, cy=H/2;
+      const distC=Math.sqrt((dot.gx-cx)**2+(dot.gy-cy)**2);
+      const pElapsed=elapsed-5;
+      let pulseAlpha=0;
+      if (pElapsed>0) {
+        const cycleT=pElapsed%8;
+        const dca=cycleT-distC*0.003;
+        if (dca>0&&dca<0.6) pulseAlpha=Math.sin((dca/0.6)*Math.PI)*0.3;
+      }
+      visCount++;
+      // Mouse push
+      let targetX=dot.gx, targetY=dot.gy;
+      if (hasMouse) {
+        const pdx=dot.gx-mx, pdy=dot.gy-my, pdist=Math.sqrt(pdx*pdx+pdy*pdy);
+        if (pdist<SEO_INFL) {
+          const raw=1-pdist/SEO_INFL, s=raw*raw*(3-2*raw), inf=s*s*(3-2*s);
+          const pushMag=Math.pow(inf,3)*SEO_PUSH, len=pdist||1;
+          targetX+=(pdx/len)*pushMag; targetY+=(pdy/len)*pushMag;
+        }
+      }
+      dot.x+=(targetX-dot.x)*SEO_LERP; dot.y+=(targetY-dot.y)*SEO_LERP;
+      // Vertical fade
+      const fadeZone=H*0.82;
+      let vFade=1;
+      if (dot.gy>fadeZone) vFade=1-Math.min(1,(dot.gy-fadeZone)/(H-fadeZone));
+      if (vFade<0.005) continue;
+      const [r,g,b]=SEO_TMPLS[dot.templateIdx].color;
+      let alpha: number, radius: number;
+      if (dot.status===SEO_PUB) {
+        alpha=0.30+Math.sin(now*1.2+dot.phase)*0.10; radius=2;
+      } else if (dot.status===SEO_GEN) {
+        alpha=0.12; radius=1.8+Math.sin(now*0.8+dot.phase)*0.2;
+      } else {
+        alpha=0.25; radius=2;
+      }
+      if (st.hoveredIdx===i) { alpha=0.9; radius=5; }
+      // Proximity lens
+      if (st.hoveredIdx!==i && hasMouse) {
+        const ldx=dot.x-mx, ldy=dot.y-my, ldist=Math.sqrt(ldx*ldx+ldy*ldy);
+        if (ldist<SEO_PROX_R) {
+          const pf=seoSmooth(1-ldist/SEO_PROX_R);
+          radius+=pf*0.8;
+          if (st.hoveredIdx<0) alpha+=pf*0.10;
+        }
+      }
+      alpha=Math.min(0.95,alpha+pulseAlpha);
+      ctx.globalAlpha=alpha*fadeIn*vFade;
+      ctx.fillStyle=`rgb(${r},${g},${b})`;
+      ctx.beginPath(); ctx.arc(dot.x,dot.y,Math.max(0.5,radius),0,Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    // Tooltip
+    if (st.hoveredIdx>=0) {
+      const dot=dots[st.hoveredIdx];
+      if (elapsed-dot.birthTime>=0) drawSEOTooltip(ctx,dot,W,H);
+    }
+    // Page counter
+    ctx.save(); ctx.textAlign='right'; ctx.globalAlpha=0.8;
+    ctx.fillStyle='rgba(99,102,241,0.55)'; ctx.font='9px "SF Mono","Fira Code",monospace';
+    ctx.fillText(`${visCount.toLocaleString()} pages`,W-10,16);
+    ctx.restore();
+  }
+
+  // ── Product 1: Reach Outreach Grid (reach11 port) ────────────────────────
+  const REACH_FIRST_NAMES = ["Sarah","James","Emma","Michael","Sophie","Daniel","Rachel","Tom","Jessica","Alex","Chris","Lauren","David","Hannah","Ben","Kate","Ryan","Olivia","Mark","Lucy"];
+  const REACH_LAST_NAMES  = ["Chen","Williams","Patel","Thompson","Garcia","Anderson","Martinez","Johnson","Lee","Taylor","Brown","Wilson","Moore","Clark","Hall","Young","King","Wright","Scott","Green"];
+  const REACH_COMPANIES   = ["Acme Corp","TechFlow","DataSync","CloudNine","Nexus Labs","Horizon AI","Vertex Systems","PulseMedia","Zenith Group","Atlas Digital","BrightPath","CoreStack","DeepBlue","EdgePoint","FrontLine","GrowthLab","HyperScale","InnoVate","JetStream","KineticIO"];
+  const REACH_ROLES       = ["Head of Marketing","VP Growth","CMO","Marketing Director","Digital Lead","Growth Manager","Head of Demand Gen","Performance Lead","Brand Director","Acquisition Manager"];
+  const REACH_DOMAINS     = ["outreach-hub.io","connect-reach.co","mailflow-pro.com","sendgrid-alt.io","inbox-direct.co","pulse-mail.com","rapid-reach.io","smart-send.co","flow-mail.io","direct-reach.com"];
+  const REACH_SUBJECTS    = [
+    "Quick question about {company}'s growth strategy",
+    "{firstName}, saw your recent {company} launch",
+    "Idea for {company}'s outreach — 3 min read",
+    "{firstName} — {company} + Pello could be interesting",
+    "Re: scaling {company}'s pipeline",
+    "{firstName}, one thing about {company}'s email strategy",
+    "Congrats on {company}'s Series B, {firstName}",
+    "Quick win for {company}'s demand gen",
+  ];
+  const REACH_OPENERS     = [
+    "I noticed {company} just expanded into new markets — impressive growth.",
+    "Saw your LinkedIn post about {company}'s Q3 results, {firstName}.",
+    "A mutual connection mentioned {company} is scaling outreach.",
+    "Your talk at SaaStr about {company}'s growth was spot on.",
+    "{firstName}, I came across {company}'s case study on demand gen.",
+    "Noticed {company} is hiring 3 new SDRs — sounds like you're scaling.",
+  ];
+
+  function reachPick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+  function reachFill(tmpl: string, fn: string, co: string): string {
+    return tmpl.replace(/{firstName}/g, fn).replace(/{company}/g, co);
+  }
+
+  interface ReachCell {
+    firstName: string; lastName: string; company: string; role: string;
+    domain: string; subject: string; opener: string;
+    stage: string; status: 'delivered' | 'opened' | 'replied';
+  }
+  interface ReachParticle { c: number; r: number; speed: number; }
+  interface ReachLegItem { label: string; status: string; color: string; x: number; y: number; w: number; h: number; }
+
+  function reachGenCell(): ReachCell {
+    const fn = reachPick(REACH_FIRST_NAMES), co = reachPick(REACH_COMPANIES);
+    const sr = Math.random();
+    return {
+      firstName: fn, lastName: reachPick(REACH_LAST_NAMES), company: co, role: reachPick(REACH_ROLES),
+      domain: reachPick(REACH_DOMAINS),
+      subject: reachFill(reachPick(REACH_SUBJECTS), fn, co),
+      opener:  reachFill(reachPick(REACH_OPENERS),  fn, co),
+      stage:   reachPick(['1st touch', 'follow-up', 'reply']),
+      status:  sr < 0.60 ? 'delivered' : sr < 0.85 ? 'opened' : 'replied',
+    };
+  }
+
+  function initReach(w: number, h: number): Record<string, unknown> {
+    const NC = 15, NR = 12;
+    const VP_Y = h * 0.12, BOT_Y = h * 0.96, HALF_W = w * 0.32;
+    const GRID_CX = w * 0.72; // center of grid — right half of the card
+    const total = (NC - 1) * (NR - 1);
+    const cells: ReachCell[] = Array.from({ length: total }, reachGenCell);
+    const particles: ReachParticle[] = Array.from({ length: 22 }, () => ({
+      c: Math.random() * (NC - 1), r: Math.random() * (NR - 1),
+      speed: 0.04 + Math.random() * 0.06,
+    }));
+    // Legend positioned to the right of the "YOUR WEBSITE" box
+    const BOX_W_INIT = 160;
+    const legX = w * 0.72 + BOX_W_INIT / 2 + 16;
+    const legStartY = Math.max(4, h * 0.12 - 44 - 6); // aligned with box top
+    const legItems: ReachLegItem[] = [
+      { label: 'Delivered', status: 'delivered', color: 'rgba(139,92,246,0.5)', x: legX, y: legStartY, w: 150, h: 22 },
+      { label: 'Opened',    status: 'opened',    color: 'rgba(168,85,247,0.6)', x: legX, y: legStartY + 24, w: 150, h: 22 },
+      { label: 'Replied',   status: 'replied',   color: 'rgba(74,222,128,0.7)', x: legX, y: legStartY + 48, w: 150, h: 22 },
+    ];
+    return { NC, NR, VP_Y, BOT_Y, HALF_W, GRID_CX, cells, particles, emailCount: 18283, lastTick: 0, hovCellC: -1, hovCellR: -1, legItems, hoveredLegend: null, autoC: Math.floor(Math.random()*(NC-1)), autoR: Math.floor(Math.random()*(NR-1)), autoTimer: 0, userActive: false, userLeftAt: 0, stickyC: -1, stickyR: -1 };
+  }
+
+  function drawReachTooltip(c: CanvasRenderingContext2D, cell: ReachCell, sx: number, sy: number, W: number, H: number) {
+    const TW = 255, TH = 116;
+    let tx = sx - TW / 2;
+    let ty = sy - TH - 14;
+    tx = Math.max(8, Math.min(W - TW - 8, tx));
+    if (ty < 8) ty = sy + 14;
+    if (ty + TH > H - 6) ty = sy - TH - 14;
+    const pad = 12;
+    c.save();
+    c.shadowColor = 'rgba(139,92,246,0.3)'; c.shadowBlur = 20;
+    rrect(c, tx, ty, TW, TH, 9); c.fillStyle = 'rgba(6,7,18,0.88)'; c.fill();
+    c.shadowBlur = 0; c.shadowColor = 'transparent';
+    rrect(c, tx, ty, TW, TH, 9); c.fillStyle = 'rgba(139,92,246,0.09)'; c.fill();
+    c.strokeStyle = 'rgba(139,92,246,0.35)'; c.lineWidth = 1; c.stroke();
+    c.globalAlpha = 0.65; rrect(c, tx, ty, TW, 3, 3); c.fillStyle = '#8b5cf6'; c.fill(); c.globalAlpha = 1;
+    c.textAlign = 'left';
+    c.font = 'bold 9px "SF Mono","Fira Code",monospace';
+    c.fillStyle = 'rgba(139,92,246,0.8)';
+    c.fillText(`FROM: ${cell.domain}  ·  ${cell.stage.toUpperCase()}`, tx + pad, ty + 15);
+    c.font = '500 12px -apple-system,system-ui,sans-serif';
+    c.fillStyle = '#ffffff';
+    c.fillText(`To: ${cell.firstName} ${cell.lastName} — ${cell.role}`, tx + pad, ty + 31);
+    c.fillStyle = 'rgba(255,255,255,0.5)';
+    c.font = '10px -apple-system,system-ui,sans-serif';
+    c.fillText(cell.company, tx + pad, ty + 46);
+    c.fillStyle = 'rgba(255,255,255,0.75)';
+    c.save(); c.beginPath(); c.rect(tx + pad, ty + 51, TW - pad * 2, 14); c.clip();
+    c.fillText(`Subj: ${cell.subject}`, tx + pad, ty + 62); c.restore();
+    c.fillStyle = 'rgba(255,255,255,0.4)';
+    c.font = '9px -apple-system,system-ui,sans-serif';
+    c.save(); c.beginPath(); c.rect(tx + pad, ty + 67, TW - pad * 2, 12); c.clip();
+    c.fillText(cell.opener, tx + pad, ty + 78); c.restore();
+    const sc = cell.status === 'replied' ? '#4ade80' : cell.status === 'opened' ? '#a78bfa' : 'rgba(255,255,255,0.4)';
+    c.fillStyle = sc;
+    c.font = 'bold 9px "SF Mono","Fira Code",monospace';
+    c.fillText(`● ${cell.status}`, tx + pad, ty + TH - 9);
+    c.restore();
+  }
+
+  function drawReach(ctx: CanvasRenderingContext2D, w: number, h: number, _t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
+    const st = state as {
+      NC: number; NR: number; VP_Y: number; BOT_Y: number; HALF_W: number; GRID_CX: number;
+      cells: ReachCell[]; particles: ReachParticle[];
+      emailCount: number; lastTick: number;
+      hovCellC: number; hovCellR: number;
+      legItems: ReachLegItem[]; hoveredLegend: string | null;
+      autoC: number; autoR: number; autoTimer: number;
+      userActive: boolean; userLeftAt: number;
+      stickyC: number; stickyR: number;
+    };
+    const { NC, NR, cells, particles, legItems } = st;
+    const { VP_Y, BOT_Y, HALF_W, GRID_CX } = st;
+
+    const now = performance.now() * 0.001;
+    if (now - st.lastTick > 0.3) { st.emailCount++; st.lastTick = now; }
+
+    function project(c: number, r: number): { sx: number; sy: number } {
+      const tFrac = Math.max(0.001, r / Math.max(1, NR - 1));
+      const frac = (c - (NC - 1) / 2) / Math.max(1, (NC - 1) / 2);
+      return { sx: GRID_CX + frac * HALF_W * tFrac, sy: VP_Y + (BOT_Y - VP_Y) * tFrac };
+    }
+    function screenToGrid(sx: number, sy: number): [number, number] {
+      const t2 = Math.max(0.01, (sy - VP_Y) / Math.max(1, BOT_Y - VP_Y));
+      const frac = (sx - GRID_CX) / Math.max(0.01, HALF_W * t2);
+      return [
+        Math.max(0, Math.min(NC - 2, (frac + 1) * (NC - 1) / 2)),
+        Math.max(0, Math.min(NR - 2, t2 * (NR - 1))),
+      ];
+    }
+
+    // Hover detection: user mouse > sticky (3s) > auto-rotate (3s cycle)
+    if (hasMouse) {
+      st.hoveredLegend = null;
+      let foundLeg = false;
+      for (const item of legItems) {
+        if (mx >= item.x - 6 && mx <= item.x + item.w + 6 && my >= item.y - 3 && my <= item.y + item.h + 3) {
+          st.hoveredLegend = item.status; st.hovCellC = -1; st.hovCellR = -1; foundLeg = true; break;
+        }
+      }
+      if (!foundLeg) {
+        if (my >= VP_Y) {
+          const [gc, gr] = screenToGrid(mx, my);
+          const cc2 = Math.floor(gc), rr2 = Math.floor(gr);
+          if (cc2 >= 0 && cc2 < NC - 1 && rr2 >= 0 && rr2 < NR - 1) {
+            st.hovCellC = cc2; st.hovCellR = rr2;
+            st.stickyC = cc2; st.stickyR = rr2;
+            st.userActive = true;
+          } else { st.hovCellC = -1; st.hovCellR = -1; }
+        } else { st.hovCellC = -1; st.hovCellR = -1; }
+      }
+    } else {
+      st.hoveredLegend = null;
+      if (st.userActive) {
+        st.userActive = false;
+        st.userLeftAt = now;
+        st.hovCellC = st.stickyC; st.hovCellR = st.stickyR;
+      } else if (st.stickyC >= 0 && now - st.userLeftAt < 3) {
+        st.hovCellC = st.stickyC; st.hovCellR = st.stickyR;
+      } else {
+        st.stickyC = -1; st.stickyR = -1;
+        if (now - st.autoTimer > 3) {
+          st.autoTimer = now;
+          st.autoC = Math.floor(Math.random() * (NC - 1));
+          st.autoR = 1 + Math.floor(Math.random() * (NR - 3));
+        }
+        st.hovCellC = st.autoC; st.hovCellR = st.autoR;
+      }
+    }
+
+    const pulseRow = ((now % 2) / 2) * (NR - 1);
+
+    // 1. Cell fills
+    for (let r = 0; r < NR - 1; r++) {
+      const depth = (r + 0.5) / (NR - 1);
+      const pBoost = Math.max(0, 1 - Math.abs(r + 0.5 - pulseRow) / 1.8) * 0.07;
+      for (let c = 0; c < NC - 1; c++) {
+        const cell = cells[r * (NC - 1) + c];
+        const isHov = c === st.hovCellC && r === st.hovCellR;
+        const tl = project(c, r), tr = project(c + 1, r), br = project(c + 1, r + 1), bl = project(c, r + 1);
+        ctx.beginPath(); ctx.moveTo(tl.sx, tl.sy); ctx.lineTo(tr.sx, tr.sy);
+        ctx.lineTo(br.sx, br.sy); ctx.lineTo(bl.sx, bl.sy); ctx.closePath();
+        if (isHov) {
+          ctx.fillStyle = 'rgba(139,92,246,0.20)';
+        } else if (st.hoveredLegend && cell.status !== st.hoveredLegend) {
+          ctx.fillStyle = 'rgba(6,7,18,0.02)';
+        } else if (st.hoveredLegend && cell.status === st.hoveredLegend) {
+          const a = (cell.status === 'replied' ? 0.25 : cell.status === 'opened' ? 0.18 : 0.10) * (0.5 + depth * 0.5) + pBoost;
+          ctx.fillStyle = cell.status === 'replied' ? `rgba(74,222,128,${a})` : cell.status === 'opened' ? `rgba(168,85,247,${a})` : `rgba(139,92,246,${a})`;
+        } else {
+          const base = cell.status === 'replied' ? 0.10 : cell.status === 'opened' ? 0.055 : 0.025;
+          const a = base * (0.25 + depth * 0.75) + pBoost;
+          ctx.fillStyle = cell.status === 'replied' ? `rgba(74,222,128,${a})` : `rgba(139,92,246,${a})`;
+        }
+        ctx.fill();
+      }
+    }
+
+    // 2. Grid lines
+    ctx.lineWidth = 0.5;
+    for (let r = 0; r < NR; r++) {
+      const near = st.hovCellR >= 0 && Math.abs(r - st.hovCellR) <= 1;
+      ctx.beginPath();
+      for (let c = 0; c < NC; c++) { const pt = project(c, r); c === 0 ? ctx.moveTo(pt.sx, pt.sy) : ctx.lineTo(pt.sx, pt.sy); }
+      ctx.strokeStyle = near ? 'rgba(139,92,246,0.16)' : 'rgba(139,92,246,0.07)'; ctx.stroke();
+    }
+    for (let c = 0; c < NC; c++) {
+      const near = st.hovCellC >= 0 && Math.abs(c - st.hovCellC) <= 1;
+      ctx.beginPath();
+      for (let r = 0; r < NR; r++) { const pt = project(c, r); r === 0 ? ctx.moveTo(pt.sx, pt.sy) : ctx.lineTo(pt.sx, pt.sy); }
+      ctx.strokeStyle = near ? 'rgba(139,92,246,0.16)' : 'rgba(139,92,246,0.07)'; ctx.stroke();
+    }
+
+    // 3. Particles flowing downward
+    for (const p of particles) {
+      p.r += p.speed;
+      if (p.r >= NR - 1) { p.r = 0; p.c = Math.random() * (NC - 1); }
+      const pt = project(p.c, p.r);
+      const alpha = 0.12 + (p.r / (NR - 1)) * 0.3;
+      ctx.globalAlpha = alpha; ctx.fillStyle = '#c4b5fd';
+      ctx.beginPath(); ctx.arc(pt.sx, pt.sy, 1.2, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // 4. "YOUR WEBSITE" box
+    const BOX_W = 160, BOX_H = 44;
+    const bx = GRID_CX - BOX_W / 2, by = Math.max(4, VP_Y - BOX_H - 6);
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(GRID_CX, by + BOX_H); ctx.lineTo(GRID_CX, VP_Y);
+    ctx.strokeStyle = 'rgba(139,92,246,0.22)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.shadowColor = 'rgba(139,92,246,0.35)'; ctx.shadowBlur = 16;
+    rrect(ctx, bx, by, BOX_W, BOX_H, 8); ctx.fillStyle = 'rgba(6,7,18,0.65)'; ctx.fill();
+    ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+    rrect(ctx, bx, by, BOX_W, BOX_H, 8); ctx.fillStyle = 'rgba(139,92,246,0.09)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(139,92,246,0.3)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.globalAlpha = 0.6; rrect(ctx, bx, by, BOX_W, 2, 2); ctx.fillStyle = '#8b5cf6'; ctx.fill(); ctx.globalAlpha = 1;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(139,92,246,0.75)'; ctx.font = '9px "SF Mono","Fira Code",monospace';
+    ctx.fillText('YOUR WEBSITE', GRID_CX, by + 16);
+    ctx.fillStyle = '#ffffff'; ctx.font = '500 11px -apple-system,system-ui,sans-serif';
+    ctx.fillText(`${st.emailCount.toLocaleString()} emails sent today`, GRID_CX, by + 33);
+    ctx.restore();
+
+    // 5. Hovered cell border + tooltip
+    if (st.hovCellC >= 0 && st.hovCellR >= 0) {
+      const tl = project(st.hovCellC, st.hovCellR), tr = project(st.hovCellC + 1, st.hovCellR);
+      const br = project(st.hovCellC + 1, st.hovCellR + 1), bl = project(st.hovCellC, st.hovCellR + 1);
+      ctx.beginPath(); ctx.moveTo(tl.sx, tl.sy); ctx.lineTo(tr.sx, tr.sy);
+      ctx.lineTo(br.sx, br.sy); ctx.lineTo(bl.sx, bl.sy); ctx.closePath();
+      ctx.strokeStyle = 'rgba(139,92,246,0.6)'; ctx.lineWidth = 1.5; ctx.stroke();
+      drawReachTooltip(ctx, cells[st.hovCellR * (NC - 1) + st.hovCellC], (tl.sx + br.sx) / 2, (tl.sy + br.sy) / 2 - 8, w, h);
+    }
+
+    // 6. Legend (right of "YOUR WEBSITE" box) with counts
+    const deliveredCount = cells.filter(c => c.status === 'delivered').length;
+    const openedCount = cells.filter(c => c.status === 'opened').length;
+    const repliedCount = cells.filter(c => c.status === 'replied').length;
+    const legCounts: Record<string, number> = { delivered: deliveredCount, opened: openedCount, replied: repliedCount };
+
+    for (const item of legItems) {
+      const isHovered = st.hoveredLegend === item.status;
+      const alpha = isHovered ? 1.0 : 0.65;
+      if (isHovered) {
+        ctx.fillStyle = 'rgba(139,92,246,0.08)';
+        rrect(ctx, item.x - 6, item.y - 3, item.w + 12, item.h + 6, 5);
+        ctx.fill();
+      }
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = item.color;
+      ctx.beginPath(); ctx.arc(item.x + 7, item.y + item.h / 2, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = isHovered ? '#ffffff' : 'rgba(255,255,255,0.6)';
+      ctx.font = `${isHovered ? 'bold ' : ''}11px "SF Mono","Fira Code",monospace`;
+      ctx.textAlign = 'left';
+      ctx.fillText(item.label, item.x + 18, item.y + item.h / 2 + 4);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = isHovered ? '#c4b5fd' : 'rgba(139,92,246,0.6)';
+      ctx.font = `bold 11px "SF Mono","Fira Code",monospace`;
+      ctx.fillText(`${legCounts[item.status]}`, item.x + item.w, item.y + item.h / 2 + 4);
+      ctx.globalAlpha = 1;
+    }
+
+    // 7. Stats box (below legend, right of box)
+    const statsX = legItems[0].x - 6;
+    const statsY = legItems[2].y + legItems[2].h + 10;
+    const statsW = legItems[0].w + 12;
+    const statsH = 92;
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(139,92,246,0.15)';
+    ctx.shadowBlur = 14;
+    rrect(ctx, statsX, statsY, statsW, statsH, 7);
+    ctx.fillStyle = 'rgba(139,92,246,0.06)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(139,92,246,0.15)';
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.restore();
+
+    ctx.textAlign = 'left';
+    const statsData = [
+      { label: 'Domains', value: '135', color: '#c4b5fd' },
+      { label: 'Mailboxes', value: '405', color: '#c4b5fd' },
+      { label: 'Inbox rate', value: '98.2%', color: '#4ade80' },
+      { label: 'Reply rate', value: '4.7%', color: '#4ade80' },
+    ];
+    for (let si = 0; si < statsData.length; si++) {
+      const sd = statsData[si];
+      const sy2 = statsY + 16 + si * 19;
+      ctx.globalAlpha = 0.55;
+      ctx.fillStyle = '#8b5cf6';
+      ctx.font = '10px "SF Mono","Fira Code",monospace';
+      ctx.fillText(sd.label, statsX + 10, sy2);
+      ctx.globalAlpha = 0.8;
+      ctx.fillStyle = sd.color;
+      ctx.font = 'bold 10px "SF Mono","Fira Code",monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText(sd.value, statsX + statsW - 10, sy2);
+      ctx.textAlign = 'left';
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // ── Product 2: Publish Content Rain ──────────────────────────────────────
+  interface RainDash { y:number; alpha:number; speed:number; }
+  interface RainColumn { x:number; dashes:RainDash[]; }
+  function initRain(w: number, h: number) {
+    const numCols=50, colW=w/numCols;
+    const columns: RainColumn[]=[];
+    for (let c=0;c<numCols;c++) {
+      const dashes: RainDash[]=[];
+      for (let d=0;d<10;d++) dashes.push({
+        y: Math.random()*h,
+        alpha: 0.30+Math.random()*0.15,
+        speed: 0.3+Math.random()*0.5,
+      });
+      columns.push({ x: c*colW+colW/2, dashes });
+    }
+    return { columns };
+  }
+  function drawRain(ctx: CanvasRenderingContext2D, w: number, h: number, _t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
+    const { columns } = state as { columns: RainColumn[] };
+    const [r,g,b]=PV_RGB[2];
+    for (const col of columns) {
+      const near=hasMouse && Math.abs(mx-col.x) < w/50;
+      const speedMult=near ? 0.3 : 1;
+      const alphaMult=near ? 1.8 : 1;
+      for (const dash of col.dashes) {
+        dash.y+=dash.speed*speedMult;
+        if (dash.y > h+5) { dash.y=-5; dash.speed=0.3+Math.random()*0.5; dash.alpha=0.30+Math.random()*0.15; }
+        const a=Math.min(0.55, dash.alpha*alphaMult);
+        ctx.strokeStyle=`rgba(${r},${g},${b},${a})`;
+        ctx.lineWidth=2;
+        ctx.beginPath(); ctx.moveTo(col.x-1.5, dash.y); ctx.lineTo(col.x+1.5, dash.y); ctx.stroke();
+      }
+    }
+  }
+
+  // ── Product 3: Social Holographic Globe ──────────────────────────────────
+  const SOC_PLATFORMS = [
+    { name: 'TikTok',    color: [0,242,234]   as [number,number,number] },
+    { name: 'Instagram', color: [228,64,95]    as [number,number,number] },
+    { name: 'X',         color: [29,161,242]   as [number,number,number] },
+    { name: 'Reddit',    color: [255,69,0]     as [number,number,number] },
+    { name: 'YouTube',   color: [255,0,0]      as [number,number,number] },
+  ];
+  const SOC_NICHES  = ['fitness','food','travel','tech','finance','fashion','gaming','beauty','sports','music'];
+  const SOC_FNAMES  = ['alex','casey','jordan','taylor','morgan','riley','sage','quinn','blake','drew','luna','nova','rex','ivy','leo'];
+  const SOC_MODELS  = ['iPhone 15','iPhone 14','Samsung S24','Pixel 8','iPhone 15 Pro','Samsung S23','OnePlus 12'];
+  const SOC_STATUSES = ['Active','Posting','Engaging'] as const;
+  const SOC_CITIES = [
+    { name: 'London',      lat: 51.5,  lon: -0.1,   code: 'LDN', count: 7  },
+    { name: 'New York',    lat: 40.7,  lon: -74.0,  code: 'NYC', count: 6  },
+    { name: 'Los Angeles', lat: 34.0,  lon: -118.2, code: 'LA',  count: 5  },
+    { name: 'Tokyo',       lat: 35.7,  lon: 139.7,  code: 'TKY', count: 5  },
+    { name: 'Berlin',      lat: 52.5,  lon: 13.4,   code: 'BLN', count: 4  },
+    { name: 'Sydney',      lat: -33.9, lon: 151.2,  code: 'SYD', count: 4  },
+    { name: 'Dubai',       lat: 25.2,  lon: 55.3,   code: 'DXB', count: 3  },
+    { name: 'Singapore',   lat: 1.3,   lon: 103.8,  code: 'SGP', count: 3  },
+    { name: 'São Paulo',   lat: -23.5, lon: -46.6,  code: 'SAO', count: 3  },
+    { name: 'Mumbai',      lat: 19.1,  lon: 72.9,   code: 'MUM', count: 3  },
+    { name: 'Seoul',       lat: 37.6,  lon: 127.0,  code: 'SEL', count: 3  },
+    { name: 'Toronto',     lat: 43.7,  lon: -79.4,  code: 'TOR', count: 3  },
+  ];
+
+  interface SocAccount { platform: string; color: [number,number,number]; username: string; followers: string; }
+  interface PhoneSocNode {
+    lat: number; lon: number; x3d: number; y3d: number; z3d: number;
+    phoneNum: number; model: string; city: string;
+    accounts: SocAccount[]; status: 'Active'|'Posting'|'Engaging';
+    phase: number; postsToday: number;
+  }
+  interface SocGlobeDot { x: number; y: number; z: number; isLand: boolean; }
+  interface SocActivityPulse { sx: number; sy: number; born: number; duration: number; color: [number,number,number]; }
+
+  function socR01() { return Math.random(); }
+  function socRPick<T>(arr: readonly T[]): T { return arr[Math.floor(socR01()*arr.length)]; }
+  function socRRange(a: number, b: number) { return a+socR01()*(b-a); }
+
+  function socIsLand(lat: number, lon: number): boolean {
+    if (lat>=15&&lat<=70&&lon>=-168&&lon<=-52) return true;
+    if (lat>=7&&lat<=22&&lon>=-92&&lon<=-60) return true;
+    if (lat>=-56&&lat<=12&&lon>=-82&&lon<=-34) return true;
+    if (lat>=50&&lat<=59&&lon>=-11&&lon<=2) return true;
+    if (lat>=63&&lat<=67&&lon>=-25&&lon<=-12) return true;
+    if (lat>=36&&lat<=60&&lon>=-10&&lon<=30) return true;
+    if (lat>=55&&lat<=71&&lon>=4&&lon<=30) return true;
+    if (lat>=60&&lat<=83&&lon>=-57&&lon<=-17) return true;
+    if (lat>=18&&lat<=37&&lon>=-17&&lon<=38) return true;
+    if (lat>=-5&&lat<=18&&lon>=-18&&lon<=15) return true;
+    if (lat>=-35&&lat<=12&&lon>=14&&lon<=52) return true;
+    if (lat>=-26&&lat<=-12&&lon>=43&&lon<=51) return true;
+    if (lat>=12&&lat<=42&&lon>=25&&lon<=62) return true;
+    if (lat>=42&&lat<=75&&lon>=28&&lon<=180) return true;
+    if (lat>=6&&lat<=28&&lon>=66&&lon<=92) return true;
+    if (lat>=1&&lat<=28&&lon>=92&&lon<=110) return true;
+    if (lat>=4&&lat<=20&&lon>=116&&lon<=128) return true;
+    if (lat>=-10&&lat<=6&&lon>=95&&lon<=141) return true;
+    if (lat>=18&&lat<=55&&lon>=100&&lon<=135) return true;
+    if (lat>=30&&lat<=45&&lon>=129&&lon<=146) return true;
+    if (lat>=-39&&lat<=-10&&lon>=113&&lon<=154) return true;
+    if (lat>=-47&&lat<=-34&&lon>=166&&lon<=180) return true;
+    return false;
+  }
+
+  function socLatLonTo3D(lat: number, lon: number): [number,number,number] {
+    const phi=(90-lat)*Math.PI/180, theta=(lon+180)*Math.PI/180;
+    return [Math.sin(phi)*Math.cos(theta),Math.cos(phi),Math.sin(phi)*Math.sin(theta)];
+  }
+
+  const SOC_TILT = 15*Math.PI/180;
+
+  function socApplyRotations(x: number, y: number, z: number, rotY: number): [number,number,number] {
+    const ct=Math.cos(SOC_TILT), st2=Math.sin(SOC_TILT);
+    const x2=x*ct-y*st2, y2=x*st2+y*ct, z2=z;
+    const cy=Math.cos(rotY), sy=Math.sin(rotY);
+    return [x2*cy+z2*sy, y2, -x2*sy+z2*cy];
+  }
+
+  function socProject(x: number, y: number, z: number, rotY: number, globeR: number, globeCX: number, globeCY: number) {
+    const [rx,ry,rz]=socApplyRotations(x,y,z,rotY);
+    return { sx:globeCX+rx*globeR, sy:globeCY-ry*globeR, depth:rz, visible:rz>-0.1 };
+  }
+
+  function initSocial(w: number, h: number): Record<string,unknown> {
+    const GLOBE_R=Math.min(w,h)*0.38;
+    const GLOBE_CX=w*0.32, GLOBE_CY=h*0.50;
+    // Fibonacci sphere 800 dots
+    const globeDots: SocGlobeDot[]=[];
+    { const gr2=(1+Math.sqrt(5))/2;
+      for (let i=0;i<800;i++) {
+        const theta=2*Math.PI*i/gr2, phi=Math.acos(1-2*(i+0.5)/800);
+        const x=Math.sin(phi)*Math.cos(theta), y=Math.cos(phi), z=Math.sin(phi)*Math.sin(theta);
+        const lat=90-(phi*180/Math.PI);
+        const lon=((theta*180/Math.PI)%360+360)%360-180;
+        globeDots.push({x,y,z,isLand:socIsLand(lat,lon)});
+      }
+    }
+    // Phones
+    const socPhones: PhoneSocNode[]=[];
+    let pNum=1;
+    for (const city of SOC_CITIES) {
+      for (let i=0;i<city.count;i++) {
+        const spread=city.name==='Singapore'?0.5:1.5;
+        const lat=city.lat+socRRange(-spread,spread), lon=city.lon+socRRange(-spread,spread);
+        const [x3d,y3d,z3d]=socLatLonTo3D(lat,lon);
+        const n=Math.floor(socR01()*2)+2;
+        const accs: SocAccount[]=[];
+        for (let a=0;a<n;a++) {
+          const pl=socRPick(SOC_PLATFORMS);
+          const fol=Math.floor(socRRange(1000,80000));
+          accs.push({platform:pl.name,color:pl.color,username:`@${socRPick(SOC_FNAMES)}_${socRPick(SOC_NICHES)}_${city.code.toLowerCase()}`,followers:fol>=1000?`${(fol/1000).toFixed(1)}k`:`${fol}`});
+        }
+        socPhones.push({lat,lon,x3d,y3d,z3d,phoneNum:pNum++,model:socRPick(SOC_MODELS),city:city.name,accounts:accs,status:socRPick(SOC_STATUSES),phase:socR01()*Math.PI*2,postsToday:Math.floor(socRRange(5,80))});
+      }
+    }
+    const totalPhones=socPhones.length;
+    const totalAccounts=socPhones.reduce((s,p)=>s+p.accounts.length,0);
+    return {
+      GLOBE_R,GLOBE_CX,GLOBE_CY,rotY:0,
+      globeDots,socPhones,totalPhones,totalAccounts,
+      activityPulses:[] as SocActivityPulse[],lastPulseSpawn:0,
+      hoveredPhone:null as PhoneSocNode|null,stickyPhone:null as PhoneSocNode|null,
+      autoHoverIdx:0,autoHoverTimer:0,
+    };
+  }
+
+  function drawSocTooltip(c: CanvasRenderingContext2D, phone: PhoneSocNode, sx: number, sy: number, W: number, H: number) {
+    const pad=12, lineH=16;
+    const tooltipW=280, tooltipH=pad*2+lineH*(phone.accounts.length+3)+10;
+    let tx=sx+16, ty=sy-tooltipH/2;
+    if (tx+tooltipW>W-8) tx=sx-tooltipW-16;
+    ty=Math.max(8,Math.min(H-tooltipH-8,ty));
+    c.save();
+    c.shadowColor='rgba(0,242,234,0.25)'; c.shadowBlur=24;
+    rrect(c,tx,ty,tooltipW,tooltipH,8); c.fillStyle='rgba(4,12,18,0.45)'; c.fill(); c.shadowBlur=0;
+    rrect(c,tx,ty,tooltipW,tooltipH,8); c.fillStyle='rgba(0,242,234,0.06)'; c.fill();
+    c.save(); c.beginPath(); c.rect(tx,ty,tooltipW,tooltipH); c.clip();
+    c.lineWidth=0.5;
+    for (let y2=ty;y2<ty+tooltipH;y2+=3) {
+      c.globalAlpha=0.03; c.strokeStyle='#00f2ea';
+      c.beginPath(); c.moveTo(tx,y2); c.lineTo(tx+tooltipW,y2); c.stroke();
+    }
+    c.restore();
+    rrect(c,tx,ty,tooltipW,tooltipH,8); c.strokeStyle='rgba(0,242,234,0.25)'; c.lineWidth=1; c.stroke();
+    c.globalAlpha=0.6; c.fillStyle='rgba(0,242,234,0.5)';
+    rrect(c,tx,ty,tooltipW,3,3); c.fill(); c.globalAlpha=1;
+    let cy3=ty+pad+11;
+    c.globalAlpha=1; c.textAlign='left';
+    c.fillStyle='#00f2ea'; c.font='bold 10px "SF Mono","Fira Code",monospace';
+    c.fillText(`PHONE #${phone.phoneNum}  //  ${phone.model}`,tx+pad,cy3); cy3+=lineH;
+    c.fillStyle='rgba(0,242,234,0.45)'; c.font='9px "SF Mono","Fira Code",monospace';
+    c.fillText(`>> ${phone.city}`,tx+pad,cy3); cy3+=lineH+3;
+    const groups=new Map<string,{color:[number,number,number];entries:{u:string;f:string}[]}>();
+    for (const acc of phone.accounts) {
+      if (!groups.has(acc.platform)) groups.set(acc.platform,{color:acc.color,entries:[]});
+      groups.get(acc.platform)!.entries.push({u:acc.username,f:acc.followers});
+    }
+    for (const [,{color,entries}] of groups) {
+      const [r2,g2,b2]=color;
+      c.fillStyle=`rgb(${r2},${g2},${b2})`;
+      c.beginPath(); c.arc(tx+pad+4,cy3-3,3,0,Math.PI*2); c.fill();
+      const cnt=entries.length>1?`${entries.length}x `:'   ';
+      const line=`${cnt}${entries.map(e=>`${e.u} (${e.f})`).join('  ')}`;
+      c.fillStyle='rgba(200,255,255,0.85)'; c.font='9px "SF Mono","Fira Code",monospace';
+      c.save(); c.beginPath(); c.rect(tx+pad+12,cy3-12,tooltipW-pad-20,15); c.clip();
+      c.fillText(line,tx+pad+12,cy3); c.restore(); cy3+=lineH;
+    }
+    cy3+=3;
+    const sc=phone.status==='Active'?'rgba(74,222,128,0.9)':phone.status==='Posting'?'rgba(0,242,234,0.9)':'rgba(251,191,36,0.8)';
+    c.fillStyle=sc; c.font='9px "SF Mono","Fira Code",monospace';
+    c.fillText(`[ ${phone.status} ]  ${phone.accounts.length} accts  //  ${phone.postsToday} posts`,tx+pad,cy3);
+    c.restore();
+  }
+
+  function drawSocial(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, state: Record<string,unknown>) {
+    const st=state as {
+      GLOBE_R:number;GLOBE_CX:number;GLOBE_CY:number;rotY:number;
+      globeDots:SocGlobeDot[];socPhones:PhoneSocNode[];
+      totalPhones:number;totalAccounts:number;
+      activityPulses:SocActivityPulse[];lastPulseSpawn:number;
+      hoveredPhone:PhoneSocNode|null;stickyPhone:PhoneSocNode|null;
+      autoHoverIdx:number;autoHoverTimer:number;
+    };
+    st.rotY+=0.005;
+    const { GLOBE_R, GLOBE_CX, GLOBE_CY } = st;
+    const rotY=st.rotY;
+    function proj(x: number, y: number, z: number) { return socProject(x,y,z,rotY,GLOBE_R,GLOBE_CX,GLOBE_CY); }
+
+    // Scan beam
+    const beamY=GLOBE_CY-GLOBE_R+((t%5)/5)*(GLOBE_R*2);
+
+    // Globe ambient glow
+    const breathe=0.03+Math.sin(t*0.5)*0.008;
+    const grd=ctx.createRadialGradient(GLOBE_CX,GLOBE_CY,0,GLOBE_CX,GLOBE_CY,GLOBE_R*1.5);
+    grd.addColorStop(0,`rgba(0,242,234,${breathe})`);
+    grd.addColorStop(0.5,`rgba(0,242,234,${breathe*0.4})`);
+    grd.addColorStop(1,'rgba(0,242,234,0)');
+    ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(GLOBE_CX,GLOBE_CY,GLOBE_R*1.5,0,Math.PI*2); ctx.fill();
+
+    // Edge ring
+    ctx.save();
+    ctx.strokeStyle=`rgba(0,242,234,${0.12+Math.sin(t*0.3)*0.04})`; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(GLOBE_CX,GLOBE_CY,GLOBE_R,0,Math.PI*2); ctx.stroke();
+    ctx.restore();
+
+    // Scan lines
+    ctx.lineWidth=0.5;
+    for (let y=GLOBE_CY-GLOBE_R;y<GLOBE_CY+GLOBE_R;y+=4) {
+      const dy=y-GLOBE_CY, cr=Math.sqrt(Math.max(0,GLOBE_R*GLOBE_R-dy*dy));
+      if (cr<2) continue;
+      const near=Math.abs(y-beamY)<8;
+      ctx.globalAlpha=near?0.20:0.035; ctx.strokeStyle='#00f2ea';
+      ctx.beginPath(); ctx.moveTo(GLOBE_CX-cr,y); ctx.lineTo(GLOBE_CX+cr,y); ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+    if (beamY>GLOBE_CY-GLOBE_R&&beamY<GLOBE_CY+GLOBE_R) {
+      const dy=beamY-GLOBE_CY, cr=Math.sqrt(Math.max(0,GLOBE_R*GLOBE_R-dy*dy));
+      for (let offset=-10;offset<=0;offset+=2) {
+        const trailY=beamY+offset, tdy=trailY-GLOBE_CY;
+        const tcr=Math.sqrt(Math.max(0,GLOBE_R*GLOBE_R-tdy*tdy));
+        if (tcr<2) continue;
+        ctx.globalAlpha=0.03*(1+offset/10); ctx.strokeStyle='#00f2ea'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(GLOBE_CX-tcr,trailY); ctx.lineTo(GLOBE_CX+tcr,trailY); ctx.stroke();
+      }
+      const bg=ctx.createLinearGradient(GLOBE_CX-cr,0,GLOBE_CX+cr,0);
+      bg.addColorStop(0,'rgba(0,242,234,0)'); bg.addColorStop(0.3,'rgba(0,242,234,0.25)');
+      bg.addColorStop(0.5,'rgba(0,242,234,0.35)'); bg.addColorStop(0.7,'rgba(0,242,234,0.25)');
+      bg.addColorStop(1,'rgba(0,242,234,0)');
+      ctx.globalAlpha=1; ctx.lineWidth=2; ctx.strokeStyle=bg;
+      ctx.beginPath(); ctx.moveTo(GLOBE_CX-cr,beamY); ctx.lineTo(GLOBE_CX+cr,beamY); ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+
+    // Globe dots — 4 passes
+    for (const dot of st.globeDots) {
+      if (!dot.isLand) continue;
+      const [rx,ry,rz]=socApplyRotations(dot.x,dot.y,dot.z,rotY);
+      if (rz>=-0.05) continue;
+      const sx=GLOBE_CX+rx*GLOBE_R, sy=GLOBE_CY-ry*GLOBE_R;
+      const bd=Math.max(0,-rz-0.05);
+      ctx.globalAlpha=0.12+bd*0.10; ctx.fillStyle='rgb(0,200,195)';
+      ctx.beginPath(); ctx.arc(sx,sy,0.8+bd*0.4,0,Math.PI*2); ctx.fill();
+    }
+    for (const dot of st.globeDots) {
+      if (dot.isLand) continue;
+      const [rx,ry,rz]=socApplyRotations(dot.x,dot.y,dot.z,rotY);
+      if (rz>=-0.05) continue;
+      const sx=GLOBE_CX+rx*GLOBE_R, sy=GLOBE_CY-ry*GLOBE_R;
+      ctx.globalAlpha=0.015; ctx.fillStyle='rgb(0,70,68)';
+      ctx.beginPath(); ctx.arc(sx,sy,0.4,0,Math.PI*2); ctx.fill();
+    }
+    for (const dot of st.globeDots) {
+      if (dot.isLand) continue;
+      const [rx,ry,rz]=socApplyRotations(dot.x,dot.y,dot.z,rotY);
+      if (rz<-0.05) continue;
+      const sx=GLOBE_CX+rx*GLOBE_R, sy=GLOBE_CY-ry*GLOBE_R;
+      const depth=Math.max(0,rz), nearBeam=Math.abs(sy-beamY)<8;
+      ctx.globalAlpha=nearBeam?0.10:(0.015+depth*0.025); ctx.fillStyle='rgb(0,80,78)';
+      ctx.beginPath(); ctx.arc(sx,sy,0.5,0,Math.PI*2); ctx.fill();
+    }
+    ctx.save(); ctx.shadowColor='rgba(0,242,234,0.35)'; ctx.shadowBlur=3;
+    for (const dot of st.globeDots) {
+      if (!dot.isLand) continue;
+      const [rx,ry,rz]=socApplyRotations(dot.x,dot.y,dot.z,rotY);
+      if (rz<-0.05) continue;
+      const sx=GLOBE_CX+rx*GLOBE_R, sy=GLOBE_CY-ry*GLOBE_R;
+      const depth=Math.max(0,rz), nearBeam=Math.abs(sy-beamY)<10;
+      const flicker=0.92+Math.sin(t*8+dot.x*20+dot.y*30)*0.08;
+      const baseAlpha=(0.28+depth*0.45)*flicker;
+      ctx.globalAlpha=nearBeam?Math.min(1,baseAlpha+0.45):baseAlpha;
+      ctx.fillStyle=nearBeam?'rgb(150,255,252)':'rgb(0,242,234)';
+      const rad=(1.0+depth*0.9)*(nearBeam?1.4:1);
+      ctx.beginPath(); ctx.arc(sx,sy,rad,0,Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+
+    // Activity pulses
+    if (t-st.lastPulseSpawn>0.6) {
+      st.lastPulseSpawn=t;
+      const cands: {sx:number;sy:number}[]=[];
+      for (const p of st.socPhones) { const pp=proj(p.x3d,p.y3d,p.z3d); if (pp.visible) cands.push({sx:pp.sx,sy:pp.sy}); }
+      if (cands.length>0) {
+        const cc2=cands[Math.floor(Math.random()*cands.length)];
+        const acct=st.socPhones[Math.floor(Math.random()*st.socPhones.length)].accounts[0];
+        st.activityPulses.push({sx:cc2.sx+(Math.random()-0.5)*12,sy:cc2.sy+(Math.random()-0.5)*12,born:t,duration:1.2,color:acct.color});
+      }
+    }
+    for (let i=st.activityPulses.length-1;i>=0;i--) {
+      const pulse=st.activityPulses[i], age=t-pulse.born;
+      if (age>pulse.duration) { st.activityPulses.splice(i,1); continue; }
+      const progress=age/pulse.duration;
+      const [pr2,pg2,pb2]=pulse.color;
+      ctx.globalAlpha=(1-progress)*0.25; ctx.strokeStyle=`rgb(${pr2},${pg2},${pb2})`; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(pulse.sx,pulse.sy,3+progress*15,0,Math.PI*2); ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+
+    // Hover: user mouse > sticky (3s) > auto-hover (4s cycle)
+    if (hasMouse) {
+      let best: PhoneSocNode|null=null, bestD=25;
+      for (const p of st.socPhones) {
+        const pp=proj(p.x3d,p.y3d,p.z3d); if (!pp.visible) continue;
+        const d=Math.sqrt((pp.sx-mx)**2+(pp.sy-my)**2);
+        if (d<bestD){bestD=d;best=p;}
+      }
+      if (best) { st.stickyPhone=best; st.hoveredPhone=best; }
+      else {
+        if (st.stickyPhone) {
+          const pp=proj(st.stickyPhone.x3d,st.stickyPhone.y3d,st.stickyPhone.z3d);
+          st.hoveredPhone=(pp.visible&&pp.depth>0.05)?st.stickyPhone:null;
+          if (!st.hoveredPhone) st.stickyPhone=null;
+        } else { st.hoveredPhone=null; }
+      }
+    } else {
+      // No mouse — use sticky or auto-hover
+      if (st.stickyPhone) {
+        const pp=proj(st.stickyPhone.x3d,st.stickyPhone.y3d,st.stickyPhone.z3d);
+        if (pp.visible && pp.depth > 0.05) {
+          st.hoveredPhone = st.stickyPhone;
+        } else {
+          // Sticky phone rotated out — clear it and immediately pick a new auto target
+          st.stickyPhone = null;
+          st.hoveredPhone = null;
+          st.autoHoverTimer = 0; // force immediate auto-pick
+        }
+      }
+      if (!st.hoveredPhone) {
+        // Auto-hover: pick a visible phone, rotate every 4s or immediately if none shown
+        if (t - st.autoHoverTimer > 4 || !st.socPhones[st.autoHoverIdx] || !proj(st.socPhones[st.autoHoverIdx].x3d, st.socPhones[st.autoHoverIdx].y3d, st.socPhones[st.autoHoverIdx].z3d).visible) {
+          st.autoHoverTimer = t;
+          // Find a visible phone
+          let found = false;
+          for (let tries = 0; tries < st.socPhones.length; tries++) {
+            st.autoHoverIdx = (st.autoHoverIdx + 1) % st.socPhones.length;
+            const pp = proj(st.socPhones[st.autoHoverIdx].x3d, st.socPhones[st.autoHoverIdx].y3d, st.socPhones[st.autoHoverIdx].z3d);
+            if (pp.visible && pp.depth > 0.15) { found = true; break; }
+          }
+          if (!found) st.autoHoverIdx = 0; // fallback
+        }
+        const ap = st.socPhones[st.autoHoverIdx];
+        if (ap) {
+          const apr = proj(ap.x3d, ap.y3d, ap.z3d);
+          st.hoveredPhone = (apr.visible && apr.depth > 0.1) ? ap : null;
+        }
+      }
+    }
+
+    // Phone nodes
+    for (const phone of st.socPhones) {
+      const p=proj(phone.x3d,phone.y3d,phone.z3d);
+      if (!p.visible) {
+        ctx.globalAlpha=0.04; ctx.fillStyle='#00f2ea';
+        ctx.beginPath(); ctx.arc(p.sx,p.sy,1,0,Math.PI*2); ctx.fill();
+        ctx.globalAlpha=1; continue;
+      }
+      const hov=st.hoveredPhone===phone;
+      const depth=Math.max(0.2,p.depth);
+      let alpha=0.5*depth, rad=4;
+      const nearBeam=Math.abs(p.sy-beamY)<12;
+      if (nearBeam) alpha=Math.min(0.95,alpha+0.35);
+      if (phone.status==='Posting') alpha=Math.max(alpha,0.4+Math.sin(t*3+phone.phase)*0.15);
+      if (hov){alpha=1;rad=8;}
+      ctx.globalAlpha=alpha*0.4; ctx.strokeStyle='#00f2ea'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(p.sx,p.sy,rad+3,0,Math.PI*2); ctx.stroke();
+      ctx.globalAlpha=alpha*0.15; ctx.fillStyle='#00f2ea';
+      ctx.beginPath(); ctx.arc(p.sx,p.sy,rad+5,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha=alpha; ctx.fillStyle='#00f2ea';
+      ctx.beginPath(); ctx.arc(p.sx,p.sy,rad,0,Math.PI*2); ctx.fill();
+      const [pr3,pg3,pb3]=phone.accounts[0].color;
+      ctx.globalAlpha=hov?1:alpha*0.9; ctx.fillStyle=`rgb(${pr3},${pg3},${pb3})`;
+      ctx.beginPath(); ctx.arc(p.sx,p.sy,hov?4:2,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha=1;
+    }
+
+    if (st.hoveredPhone) {
+      const p=proj(st.hoveredPhone.x3d,st.hoveredPhone.y3d,st.hoveredPhone.z3d);
+      drawSocTooltip(ctx,st.hoveredPhone,p.sx,p.sy,w,h);
+    }
+
+    // ── HUD panel — position glass div + render HTML text inside ──
+    const BOX_W=190, BOX_H_EST=260;
+    const bx=GLOBE_CX-BOX_W/2, by=GLOBE_CY-BOX_H_EST/2;
+
+    const glassEl = document.getElementById('soc-hud-glass');
+    if (glassEl) {
+      const card = glassEl.parentElement!;
+      const cardRect = card.getBoundingClientRect();
+      const canvasEl = card.querySelector('.product-bg') as HTMLElement;
+      const canvasRect = canvasEl?.getBoundingClientRect();
+      if (canvasRect) {
+        const offX = canvasRect.left - cardRect.left;
+        const offY = canvasRect.top - cardRect.top;
+        glassEl.style.display = 'block';
+        glassEl.style.left = `${offX + bx}px`;
+        glassEl.style.top = `${offY + by}px`;
+        glassEl.style.width = `${BOX_W}px`;
+
+        // Build HTML content (only rebuild occasionally to avoid DOM thrash)
+        if (!glassEl.dataset.built) {
+          glassEl.dataset.built = '1';
+          const queueVal = 47;
+          glassEl.innerHTML = `
+            <div class="soc-hud-section">
+              <div class="soc-hud-title">INFRASTRUCTURE</div>
+              <div class="soc-hud-sep"></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">PHONES</span><span class="soc-hud-val">${st.totalPhones}</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">ACTIVE</span><span class="soc-hud-val">${st.totalPhones-3}/${st.totalPhones}</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">CITIES</span><span class="soc-hud-val">12</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">UPTIME</span><span class="soc-hud-val">99.7%</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">LATENCY</span><span class="soc-hud-val">&lt; 14ms</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">SYNC</span><span class="soc-hud-val">REAL-TIME</span></div>
+            </div>
+            <div class="soc-hud-section">
+              <div class="soc-hud-title">OPERATIONS</div>
+              <div class="soc-hud-sep"></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">ACCOUNTS</span><span class="soc-hud-val">${st.totalAccounts}</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">POSTS/DAY</span><span class="soc-hud-val">1,247</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">PLATFORMS</span><span class="soc-hud-val">5 active</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">QUEUE</span><span class="soc-hud-val" id="soc-hud-queue">${queueVal} pending</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">ENGAGEMENT</span><span class="soc-hud-val">6.8% avg</span></div>
+            </div>
+            <div class="soc-hud-status" id="soc-hud-status">● ALL SYSTEMS OPERATIONAL ●</div>
+          `;
+        }
+        // Update dynamic values
+        const queueEl = document.getElementById('soc-hud-queue');
+        if (queueEl) queueEl.textContent = `${Math.floor(47+Math.sin(t*0.3)*12)} pending`;
+        const statusEl = document.getElementById('soc-hud-status');
+        if (statusEl) {
+          const flash = Math.floor(t*2)%2===0;
+          statusEl.textContent = `${flash?'●':'○'}  ALL SYSTEMS OPERATIONAL  ${flash?'●':'○'}`;
+        }
+      }
+    }
+  }
+
+  // ── Product 4: Pitch Topo Contours ───────────────────────────────────────
+  function drawTopo(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, _state: Record<string, unknown>) {
+    const [r,g,b]=PV_RGB[4];
+    const step=8;
+    const cols=Math.ceil(w/step)+1, rows=Math.ceil(h/step)+1;
+    const grid: number[][]=[];
+    for (let row=0;row<rows;row++) {
+      grid[row]=[];
+      for (let col=0;col<cols;col++) {
+        const x=col*step, y=row*step;
+        let v=noise2(x*0.020+t*0.2, y*0.020+t*0.15);
+        if (hasMouse) {
+          const dx=x-mx, dy=y-my, d2=dx*dx+dy*dy;
+          v+=Math.exp(-d2/15000)*0.4;
+        }
+        grid[row][col]=v;
+      }
+    }
+    const levels=[-0.5,-0.3,-0.1,0.1,0.3,0.5];
+    const alphas=[0.20,0.25,0.30,0.35,0.40,0.45];
+    for (let li=0;li<levels.length;li++) {
+      const level=levels[li];
+      ctx.strokeStyle=`rgba(${r},${g},${b},${alphas[li]})`;
+      ctx.lineWidth=1;
+      ctx.beginPath();
+      for (let row=0;row<rows-1;row++) for (let col=0;col<cols-1;col++) {
+        const tl=grid[row][col], tr=grid[row][col+1];
+        const bl=grid[row+1][col], br=grid[row+1][col+1];
+        const x0=col*step, y0=row*step;
+        const cr: [number,number][]=[];
+        if ((tl<level)!==(tr<level)) { const tt=(level-tl)/(tr-tl); cr.push([x0+tt*step, y0]); }
+        if ((tr<level)!==(br<level)) { const tt=(level-tr)/(br-tr); cr.push([x0+step, y0+tt*step]); }
+        if ((bl<level)!==(br<level)) { const tt=(level-bl)/(br-bl); cr.push([x0+tt*step, y0+step]); }
+        if ((tl<level)!==(bl<level)) { const tt=(level-tl)/(bl-tl); cr.push([x0, y0+tt*step]); }
+        if (cr.length===2) {
+          ctx.moveTo(cr[0][0],cr[0][1]); ctx.lineTo(cr[1][0],cr[1][1]);
+        } else if (cr.length===4) {
+          ctx.moveTo(cr[0][0],cr[0][1]); ctx.lineTo(cr[3][0],cr[3][1]);
+          ctx.moveTo(cr[1][0],cr[1][1]); ctx.lineTo(cr[2][0],cr[2][1]);
+        }
+      }
+      ctx.stroke();
+    }
+  }
+
+  // ── Product 5: Ads Equalizer Bars ────────────────────────────────────────
+  function drawBars(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, _state: Record<string, unknown>) {
+    const [r,g,b]=PV_RGB[5];
+    const numBars=40, barW=3, barGap=2, totalW=barW+barGap;
+    const startX=(w-numBars*totalW)/2;
+    const centerY=h*0.62;
+    for (let i=0;i<numBars;i++) {
+      const x=startX+i*totalW;
+      const bCx=x+barW/2;
+      const n=(noise2(i*0.15+t*0.4, t*0.6+i*0.05)+1)*0.5;
+      let barH=4+n*30;
+      if (hasMouse) {
+        const dx=Math.abs(mx-bCx);
+        if (dx<60) barH=Math.max(barH, Math.pow(1-dx/60,2)*35);
+      }
+      const alpha=0.25+(barH/34)*0.25;
+      ctx.fillStyle=`rgba(${r},${g},${b},${alpha})`;
+      ctx.fillRect(x, centerY-barH, barW, barH);
+    }
+  }
+
+  // ── Product 6: Flow Particles ─────────────────────────────────────────────
+  interface FParticle { x:number; y:number; trail:{x:number;y:number}[]; }
+  function initParticles(w: number, h: number) {
+    const particles: FParticle[]=[];
+    for (let i=0;i<60;i++) particles.push({ x:Math.random()*w, y:Math.random()*h, trail:[] });
+    return { particles };
+  }
+  function drawParticles(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
+    const { particles } = state as { particles: FParticle[] };
+    const [r,g,b]=PV_RGB[6];
+    const s=0.018;
+    for (const p of particles) {
+      const n_py=noise2(p.x*s, (p.y+1)*s+t*0.1);
+      const n_ny=noise2(p.x*s, (p.y-1)*s+t*0.1);
+      const n_px=noise2((p.x+1)*s, p.y*s+t*0.1);
+      const n_nx=noise2((p.x-1)*s, p.y*s+t*0.1);
+      let vx=(n_py-n_ny)/2;
+      let vy=-(n_px-n_nx)/2;
+      const vmag=Math.sqrt(vx*vx+vy*vy)||0.001;
+      vx=(vx/vmag)*0.5; vy=(vy/vmag)*0.5;
+      if (hasMouse) {
+        const dx=p.x-mx, dy=p.y-my, d=Math.sqrt(dx*dx+dy*dy);
+        if (d<150&&d>0) { const str=(1-d/150)*1.5; vx+=(-dy/d)*str; vy+=(dx/d)*str; }
+      }
+      p.trail.push({x:p.x,y:p.y});
+      if (p.trail.length>5) p.trail.shift();
+      p.x+=vx; p.y+=vy;
+      if (p.x<0) p.x+=w; if (p.x>w) p.x-=w;
+      if (p.y<0) p.y+=h; if (p.y>h) p.y-=h;
+      for (let ti=1;ti<p.trail.length;ti++) {
+        ctx.strokeStyle=`rgba(${r},${g},${b},${(ti/p.trail.length)*0.25})`;
+        ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(p.trail[ti-1].x,p.trail[ti-1].y); ctx.lineTo(p.trail[ti].x,p.trail[ti].y); ctx.stroke();
+      }
+      ctx.fillStyle=`rgba(${r},${g},${b},0.40)`;
+      ctx.beginPath(); ctx.arc(p.x,p.y,1,0,Math.PI*2); ctx.fill();
+    }
+  }
+
+  // ── Product 7: Build Blueprint Mesh ─────────────────────────────────────
+  interface BuildAnim { x:number; y:number; dir:'h'|'v'; len:number; startTime:number; }
+  function initBlueprint() { return { builds:[] as BuildAnim[], lastBuildTime:0 }; }
+  function drawBlueprint(ctx: CanvasRenderingContext2D, w: number, h: number, _t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
+    const [r,g,b]=PV_RGB[7];
+    const st = state as { builds: BuildAnim[]; lastBuildTime: number };
+    const BG=20, now=performance.now();
+    if (now-st.lastBuildTime>800+Math.random()*1500 && st.builds.length<3) {
+      const col=Math.floor(Math.random()*Math.floor(w/BG));
+      const row=Math.floor(Math.random()*Math.floor(h/BG));
+      const dir: 'h'|'v'=Math.random()>0.5?'h':'v';
+      const maxLen=dir==='h'?(Math.floor(w/BG)-col)*BG:(Math.floor(h/BG)-row)*BG;
+      const len=Math.min(BG*(2+Math.floor(Math.random()*4)), maxLen||BG);
+      st.builds.push({ x:col*BG, y:row*BG, dir, len, startTime:now });
+      st.lastBuildTime=now;
+    }
+    st.builds=st.builds.filter((bld:BuildAnim)=>(now-bld.startTime)<1500);
+    for (let y=0;y<=h;y+=BG) {
+      const alpha=hasMouse&&Math.abs(my-y)<BG ? 0.22 : 0.12;
+      ctx.strokeStyle=`rgba(${r},${g},${b},${alpha})`; ctx.lineWidth=0.5;
+      ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke();
+    }
+    for (let x=0;x<=w;x+=BG) {
+      const alpha=hasMouse&&Math.abs(mx-x)<BG ? 0.22 : 0.12;
+      ctx.strokeStyle=`rgba(${r},${g},${b},${alpha})`; ctx.lineWidth=0.5;
+      ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke();
+    }
+    for (const bld of st.builds) {
+      const elapsed=(now-bld.startTime)/1000;
+      const alpha=elapsed<0.5 ? 0.40 : 0.40*(1-(elapsed-0.5)/1.0);
+      if (alpha<0.005) continue;
+      const progress=Math.min(1,elapsed/0.5);
+      ctx.strokeStyle=`rgba(${r},${g},${b},${alpha})`; ctx.lineWidth=2;
+      ctx.beginPath();
+      if (bld.dir==='h') { ctx.moveTo(bld.x,bld.y); ctx.lineTo(bld.x+bld.len*progress,bld.y); }
+      else { ctx.moveTo(bld.x,bld.y); ctx.lineTo(bld.x,bld.y+bld.len*progress); }
+      ctx.stroke();
+    }
+  }
+
+  // ── State initialisation per product ────────────────────────────────────
+  function initProdState(idx: number, w: number, h: number): Record<string, unknown> {
+    switch(idx) {
+      case 0: return initSEO(w,h);
+      case 1: return initReach(w,h);
+      case 2: return initRain(w,h);
+      case 3: return initSocial(w,h);
+      case 6: return initParticles(w,h);
+      case 7: return initBlueprint();
+      default: return {};
+    }
+  }
+
+  function renderProd(idx: number, cs: CardState, t: number) {
+    const { ctx, w, h, canvas, state } = cs;
+    const rect=canvas.getBoundingClientRect();
+    const lx=gMx-rect.left, ly=gMy-rect.top;
+    const hasMouse=lx>=0&&lx<=w&&ly>=0&&ly<=h;
+    ctx.clearRect(0,0,w,h);
+    switch(idx) {
+      case 0: drawSEO(ctx,w,h,t,lx,ly,hasMouse,state); break;
+      case 1: drawReach(ctx,w,h,t,lx,ly,hasMouse,state); break;
+      case 2: drawRain(ctx,w,h,t,lx,ly,hasMouse,state); break;
+      case 3: drawSocial(ctx,w,h,t,lx,ly,hasMouse,state); break;
+      case 4: drawTopo(ctx,w,h,t,lx,ly,hasMouse,state); break;
+      case 5: drawBars(ctx,w,h,t,lx,ly,hasMouse,state); break;
+      case 6: drawParticles(ctx,w,h,t,lx,ly,hasMouse,state); break;
+      case 7: drawBlueprint(ctx,w,h,t,lx,ly,hasMouse,state); break;
+    }
+  }
+
+  // ── Wire up card canvases ────────────────────────────────────────────────
+  const pvCards: CardState[] = [];
+  const pvCardElems = document.querySelectorAll<HTMLElement>('.product-card');
+  const pvVisible = new Set<number>();
+
+  pvCardElems.forEach((card, i) => {
+    if (i >= 8) return;
+    const bgCanvas = card.querySelector<HTMLCanvasElement>('.product-bg')!;
+    const bgCtx = bgCanvas.getContext('2d')!;
+    const halfDpr = Math.max(1.0, (window.devicePixelRatio||1) * 1.0);
+    const rect = card.getBoundingClientRect();
+    const cw = Math.round(rect.width) || 800;
+    const ch = Math.round(rect.height) || 400;
+    bgCanvas.width = Math.round(cw * halfDpr);
+    bgCanvas.height = Math.round(ch * halfDpr);
+    bgCanvas.style.width = `${cw}px`;
+    bgCanvas.style.height = `${ch}px`;
+    bgCtx.setTransform(halfDpr, 0, 0, halfDpr, 0, 0);
+    const pState = initProdState(i, cw, ch);
+    pvCards.push({ canvas: bgCanvas, ctx: bgCtx, w: cw, h: ch, dpr: halfDpr, visible: false, state: pState });
+
+    // Apply product colour tint to card background
+    const section = card.querySelector('.ps-section') as HTMLElement|null;
+    const color = section?.style.getPropertyValue('--product-color') || '#6366f1';
+    card.style.background = `linear-gradient(135deg, ${color}08 0%, rgba(6, 7, 18, 0.75) 50%, ${color}05 100%)`;
+    card.style.borderColor = `${color}15`;
+
+    // Resize observer — track full card dimensions
+    new ResizeObserver(() => {
+      const nRect = card.getBoundingClientRect();
+      const nw = Math.round(nRect.width) || cw;
+      const nh = Math.round(nRect.height) || ch;
+      const cs = pvCards[i];
+      cs.w = nw; cs.h = nh;
+      bgCanvas.width = Math.round(nw * halfDpr);
+      bgCanvas.height = Math.round(nh * halfDpr);
+      bgCanvas.style.width = `${nw}px`;
+      bgCanvas.style.height = `${nh}px`;
+      bgCtx.setTransform(halfDpr, 0, 0, halfDpr, 0, 0);
+      cs.state = initProdState(i, nw, nh);
+    }).observe(card);
+
+    // Fade in on first intersection
+    requestAnimationFrame(() => { bgCanvas.style.opacity = '1'; });
+  });
+
+  // IntersectionObserver — only render cards within 200px of viewport
+  const pvIO = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      const el = entry.target as HTMLElement;
+      let idx = -1;
+      pvCardElems.forEach((c, i) => { if (c === el) idx = i; });
+      if (idx < 0 || idx >= 8) return;
+      if (entry.isIntersecting) pvVisible.add(idx);
+      else pvVisible.delete(idx);
+    }
+  }, { rootMargin: '200px' });
+  pvCardElems.forEach((el, i) => { if (i < 8) pvIO.observe(el); });
+
+  // Single rAF drives ALL product card canvases
+  function pvLoop() {
+    requestAnimationFrame(pvLoop);
+    const t = performance.now() * 0.001;
+    for (const idx of pvVisible) {
+      if (idx < pvCards.length) renderProd(idx, pvCards[idx], t);
+    }
+  }
+  requestAnimationFrame(pvLoop);
+
+  }); // end requestIdleCallback
+</script>
+
+<!-- PelloPitch Live Preview cycling animation -->
+<script>
+  (function () {
+    const scenarios = [
+      {
+        url: 'acme.com/lp?src=google-ads&industry=saas',
+        headline: 'Scale your SaaS faster with AI marketing',
+        sub: 'Built for Series A+ startups like yours',
+        source: 'Google Ads → SaaS',
+        sourceColor: '#60a5fa',
+        sourceBg: 'rgba(96,165,250,0.1)',
+        sourceBorder: 'rgba(96,165,250,0.25)',
+        ctaBg: 'rgba(96,165,250,0.1)',
+        ctaBorder: 'rgba(96,165,250,0.3)',
+        cvr: '11.4% CVR',
+      },
+      {
+        url: 'acme.com/lp?src=linkedin&industry=fintech',
+        headline: 'Compliant growth for regulated markets',
+        sub: 'Trusted by leading fintech teams globally',
+        source: 'LinkedIn → Fintech',
+        sourceColor: '#a78bfa',
+        sourceBg: 'rgba(167,139,250,0.1)',
+        sourceBorder: 'rgba(167,139,250,0.25)',
+        ctaBg: 'rgba(167,139,250,0.1)',
+        ctaBorder: 'rgba(167,139,250,0.3)',
+        cvr: '9.8% CVR',
+      },
+      {
+        url: 'acme.com/lp?src=cold-email&industry=agency',
+        headline: 'Agency growth, without the guesswork',
+        sub: 'Proven playbooks for digital agencies',
+        source: 'Cold Email → Agency',
+        sourceColor: '#fbbf24',
+        sourceBg: 'rgba(251,191,36,0.1)',
+        sourceBorder: 'rgba(251,191,36,0.25)',
+        ctaBg: 'rgba(251,191,36,0.1)',
+        ctaBorder: 'rgba(251,191,36,0.3)',
+        cvr: '8.2% CVR',
+      },
+    ];
+
+    const urlEl = document.getElementById('pitch-url-text');
+    const loadingEl = document.getElementById('pitch-loading');
+    const scenarioEl = document.getElementById('pitch-scenario');
+    const headlineEl = document.getElementById('pitch-headline');
+    const subEl = document.getElementById('pitch-sub');
+    const sourceBadgeEl = document.getElementById('pitch-source-badge');
+    const sourceLabel = document.getElementById('pitch-source-label');
+    const cvrEl = document.getElementById('pitch-cvr-val');
+    const mockCtaEl = document.getElementById('pitch-mock-cta');
+
+    if (!urlEl || !loadingEl || !scenarioEl || !headlineEl || !subEl || !sourceBadgeEl || !sourceLabel || !cvrEl) return;
+
+    let current = 0;
+    let twTimer: ReturnType<typeof setInterval> | null = null;
+
+    function typewriterUrl(text: string, done: () => void) {
+      if (twTimer !== null) clearInterval(twTimer);
+      urlEl!.textContent = '';
+      let i = 0;
+      twTimer = setInterval(() => {
+        urlEl!.textContent += text[i];
+        i++;
+        if (i >= text.length) {
+          clearInterval(twTimer!);
+          twTimer = null;
+          done();
+        }
+      }, 22);
+    }
+
+    function applyScenario(s: typeof scenarios[0]) {
+      headlineEl!.textContent = s.headline;
+      subEl!.textContent = s.sub;
+      sourceLabel!.textContent = s.source;
+      sourceBadgeEl!.style.color = s.sourceColor;
+      sourceBadgeEl!.style.background = s.sourceBg;
+      sourceBadgeEl!.style.borderColor = s.sourceBorder;
+      if (cvrEl) cvrEl.textContent = s.cvr;
+      if (mockCtaEl) {
+        mockCtaEl.style.color = s.sourceColor;
+        mockCtaEl.style.background = s.ctaBg;
+        mockCtaEl.style.borderColor = s.ctaBorder;
+      }
+    }
+
+    function transition() {
+      const next = (current + 1) % scenarios.length;
+      // Step 1: fade out scenario content
+      scenarioEl!.classList.add('fade-out');
+      setTimeout(() => {
+        // Step 2: show loading overlay + typewriter URL
+        loadingEl!.classList.add('active');
+        typewriterUrl(scenarios[next].url, () => {
+          // Step 3: apply new content, hide loading, fade back in
+          setTimeout(() => {
+            applyScenario(scenarios[next]);
+            loadingEl!.classList.remove('active');
+            scenarioEl!.classList.remove('fade-out');
+            current = next;
+          }, 350);
+        });
+      }, 300);
+    }
+
+    // Set initial state
+    applyScenario(scenarios[0]);
+
+    // Cycle every 3.5 seconds
+    setInterval(transition, 3500);
+  })();
+</script>
