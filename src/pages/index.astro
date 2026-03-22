@@ -563,25 +563,24 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     -webkit-backdrop-filter: blur(6px);
   }
 
-  /* Mobile: PelloReach + PelloSocial — canvas below text */
+  /* Mobile: PelloReach + PelloSocial — canvas below text, standard panel stays hidden */
   @media (max-width: 1023px) {
     #soc-hud-glass { display: none !important; }
 
-    /* Stack card contents vertically */
+    /* Stack card as column */
     .product-card[data-product="1"],
     .product-card[data-product="3"] {
       display: flex;
       flex-direction: column;
     }
-    /* Text on top */
+    /* Text content on top */
     .product-card[data-product="1"] .product-card-content,
     .product-card[data-product="3"] .product-card-content {
       order: 1;
       position: relative;
       z-index: 2;
-      background: transparent;
     }
-    /* Canvas below text — pull out of absolute positioning */
+    /* Canvas pulled below text */
     .product-card[data-product="1"] .product-bg,
     .product-card[data-product="3"] .product-bg {
       order: 2;
@@ -592,6 +591,11 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
       opacity: 1 !important;
       flex-shrink: 0;
       border-radius: 0 0 1.1rem 1.1rem;
+    }
+    /* Keep standard ps-visual panels hidden — globe/reach canvas IS the visual */
+    .product-card[data-product="1"] .ps-visual,
+    .product-card[data-product="3"] .ps-visual {
+      display: none !important;
     }
   }
 </style>
