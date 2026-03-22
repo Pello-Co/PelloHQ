@@ -1805,73 +1805,82 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
                   <span style="font-family:monospace;font-size:0.7rem;color:#34d399;">LIVE</span>
                 </div>
               </div>
-              <!-- Phase 1: URL input -->
-              <div id="v31-url-phase" style="background:rgba(6,7,18,0.98);height:340px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;gap:1.5rem;">
-                <p style="font-family:'SF Mono','Fira Code',monospace;font-size:0.7rem;color:rgba(255,255,255,0.3);letter-spacing:0.1em;text-transform:uppercase;">Enter your website to see the demo</p>
-                <div id="v31-url-bar" style="display:flex;align-items:center;gap:0;width:100%;max-width:340px;border:1.5px solid rgba(217,70,239,0.5);border-radius:8px;overflow:hidden;background:rgba(217,70,239,0.04);box-shadow:0 0 20px rgba(217,70,239,0.1);">
+              <!-- Phase 1: URL input (full width) -->
+              <div id="v31-url-phase" style="background:rgba(6,7,18,0.98);height:340px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;gap:1.75rem;">
+                <p style="font-family:'SF Mono','Fira Code',monospace;font-size:0.7rem;color:rgba(255,255,255,0.25);letter-spacing:0.12em;text-transform:uppercase;">Enter your website URL</p>
+                <div style="display:flex;align-items:center;gap:0;width:100%;max-width:360px;border:1.5px solid rgba(217,70,239,0.5);border-radius:8px;overflow:hidden;background:rgba(217,70,239,0.04);box-shadow:0 0 30px rgba(217,70,239,0.1);">
                   <span style="padding:0 0.75rem;color:rgba(217,70,239,0.5);font-size:0.9rem;flex-shrink:0;">🔗</span>
                   <span id="v31-url-typed" style="flex:1;padding:0.75rem 0.25rem;font-family:'SF Mono','Fira Code',monospace;font-size:0.82rem;color:white;min-height:40px;display:flex;align-items:center;justify-content:center;text-align:center;"></span>
                 </div>
-                <div id="v31-analyse-btn" style="opacity:0;background:linear-gradient(135deg,#d946ef,#a21caf);color:white;padding:0.5rem 1.25rem;border-radius:6px;font-family:monospace;font-size:0.78rem;font-weight:700;transition:opacity 0.3s,transform 0.15s;cursor:pointer;">Analyse →</div>
+                <div id="v31-analyse-btn" style="opacity:0;background:linear-gradient(135deg,#d946ef,#a21caf);color:white;padding:0.55rem 1.4rem;border-radius:6px;font-family:monospace;font-size:0.8rem;font-weight:700;transition:opacity 0.3s,transform 0.15s;cursor:pointer;box-shadow:0 0 20px rgba(217,70,239,0.3);">Analyse →</div>
               </div>
-              <!-- Phase 2: Loading -->
-              <div id="v31-loading-phase" style="background:rgba(6,7,18,0.98);height:340px;display:none;flex-direction:column;align-items:center;justify-content:center;padding:2rem;gap:1rem;">
-                <div id="v31-load-url" style="font-family:monospace;font-size:0.8rem;color:#d946ef;margin-bottom:0.5rem;"></div>
-                <div id="v31-load-stages" style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:0.5rem;font-family:'SF Mono','Fira Code',monospace;font-size:0.75rem;"></div>
+
+              <!-- Phase 2: Split view — User sees LEFT, Terminal RIGHT -->
+              <div id="v31-split-phase" style="display:none;height:340px;flex-direction:row;">
+
+                <!-- LEFT: What your user sees -->
+                <div style="width:42%;border-right:1px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;background:rgba(4,5,14,0.95);overflow:hidden;position:relative;">
+                  <div style="padding:0.7rem 1rem;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;gap:0.5rem;background:rgba(0,0,0,0.2);">
+                    <div style="width:6px;height:6px;border-radius:50%;background:#d946ef;animation:wow8-pulse 1.5s infinite;flex-shrink:0;"></div>
+                    <span style="font-size:0.6rem;font-family:monospace;color:rgba(255,255,255,0.3);letter-spacing:0.08em;text-transform:uppercase;">What your user sees</span>
+                  </div>
+                  <div style="flex:1;padding:1.25rem 1.25rem;display:flex;flex-direction:column;justify-content:center;">
+                    <div id="v31-user-url" style="font-family:monospace;font-size:0.72rem;color:#d946ef;margin-bottom:1.25rem;opacity:0.7;"></div>
+                    <div id="v31-user-stages" style="display:flex;flex-direction:column;gap:0.75rem;"></div>
+                    <!-- Continue button — hidden until done -->
+                    <div id="v31-continue-wrap" style="margin-top:1.5rem;opacity:0;transition:opacity 0.5s ease;position:relative;">
+                      <div id="v31-continue-btn" style="display:inline-flex;align-items:center;gap:0.5rem;background:linear-gradient(135deg,#d946ef,#a21caf);color:white;padding:0.6rem 1.25rem;border-radius:7px;font-family:monospace;font-size:0.78rem;font-weight:700;box-shadow:0 0 24px rgba(217,70,239,0.4),0 0 48px rgba(217,70,239,0.15);cursor:pointer;position:relative;">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M6 2l4 4-4 4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        View your demo
+                      </div>
+                      <!-- Animated cursor -->
+                      <div id="v31-cursor" style="position:absolute;left:60px;top:-8px;opacity:0;transition:opacity 0.3s,left 0.6s ease,top 0.6s ease;pointer-events:none;z-index:10;">
+                        <svg width="18" height="22" viewBox="0 0 18 22" fill="none"><path d="M2 2l14 8-7 2-2 7-5-17z" fill="white" stroke="rgba(0,0,0,0.3)" stroke-width="0.5"/></svg>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- RIGHT: Terminal -->
+                <div style="flex:1;display:flex;flex-direction:column;background:rgba(6,7,18,0.98);overflow:hidden;">
+                  <div style="padding:0.5rem 0.85rem;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;gap:0.5rem;background:rgba(0,0,0,0.25);">
+                    <div style="display:flex;gap:4px;"><span style="width:7px;height:7px;border-radius:50%;background:#ff5f57;display:block;"></span><span style="width:7px;height:7px;border-radius:50%;background:#febc2e;display:block;"></span><span style="width:7px;height:7px;border-radius:50%;background:#28c840;display:block;"></span></div>
+                    <span style="font-size:0.6rem;font-family:monospace;color:rgba(255,255,255,0.2);margin-left:0.25rem;letter-spacing:0.05em;text-transform:uppercase;">What PelloPitch is doing</span>
+                  </div>
+                  <div id="v31-terminal" style="flex:1;padding:0.9rem 1rem;font-family:'SF Mono','Fira Code',monospace;font-size:0.68rem;line-height:1.75;overflow-y:auto;"></div>
+                </div>
               </div>
-              <!-- Phase 3: Terminal -->
-              <div id="v31-terminal" style="background:rgba(6,7,18,0.98);padding:1.25rem 1.5rem;font-family:'SF Mono','Fira Code',monospace;font-size:0.75rem;line-height:1.8;height:340px;overflow-y:auto;display:none;"></div>
-              <!-- Phase 4: Website reveal -->
+
+              <!-- Phase 3: Website reveal (full width) -->
               <div id="v31-reveal-phase" style="background:rgba(6,7,18,0.98);height:340px;display:none;align-items:center;justify-content:center;overflow:hidden;position:relative;">
-                <!-- Glow corona behind page -->
                 <div id="v31-corona" style="position:absolute;inset:0;z-index:0;pointer-events:none;opacity:0;transition:opacity 0.8s ease;background:radial-gradient(ellipse 80% 60% at 50% 50%,rgba(217,70,239,0.08) 0%,transparent 70%);"></div>
-                <!-- Shimmer sweep -->
                 <div id="v31-shimmer" style="position:absolute;inset:0;z-index:11;pointer-events:none;background:linear-gradient(105deg,transparent 20%,rgba(255,255,255,0.06) 40%,rgba(217,70,239,0.22) 50%,rgba(255,255,255,0.06) 60%,transparent 80%);transform:translateX(-150%);transition:transform 0.9s cubic-bezier(0.4,0,0.2,1);"></div>
-                <!-- Second shimmer (delayed) -->
                 <div id="v31-shimmer2" style="position:absolute;inset:0;z-index:11;pointer-events:none;background:linear-gradient(105deg,transparent 20%,rgba(255,255,255,0.03) 40%,rgba(217,70,239,0.1) 50%,rgba(255,255,255,0.03) 60%,transparent 80%);transform:translateX(-150%);transition:transform 0.9s cubic-bezier(0.4,0,0.2,1);"></div>
-                <!-- Mock website -->
                 <div id="v31-site" style="width:100%;height:100%;opacity:0;transform:scale(0.94) translateY(6px);transition:opacity 0.6s ease,transform 0.6s cubic-bezier(0.34,1.2,0.64,1);overflow:hidden;position:relative;z-index:5;">
-                  <!-- Browser chrome -->
                   <div style="background:rgba(0,0,0,0.6);padding:0.5rem 0.75rem;display:flex;align-items:center;gap:0.6rem;border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;">
                     <div style="display:flex;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#ff5f57;display:block;"></span><span style="width:8px;height:8px;border-radius:50%;background:#febc2e;display:block;"></span><span style="width:8px;height:8px;border-radius:50%;background:#28c840;display:block;"></span></div>
                     <div id="v31-site-url" style="flex:1;background:rgba(255,255,255,0.06);border-radius:4px;padding:0.2rem 0.6rem;font-family:monospace;font-size:0.65rem;color:rgba(255,255,255,0.4);text-align:center;"></div>
                     <span id="v31-cvr-badge" style="font-family:monospace;font-size:0.65rem;font-weight:700;color:#34d399;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);border-radius:999px;padding:0.1rem 0.5rem;opacity:0;transition:opacity 0.4s ease 0.8s;"></span>
                   </div>
-                  <!-- Page body -->
                   <div style="padding:1.1rem 1.2rem 0;display:flex;flex-direction:column;gap:0.6rem;">
-                    <!-- Visitor tag -->
                     <div id="v31-r0" style="opacity:0;transform:translateY(10px);transition:all 0.45s cubic-bezier(0.34,1.2,0.64,1);">
                       <div id="v31-site-badge" style="display:inline-block;border-radius:999px;padding:0.15rem 0.7rem;font-family:monospace;font-size:0.6rem;font-weight:700;"></div>
                     </div>
-                    <!-- Headline — typewriter -->
                     <div id="v31-r1" style="opacity:0;transform:translateY(10px);transition:all 0.45s cubic-bezier(0.34,1.2,0.64,1) 0.07s;">
                       <div id="v31-site-headline" style="font-size:1.1rem;font-weight:800;color:white;line-height:1.2;min-height:1.4rem;"></div>
                     </div>
-                    <!-- Subline -->
                     <div id="v31-r2" style="opacity:0;transform:translateY(10px);transition:all 0.45s cubic-bezier(0.34,1.2,0.64,1) 0.14s;">
                       <div id="v31-site-sub" style="font-size:0.7rem;color:rgba(255,255,255,0.45);line-height:1.5;max-width:90%;"></div>
                     </div>
-                    <!-- CTA with glow ring -->
                     <div id="v31-r3" style="opacity:0;transform:translateY(10px);transition:all 0.45s cubic-bezier(0.34,1.2,0.64,1) 0.21s;position:relative;display:inline-flex;align-items:center;">
                       <div id="v31-cta-glow" style="position:absolute;inset:-4px;border-radius:10px;opacity:0;transition:opacity 0.5s ease;filter:blur(8px);"></div>
                       <div id="v31-site-cta" style="position:relative;z-index:1;display:inline-block;padding:0.45rem 1.1rem;border-radius:6px;font-size:0.75rem;font-weight:700;color:white;cursor:pointer;"></div>
                     </div>
-                    <!-- Feature blocks -->
                     <div id="v31-r4" style="opacity:0;transform:translateY(10px);transition:all 0.45s cubic-bezier(0.34,1.2,0.64,1) 0.3s;display:flex;gap:0.4rem;margin-top:0.1rem;">
-                      <div id="v31-feat1" style="flex:1;padding:0.4rem 0.5rem;border-radius:5px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);">
-                        <div style="font-size:0.6rem;font-weight:700;color:rgba(255,255,255,0.5);margin-bottom:0.15rem;" id="v31-f1t"></div>
-                        <div style="height:2px;width:60%;border-radius:1px;background:rgba(255,255,255,0.08);"></div>
-                      </div>
-                      <div id="v31-feat2" style="flex:1;padding:0.4rem 0.5rem;border-radius:5px;border:1px solid rgba(255,255,255,0.05);background:rgba(255,255,255,0.015);">
-                        <div style="font-size:0.6rem;font-weight:700;color:rgba(255,255,255,0.4);margin-bottom:0.15rem;" id="v31-f2t"></div>
-                        <div style="height:2px;width:45%;border-radius:1px;background:rgba(255,255,255,0.06);"></div>
-                      </div>
-                      <div id="v31-feat3" style="flex:1;padding:0.4rem 0.5rem;border-radius:5px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.01);">
-                        <div style="font-size:0.6rem;font-weight:700;color:rgba(255,255,255,0.3);margin-bottom:0.15rem;" id="v31-f3t"></div>
-                        <div style="height:2px;width:70%;border-radius:1px;background:rgba(255,255,255,0.05);"></div>
-                      </div>
+                      <div id="v31-feat1" style="flex:1;padding:0.4rem 0.5rem;border-radius:5px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);font-size:0.6rem;font-weight:700;color:rgba(255,255,255,0.5);"></div>
+                      <div id="v31-feat2" style="flex:1;padding:0.4rem 0.5rem;border-radius:5px;border:1px solid rgba(255,255,255,0.05);background:rgba(255,255,255,0.015);font-size:0.6rem;font-weight:700;color:rgba(255,255,255,0.4);"></div>
+                      <div id="v31-feat3" style="flex:1;padding:0.4rem 0.5rem;border-radius:5px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.01);font-size:0.6rem;font-weight:700;color:rgba(255,255,255,0.3);"></div>
                     </div>
-                    <!-- CVR counter + proof -->
                     <div id="v31-r5" style="opacity:0;transform:translateY(10px);transition:all 0.45s cubic-bezier(0.34,1.2,0.64,1) 0.38s;display:flex;align-items:center;gap:1rem;padding-top:0.35rem;border-top:1px solid rgba(255,255,255,0.05);">
                       <div style="display:flex;align-items:baseline;gap:0.3rem;">
                         <span style="font-size:0.55rem;color:rgba(255,255,255,0.2);font-family:monospace;letter-spacing:0.05em;">CVR</span>
@@ -1879,10 +1888,9 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
                       </div>
                       <div id="v31-site-proof" style="font-size:0.58rem;color:rgba(255,255,255,0.18);font-family:monospace;flex:1;text-align:right;"></div>
                     </div>
-                    <!-- Social proof avatars row -->
                     <div id="v31-r6" style="opacity:0;transform:translateY(10px);transition:all 0.45s cubic-bezier(0.34,1.2,0.64,1) 0.46s;display:flex;align-items:center;justify-content:space-between;padding-top:0.3rem;">
                       <div style="display:flex;align-items:center;gap:0;">
-                        <div style="width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(0,0,0,0.4);background:linear-gradient(135deg,#6366f1,#8b5cf6);margin-left:-4px;font-size:0.5rem;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;">J</div>
+                        <div style="width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(0,0,0,0.4);background:linear-gradient(135deg,#6366f1,#8b5cf6);margin-left:0;font-size:0.5rem;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;">J</div>
                         <div style="width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(0,0,0,0.4);background:linear-gradient(135deg,#ec4899,#f43f5e);margin-left:-4px;font-size:0.5rem;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;">S</div>
                         <div style="width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(0,0,0,0.4);background:linear-gradient(135deg,#14b8a6,#06b6d4);margin-left:-4px;font-size:0.5rem;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;">M</div>
                         <div style="width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(0,0,0,0.4);background:linear-gradient(135deg,#f59e0b,#ef4444);margin-left:-4px;font-size:0.5rem;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;">A</div>
@@ -1893,13 +1901,14 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
                   </div>
                 </div>
               </div>
+
+              <!-- Metrics footer -->
               <div class="px-5 py-4 border-t" style="border-color:rgba(255,255,255,.06);background:rgba(0,0,0,.15);">
                 <div class="flex gap-6 text-xs font-mono">
                   <span id="v31-metric-ai" style="color:#a78bfa;opacity:0;transition:opacity 0.6s ease;">AI calls: —</span>
                   <span class="text-zinc-600" id="v31-metric-sep" style="opacity:0;transition:opacity 0.6s ease;">|</span>
                   <span id="v31-metric-vars" style="color:#fbbf24;opacity:0;transition:opacity 0.6s ease;">Variables: —</span>
-                </div>
-              </div>
+                </div></div>
             </div>
           </div>
         </div>
@@ -5933,238 +5942,267 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
 <!-- Variant 31: Build in Public Terminal -->
 <script>
 (function() {
-  const urlPhase = document.getElementById('v31-url-phase');
-  const loadingPhase = document.getElementById('v31-loading-phase');
-  const term = document.getElementById('v31-terminal');
-  const urlTyped = document.getElementById('v31-url-typed');
-  const analyseBtn = document.getElementById('v31-analyse-btn');
-  const loadUrl = document.getElementById('v31-load-url');
-  const loadStages = document.getElementById('v31-load-stages');
-  if (!urlPhase || !loadingPhase || !term) return;
+  const urlPhase    = document.getElementById('v31-url-phase');
+  const splitPhase  = document.getElementById('v31-split-phase');
+  const revealPhase = document.getElementById('v31-reveal-phase');
+  const urlTyped    = document.getElementById('v31-url-typed');
+  const analyseBtn  = document.getElementById('v31-analyse-btn');
+  const term        = document.getElementById('v31-terminal');
+  const userUrl     = document.getElementById('v31-user-url');
+  const userStages  = document.getElementById('v31-user-stages');
+  const contWrap    = document.getElementById('v31-continue-wrap');
+  const contBtn     = document.getElementById('v31-continue-btn');
+  const cursor      = document.getElementById('v31-cursor');
+  if (!urlPhase || !splitPhase || !term) return;
 
   const visitors = [
     {
       url:'acmegrowth.co', vertical:'marketing-agency', conf:'0.94',
       href:'pellopitch.com/demo/acmegrowth.co', time:'4.2s', cvr:'11.4%',
-      words:'9,847', pages:'14', aiCalls: Math.floor(Math.random()*13)+18,
-      vars: Math.floor(Math.random()*75)+76,
-      analysis: [
-        { k:'Company', v:'Acme Growth Co.' },
-        { k:'Services', v:'SEO · Content · PPC · Email' },
-        { k:'Target', v:'B2B SaaS, Series A+' },
-        { k:'Tone', v:'Data-driven, authoritative' },
+      words:'9,847', pages:'14',
+      analysis:[
+        {k:'Company',v:'Acme Growth Co.'},
+        {k:'Services',v:'SEO \u00b7 Content \u00b7 PPC \u00b7 Email'},
+        {k:'Target',v:'B2B SaaS, Series A+'},
+        {k:'Tone',v:'Data-driven, authoritative'},
       ],
-      pipeline: [
-        { label:'Prospect Intelligence', ms:'67' },
-        { label:'Keyword Gap Analysis', ms:'89' },
-        { label:'Backlink Opportunity Map', ms:'112' },
-        { label:'Content Strategy Engine', ms:'94' },
-        { label:'Social Signal Audit', ms:'58' },
-        { label:'Business Impact Model', ms:'45' },
+      pipeline:[
+        {label:'Prospect Intelligence',ms:'67'},
+        {label:'Keyword Gap Analysis',ms:'89'},
+        {label:'Backlink Opportunity Map',ms:'112'},
+        {label:'Content Strategy Engine',ms:'94'},
+        {label:'Social Signal Audit',ms:'58'},
+        {label:'Business Impact Model',ms:'45'},
       ],
-      sections: ['FirmHeroSection','NarrativeSection','ShowcaseSection — SEO Dashboard','ShowcaseSection — Social Proof','ImpactSection','SetupSection'],
+      sections:['FirmHeroSection','NarrativeSection','ShowcaseSection \u2014 SEO Dashboard','ShowcaseSection \u2014 Social Proof','ImpactSection','SetupSection'],
     },
     {
       url:'vaultshield.com', vertical:'cybersecurity', conf:'0.97',
       href:'pellopitch.com/demo/vaultshield.com', time:'3.9s', cvr:'9.8%',
-      words:'11,203', pages:'18', aiCalls: Math.floor(Math.random()*13)+18,
-      vars: Math.floor(Math.random()*75)+76,
-      analysis: [
-        { k:'Company', v:'VaultShield Security' },
-        { k:'Services', v:'EDR · SIEM · Zero Trust · SOC' },
-        { k:'Target', v:'Enterprise, CISO-level buyers' },
-        { k:'Tone', v:'Authoritative, urgent, precise' },
+      words:'11,203', pages:'18',
+      analysis:[
+        {k:'Company',v:'VaultShield Security'},
+        {k:'Services',v:'EDR \u00b7 SIEM \u00b7 Zero Trust \u00b7 SOC'},
+        {k:'Target',v:'Enterprise, CISO-level buyers'},
+        {k:'Tone',v:'Authoritative, urgent, precise'},
       ],
-      pipeline: [
-        { label:'Risk Intelligence Profile', ms:'71' },
-        { label:'Threat Landscape Analysis', ms:'134' },
-        { label:'Compliance Gap Scanner', ms:'88' },
-        { label:'FAQ & Objection Extractor', ms:'62' },
-        { label:'Social Proof Aggregator', ms:'49' },
-        { label:'Security Impact Model', ms:'45' },
+      pipeline:[
+        {label:'Risk Intelligence Profile',ms:'71'},
+        {label:'Threat Landscape Analysis',ms:'134'},
+        {label:'Compliance Gap Scanner',ms:'88'},
+        {label:'FAQ & Objection Extractor',ms:'62'},
+        {label:'Social Proof Aggregator',ms:'49'},
+        {label:'Security Impact Model',ms:'45'},
       ],
-      sections: ['FirmHeroSection','NarrativeSection — Threat Brief','ShowcaseSection — Threat Dashboard','ShowcaseSection — Compliance Map','ImpactSection','SetupSection'],
+      sections:['FirmHeroSection','NarrativeSection \u2014 Threat Brief','ShowcaseSection \u2014 Threat Dashboard','ShowcaseSection \u2014 Compliance Map','ImpactSection','SetupSection'],
     },
     {
       url:'peakconsult.io', vertical:'consultancy', conf:'0.96',
       href:'pellopitch.com/demo/peakconsult.io', time:'4.5s', cvr:'10.2%',
-      words:'8,129', pages:'11', aiCalls: Math.floor(Math.random()*13)+18,
-      vars: Math.floor(Math.random()*75)+76,
-      analysis: [
-        { k:'Company', v:'Peak Consulting Group' },
-        { k:'Services', v:'Strategy · M&A · Transformation' },
-        { k:'Target', v:'C-suite, PE-backed businesses' },
-        { k:'Tone', v:'Credible, precise, results-first' },
+      words:'8,129', pages:'11',
+      analysis:[
+        {k:'Company',v:'Peak Consulting Group'},
+        {k:'Services',v:'Strategy \u00b7 M&A \u00b7 Transformation'},
+        {k:'Target',v:'C-suite, PE-backed businesses'},
+        {k:'Tone',v:'Credible, precise, results-first'},
       ],
-      pipeline: [
-        { label:'Client Intelligence Extraction', ms:'78' },
-        { label:'Competitive Landscape Map', ms:'102' },
-        { label:'Case Study & Proof Mining', ms:'91' },
-        { label:'FAQ & Objection Modelling', ms:'67' },
-        { label:'SEO Signal Analysis', ms:'54' },
-        { label:'Business Case Generator', ms:'45' },
+      pipeline:[
+        {label:'Client Intelligence Extraction',ms:'78'},
+        {label:'Competitive Landscape Map',ms:'102'},
+        {label:'Case Study & Proof Mining',ms:'91'},
+        {label:'FAQ & Objection Modelling',ms:'67'},
+        {label:'SEO Signal Analysis',ms:'54'},
+        {label:'Business Case Generator',ms:'45'},
       ],
-      sections: ['FirmHeroSection','NarrativeSection — Pain Brief','ShowcaseSection — Case Studies','ShowcaseSection — Impact Stats','ImpactSection','SetupSection'],
+      sections:['FirmHeroSection','NarrativeSection \u2014 Pain Brief','ShowcaseSection \u2014 Case Studies','ShowcaseSection \u2014 Impact Stats','ImpactSection','SetupSection'],
     },
   ];
+
+  const revealData = {
+    'marketing-agency':{company:'Acme Growth Co.',headline:'We grew your competitors. Now we grow you.',sub:'Full-funnel digital marketing for B2B SaaS. SEO, paid, content \u2014 all under one roof.',cta:'Get Your Growth Audit \u2192',proof:'Avg. 340% organic traffic lift in 6 months',color:'#60a5fa',badge:'marketing-agency',feat1:'SEO & Content',feat2:'Paid Acquisition',feat3:'CRO',trust:'51 teams booked demos this week'},
+    'cybersecurity':{company:'VaultShield',headline:'Your threat surface is bigger than you think.',sub:'Zero-trust security for modern infrastructure. We find the gaps before attackers do.',cta:'Run Free Threat Scan \u2192',proof:'Zero breaches across 1,200+ protected clients',color:'#ef4444',badge:'cybersecurity',feat1:'Threat Detection',feat2:'Zero Trust',feat3:'Compliance',trust:'34 CISOs reviewed this demo today'},
+    'consultancy':{company:'Peak Consulting',headline:'Strategy that actually ships.',sub:'We work alongside your team \u2014 not above them. From diagnosis to execution in 90 days.',cta:'Book a Strategy Call \u2192',proof:'Avg. 2.4x revenue growth within 12 months',color:'#34d399',badge:'consultancy',feat1:'Strategy',feat2:'Transformation',feat3:'Execution',trust:'28 executives booked a call this week'},
+  };
+
   let idx = 0;
   let started = false;
-
   function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-  function addLine(html) {
-    const d = document.createElement('div'); d.style.minHeight='1.8em';
-    d.innerHTML = html; term.appendChild(d); term.scrollTop = term.scrollHeight;
+  // ── User-facing left panel stages ─────────────────────────────────────
+  const USER_STAGES = [
+    { label:'Crawling your website\u2026',      done:'Crawled \u2014 {words} words' },
+    { label:'Extracting business intelligence\u2026', done:'BusinessIntelligence extracted' },
+    { label:'Detecting your vertical\u2026',    done:'Vertical: {vertical}' },
+    { label:'Generating your journey\u2026',    done:'Demo ready \u2714' },
+  ];
+
+  function makeUserStage(label) {
+    const el = document.createElement('div');
+    el.style.cssText = 'display:flex;align-items:center;gap:0.65rem;color:rgba(255,255,255,0.35);font-size:0.85rem;transition:color 0.3s;';
+    el.innerHTML = '<span style="width:16px;height:16px;border:1.5px solid #d946ef;border-top-color:transparent;border-radius:50%;animation:wow1-spin 0.7s linear infinite;flex-shrink:0;display:inline-block;"></span><span>' + label + '</span>';
+    return el;
+  }
+  function doneUserStage(el, text) {
+    el.style.color = 'rgba(255,255,255,0.75)';
+    el.innerHTML = '<span style="color:#34d399;font-size:1rem;flex-shrink:0;line-height:1;">&#10003;</span><span>' + text + '</span>';
   }
 
+  // ── Terminal helpers ───────────────────────────────────────────────────
+  function addLine(html) {
+    const d = document.createElement('div'); d.style.minHeight='1.7em';
+    d.innerHTML = html; term.appendChild(d); term.scrollTop = term.scrollHeight;
+  }
   async function typeChar(html, delay) {
-    delay = delay || 20;
-    const line = document.createElement('div'); line.style.minHeight='1.8em';
+    delay = delay || 22;
+    const line = document.createElement('div'); line.style.minHeight='1.7em';
     term.appendChild(line); term.scrollTop = term.scrollHeight;
     for (let ci = 0; ci < html.length; ci++) {
-      line.innerHTML = html.substring(0,ci+1) + '<span style="color:#d946ef;opacity:0.8;">|</span>';
+      line.innerHTML = html.substring(0,ci+1) + '<span style="color:#d946ef;opacity:0.7;">|</span>';
       term.scrollTop = term.scrollHeight;
       if (html[ci] !== '<' && html[ci] !== '>') { await sleep(delay); }
       else if (html[ci] === '<') { while (ci < html.length && html[ci] !== '>') ci++; }
     }
     line.innerHTML = html; term.scrollTop = term.scrollHeight;
   }
+  async function bar(label, speed) {
+    const el = document.createElement('div'); el.style.minHeight='1.7em'; term.appendChild(el);
+    for (let i = 0; i <= 10; i++) {
+      el.innerHTML = '  <span style="color:#a78bfa;">' + label + '</span> <span style="color:#d946ef;">[' + '\u2588'.repeat(i) + '\u2591'.repeat(10-i) + ']</span> <span style="color:rgba(255,255,255,0.3);">' + (i*10) + '%</span>';
+      term.scrollTop = term.scrollHeight; await sleep(speed);
+    }
+  }
 
-  async function runTerminal(v) {
-    loadingPhase.style.display = 'none';
-    term.style.display = 'block';
+  // ── Main sequence ──────────────────────────────────────────────────────
+  async function runSplit(v) {
+    const aiCalls = Math.floor(Math.random()*13)+18;
+    const vars = Math.floor(Math.random()*75)+76;
+
+    // Setup split phase
+    urlPhase.style.display = 'none';
+    splitPhase.style.display = 'flex';
     term.innerHTML = '';
-    const aiCalls = v.aiCalls || (Math.floor(Math.random()*13)+18);
-    const vars = v.vars || (Math.floor(Math.random()*75)+76);
-    async function bar(label, speed) {
-      const el = document.createElement('div'); el.style.minHeight='1.8em'; term.appendChild(el);
-      for (let i = 0; i <= 10; i++) {
-        el.innerHTML = '  <span style="color:#a78bfa;">' + label + '</span> <span style="color:#d946ef;">[' + '\u2588'.repeat(i) + '\u2591'.repeat(10-i) + ']</span> <span style="color:rgba(255,255,255,0.35);">' + (i*10) + '%</span>';
-        term.scrollTop = term.scrollHeight; await sleep(speed);
-      }
-    }
-    await sleep(150);
-    await typeChar('<span style="color:#d946ef;">$</span> <span style="color:white;">pitch new --url=' + v.url + '</span>', 25);
+    if (userStages) userStages.innerHTML = '';
+    if (contWrap) contWrap.style.opacity = '0';
+    if (userUrl) userUrl.textContent = 'Analysing ' + v.url + '...';
+
+    // Create all user stages upfront (spinning)
+    const stageEls = USER_STAGES.map(s => {
+      const el = makeUserStage(s.label); userStages.appendChild(el); return el;
+    });
+
+    // Run terminal + sync user stages
+    await sleep(120);
+    await typeChar('<span style="color:#d946ef;">$</span> <span style="color:white;">pitch new --url=' + v.url + '</span>', 22);
     addLine('');
-    await sleep(100);
-    addLine('  <span style="color:#60a5fa;">&darr; Normalising...</span>  <span style="color:rgba(255,255,255,0.5);">' + v.url + '</span> <span style="color:#34d399;">&#10003;</span>');
     await sleep(90);
-    addLine('  <span style="color:#60a5fa;">&darr; Cache check...</span>   <span style="color:#fbbf24;">MISS &mdash; building fresh</span>');
-    await sleep(100);
-    addLine('  <span style="color:#60a5fa;">&darr; Spawning crawler...</span> <span style="color:rgba(255,255,255,0.3);">Firecrawl v4.13</span>');
-    await sleep(160); addLine('');
-    await bar('CRAWL    ', 55);
-    await sleep(70);
-    addLine('  <span style="color:#34d399;">&darr; Pages crawled:</span>     <span style="color:white;">' + v.pages + '</span> <span style="color:#34d399;">&#10003;</span>');
-    await sleep(50);
-    addLine('  <span style="color:#34d399;">&darr; Words extracted:</span>   <span style="color:white;">' + v.words + '</span> <span style="color:#34d399;">&#10003;</span>');
-    await sleep(50);
-    addLine('  <span style="color:#34d399;">&darr; Images indexed:</span>    <span style="color:white;">' + (Math.floor(Math.random()*40)+20) + '</span> <span style="color:#34d399;">&#10003;</span>');
-    await sleep(50);
-    addLine('  <span style="color:#34d399;">&darr; Backlinks found:</span>   <span style="color:white;">' + (Math.floor(Math.random()*2000)+500).toLocaleString() + '</span> <span style="color:#34d399;">&#10003;</span>');
-    await sleep(50);
-    addLine('  <span style="color:#34d399;">&darr; Social signals:</span>    <span style="color:white;">Twitter &middot; LinkedIn &middot; Reddit</span> <span style="color:#34d399;">&#10003;</span>');
-    await sleep(50);
-    addLine('  <span style="color:#34d399;">&darr; FAQ clusters:</span>      <span style="color:white;">' + (Math.floor(Math.random()*12)+6) + ' topics mapped</span> <span style="color:#34d399;">&#10003;</span>');
-    await sleep(130); addLine('');
-    await bar('ANALYSE  ', 45);
-    await sleep(70);
+    addLine('  <span style="color:#60a5fa;">&darr; Normalising...</span> <span style="color:rgba(255,255,255,0.45);">' + v.url + '</span> <span style="color:#34d399;">&#10003;</span>');
+    await sleep(80);
+    addLine('  <span style="color:#60a5fa;">&darr; Cache check...</span>  <span style="color:#fbbf24;">MISS &mdash; building fresh</span>');
+    await sleep(90);
+    addLine('  <span style="color:#60a5fa;">&darr; Spawning crawler...</span> <span style="color:rgba(255,255,255,0.25);">Firecrawl v4.13</span>');
+    await sleep(140); addLine('');
+
+    // CRAWL
+    await bar('CRAWL    ', 48);
+    await sleep(55);
+    addLine('  <span style="color:#34d399;">&darr; Pages:</span> <span style="color:white;">' + v.pages + '</span> <span style="color:#34d399;">&#10003;</span>');
+    addLine('  <span style="color:#34d399;">&darr; Words:</span> <span style="color:white;">' + v.words + '</span> <span style="color:#34d399;">&#10003;</span>');
+    await sleep(40);
+    addLine('  <span style="color:#34d399;">&darr; Images:</span> <span style="color:white;">' + (Math.floor(Math.random()*40)+20) + '</span> <span style="color:#34d399;">&#10003;</span>');
+    addLine('  <span style="color:#34d399;">&darr; Backlinks:</span> <span style="color:white;">' + (Math.floor(Math.random()*2000)+500).toLocaleString() + '</span> <span style="color:#34d399;">&#10003;</span>');
+    addLine('  <span style="color:#34d399;">&darr; Social:</span> <span style="color:white;">Twitter \u00b7 LinkedIn \u00b7 Reddit</span> <span style="color:#34d399;">&#10003;</span>');
+    addLine('  <span style="color:#34d399;">&darr; FAQ clusters:</span> <span style="color:white;">' + (Math.floor(Math.random()*12)+6) + ' topics</span> <span style="color:#34d399;">&#10003;</span>');
+    // User stage 0 done
+    doneUserStage(stageEls[0], USER_STAGES[0].done.replace('{words}', v.words));
+    await sleep(100); addLine('');
+
+    // ANALYSE
+    await bar('ANALYSE  ', 42);
+    await sleep(55);
     for (const item of v.analysis) {
-      addLine('  <span style="color:#60a5fa;">&darr; ' + item.k + ':</span> <span style="color:rgba(255,255,255,0.65);">' + item.v + '</span>');
-      await sleep(50);
+      addLine('  <span style="color:#60a5fa;">&darr; ' + item.k + ':</span> <span style="color:rgba(255,255,255,0.6);">' + item.v + '</span>');
+      await sleep(42);
     }
-    addLine('  <span style="color:#d946ef;font-weight:700;">&darr; Vertical: ' + v.vertical + '</span> <span style="color:#34d399;">&#10003;</span> <span style="color:rgba(255,255,255,0.2);">(conf: ' + v.conf + ')</span>');
-    await sleep(130); addLine('');
-    await bar('PIPELINE ', 50);
-    await sleep(70);
+    doneUserStage(stageEls[1], USER_STAGES[1].done);
+    addLine('  <span style="color:#d946ef;font-weight:700;">&darr; Vertical: ' + v.vertical + '</span> <span style="color:#34d399;">&#10003;</span> <span style="color:rgba(255,255,255,0.18);">(conf: ' + v.conf + ')</span>');
+    doneUserStage(stageEls[2], USER_STAGES[2].done.replace('{vertical}', v.vertical));
+    await sleep(110); addLine('');
+
+    // PIPELINE
+    await bar('PIPELINE ', 46);
+    await sleep(55);
     for (const stage of v.pipeline) {
-      addLine('  <span style="color:#60a5fa;">&darr; ' + stage.label + '...</span> <span style="color:#34d399;">&#10003;</span> <span style="color:rgba(255,255,255,0.2);">(' + stage.ms + 'ms)</span>');
-      await sleep(60);
+      addLine('  <span style="color:#60a5fa;">&darr; ' + stage.label + '...</span> <span style="color:#34d399;">&#10003;</span> <span style="color:rgba(255,255,255,0.18);">(' + stage.ms + 'ms)</span>');
+      await sleep(52);
     }
-    addLine('  <span style="color:rgba(255,255,255,0.3);">&darr; AI calls:</span> <span style="color:#a78bfa;">' + aiCalls + '</span>');
-    await sleep(120); addLine('');
-    await bar('GENERATE ', 44);
-    await sleep(70);
-    addLine('  <span style="color:#34d399;">&darr; Copy variants generated:</span>  <span style="color:white;">' + vars + '</span> <span style="color:#34d399;">&#10003;</span>');
-    await sleep(50);
-    addLine('  <span style="color:#34d399;">&darr; Best variant selected:</span>    <span style="color:#d946ef;">variant #' + (Math.floor(Math.random()*vars)+1) + '</span> <span style="color:rgba(255,255,255,0.2);">(highest CVR)</span>');
-    await sleep(50);
-    addLine('  <span style="color:#34d399;">&darr; SEO metadata:</span>             <span style="color:white;">title &middot; og &middot; schema &middot; canonical</span> <span style="color:#34d399;">&#10003;</span>');
-    await sleep(50);
-    addLine('  <span style="color:#34d399;">&darr; Social proof:</span>             <span style="color:white;">' + (Math.floor(Math.random()*4)+2) + ' blocks embedded</span> <span style="color:#34d399;">&#10003;</span>');
-    await sleep(50);
-    addLine('  <span style="color:#34d399;">&darr; FAQ section:</span>              <span style="color:white;">' + (Math.floor(Math.random()*5)+4) + ' questions generated</span> <span style="color:#34d399;">&#10003;</span>');
-    await sleep(120); addLine('');
-    await bar('RENDER   ', 42);
-    await sleep(60);
+    addLine('  <span style="color:rgba(255,255,255,0.25);">&darr; AI calls: <span style="color:#a78bfa;">' + aiCalls + '</span>');
+    await sleep(100); addLine('');
+
+    // GENERATE
+    await bar('GENERATE ', 40);
+    await sleep(55);
+    addLine('  <span style="color:#34d399;">&darr; Copy variants:</span> <span style="color:white;">' + vars + '</span> <span style="color:#34d399;">&#10003;</span>');
+    addLine('  <span style="color:#34d399;">&darr; Best variant:</span> <span style="color:#d946ef;">#' + (Math.floor(Math.random()*vars)+1) + '</span> <span style="color:rgba(255,255,255,0.18);">(highest CVR)</span>');
+    addLine('  <span style="color:#34d399;">&darr; SEO metadata:</span> <span style="color:white;">title \u00b7 og \u00b7 schema \u00b7 canonical</span> <span style="color:#34d399;">&#10003;</span>');
+    addLine('  <span style="color:#34d399;">&darr; Social proof:</span> <span style="color:white;">' + (Math.floor(Math.random()*4)+2) + ' blocks matched</span> <span style="color:#34d399;">&#10003;</span>');
+    addLine('  <span style="color:#34d399;">&darr; FAQ section:</span> <span style="color:white;">' + (Math.floor(Math.random()*5)+4) + ' Q&As generated</span> <span style="color:#34d399;">&#10003;</span>');
+    await sleep(100); addLine('');
+
+    // RENDER
+    await bar('RENDER   ', 38);
+    await sleep(55);
     for (const sec of v.sections) {
       addLine('  <span style="color:#60a5fa;">&darr; ' + sec + '</span> <span style="color:#34d399;">&#10003;</span>');
-      await sleep(60);
+      await sleep(52);
     }
-    await sleep(180); addLine('');
-    addLine('  <span style="color:rgba(255,255,255,0.1);">\u250c' + '\u2500'.repeat(46) + '\u2510</span>');
-    addLine('  <span style="color:rgba(255,255,255,0.1);">\u2502</span>  <span style="color:#d946ef;font-weight:700;letter-spacing:0.05em;">DEMO LIVE</span>  \u2192  <span style="color:rgba(255,255,255,0.5);">' + v.href + '</span>');
-    addLine('  <span style="color:rgba(255,255,255,0.1);">\u2502</span>  <span style="color:rgba(255,255,255,0.3);">Build:</span> <span style="color:#34d399;">' + v.time + '</span>  <span style="color:rgba(255,255,255,0.3);">AI:</span> <span style="color:#a78bfa;">' + aiCalls + '</span>  <span style="color:rgba(255,255,255,0.3);">Vars:</span> <span style="color:#fbbf24;">' + vars + '</span>  <span style="color:rgba(255,255,255,0.3);">CVR:</span> <span style="color:#d946ef;font-weight:700;">' + v.cvr + '</span>');
-    addLine('  <span style="color:rgba(255,255,255,0.1);">\u2514' + '\u2500'.repeat(46) + '\u2518</span>');
-    addLine(''); addLine('<span style="color:#d946ef;">$</span> <span style="color:#d946ef;opacity:0.5;">|</span>');
-    // Reveal metrics footer now that we have real values
-    const mAi2 = document.getElementById('v31-metric-ai');
-    const mVars2 = document.getElementById('v31-metric-vars');
-    const mSep2 = document.getElementById('v31-metric-sep');
-    if (mAi2) { mAi2.textContent = 'AI calls: ' + aiCalls; mAi2.style.opacity='1'; }
-    if (mVars2) { mVars2.textContent = 'Variables: ' + vars; mVars2.style.opacity='1'; }
-    if (mSep2) { mSep2.style.opacity='1'; }
-    await sleep(1200);
+    await sleep(160); addLine('');
+    addLine('  <span style="color:rgba(255,255,255,0.08);">\u250c' + '\u2500'.repeat(40) + '\u2510</span>');
+    addLine('  <span style="color:rgba(255,255,255,0.08);">\u2502</span>  <span style="color:#d946ef;font-weight:700;">DEMO LIVE</span>  \u2192  <span style="color:rgba(255,255,255,0.4);">' + v.href + '</span>');
+    addLine('  <span style="color:rgba(255,255,255,0.08);">\u2502</span>  <span style="color:rgba(255,255,255,0.25);">Build:</span> <span style="color:#34d399;">' + v.time + '</span>  <span style="color:rgba(255,255,255,0.25);">AI:</span> <span style="color:#a78bfa;">' + aiCalls + '</span>  <span style="color:rgba(255,255,255,0.25);">Vars:</span> <span style="color:#fbbf24;">' + vars + '</span>  <span style="color:rgba(255,255,255,0.25);">CVR:</span> <span style="color:#d946ef;font-weight:700;">' + v.cvr + '</span>');
+    addLine('  <span style="color:rgba(255,255,255,0.08);">\u2514' + '\u2500'.repeat(40) + '\u2518</span>');
+
+    // User stage 3 done
+    doneUserStage(stageEls[3], USER_STAGES[3].done);
+
+    // Reveal metrics
+    const mAi = document.getElementById('v31-metric-ai');
+    const mVars = document.getElementById('v31-metric-vars');
+    const mSep = document.getElementById('v31-metric-sep');
+    if (mAi) { mAi.textContent = 'AI calls: ' + aiCalls; mAi.style.opacity='1'; }
+    if (mVars) { mVars.textContent = 'Variables: ' + vars; mVars.style.opacity='1'; }
+    if (mSep) mSep.style.opacity='1';
+
+    // Show continue button
+    await sleep(300);
+    if (contWrap) contWrap.style.opacity = '1';
+
+    // Animate cursor in, drift toward button, click it
+    await sleep(600);
+    if (cursor) {
+      cursor.style.opacity = '1';
+      cursor.style.left = '120px'; cursor.style.top = '4px';
+      await sleep(700);
+      cursor.style.left = '40px'; cursor.style.top = '12px';
+      await sleep(700);
+      // Click animation
+      if (contBtn) { contBtn.style.transform='scale(0.92)'; }
+      await sleep(140);
+      if (contBtn) { contBtn.style.transform=''; }
+      cursor.style.opacity = '0';
+    }
+    await sleep(250);
+    // Transition to reveal
+    splitPhase.style.display = 'none';
     runRevealPhase(v);
   }
 
-  const revealData = {
-    'marketing-agency': {
-      company: 'Acme Growth Co.',
-      headline: 'We grew your competitors. Now we grow you.',
-      sub: 'Full-funnel digital marketing for B2B SaaS. SEO, paid, content — all under one roof.',
-      cta: 'Get Your Growth Audit →',
-      proof: 'Avg. 340% organic traffic lift in 6 months',
-      color: '#60a5fa', badge: 'marketing-agency',
-      feat1: 'SEO & Content', feat2: 'Paid Acquisition', feat3: 'CRO',
-      trust: '51 teams booked demos this week'
-    },
-    'cybersecurity': {
-      company: 'VaultShield',
-      headline: 'Your threat surface is bigger than you think.',
-      sub: 'Zero-trust security for modern infrastructure. We find the gaps before attackers do.',
-      cta: 'Run Free Threat Scan →',
-      proof: 'Zero breaches across 1,200+ protected clients',
-      color: '#ef4444', badge: 'cybersecurity',
-      feat1: 'Threat Detection', feat2: 'Zero Trust', feat3: 'Compliance',
-      trust: '34 CISOs reviewed this demo today'
-    },
-    'consultancy': {
-      company: 'Peak Consulting',
-      headline: 'Strategy that actually ships.',
-      sub: 'We work alongside your team — not above them. From diagnosis to execution in 90 days.',
-      cta: 'Book a Strategy Call →',
-      proof: 'Avg. 2.4x revenue growth within 12 months',
-      color: '#34d399', badge: 'consultancy',
-      feat1: 'Strategy', feat2: 'Transformation', feat3: 'Execution',
-      trust: '28 executives booked a call this week'
-    },
-  };
-
   async function runRevealPhase(v) {
-    const revealPhase = document.getElementById('v31-reveal-phase');
+    if (!revealPhase) return;
+    revealPhase.style.display = 'flex';
     const site = document.getElementById('v31-site');
     const shimmer = document.getElementById('v31-shimmer');
     const shimmer2 = document.getElementById('v31-shimmer2');
     const corona = document.getElementById('v31-corona');
-    if (!revealPhase) return;
-
-    term.style.display = 'none';
-    revealPhase.style.display = 'flex';
-
-    const rd = revealData[v.vertical] || revealData['marketing-agency'];
-
-    // Populate static content
     const siteUrl = document.getElementById('v31-site-url');
     const cvrBadge = document.getElementById('v31-cvr-badge');
     const siteBadge = document.getElementById('v31-site-badge');
@@ -6174,12 +6212,14 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     const siteProof = document.getElementById('v31-site-proof');
     const cvrCounter = document.getElementById('v31-cvr-counter');
     const siteHeadlineEl = document.getElementById('v31-site-headline');
-    const f1 = document.getElementById('v31-f1t');
-    const f2 = document.getElementById('v31-f2t');
-    const f3 = document.getElementById('v31-f3t');
+    const f1 = document.getElementById('v31-feat1');
+    const f2 = document.getElementById('v31-feat2');
+    const f3 = document.getElementById('v31-feat3');
+    const trustLine = document.getElementById('v31-trust-line');
+    const rd = revealData[v.vertical] || revealData['marketing-agency'];
 
     if (siteUrl) siteUrl.textContent = v.href;
-    if (cvrBadge) { cvrBadge.textContent = v.cvr + ' CVR'; cvrBadge.style.opacity = '0'; }
+    if (cvrBadge) { cvrBadge.textContent = v.cvr + ' CVR'; cvrBadge.style.opacity='0'; }
     if (siteBadge) { siteBadge.textContent = rd.company; siteBadge.style.cssText += ';background:' + rd.color + '15;color:' + rd.color + ';border:1px solid ' + rd.color + '30;'; }
     if (siteSub) siteSub.textContent = rd.sub;
     if (siteCta) { siteCta.textContent = rd.cta; siteCta.style.background = 'linear-gradient(135deg,' + rd.color + ',' + rd.color + 'cc)'; }
@@ -6190,107 +6230,44 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     if (f1) f1.textContent = rd.feat1;
     if (f2) f2.textContent = rd.feat2;
     if (f3) f3.textContent = rd.feat3;
-
-    // Reset rows
-    for (let i = 0; i <= 6; i++) {
-      const r = document.getElementById('v31-r' + i);
-      if (r) { r.style.opacity = '0'; r.style.transform = 'translateY(10px)'; }
-    }
-
-    // Reset shimmer positions
+    if (trustLine) trustLine.textContent = rd.trust || '';
+    for (let i = 0; i <= 6; i++) { const r = document.getElementById('v31-r' + i); if (r) { r.style.opacity='0'; r.style.transform='translateY(10px)'; } }
     if (shimmer) { shimmer.style.transition='none'; shimmer.style.transform='translateX(-150%)'; }
     if (shimmer2) { shimmer2.style.transition='none'; shimmer2.style.transform='translateX(-150%)'; }
     if (site) { site.style.opacity='0'; site.style.transform='scale(0.94) translateY(6px)'; }
     if (corona) corona.style.opacity='0';
 
     await sleep(80);
-
-    // Step 1: Corona glow blooms
-    if (corona) corona.style.opacity = '1';
+    if (corona) corona.style.opacity='1';
     await sleep(150);
-
-    // Step 2: Site scales in with spring
     if (site) { site.style.opacity='1'; site.style.transform='scale(1) translateY(0)'; }
     await sleep(200);
-
-    // Step 3: First shimmer sweep
-    if (shimmer) {
-      shimmer.style.transition = 'transform 0.85s cubic-bezier(0.4,0,0.2,1)';
-      shimmer.style.transform = 'translateX(200%)';
-    }
+    if (shimmer) { shimmer.style.transition='transform 0.85s cubic-bezier(0.4,0,0.2,1)'; shimmer.style.transform='translateX(200%)'; }
     await sleep(180);
 
-    // Step 4: Rows cascade in
     for (let i = 0; i <= 5; i++) {
-      const r = document.getElementById('v31-r' + i);
-      if (r) { r.style.opacity='1'; r.style.transform='translateY(0)'; }
-      if (i === 0) {
-        const trustLine = document.getElementById('v31-trust-line');
-        if (trustLine) trustLine.textContent = rd.trust || '';
-        const r6 = document.getElementById('v31-r6');
-        if (r6) { r6.style.opacity='0'; r6.style.transform='translateY(10px)'; }
-      }
+      const r = document.getElementById('v31-r' + i); if (r) { r.style.opacity='1'; r.style.transform='translateY(0)'; }
       if (i === 1) {
-        // Typewriter the headline
+        const r6 = document.getElementById('v31-r6'); if (r6) { r6.style.opacity='0'; r6.style.transform='translateY(10px)'; }
         await sleep(50);
         const hl = rd.headline;
-        if (siteHeadlineEl) {
-          siteHeadlineEl.textContent = '';
-          for (let ci = 0; ci < hl.length; ci++) {
-            siteHeadlineEl.textContent = hl.substring(0, ci+1);
-            await sleep(22);
-          }
-        }
-      } else {
-        await sleep(100);
-      }
+        if (siteHeadlineEl) { siteHeadlineEl.textContent=''; for (let ci=0;ci<hl.length;ci++){siteHeadlineEl.textContent=hl.substring(0,ci+1);await sleep(20);} }
+      } else { await sleep(95); }
     }
-
-    // Also reveal r6 (avatars + trust)
-    const r6 = document.getElementById('v31-r6');
-    if (r6) { await sleep(80); r6.style.opacity='1'; r6.style.transform='translateY(0)'; }
-    // Step 5: CVR badge fades in
-    if (cvrBadge) cvrBadge.style.opacity = '1';
-
-    // Step 6: Second shimmer (subtle)
+    const r6 = document.getElementById('v31-r6'); if (r6) { await sleep(80); r6.style.opacity='1'; r6.style.transform='translateY(0)'; }
+    if (cvrBadge) cvrBadge.style.opacity='1';
     await sleep(300);
-    if (shimmer2) {
-      shimmer2.style.transition = 'transform 0.9s cubic-bezier(0.4,0,0.2,1)';
-      shimmer2.style.transform = 'translateX(200%)';
-    }
-
-    // Step 7: CTA glow ring pulses
+    if (shimmer2) { shimmer2.style.transition='transform 0.9s cubic-bezier(0.4,0,0.2,1)'; shimmer2.style.transform='translateX(200%)'; }
     await sleep(400);
-    if (ctaGlow) { ctaGlow.style.opacity='0.6'; }
-    await sleep(350);
-    if (ctaGlow) { ctaGlow.style.opacity='0'; }
+    if (ctaGlow) { ctaGlow.style.opacity='0.6'; } await sleep(350); if (ctaGlow) { ctaGlow.style.opacity='0'; } await sleep(200); if (ctaGlow) { ctaGlow.style.opacity='0.4'; } await sleep(250); if (ctaGlow) { ctaGlow.style.opacity='0'; }
     await sleep(200);
-    if (ctaGlow) { ctaGlow.style.opacity='0.4'; }
-    await sleep(250);
-    if (ctaGlow) { ctaGlow.style.opacity='0'; }
-
-    // Step 8: CVR counter animates from 2.1% up to target
-    await sleep(200);
-    const targetCvr = parseFloat(v.cvr);
-    const startCvr = 2.1;
-    const steps = 30;
-    for (let i = 0; i <= steps; i++) {
-      const val = startCvr + (targetCvr - startCvr) * (i/steps);
-      if (cvrCounter) {
-        cvrCounter.textContent = val.toFixed(1) + '%';
-        const pct = i/steps;
-        const r = Math.round(113 + (52-113)*pct);
-        const g = Math.round(113 + (211-113)*pct);
-        const b = Math.round(113 + (153-113)*pct);
-        cvrCounter.style.color = 'rgb('+r+','+g+','+b+')';
-      }
-      await sleep(40);
+    const targetCvr = parseFloat(v.cvr); const steps=30;
+    for (let i=0;i<=steps;i++) {
+      const val = 2.1 + (targetCvr-2.1)*(i/steps);
+      if (cvrCounter) { cvrCounter.textContent=val.toFixed(1)+'%'; const pct=i/steps; cvrCounter.style.color='rgb('+(Math.round(113+(52-113)*pct))+','+(Math.round(113+(211-113)*pct))+','+(Math.round(113+(153-113)*pct))+')'; }
+      await sleep(38);
     }
-
-    // Hold
-    await sleep(2200);
-
-    // Fade out everything
+    await sleep(2400);
     if (corona) corona.style.opacity='0';
     if (site) { site.style.opacity='0'; site.style.transform='scale(0.94) translateY(6px)'; }
     await sleep(500);
@@ -6298,89 +6275,33 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     runCycle();
   }
 
-  async function runLoadingPhase(v) {
-    urlPhase.style.display = 'none';
-    loadingPhase.style.display = 'flex';
-    if (loadUrl) loadUrl.textContent = 'Analysing ' + v.url + '...';
-    if (loadStages) loadStages.innerHTML = '';
-    const stages = [
-      { label: 'Crawling ' + v.url + '...', done: 'Crawled — 8,432 words', delay: 900 },
-      { label: 'Analysing business intelligence...', done: 'BusinessIntelligence extracted', delay: 700 },
-      { label: 'Detecting vertical...', done: 'Vertical: ' + v.vertical, delay: 600 },
-      { label: 'Generating journey...', done: 'Demo ready — ' + v.time, delay: 700 },
-    ];
-    for (const s of stages) {
-      const el = document.createElement('div');
-      el.style.cssText = 'display:flex;align-items:center;gap:0.6rem;color:rgba(255,255,255,0.4);';
-      el.innerHTML = '<span style="width:12px;height:12px;border:1.5px solid #d946ef;border-top-color:transparent;border-radius:50%;animation:wow1-spin 0.7s linear infinite;flex-shrink:0;display:inline-block;"></span><span>' + s.label + '</span>';
-      if (loadStages) loadStages.appendChild(el);
-      await sleep(s.delay);
-      el.innerHTML = '<span style="color:#34d399;font-size:1rem;flex-shrink:0;">&#10003;</span><span style="color:rgba(255,255,255,0.65);">' + s.done + '</span>';
-    }
-    await sleep(300);
-    runTerminal(v);
-  }
-
   async function runUrlPhase(v) {
-    // Reset all phases
-    urlPhase.style.display = 'flex';
-    loadingPhase.style.display = 'none';
-    term.style.display = 'none';
-    if (urlTyped) urlTyped.textContent = '';
-    if (analyseBtn) analyseBtn.style.opacity = '0';
-
+    urlPhase.style.display='flex'; splitPhase.style.display='none'; revealPhase.style.display='none';
+    if (urlTyped) urlTyped.textContent='';
+    if (analyseBtn) analyseBtn.style.opacity='0';
+    const mAi=document.getElementById('v31-metric-ai'); const mVars=document.getElementById('v31-metric-vars'); const mSep=document.getElementById('v31-metric-sep');
+    if (mAi) mAi.style.opacity='0'; if (mVars) mVars.style.opacity='0'; if (mSep) mSep.style.opacity='0';
     await sleep(1600);
-    // Type URL
-    const url = v.url;
-    for (let i = 0; i <= url.length; i++) {
-      if (urlTyped) urlTyped.innerHTML = url.substring(0, i) + '<span style="color:#d946ef;animation:wow8-pulse 0.8s infinite;">|</span>';
-      await sleep(80);
-    }
-    if (urlTyped) urlTyped.textContent = url;
+    for (let i=0;i<=v.url.length;i++) { if(urlTyped) urlTyped.innerHTML=v.url.substring(0,i)+'<span style="color:#d946ef;animation:wow8-pulse 0.8s infinite;">|</span>'; await sleep(80); }
+    if (urlTyped) urlTyped.textContent=v.url;
     await sleep(300);
-    // Show analyse button
-    if (analyseBtn) {
-      analyseBtn.style.opacity = '1';
-      await sleep(800);
-      // Button click animation
-      analyseBtn.style.transform = 'scale(0.93)';
-      await sleep(150);
-      analyseBtn.style.transform = '';
-    }
+    if (analyseBtn) { analyseBtn.style.opacity='1'; await sleep(850); analyseBtn.style.transform='scale(0.92)'; await sleep(140); analyseBtn.style.transform=''; }
     await sleep(200);
-    runLoadingPhase(v);
+    runSplit(v);
   }
 
   async function runCycle() {
     const v = visitors[idx % visitors.length]; idx++;
-    v.aiCalls = Math.floor(Math.random()*13)+18;
-    v.vars = Math.floor(Math.random()*75)+76;
-    // Hide metrics until terminal runs
-    const mAi = document.getElementById('v31-metric-ai');
-    const mVars = document.getElementById('v31-metric-vars');
-    const mSep = document.getElementById('v31-metric-sep');
-    if (mAi) { mAi.style.opacity='0'; }
-    if (mVars) { mVars.style.opacity='0'; }
-    if (mSep) { mSep.style.opacity='0'; }
     await runUrlPhase(v);
   }
 
-  // Scroll-triggered start using IntersectionObserver
   const section = document.getElementById('pitch-variant-31');
   if (section) {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting && !started) {
-          started = true;
-          observer.disconnect();
-          runCycle();
-        }
-      });
-    }, { threshold: 0.3 });
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting && !started) { started=true; observer.disconnect(); runCycle(); } });
+    }, {threshold:0.3});
     observer.observe(section);
-  } else {
-    runCycle();
-  }
+  } else { runCycle(); }
 })();
 </script>
 
