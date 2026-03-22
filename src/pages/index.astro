@@ -2299,7 +2299,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
   const visitors = [
     {
       url:'acmegrowth.co', vertical:'marketing-agency', conf:'0.94',
-      href:'pellopitch.com/demo/acmegrowth.co', time:'4.2s', cvr:'11.4%',
+      href:'pellopitch.com/demo/acmegrowth.co', time:'3.8s', cvr:'11.4%',
       words:'9,847', pages:'14',
       analysis:[
         {k:'Company',v:'Acme Growth Co.'},
@@ -2360,9 +2360,9 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
   ];
 
   const revealData = {
-    'marketing-agency':{company:'Acme Growth Co.',headline:'We grew your competitors. Now we grow you.',sub:'Full-funnel digital marketing for B2B SaaS. SEO, paid, content \u2014 all under one roof.',cta:'Get Your Growth Audit \u2192',proof:'Avg. 340% organic traffic lift in 6 months',color:'#60a5fa',badge:'marketing-agency',feat1:'SEO & Content',feat2:'Paid Acquisition',feat3:'CRO',trust:'51 teams booked demos this week'},
-    'cybersecurity':{company:'VaultShield',headline:'Your threat surface is bigger than you think.',sub:'Zero-trust security for modern infrastructure. We find the gaps before attackers do.',cta:'Run Free Threat Scan \u2192',proof:'Zero breaches across 1,200+ protected clients',color:'#ef4444',badge:'cybersecurity',feat1:'Threat Detection',feat2:'Zero Trust',feat3:'Compliance',trust:'34 CISOs reviewed this demo today'},
-    'consultancy':{company:'Peak Consulting',headline:'Strategy that actually ships.',sub:'We work alongside your team \u2014 not above them. From diagnosis to execution in 90 days.',cta:'Book a Strategy Call \u2192',proof:'Avg. 2.4x revenue growth within 12 months',color:'#34d399',badge:'consultancy',feat1:'Strategy',feat2:'Transformation',feat3:'Execution',trust:'28 executives booked a call this week'},
+    'marketing-agency':{company:'Acme Growth Co.',headline:'We grew your competitors. Now we grow you.',sub:'Full-funnel digital marketing for B2B SaaS. SEO, content, paid \u2014 all working together, finally.',cta:'Get Your Free Growth Audit \u2192',proof:'Clients average 340% more organic traffic in 6 months',color:'#60a5fa',badge:'marketing-agency',feat1:'SEO & Content',feat2:'Paid Acquisition',feat3:'CRO',trust:'51 marketing teams booked demos this week'},
+    'cybersecurity':{company:'VaultShield',headline:'Your attackers already know your gaps. Do you?',sub:'Zero-trust security built for modern infrastructure. We map your exposure before the breach happens.',cta:'Run Your Free Threat Scan \u2192',proof:'Zero confirmed breaches across 1,200+ enterprise clients',color:'#ef4444',badge:'cybersecurity',feat1:'Threat Detection',feat2:'Zero Trust',feat3:'Compliance',trust:'34 CISOs reviewed this demo this week'},
+    'consultancy':{company:'Peak Consulting',headline:'Most strategy dies in the boardroom. Ours ships.',sub:'We embed with your team from day one. Diagnosis to execution in 90 days \u2014 not 18 months.',cta:'Book Your Strategy Call \u2192',proof:'Clients average 2.4x revenue growth within 12 months',color:'#34d399',badge:'consultancy',feat1:'Strategy',feat2:'Transformation',feat3:'Execution',trust:'28 C-suite leaders booked calls this week'},
   };
 
   let idx = 0;
@@ -2371,10 +2371,10 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
 
   // ── User-facing left panel stages ─────────────────────────────────────
   const USER_STAGES = [
-    { label:'Crawling your website\u2026',      done:'Crawled \u2014 {words} words' },
-    { label:'Extracting business intelligence\u2026', done:'BusinessIntelligence extracted' },
-    { label:'Detecting your vertical\u2026',    done:'Vertical: {vertical}' },
-    { label:'Generating your journey\u2026',    done:'Demo ready \u2714' },
+    { label:'Reading your website\u2026',        done:'\u2714 {words} words read across {pages} pages' },
+    { label:'Understanding your business\u2026', done:'\u2714 Business profile complete' },
+    { label:'Matching your industry\u2026',      done:'\u2714 Vertical identified: {vertical}' },
+    { label:'Building your demo\u2026',          done:'\u2714 Your personalised demo is ready' },
   ];
 
   function makeUserStage(label) {
@@ -2450,11 +2450,11 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     addLine('  <span style="color:#34d399;">&darr; Words:</span> <span style="color:white;">' + v.words + '</span> <span style="color:#34d399;">&#10003;</span>');
     await sleep(40);
     addLine('  <span style="color:#34d399;">&darr; Images:</span> <span style="color:white;">' + (Math.floor(Math.random()*40)+20) + '</span> <span style="color:#34d399;">&#10003;</span>');
-    addLine('  <span style="color:#34d399;">&darr; Backlinks:</span> <span style="color:white;">' + (Math.floor(Math.random()*2000)+500).toLocaleString() + '</span> <span style="color:#34d399;">&#10003;</span>');
-    addLine('  <span style="color:#34d399;">&darr; Social:</span> <span style="color:white;">Twitter \u00b7 LinkedIn \u00b7 Reddit</span> <span style="color:#34d399;">&#10003;</span>');
-    addLine('  <span style="color:#34d399;">&darr; FAQ clusters:</span> <span style="color:white;">' + (Math.floor(Math.random()*12)+6) + ' topics</span> <span style="color:#34d399;">&#10003;</span>');
+    addLine('  <span style="color:#34d399;">&darr; Backlinks:</span> <span style="color:white;">' + (Math.floor(Math.random()*4800)+1200).toLocaleString() + ' referring domains</span> <span style="color:#34d399;">&#10003;</span>');
+    addLine('  <span style="color:#34d399;">&darr; Social signals:</span> <span style="color:white;">' + (Math.floor(Math.random()*800)+200).toLocaleString() + ' mentions found</span> <span style="color:#34d399;">&#10003;</span>');
+    addLine('  <span style="color:#34d399;">&darr; FAQ topics:</span> <span style="color:white;">' + (Math.floor(Math.random()*12)+8) + ' buyer objections mapped</span> <span style="color:#34d399;">&#10003;</span>');
     // User stage 0 done
-    doneUserStage(stageEls[0], USER_STAGES[0].done.replace('{words}', v.words));
+    doneUserStage(stageEls[0], USER_STAGES[0].done.replace('{words}', v.words).replace('{pages}', v.pages));
     await sleep(100); addLine('');
 
     // ANALYSE
@@ -2482,11 +2482,11 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     // GENERATE
     await bar('GENERATE ', 40);
     await sleep(55);
-    addLine('  <span style="color:#34d399;">&darr; Copy variants:</span> <span style="color:white;">' + vars + '</span> <span style="color:#34d399;">&#10003;</span>');
+    addLine('  <span style="color:#34d399;">&darr; Copy variants tested:</span> <span style="color:white;">' + vars + '</span> <span style="color:#34d399;">&#10003;</span>');
     addLine('  <span style="color:#34d399;">&darr; Best variant:</span> <span style="color:#d946ef;">#' + (Math.floor(Math.random()*vars)+1) + '</span> <span style="color:rgba(255,255,255,0.18);">(highest CVR)</span>');
     addLine('  <span style="color:#34d399;">&darr; SEO metadata:</span> <span style="color:white;">title \u00b7 og \u00b7 schema \u00b7 canonical</span> <span style="color:#34d399;">&#10003;</span>');
-    addLine('  <span style="color:#34d399;">&darr; Social proof:</span> <span style="color:white;">' + (Math.floor(Math.random()*4)+2) + ' blocks matched</span> <span style="color:#34d399;">&#10003;</span>');
-    addLine('  <span style="color:#34d399;">&darr; FAQ section:</span> <span style="color:white;">' + (Math.floor(Math.random()*5)+4) + ' Q&As generated</span> <span style="color:#34d399;">&#10003;</span>');
+    addLine('  <span style="color:#34d399;">&darr; Social proof:</span> <span style="color:white;">' + (Math.floor(Math.random()*3)+3) + ' case studies matched</span> <span style="color:#34d399;">&#10003;</span>');
+    addLine('  <span style="color:#34d399;">&darr; FAQ section:</span> <span style="color:white;">' + (Math.floor(Math.random()*5)+5) + ' objection-handling Q&As</span> <span style="color:#34d399;">&#10003;</span>');
     await sleep(100); addLine('');
 
     // RENDER
