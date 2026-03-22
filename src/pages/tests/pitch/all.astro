@@ -1810,7 +1810,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
                 <p style="font-family:'SF Mono','Fira Code',monospace;font-size:0.7rem;color:rgba(255,255,255,0.3);letter-spacing:0.1em;text-transform:uppercase;">Enter your website to see the demo</p>
                 <div id="v31-url-bar" style="display:flex;align-items:center;gap:0;width:100%;max-width:340px;border:1.5px solid rgba(217,70,239,0.5);border-radius:8px;overflow:hidden;background:rgba(217,70,239,0.04);box-shadow:0 0 20px rgba(217,70,239,0.1);">
                   <span style="padding:0 0.75rem;color:rgba(217,70,239,0.5);font-size:0.9rem;flex-shrink:0;">🔗</span>
-                  <span id="v31-url-typed" style="flex:1;padding:0.75rem 0.25rem;font-family:'SF Mono','Fira Code',monospace;font-size:0.82rem;color:white;min-height:40px;display:flex;align-items:center;"></span>
+                  <span id="v31-url-typed" style="flex:1;padding:0.75rem 0.25rem;font-family:'SF Mono','Fira Code',monospace;font-size:0.82rem;color:white;min-height:40px;display:flex;align-items:center;justify-content:center;text-align:center;"></span>
                 </div>
                 <div id="v31-analyse-btn" style="opacity:0;background:linear-gradient(135deg,#d946ef,#a21caf);color:white;padding:0.5rem 1.25rem;border-radius:6px;font-family:monospace;font-size:0.78rem;font-weight:700;transition:opacity 0.3s,transform 0.15s;cursor:pointer;">Analyse →</div>
               </div>
@@ -1821,6 +1821,43 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
               </div>
               <!-- Phase 3: Terminal -->
               <div id="v31-terminal" style="background:rgba(6,7,18,0.98);padding:1.25rem 1.5rem;font-family:'SF Mono','Fira Code',monospace;font-size:0.75rem;line-height:1.8;height:340px;overflow-y:auto;display:none;"></div>
+              <!-- Phase 4: Website reveal -->
+              <div id="v31-reveal-phase" style="background:rgba(6,7,18,0.98);height:340px;display:none;align-items:center;justify-content:center;overflow:hidden;position:relative;">
+                <!-- Shimmer sweep overlay -->
+                <div id="v31-shimmer" style="position:absolute;inset:0;z-index:10;pointer-events:none;background:linear-gradient(105deg,transparent 35%,rgba(217,70,239,0.18) 50%,transparent 65%);transform:translateX(-100%);transition:transform 0.8s cubic-bezier(0.4,0,0.2,1);"></div>
+                <!-- Mock website -->
+                <div id="v31-site" style="width:100%;height:100%;opacity:0;transform:scale(0.96);transition:opacity 0.5s ease,transform 0.5s ease;overflow:hidden;">
+                  <!-- Browser chrome -->
+                  <div style="background:rgba(0,0,0,0.5);padding:0.5rem 0.75rem;display:flex;align-items:center;gap:0.6rem;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;">
+                    <div style="display:flex;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#ff5f57;display:block;"></span><span style="width:8px;height:8px;border-radius:50%;background:#febc2e;display:block;"></span><span style="width:8px;height:8px;border-radius:50%;background:#28c840;display:block;"></span></div>
+                    <div id="v31-site-url" style="flex:1;background:rgba(255,255,255,0.06);border-radius:4px;padding:0.2rem 0.6rem;font-family:monospace;font-size:0.65rem;color:rgba(255,255,255,0.4);text-align:center;"></div>
+                    <span id="v31-cvr-badge" style="font-family:monospace;font-size:0.65rem;font-weight:700;color:#34d399;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);border-radius:999px;padding:0.1rem 0.5rem;"></span>
+                  </div>
+                  <!-- Page content — reveals row by row -->
+                  <div style="padding:1.2rem 1.2rem 0;display:flex;flex-direction:column;gap:0.75rem;">
+                    <div id="v31-r0" style="opacity:0;transform:translateY(8px);transition:all 0.4s ease;">
+                      <div id="v31-site-badge" style="display:inline-block;border-radius:999px;padding:0.15rem 0.7rem;font-family:monospace;font-size:0.62rem;font-weight:700;margin-bottom:0.4rem;"></div>
+                    </div>
+                    <div id="v31-r1" style="opacity:0;transform:translateY(8px);transition:all 0.4s ease 0.08s;">
+                      <div id="v31-site-headline" style="font-size:1.05rem;font-weight:800;color:white;line-height:1.25;"></div>
+                    </div>
+                    <div id="v31-r2" style="opacity:0;transform:translateY(8px);transition:all 0.4s ease 0.16s;">
+                      <div id="v31-site-sub" style="font-size:0.72rem;color:rgba(255,255,255,0.45);line-height:1.5;max-width:92%;"></div>
+                    </div>
+                    <div id="v31-r3" style="opacity:0;transform:translateY(8px);transition:all 0.4s ease 0.24s;">
+                      <div id="v31-site-cta" style="display:inline-block;padding:0.45rem 1.1rem;border-radius:6px;font-size:0.75rem;font-weight:700;color:white;"></div>
+                    </div>
+                    <div id="v31-r4" style="opacity:0;transform:translateY(8px);transition:all 0.4s ease 0.34s;display:flex;gap:0.5rem;margin-top:0.25rem;">
+                      <div style="flex:1;height:38px;border-radius:5px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);"></div>
+                      <div style="flex:1;height:38px;border-radius:5px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.04);"></div>
+                      <div style="flex:1;height:38px;border-radius:5px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);"></div>
+                    </div>
+                    <div id="v31-r5" style="opacity:0;transform:translateY(8px);transition:all 0.4s ease 0.44s;padding-top:0.25rem;border-top:1px solid rgba(255,255,255,0.05);">
+                      <div id="v31-site-proof" style="font-size:0.65rem;color:rgba(255,255,255,0.25);font-family:monospace;"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <div class="px-5 py-4 border-t" style="border-color:rgba(255,255,255,.06);background:rgba(0,0,0,.15);">
                 <div class="flex gap-6 text-xs font-mono">
                   <span style="color:#d946ef;">4.2s avg build</span>
@@ -5959,8 +5996,90 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     addLine('  <span style="color:rgba(255,255,255,0.12);">|</span>  <span style="color:rgba(255,255,255,0.35);">Build time:</span> <span style="color:#34d399;">' + v.time + '</span>  <span style="color:rgba(255,255,255,0.35);">CVR:</span> <span style="color:#d946ef;font-weight:700;">' + v.cvr + '</span>');
     addLine('  <span style="color:rgba(255,255,255,0.12);">+--------------------------------------+</span>');
     addLine(''); addLine('<span style="color:#d946ef;">$ </span><span style="color:#d946ef;">|</span>');
-    // Pause then restart the full cycle from URL phase
-    await sleep(3500);
+    // Transition to website reveal
+    await sleep(1200);
+    runRevealPhase(v);
+  }
+
+  const revealData = {
+    'marketing-agency': { headline: 'Scale your Series A SaaS with proven SEO', sub: 'Built for founders who\'ve found product-market fit. Here\'s your growth playbook.', cta: 'Start Free Trial →', proof: 'Trusted by 200+ SaaS teams', color: '#60a5fa', badge: 'marketing-agency' },
+    'cybersecurity':    { headline: 'Your endpoints are exposed. We fix that.', sub: 'Enterprise-grade protection, deployed in days. Zero false positives.', cta: 'Book a Demo →', proof: 'Protecting 1,200+ enterprise clients', color: '#ef4444', badge: 'cybersecurity' },
+    'consultancy':      { headline: 'Strategic clarity, delivered fast.', sub: 'Decision-makers choose Bain before the first meeting. Here\'s why.', cta: 'Talk to Our Team →', proof: 'Trusted by 40% of Fortune 500', color: '#34d399', badge: 'consultancy' },
+  };
+
+  async function runRevealPhase(v) {
+    const revealPhase = document.getElementById('v31-reveal-phase');
+    const site = document.getElementById('v31-site');
+    const shimmer = document.getElementById('v31-shimmer');
+    if (!revealPhase) return;
+
+    // Hide terminal, show reveal
+    term.style.display = 'none';
+    revealPhase.style.display = 'flex';
+
+    const rd = revealData[v.vertical] || revealData['marketing-agency'];
+
+    // Populate content
+    const siteUrl = document.getElementById('v31-site-url');
+    const cvrBadge = document.getElementById('v31-cvr-badge');
+    const siteBadge = document.getElementById('v31-site-badge');
+    const siteHeadline = document.getElementById('v31-site-headline');
+    const siteSub = document.getElementById('v31-site-sub');
+    const siteCta = document.getElementById('v31-site-cta');
+    const siteProof = document.getElementById('v31-site-proof');
+
+    if (siteUrl) siteUrl.textContent = v.href;
+    if (cvrBadge) cvrBadge.textContent = v.cvr + ' CVR';
+    if (siteBadge) { siteBadge.textContent = rd.badge; siteBadge.style.cssText += ';background:' + rd.color + '18;color:' + rd.color + ';border:1px solid ' + rd.color + '35;'; }
+    if (siteHeadline) siteHeadline.textContent = rd.headline;
+    if (siteSub) siteSub.textContent = rd.sub;
+    if (siteCta) { siteCta.textContent = rd.cta; siteCta.style.background = 'linear-gradient(135deg,' + rd.color + ',' + rd.color + 'bb)'; }
+    if (siteProof) siteProof.textContent = rd.proof;
+
+    // Reset row opacities
+    for (let i = 0; i <= 5; i++) {
+      const r = document.getElementById('v31-r' + i);
+      if (r) { r.style.opacity = '0'; r.style.transform = 'translateY(8px)'; }
+    }
+
+    await sleep(80);
+
+    // Phase A: site fades + scales in
+    if (site) { site.style.opacity = '1'; site.style.transform = 'scale(1)'; }
+    await sleep(300);
+
+    // Phase B: shimmer sweep across
+    if (shimmer) {
+      shimmer.style.transition = 'none';
+      shimmer.style.transform = 'translateX(-100%)';
+      await sleep(20);
+      shimmer.style.transition = 'transform 0.75s cubic-bezier(0.4,0,0.2,1)';
+      shimmer.style.transform = 'translateX(200%)';
+    }
+
+    // Phase C: rows cascade in
+    for (let i = 0; i <= 5; i++) {
+      const r = document.getElementById('v31-r' + i);
+      if (r) { r.style.opacity = '1'; r.style.transform = 'translateY(0)'; }
+      await sleep(90);
+    }
+
+    // Hold, then glow pulse on CTA
+    await sleep(800);
+    if (siteCta) {
+      siteCta.style.boxShadow = '0 0 20px ' + rd.color + '60, 0 0 40px ' + rd.color + '25';
+      await sleep(600);
+      siteCta.style.boxShadow = '';
+    }
+
+    // Hold on reveal, then restart
+    await sleep(2500);
+
+    // Fade out
+    if (site) { site.style.opacity = '0'; site.style.transform = 'scale(0.96)'; }
+    await sleep(400);
+    revealPhase.style.display = 'none';
+
     runCycle();
   }
 
@@ -5995,7 +6114,7 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     if (urlTyped) urlTyped.textContent = '';
     if (analyseBtn) analyseBtn.style.opacity = '0';
 
-    await sleep(600);
+    await sleep(1600);
     // Type URL
     const url = v.url;
     for (let i = 0; i <= url.length; i++) {
