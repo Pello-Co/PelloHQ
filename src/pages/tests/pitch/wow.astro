@@ -1,0 +1,1484 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+import HeroPello from '../../../components/sections/HeroPello.astro';
+import FinalCTA from '../../../components/sections/FinalCTA.astro';
+---
+
+<Layout title="PelloPitch — WOW Variants | Pello" description="10 cinematic full-width PelloPitch section concepts.">
+  <Header />
+  <main id="main-content">
+    <div id="dot-grid-wrap" class="relative">
+      <canvas class="aurora-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+      <canvas class="dot-grid-canvas" aria-hidden="true" style="position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform;opacity:0;transition:opacity 2s ease-in;"></canvas>
+      <HeroPello />
+    </div>
+
+    <!-- Sticky jump nav -->
+    <div class="sticky top-16 z-30 bg-zinc-950/90 backdrop-blur border-b border-white/5 py-2 overflow-x-auto">
+      <div class="container flex gap-2 flex-nowrap text-xs">
+        <a href="#wow-1" class="flex-shrink-0 px-3 py-1 rounded-full font-mono transition-colors hover:text-white text-zinc-500" style="border:1px solid rgba(255,255,255,0.06);">1. Live Demo</a>
+        <a href="#wow-2" class="flex-shrink-0 px-3 py-1 rounded-full font-mono transition-colors hover:text-white text-zinc-500" style="border:1px solid rgba(255,255,255,0.06);">2. Prospect Machine</a>
+        <a href="#wow-3" class="flex-shrink-0 px-3 py-1 rounded-full font-mono transition-colors hover:text-white text-zinc-500" style="border:1px solid rgba(255,255,255,0.06);">3. Contrast Engine</a>
+        <a href="#wow-4" class="flex-shrink-0 px-3 py-1 rounded-full font-mono transition-colors hover:text-white text-zinc-500" style="border:1px solid rgba(255,255,255,0.06);">4. Vertical Portals</a>
+        <a href="#wow-5" class="flex-shrink-0 px-3 py-1 rounded-full font-mono transition-colors hover:text-white text-zinc-500" style="border:1px solid rgba(255,255,255,0.06);">5. Recognition Wall</a>
+        <a href="#wow-6" class="flex-shrink-0 px-3 py-1 rounded-full font-mono transition-colors hover:text-white text-zinc-500" style="border:1px solid rgba(255,255,255,0.06);">6. Signal to Page</a>
+        <a href="#wow-7" class="flex-shrink-0 px-3 py-1 rounded-full font-mono transition-colors hover:text-white text-zinc-500" style="border:1px solid rgba(255,255,255,0.06);">7. Emotional Map</a>
+        <a href="#wow-8" class="flex-shrink-0 px-3 py-1 rounded-full font-mono transition-colors hover:text-white text-zinc-500" style="border:1px solid rgba(255,255,255,0.06);">8. Build in Public</a>
+        <a href="#wow-9" class="flex-shrink-0 px-3 py-1 rounded-full font-mono transition-colors hover:text-white text-zinc-500" style="border:1px solid rgba(255,255,255,0.06);">9. Living Page</a>
+        <a href="#wow-10" class="flex-shrink-0 px-3 py-1 rounded-full font-mono transition-colors hover:text-white text-zinc-500" style="border:1px solid rgba(255,255,255,0.06);">10. One URL</a>
+      </div>
+    </div>
+
+    <!-- ── WOW 1: Live Demo Simulator ── -->
+    <section id="wow-1" style="min-height:600px;border-top:1px solid rgba(255,255,255,0.06);padding:5rem 0;position:relative;overflow:hidden;">
+      <div class="absolute top-5 left-1/2 -translate-x-1/2 z-20 px-3 py-1 rounded-full text-xs font-mono" style="background:rgba(217,70,239,0.1);color:#d946ef;border:1px solid rgba(217,70,239,0.25);">WOW 1 / 10 — Live Demo Simulator</div>
+      <div class="absolute inset-0" style="background:radial-gradient(ellipse 80% 60% at 50% 50%,rgba(217,70,239,0.05) 0%,transparent 70%);pointer-events:none;"></div>
+      <div style="max-width:760px;margin:0 auto;padding:4rem 2rem 2rem;">
+        <div class="text-center mb-10">
+          <p class="text-xs font-mono text-zinc-500 uppercase tracking-widest mb-3">PelloPitch</p>
+          <h2 class="text-4xl font-bold text-white mb-3">Enter any URL. Get their demo.</h2>
+          <p class="text-zinc-400 text-lg">Watch PelloPitch build a personalised prospect journey in real-time.</p>
+        </div>
+        <!-- URL input mock -->
+        <div id="wow1-input-wrap" style="display:flex;gap:0;border:1.5px solid rgba(217,70,239,0.5);border-radius:12px;overflow:hidden;background:rgba(217,70,239,0.04);margin-bottom:2rem;box-shadow:0 0 30px rgba(217,70,239,0.08);">
+          <span style="padding:0 1rem;display:flex;align-items:center;color:rgba(217,70,239,0.5);font-size:1.1rem;">🔗</span>
+          <div id="wow1-url" style="flex:1;padding:1.1rem 0.5rem;font-size:1.1rem;color:white;font-family:'SF Mono','Fira Code',monospace;min-height:56px;display:flex;align-items:center;"></div>
+          <button id="wow1-btn" style="padding:0 2rem;background:linear-gradient(135deg,#d946ef,#a21caf);color:white;font-weight:700;font-size:0.95rem;border:none;cursor:pointer;transition:opacity 0.2s;white-space:nowrap;">Analyse →</button>
+        </div>
+        <!-- Pipeline stages -->
+        <div id="wow1-pipeline" style="display:none;margin-bottom:2rem;">
+          <div id="wow1-stages" style="font-family:'SF Mono','Fira Code',monospace;font-size:0.85rem;display:flex;flex-direction:column;gap:0.6rem;"></div>
+        </div>
+        <!-- Result card -->
+        <div id="wow1-result" style="display:none;border:1px solid rgba(217,70,239,0.3);border-radius:14px;padding:1.75rem 2rem;background:rgba(217,70,239,0.05);backdrop-filter:blur(12px);">
+          <div id="wow1-vertical-badge" style="display:inline-block;background:rgba(217,70,239,0.15);color:#d946ef;border:1px solid rgba(217,70,239,0.35);border-radius:999px;padding:0.2rem 0.85rem;font-size:0.72rem;font-family:monospace;margin-bottom:1rem;"></div>
+          <h3 id="wow1-result-headline" style="font-size:1.4rem;font-weight:700;color:white;margin-bottom:1.2rem;"></h3>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.5rem;">
+            <span class="wow1-arc-pill">Recognition</span>
+            <span style="color:#d946ef;align-self:center;">→</span>
+            <span class="wow1-arc-pill">Pain</span>
+            <span style="color:#d946ef;align-self:center;">→</span>
+            <span class="wow1-arc-pill">Hope</span>
+            <span style="color:#d946ef;align-self:center;">→</span>
+            <span class="wow1-arc-pill">Proof</span>
+            <span style="color:#d946ef;align-self:center;">→</span>
+            <span class="wow1-arc-pill">Action</span>
+          </div>
+          <a href="https://pellopitch.com" target="_blank" style="display:inline-flex;align-items:center;gap:0.5rem;background:linear-gradient(135deg,#d946ef,#a21caf);color:white;padding:0.75rem 1.75rem;border-radius:8px;font-weight:700;text-decoration:none;font-size:0.95rem;">View Full Demo →</a>
+          <span id="wow1-build-time" style="margin-left:1.5rem;font-size:0.8rem;color:#34d399;font-family:monospace;"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── WOW 2: Prospect Machine ── -->
+    <section id="wow-2" style="min-height:560px;border-top:1px solid rgba(255,255,255,0.06);padding:5rem 0 3rem;position:relative;overflow:hidden;">
+      <div class="absolute top-5 left-1/2 -translate-x-1/2 z-20 px-3 py-1 rounded-full text-xs font-mono" style="background:rgba(217,70,239,0.1);color:#d946ef;border:1px solid rgba(217,70,239,0.25);">WOW 2 / 10 — Prospect Machine</div>
+      <div class="text-center mb-6" style="position:relative;z-index:10;">
+        <h2 class="text-3xl font-bold text-white mb-2">Every visitor. Their own page.</h2>
+        <p class="text-zinc-400">Thousands of visitors. Thousands of unique pages. All happening now.</p>
+      </div>
+      <canvas id="wow2-canvas" style="display:block;width:100%;height:380px;"></canvas>
+      <div style="display:flex;justify-content:center;gap:3rem;padding:1.5rem 2rem 0;font-family:monospace;font-size:0.82rem;">
+        <span style="color:#34d399;">Pages today: <span id="wow2-count">12,847</span></span>
+        <span style="color:#d946ef;">Avg CVR: 11.4%</span>
+        <span style="color:#a78bfa;">Build time: &lt;200ms</span>
+        <span style="color:#60a5fa;">Verticals: 20+</span>
+      </div>
+    </section>
+
+    <!-- ── WOW 3: Contrast Engine ── -->
+    <section id="wow-3" style="min-height:580px;border-top:1px solid rgba(255,255,255,0.06);padding:4rem 0;position:relative;overflow:hidden;">
+      <div class="absolute top-5 left-1/2 -translate-x-1/2 z-20 px-3 py-1 rounded-full text-xs font-mono" style="background:rgba(217,70,239,0.1);color:#d946ef;border:1px solid rgba(217,70,239,0.25);">WOW 3 / 10 — Contrast Engine</div>
+      <div class="text-center mb-8" style="position:relative;z-index:10;">
+        <h2 class="text-3xl font-bold text-white mb-2">One business. Two realities.</h2>
+        <p class="text-zinc-400">Same visitor. Same business. Completely different experience.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:0;max-width:1100px;margin:0 auto;padding:0 2rem;align-items:stretch;">
+        <!-- Left: Generic -->
+        <div style="border:1px solid rgba(255,255,255,0.06);border-radius:14px 0 0 14px;padding:2rem;background:rgba(255,255,255,0.01);filter:saturate(0.2);">
+          <div style="font-size:0.65rem;font-family:monospace;color:rgba(255,255,255,0.3);margin-bottom:1rem;letter-spacing:0.1em;">WITHOUT PELLOPITCH</div>
+          <div style="height:4px;background:rgba(255,255,255,0.08);border-radius:4px;margin-bottom:1.5rem;"></div>
+          <div style="font-size:1.4rem;font-weight:700;color:rgba(255,255,255,0.5);margin-bottom:0.75rem;line-height:1.3;">Welcome to NeilPatel Digital</div>
+          <div style="font-size:0.9rem;color:rgba(255,255,255,0.25);margin-bottom:1.5rem;line-height:1.6;">We provide marketing services to help your business grow online.</div>
+          <div style="display:inline-block;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.3);padding:0.6rem 1.2rem;border-radius:6px;font-weight:600;font-size:0.9rem;margin-bottom:1.5rem;">Contact Us</div>
+          <div style="display:flex;gap:1rem;margin-bottom:1rem;">
+            <div style="flex:1;height:50px;background:rgba(255,255,255,0.03);border-radius:6px;"></div>
+            <div style="flex:1;height:50px;background:rgba(255,255,255,0.03);border-radius:6px;"></div>
+            <div style="flex:1;height:50px;background:rgba(255,255,255,0.03);border-radius:6px;"></div>
+          </div>
+          <div style="margin-top:auto;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.05);">
+            <span style="font-size:1.5rem;font-weight:800;color:#ef4444;">2.1%</span>
+            <span style="font-size:0.75rem;color:rgba(255,255,255,0.2);margin-left:0.4rem;">CVR</span>
+            <div style="font-size:0.7rem;color:rgba(255,255,255,0.15);margin-top:0.25rem;">Same page for every visitor</div>
+          </div>
+        </div>
+        <!-- Divider -->
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 1.5rem;gap:0.5rem;">
+          <div style="width:1px;flex:1;background:linear-gradient(to bottom,transparent,rgba(217,70,239,0.4),transparent);"></div>
+          <div style="font-size:0.75rem;font-weight:700;color:#d946ef;font-family:monospace;white-space:nowrap;">vs</div>
+          <div style="width:1px;flex:1;background:linear-gradient(to bottom,transparent,rgba(217,70,239,0.4),transparent);"></div>
+        </div>
+        <!-- Right: PelloPitch -->
+        <div style="border:1px solid rgba(217,70,239,0.3);border-radius:0 14px 14px 0;padding:2rem;background:rgba(217,70,239,0.04);box-shadow:0 0 40px rgba(217,70,239,0.06);">
+          <div style="font-size:0.65rem;font-family:monospace;color:#d946ef;margin-bottom:1rem;letter-spacing:0.1em;">WITH PELLOPITCH</div>
+          <div id="wow3-visitor-badge" style="display:inline-flex;align-items:center;gap:0.4rem;font-size:0.65rem;font-family:monospace;background:rgba(217,70,239,0.12);color:#d946ef;border:1px solid rgba(217,70,239,0.3);border-radius:999px;padding:0.2rem 0.7rem;margin-bottom:1rem;transition:opacity 0.4s;">Personalised for: SaaS founder · Google Ads</div>
+          <div id="wow3-headline" style="font-size:1.4rem;font-weight:700;color:white;margin-bottom:0.75rem;line-height:1.3;min-height:3.5rem;transition:opacity 0.4s;">Scale your Series A SaaS with proven SEO</div>
+          <div id="wow3-body" style="font-size:0.9rem;color:rgba(255,255,255,0.7);margin-bottom:1.5rem;line-height:1.6;min-height:3rem;transition:opacity 0.4s;">Built for founders who've found product-market fit. Here's what we'd do for you.</div>
+          <div id="wow3-cta" style="display:inline-block;background:linear-gradient(135deg,#d946ef,#a21caf);color:white;padding:0.6rem 1.2rem;border-radius:6px;font-weight:600;font-size:0.9rem;margin-bottom:1.5rem;transition:opacity 0.4s;">Start Your Growth Sprint →</div>
+          <div style="display:flex;gap:1rem;margin-bottom:1rem;">
+            <div style="flex:1;height:50px;background:rgba(217,70,239,0.08);border-radius:6px;border:1px solid rgba(217,70,239,0.15);"></div>
+            <div style="flex:1;height:50px;background:rgba(217,70,239,0.06);border-radius:6px;border:1px solid rgba(217,70,239,0.1);"></div>
+            <div style="flex:1;height:50px;background:rgba(217,70,239,0.04);border-radius:6px;border:1px solid rgba(217,70,239,0.08);"></div>
+          </div>
+          <div style="margin-top:auto;padding-top:1rem;border-top:1px solid rgba(217,70,239,0.15);">
+            <span id="wow3-cvr" style="font-size:1.5rem;font-weight:800;color:#34d399;transition:opacity 0.4s;">11.4%</span>
+            <span style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-left:0.4rem;">CVR</span>
+            <div id="wow3-source" style="font-size:0.7rem;color:#d946ef;margin-top:0.25rem;transition:opacity 0.4s;">SaaS founder · Google Ads · hero-left layout</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── WOW 4: Vertical Portals ── -->
+    <section id="wow-4" style="min-height:520px;border-top:1px solid rgba(255,255,255,0.06);padding:5rem 2rem 4rem;position:relative;overflow:hidden;">
+      <div class="absolute top-5 left-1/2 -translate-x-1/2 z-20 px-3 py-1 rounded-full text-xs font-mono" style="background:rgba(217,70,239,0.1);color:#d946ef;border:1px solid rgba(217,70,239,0.25);">WOW 4 / 10 — Vertical Portals</div>
+      <div class="text-center mb-8">
+        <h2 class="text-3xl font-bold text-white mb-2">Every vertical. Its own journey.</h2>
+        <p class="text-zinc-400">20+ industries. Each one gets a demo built specifically for them.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1.25rem;max-width:960px;margin:0 auto;" id="wow4-grid">
+        <div class="wow4-portal" data-v="0" data-accent="#60a5fa" style="border:1px solid rgba(96,165,250,0.2);border-radius:14px;padding:1.75rem;background:rgba(96,165,250,0.03);cursor:pointer;transition:all 0.3s;position:relative;overflow:hidden;">
+          <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;">
+            <div style="width:10px;height:10px;border-radius:50%;background:#60a5fa;box-shadow:0 0 8px #60a5fa;"></div>
+            <span style="font-family:monospace;font-size:0.8rem;color:#60a5fa;">marketing-agency</span>
+          </div>
+          <h3 style="font-size:1.15rem;font-weight:700;color:white;margin-bottom:0.5rem;">Your content isn't converting.</h3>
+          <p style="font-size:0.82rem;color:rgba(255,255,255,0.4);line-height:1.5;margin-bottom:1rem;">Competitors outrank you on your own keywords. PelloPitch shows your prospects exactly what you can do for them.</p>
+          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+            <span class="wow4-pill" style="--c:#60a5fa;">Recognition</span>
+            <span style="color:rgba(255,255,255,0.2);font-size:0.7rem;align-self:center;">→</span>
+            <span class="wow4-pill" style="--c:#60a5fa;">Pain</span>
+            <span style="color:rgba(255,255,255,0.2);font-size:0.7rem;align-self:center;">→</span>
+            <span class="wow4-pill" style="--c:#60a5fa;">Proof</span>
+          </div>
+        </div>
+        <div class="wow4-portal" data-v="1" data-accent="#ef4444" style="border:1px solid rgba(239,68,68,0.2);border-radius:14px;padding:1.75rem;background:rgba(239,68,68,0.03);cursor:pointer;transition:all 0.3s;position:relative;overflow:hidden;">
+          <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;">
+            <div style="width:10px;height:10px;border-radius:50%;background:#ef4444;box-shadow:0 0 8px #ef4444;"></div>
+            <span style="font-family:monospace;font-size:0.8rem;color:#ef4444;">cybersecurity</span>
+          </div>
+          <h3 style="font-size:1.15rem;font-weight:700;color:white;margin-bottom:0.5rem;">Prospects don't feel the risk.</h3>
+          <p style="font-size:0.82rem;color:rgba(255,255,255,0.4);line-height:1.5;margin-bottom:1rem;">Until it's too late. PelloPitch makes your prospects feel the threat — and see you as the solution.</p>
+          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+            <span class="wow4-pill" style="--c:#ef4444;">Recognition</span>
+            <span style="color:rgba(255,255,255,0.2);font-size:0.7rem;align-self:center;">→</span>
+            <span class="wow4-pill" style="--c:#ef4444;">Pain</span>
+            <span style="color:rgba(255,255,255,0.2);font-size:0.7rem;align-self:center;">→</span>
+            <span class="wow4-pill" style="--c:#ef4444;">Action</span>
+          </div>
+        </div>
+        <div class="wow4-portal" data-v="2" data-accent="#34d399" style="border:1px solid rgba(52,211,153,0.2);border-radius:14px;padding:1.75rem;background:rgba(52,211,153,0.03);cursor:pointer;transition:all 0.3s;position:relative;overflow:hidden;">
+          <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;">
+            <div style="width:10px;height:10px;border-radius:50%;background:#34d399;box-shadow:0 0 8px #34d399;"></div>
+            <span style="font-family:monospace;font-size:0.8rem;color:#34d399;">consultancy</span>
+          </div>
+          <h3 style="font-size:1.15rem;font-weight:700;color:white;margin-bottom:0.5rem;">Decision-makers need proof first.</h3>
+          <p style="font-size:0.82rem;color:rgba(255,255,255,0.4);line-height:1.5;margin-bottom:1rem;">They won't book without it. PelloPitch delivers your credibility before the first meeting.</p>
+          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+            <span class="wow4-pill" style="--c:#34d399;">Recognition</span>
+            <span style="color:rgba(255,255,255,0.2);font-size:0.7rem;align-self:center;">→</span>
+            <span class="wow4-pill" style="--c:#34d399;">Hope</span>
+            <span style="color:rgba(255,255,255,0.2);font-size:0.7rem;align-self:center;">→</span>
+            <span class="wow4-pill" style="--c:#34d399;">Action</span>
+          </div>
+        </div>
+        <div class="wow4-portal" data-v="3" data-accent="#a78bfa" style="border:1px solid rgba(167,139,250,0.2);border-radius:14px;padding:1.75rem;background:rgba(167,139,250,0.03);cursor:pointer;transition:all 0.3s;position:relative;overflow:hidden;">
+          <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;">
+            <div style="width:10px;height:10px;border-radius:50%;background:#a78bfa;box-shadow:0 0 8px #a78bfa;"></div>
+            <span style="font-family:monospace;font-size:0.8rem;color:#a78bfa;">recruitment-tech</span>
+          </div>
+          <h3 style="font-size:1.15rem;font-weight:700;color:white;margin-bottom:0.5rem;">Top talent chooses culture fit.</h3>
+          <p style="font-size:0.82rem;color:rgba(255,255,255,0.4);line-height:1.5;margin-bottom:1rem;">Generic job descriptions don't show fit. PelloPitch shows candidates exactly why your clients are right for them.</p>
+          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+            <span class="wow4-pill" style="--c:#a78bfa;">Recognition</span>
+            <span style="color:rgba(255,255,255,0.2);font-size:0.7rem;align-self:center;">→</span>
+            <span class="wow4-pill" style="--c:#a78bfa;">Pain</span>
+            <span style="color:rgba(255,255,255,0.2);font-size:0.7rem;align-self:center;">→</span>
+            <span class="wow4-pill" style="--c:#a78bfa;">Action</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── WOW 5: Recognition Wall ── -->
+    <section id="wow-5" style="min-height:560px;border-top:1px solid rgba(255,255,255,0.06);padding:4rem 0 3rem;position:relative;overflow:hidden;">
+      <div class="absolute top-5 left-1/2 -translate-x-1/2 z-20 px-3 py-1 rounded-full text-xs font-mono" style="background:rgba(217,70,239,0.1);color:#d946ef;border:1px solid rgba(217,70,239,0.25);">WOW 5 / 10 — Recognition Wall</div>
+      <div class="text-center mb-4" style="position:relative;z-index:2;">
+        <h2 class="text-3xl font-bold text-white mb-2">PelloPitch works for every business.</h2>
+        <p class="text-zinc-400">Hover any company to see their personalised demo.</p>
+      </div>
+      <canvas id="wow5-canvas" style="display:block;width:100%;height:320px;position:relative;z-index:1;"></canvas>
+      <div id="wow5-preview" style="max-width:680px;margin:0 auto;padding:0 2rem;min-height:80px;position:relative;z-index:2;">
+        <div id="wow5-preview-inner" style="border:1px solid rgba(217,70,239,0.2);border-radius:12px;padding:1.5rem 2rem;background:rgba(217,70,239,0.04);opacity:0;transition:opacity 0.3s;">
+          <div id="wow5-co" style="font-size:1.1rem;font-weight:700;color:white;margin-bottom:0.4rem;"></div>
+          <div id="wow5-vertical" style="font-size:0.72rem;font-family:monospace;color:#d946ef;margin-bottom:0.75rem;"></div>
+          <div id="wow5-desc" style="font-size:0.85rem;color:rgba(255,255,255,0.5);line-height:1.5;"></div>
+        </div>
+        <div id="wow5-hint" style="text-align:center;color:rgba(255,255,255,0.15);font-size:0.85rem;padding:1.5rem 0;">Hover any company above →</div>
+      </div>
+    </section>
+
+    <!-- ── WOW 6: Signal to Page ── -->
+    <section id="wow-6" style="min-height:520px;border-top:1px solid rgba(255,255,255,0.06);padding:4rem 0;position:relative;overflow:hidden;">
+      <div class="absolute top-5 left-1/2 -translate-x-1/2 z-20 px-3 py-1 rounded-full text-xs font-mono" style="background:rgba(217,70,239,0.1);color:#d946ef;border:1px solid rgba(217,70,239,0.25);">WOW 6 / 10 — Signal to Page</div>
+      <div class="text-center mb-6">
+        <h2 class="text-3xl font-bold text-white mb-2">3 signals. 1 unique page.</h2>
+        <p class="text-zinc-400">Source + Industry + Intent → PelloPitch builds the perfect landing page.</p>
+      </div>
+      <canvas id="wow6-canvas" style="display:block;width:100%;height:380px;"></canvas>
+    </section>
+
+    <!-- ── WOW 7: Emotional Map ── -->
+    <section id="wow-7" style="min-height:520px;border-top:1px solid rgba(255,255,255,0.06);padding:4rem 0;position:relative;overflow:hidden;">
+      <div class="absolute top-5 left-1/2 -translate-x-1/2 z-20 px-3 py-1 rounded-full text-xs font-mono" style="background:rgba(217,70,239,0.1);color:#d946ef;border:1px solid rgba(217,70,239,0.25);">WOW 7 / 10 — Emotional Journey Map</div>
+      <div class="text-center mb-4">
+        <h2 class="text-3xl font-bold text-white mb-2">Engineered for one outcome: the booking.</h2>
+        <p class="text-zinc-400">Every section of the demo is designed to move the prospect forward. Move your mouse.</p>
+      </div>
+      <canvas id="wow7-canvas" style="display:block;width:100%;height:280px;cursor:crosshair;"></canvas>
+      <div id="wow7-text" style="max-width:680px;margin:1.5rem auto 0;padding:0 2rem;min-height:80px;text-align:center;">
+        <div id="wow7-section-name" style="font-size:0.75rem;font-family:monospace;color:#d946ef;margin-bottom:0.5rem;letter-spacing:0.1em;text-transform:uppercase;"></div>
+        <div id="wow7-section-desc" style="font-size:1.05rem;color:rgba(255,255,255,0.7);line-height:1.6;transition:opacity 0.3s;"></div>
+      </div>
+    </section>
+
+    <!-- ── WOW 8: Build in Public ── -->
+    <section id="wow-8" style="min-height:580px;border-top:1px solid rgba(255,255,255,0.06);padding:5rem 2rem;position:relative;overflow:hidden;">
+      <div class="absolute top-5 left-1/2 -translate-x-1/2 z-20 px-3 py-1 rounded-full text-xs font-mono" style="background:rgba(217,70,239,0.1);color:#d946ef;border:1px solid rgba(217,70,239,0.25);">WOW 8 / 10 — Build in Public</div>
+      <div class="text-center mb-8">
+        <h2 class="text-3xl font-bold text-white mb-2">Watch the demo build itself.</h2>
+        <p class="text-zinc-400">Every step. Every AI call. Every decision. Live.</p>
+      </div>
+      <div style="max-width:860px;margin:0 auto;border:1px solid rgba(255,255,255,0.08);border-radius:14px;overflow:hidden;box-shadow:0 0 60px rgba(0,0,0,0.5);">
+        <div style="background:rgba(0,0,0,0.5);padding:0.75rem 1.25rem;display:flex;align-items:center;gap:1rem;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <div style="display:flex;gap:6px;"><span style="width:12px;height:12px;border-radius:50%;background:#ff5f57;display:block;"></span><span style="width:12px;height:12px;border-radius:50%;background:#febc2e;display:block;"></span><span style="width:12px;height:12px;border-radius:50%;background:#28c840;display:block;"></span></div>
+          <span style="font-family:monospace;font-size:0.78rem;color:rgba(255,255,255,0.3);">PelloPitch Build Engine v3.2</span>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:0.4rem;"><span style="width:7px;height:7px;border-radius:50%;background:#34d399;display:block;animation:wow8-pulse 1.5s infinite;"></span><span style="font-family:monospace;font-size:0.7rem;color:#34d399;">LIVE</span></div>
+        </div>
+        <div id="wow8-terminal" style="background:rgba(6,7,18,0.95);padding:1.75rem 2rem;font-family:'SF Mono','Fira Code',monospace;font-size:0.82rem;line-height:1.8;height:380px;overflow-y:auto;"></div>
+      </div>
+    </section>
+
+    <!-- ── WOW 9: Living Page ── -->
+    <section id="wow-9" style="min-height:580px;border-top:1px solid rgba(255,255,255,0.06);padding:4rem 0;position:relative;overflow:hidden;">
+      <div class="absolute top-5 left-1/2 -translate-x-1/2 z-20 px-3 py-1 rounded-full text-xs font-mono" style="background:rgba(217,70,239,0.1);color:#d946ef;border:1px solid rgba(217,70,239,0.25);">WOW 9 / 10 — The Living Page</div>
+      <div style="text-align:center;margin-bottom:1.5rem;">
+        <h2 class="text-3xl font-bold text-white mb-2">The page changes. In real-time. For every visitor.</h2>
+        <p class="text-zinc-400">Watch PelloPitch AI edit the page live as a new visitor arrives.</p>
+      </div>
+      <!-- Mock landing page being edited -->
+      <div style="max-width:900px;margin:0 auto;padding:0 2rem;position:relative;">
+        <!-- AI cursor -->
+        <div id="wow9-cursor" style="position:absolute;z-index:20;pointer-events:none;transition:left 0.6s ease,top 0.6s ease;opacity:0;">
+          <div style="display:flex;align-items:flex-start;gap:4px;">
+            <svg width="14" height="18" viewBox="0 0 14 18" fill="none"><path d="M2 2l10 7-5 1-2 5-3-13z" fill="#d946ef"/></svg>
+            <span style="background:#d946ef;color:white;font-size:0.6rem;font-family:monospace;padding:1px 5px;border-radius:3px;white-space:nowrap;margin-top:1px;">PelloPitch AI</span>
+          </div>
+        </div>
+        <!-- Page mock -->
+        <div style="border:1px solid rgba(255,255,255,0.08);border-radius:12px;overflow:hidden;background:rgba(6,7,18,0.8);">
+          <!-- Mock nav -->
+          <div style="background:rgba(0,0,0,0.3);padding:0.75rem 1.5rem;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;gap:2rem;">
+            <div style="width:80px;height:18px;background:rgba(255,255,255,0.08);border-radius:4px;"></div>
+            <div style="display:flex;gap:1.5rem;margin-left:auto;">
+              <div style="width:40px;height:10px;background:rgba(255,255,255,0.05);border-radius:3px;"></div>
+              <div style="width:40px;height:10px;background:rgba(255,255,255,0.05);border-radius:3px;"></div>
+              <div style="width:40px;height:10px;background:rgba(255,255,255,0.05);border-radius:3px;"></div>
+            </div>
+          </div>
+          <!-- Hero -->
+          <div style="padding:3rem 2.5rem 2rem;border-bottom:1px solid rgba(255,255,255,0.04);">
+            <div id="wow9-visitor-tag" style="display:inline-block;font-size:0.65rem;font-family:monospace;background:rgba(217,70,239,0.1);color:#d946ef;border:1px solid rgba(217,70,239,0.25);border-radius:999px;padding:0.2rem 0.75rem;margin-bottom:1rem;transition:opacity 0.4s;">Optimised for: SaaS founder · Google Ads</div>
+            <h2 id="wow9-headline" style="font-size:2rem;font-weight:800;color:white;margin-bottom:0.75rem;line-height:1.2;transition:opacity 0.4s;position:relative;">Scale your Series A SaaS with proven SEO</h2>
+            <p id="wow9-sub" style="font-size:1rem;color:rgba(255,255,255,0.55);margin-bottom:1.5rem;max-width:520px;transition:opacity 0.4s;">Built for founders who've found product-market fit. Here's the growth playbook for you.</p>
+            <div id="wow9-cta" style="display:inline-block;background:linear-gradient(135deg,#d946ef,#a21caf);color:white;padding:0.75rem 1.75rem;border-radius:8px;font-weight:700;font-size:0.95rem;transition:opacity 0.4s;">Start Your Growth Sprint →</div>
+          </div>
+          <!-- Features row -->
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-bottom:1px solid rgba(255,255,255,0.04);">
+            <div style="padding:1.25rem 1.5rem;border-right:1px solid rgba(255,255,255,0.04);">
+              <div id="wow9-feat1" style="font-size:0.85rem;font-weight:600;color:rgba(255,255,255,0.7);margin-bottom:0.25rem;transition:opacity 0.4s;">SEO Architecture</div>
+              <div style="font-size:0.75rem;color:rgba(255,255,255,0.25);">Built for your keyword gaps</div>
+            </div>
+            <div style="padding:1.25rem 1.5rem;border-right:1px solid rgba(255,255,255,0.04);">
+              <div id="wow9-feat2" style="font-size:0.85rem;font-weight:600;color:rgba(255,255,255,0.7);margin-bottom:0.25rem;transition:opacity 0.4s;">Content Pipeline</div>
+              <div style="font-size:0.75rem;color:rgba(255,255,255,0.25);">SaaS-specific editorial</div>
+            </div>
+            <div style="padding:1.25rem 1.5rem;">
+              <div id="wow9-feat3" style="font-size:0.85rem;font-weight:600;color:rgba(255,255,255,0.7);margin-bottom:0.25rem;transition:opacity 0.4s;">Growth Reporting</div>
+              <div style="font-size:0.75rem;color:rgba(255,255,255,0.25);">MRR attribution built in</div>
+            </div>
+          </div>
+          <!-- Social proof bar -->
+          <div style="padding:0.75rem 1.5rem;display:flex;align-items:center;gap:2rem;">
+            <div id="wow9-proof" style="font-size:0.78rem;color:rgba(255,255,255,0.3);transition:opacity 0.4s;">Trusted by 200+ SaaS teams</div>
+            <div style="margin-left:auto;font-size:0.72rem;font-family:monospace;color:#34d399;" id="wow9-cvr-badge">CVR: 11.4%</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── WOW 10: One URL. Infinite Pages. ── -->
+    <section id="wow-10" style="min-height:560px;border-top:1px solid rgba(255,255,255,0.06);padding:5rem 0;position:relative;overflow:hidden;">
+      <div class="absolute top-5 left-1/2 -translate-x-1/2 z-20 px-3 py-1 rounded-full text-xs font-mono" style="background:rgba(217,70,239,0.1);color:#d946ef;border:1px solid rgba(217,70,239,0.25);">WOW 10 / 10 — One URL. Infinite Pages.</div>
+      <canvas id="wow10-canvas" style="display:block;width:100%;height:460px;"></canvas>
+      <div style="text-align:center;padding:1.5rem 2rem 0;">
+        <p style="font-size:0.9rem;color:rgba(255,255,255,0.3);">One website. Every visitor gets their own page. <span style="color:#d946ef;">In real-time.</span></p>
+      </div>
+    </section>
+
+    <FinalCTA />
+  </main>
+  <Footer />
+</Layout>
+
+<!-- Aurora + Dot Grid script -->
+<script>
+  const ric = window.requestIdleCallback || ((cb: Function) => setTimeout(cb, 1));
+  ric(() => {
+
+  // ─── Aurora Waves (behind dot grid) ─────────────────────────────────────────
+  {
+    const AP = new Uint8Array(512);
+    { const p = new Uint8Array(256); for (let i = 0; i < 256; i++) p[i] = i;
+      for (let i = 255; i > 0; i--) { const j = ((i * 2654435761) >>> 0) % (i + 1); const t = p[i]; p[i] = p[j]; p[j] = t; }
+      for (let i = 0; i < 512; i++) AP[i] = p[i & 255]; }
+    const AG: [number,number][] = [[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+    function af(t: number) { return t*t*t*(t*(t*6-15)+10); }
+    function al(a: number, b: number, t: number) { return a+t*(b-a); }
+    function ag(h: number, x: number, y: number) { const [a,b]=AG[h&7]; return a*x+b*y; }
+    function an(x: number, y: number): number {
+      const X=Math.floor(x)&255, Y=Math.floor(y)&255, xf=x-Math.floor(x), yf=y-Math.floor(y);
+      const u=af(xf), v=af(yf);
+      return al(al(ag(AP[AP[X]+Y],xf,yf), ag(AP[AP[X+1]+Y],xf-1,yf), u),
+               al(ag(AP[AP[X]+Y+1],xf,yf-1), ag(AP[AP[X+1]+Y+1],xf-1,yf-1), u), v);
+    }
+    function fbm(x: number, y: number, oct: number): number {
+      let v = 0, amp = 0.5, freq = 1.0;
+      for (let i = 0; i < oct; i++) { v += amp * an(x * freq, y * freq); amp *= 0.5; freq *= 2.0; }
+      return v;
+    }
+    const auroraCanvas = document.querySelector<HTMLCanvasElement>('.aurora-canvas')!;
+    const auroraWrap = document.getElementById('dot-grid-wrap')!;
+    const actx = auroraCanvas.getContext('2d')!;
+    let aW = 0, aH = 0, aDpr = 1;
+    const offscreen = document.createElement('canvas');
+    const octx = offscreen.getContext('2d')!;
+    function resizeAurora() {
+      aDpr = window.devicePixelRatio || 1;
+      const rect = auroraWrap.getBoundingClientRect();
+      aW = Math.round(rect.width); aH = Math.round(rect.height);
+      auroraCanvas.width = aW * aDpr; auroraCanvas.height = aH * aDpr;
+      auroraCanvas.style.width = `${aW}px`; auroraCanvas.style.height = `${aH}px`;
+      offscreen.width = Math.round(aW / 3); offscreen.height = Math.round(aH / 3);
+    }
+    function blob(cx: number, cy: number, rx: number, ry: number, angle: number, r: number, g: number, b: number, alpha: number) {
+      if (alpha < 0.004 || rx < 0.5) return;
+      octx.save(); octx.translate(cx, cy); octx.rotate(angle);
+      octx.scale(1.0, ry / Math.max(rx, 0.5));
+      const gr = octx.createRadialGradient(0, 0, 0, 0, 0, rx);
+      gr.addColorStop(0, `rgba(${r},${g},${b},${alpha.toFixed(3)})`);
+      gr.addColorStop(0.28, `rgba(${r},${g},${b},${(alpha*0.68).toFixed(3)})`);
+      gr.addColorStop(0.62, `rgba(${r},${g},${b},${(alpha*0.22).toFixed(3)})`);
+      gr.addColorStop(1, `rgba(${r},${g},${b},0)`);
+      octx.fillStyle = gr; octx.beginPath(); octx.arc(0,0,rx,0,Math.PI*2); octx.fill(); octx.restore();
+    }
+    function strand(t: number, cx: number, cy: number, rx: number, ry: number, angle: number, r: number, g: number, b: number, alpha: number, n: number, wa: number) {
+      const wx = fbm(cx*0.012+t*0.15, cy*0.012, 3)*wa, wy = fbm(cx*0.012+57, cy*0.012+t*0.13, 3)*wa;
+      const px = cx+wx, py = cy+wy;
+      const ca = alpha*(0.78+an(t*0.25, cx*0.02)*0.22);
+      blob(px, py, rx, ry, angle, r, g, b, Math.max(0,ca));
+      if (n < 2) return;
+      const cosA = Math.cos(angle), sinA = Math.sin(angle);
+      for (let i = 0; i < n; i++) {
+        const u = (i/(n-1))*2-1;
+        const bx0 = px+cosA*u*rx*0.82, by0 = py+sinA*u*rx*0.82;
+        const bwx = an(bx0*0.015+t*0.18+i*1.4, by0*0.015+30)*wa*0.40;
+        const bwy = an(bx0*0.015+80+i, by0*0.015+t*0.16)*wa*0.40;
+        const dn = (an(i*1.7+t*0.2, 200)+1)*0.5;
+        const density = (1-u*u)*(0.42+dn*0.30);
+        blob(bx0+bwx, by0+bwy, rx*(0.20+(an(i*2.3,t*0.04)+1)*0.13), ry*(0.48+density*0.52), angle, r, g, b, Math.max(0, alpha*0.52*density));
+      }
+    }
+    const AL = [
+      [0.35,0.48,0.62,0.26,-0.06, 52,14,185,0.16,0.055,0.0, 0,0.14],
+      [0.65,0.55,0.72,0.22, 0.04, 38,10,165,0.12,0.045,2.6, 0,0.12],
+      [0.40,0.62,0.78,0.24,-0.03, 28, 7,148,0.10,0.038,5.1, 0,0.13],
+      [0.35,0.48,0.44,0.12,-0.13,100,35,230,0.32,0.140,0.4, 7,0.09],
+      [0.65,0.44,0.50,0.10, 0.09,125,45,235,0.28,0.170,1.9, 6,0.08],
+      [0.30,0.58,0.40,0.13,-0.07, 75,28,215,0.26,0.110,3.4, 6,0.10],
+      [0.70,0.46,0.48,0.09, 0.16,145,40,240,0.24,0.190,5.2, 5,0.07],
+      [0.25,0.54,0.38,0.12,-0.19, 55,45,205,0.22,0.130,2.7, 5,0.09],
+      [0.72,0.52,0.43,0.11, 0.11,108,28,220,0.24,0.150,4.2, 6,0.08],
+      [0.28,0.42,0.33,0.07,-0.11,162,52,250,0.38,0.250,1.3, 5,0.06],
+      [0.72,0.56,0.35,0.06, 0.13,188,56,235,0.32,0.280,3.9, 4,0.05],
+      [0.38,0.60,0.30,0.08,-0.08,138,44,245,0.30,0.220,6.4, 5,0.07],
+      [0.62,0.40,0.27,0.07, 0.09,172,60,240,0.28,0.300,0.8, 4,0.05],
+      [0.42,0.48,0.18,0.11, 0.00,178,88,255,0.44,0.100,0.0, 3,0.04],
+      [0.58,0.52,0.14,0.09,-0.04,198,98,255,0.40,0.120,1.6, 0,0.03],
+      [0.45,0.55,0.21,0.10, 0.05,158,70,250,0.38,0.090,3.1, 3,0.04],
+    ];
+    function frameAurora() {
+      requestAnimationFrame(frameAurora);
+      const ow = offscreen.width, oh = offscreen.height;
+      const t = performance.now() * 0.001;
+      octx.clearRect(0, 0, ow, oh);
+      octx.globalCompositeOperation = 'lighter';
+      for (const row of AL) {
+        const [cxF,cyF,rxF,ryF,ang,r,g,b,alpha,spd,ph,n,waF] = row;
+        const cx = ow*(cxF+Math.sin(t*spd*3+ph)*0.15);
+        const cy = oh*(cyF+Math.sin(t*spd*2.1+ph+1.1)*0.12);
+        const rx = ow*rxF*(1+Math.sin(t*spd*4+ph*1.8)*0.15);
+        const ry = oh*ryF*(1+Math.sin(t*spd*2.5+ph*1.3)*0.18);
+        const angle = ang+Math.sin(t*spd*2.5+ph)*0.2;
+        const wa = ow*waF;
+        if (n === 0) {
+          const wx=fbm(cx*0.010+t*0.036,cy*0.010,2)*wa, wy=fbm(cx*0.010+63,cy*0.010+t*0.030,2)*wa;
+          blob(cx+wx,cy+wy,rx,ry,angle,r,g,b,alpha);
+        } else { strand(t,cx,cy,rx,ry,angle,r,g,b,alpha,n,wa); }
+      }
+      octx.globalCompositeOperation = 'source-over';
+      actx.setTransform(1,0,0,1,0,0); actx.clearRect(0,0,auroraCanvas.width,auroraCanvas.height);
+      actx.drawImage(offscreen,0,0,auroraCanvas.width,auroraCanvas.height);
+      actx.setTransform(aDpr,0,0,aDpr,0,0);
+    }
+    const roAurora = new ResizeObserver(() => resizeAurora());
+    roAurora.observe(auroraWrap);
+    resizeAurora();
+    requestAnimationFrame(frameAurora);
+    requestAnimationFrame(() => { auroraCanvas.style.opacity = '1'; });
+  }
+
+  // ─── Dot Grid Background (behind hero) ────────────────────────────────────
+  const PERM = new Uint8Array(512);
+  {
+    const p = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) p[i] = i;
+    for (let i = 255; i > 0; i--) { const j = ((i * 2654435761) >>> 0) % (i + 1); const tmp = p[i]; p[i] = p[j]; p[j] = tmp; }
+    for (let i = 0; i < 512; i++) PERM[i] = p[i & 255];
+  }
+  const GRADS: [number,number][] = [[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+  function fade(t: number) { return t*t*t*(t*(t*6-15)+10); }
+  function nlerp(a: number, b: number, t: number) { return a+t*(b-a); }
+  function grad(h: number, x: number, y: number) { const [gx,gy]=GRADS[h&7]; return gx*x+gy*y; }
+  function noise2(x: number, y: number): number {
+    const X=Math.floor(x)&255, Y=Math.floor(y)&255;
+    const xf=x-Math.floor(x), yf=y-Math.floor(y);
+    const u=fade(xf), v=fade(yf);
+    const aa=PERM[PERM[X]+Y], ab=PERM[PERM[X]+Y+1], ba=PERM[PERM[X+1]+Y], bb=PERM[PERM[X+1]+Y+1];
+    return nlerp(nlerp(grad(aa,xf,yf),grad(ba,xf-1,yf),u),nlerp(grad(ab,xf,yf-1),grad(bb,xf-1,yf-1),u),v);
+  }
+  const GRID = 16;
+  const INFLUENCE_RADIUS = 575;
+  const PUSH_STRENGTH = 28;
+  const LERP_SPEED = 0.035;
+  const NOISE_SCALE = 0.04;
+  const NOISE_SPEED = 0.0008;
+  const NOISE_STRENGTH = 6;
+  const ACCENT1: [number,number,number] = [60,130,255];
+  const ACCENT2: [number,number,number] = [100,180,255];
+  const BASE_RGB: [number,number,number] = [90,90,105];
+  interface Dot { gx: number; gy: number; x: number; y: number; }
+  const canvas = document.querySelector<HTMLCanvasElement>('.dot-grid-canvas')!;
+  const wrap = document.getElementById('dot-grid-wrap')!;
+  const ctx = canvas.getContext('2d')!;
+  let dots: Dot[] = [];
+  let mouse: { x: number; y: number } | null = null;
+  let dpr = 1;
+  function buildGrid() {
+    dots = [];
+    const W = canvas.width/dpr, H = canvas.height/dpr;
+    const cols = Math.ceil(W/GRID)+2, rows = Math.ceil(H/GRID)+2;
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) { const gx=c*GRID, gy=r*GRID; dots.push({ gx, gy, x: gx, y: gy }); }
+  }
+  function resize() {
+    dpr = window.devicePixelRatio||1;
+    const rect = wrap.getBoundingClientRect();
+    const w=Math.round(rect.width), h=Math.round(rect.height);
+    canvas.width=w*dpr; canvas.height=h*dpr;
+    canvas.style.width=`${w}px`; canvas.style.height=`${h}px`;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    buildGrid();
+  }
+  function lerpRGB(a: [number,number,number], b: [number,number,number], t: number): [number,number,number] {
+    return [Math.round(a[0]+(b[0]-a[0])*t),Math.round(a[1]+(b[1]-a[1])*t),Math.round(a[2]+(b[2]-a[2])*t)];
+  }
+  function rgbStr(c: [number,number,number]) { return `rgb(${c[0]},${c[1]},${c[2]})`; }
+  function frame() {
+    requestAnimationFrame(frame);
+    const W=canvas.width/dpr, H=canvas.height/dpr;
+    const t=performance.now()*NOISE_SPEED;
+    ctx.clearRect(0,0,W,H);
+    const fadeZone=H*0.75;
+    for (const dot of dots) {
+      let targetX=dot.gx, targetY=dot.gy, influence=0, angleToMouse=0;
+      if (mouse) {
+        const dx=dot.gx-mouse.x, dy=dot.gy-mouse.y;
+        const dist=Math.sqrt(dx*dx+dy*dy);
+        if (dist < INFLUENCE_RADIUS) {
+          const raw=1-dist/INFLUENCE_RADIUS;
+          const s=raw*raw*(3-2*raw);
+          influence=s*s*(3-2*s);
+          const pushMag=Math.pow(influence,3)*PUSH_STRENGTH;
+          const len=dist||1;
+          targetX+=(dx/len)*pushMag; targetY+=(dy/len)*pushMag;
+          const noiseX=noise2(dot.gx*NOISE_SCALE, dot.gy*NOISE_SCALE+t);
+          const noiseY=noise2(dot.gx*NOISE_SCALE+100, dot.gy*NOISE_SCALE+t);
+          const noiseMag=influence*influence*NOISE_STRENGTH;
+          targetX+=noiseX*noiseMag; targetY+=noiseY*noiseMag;
+          angleToMouse=Math.atan2(dy,dx);
+        }
+      }
+      dot.x+=(targetX-dot.x)*LERP_SPEED;
+      dot.y+=(targetY-dot.y)*LERP_SPEED;
+      let opacity=1;
+      if (dot.gy > fadeZone) opacity*=1-Math.min(1,(dot.gy-fadeZone)/(H-fadeZone));
+      if (opacity < 0.01) continue;
+      let color=rgbStr(BASE_RGB);
+      if (influence > 0) {
+        const inf3=influence*influence*influence;
+        const blendFactor=(Math.sin(angleToMouse*2+t*3)+1)*0.5;
+        const accent=lerpRGB(ACCENT1,ACCENT2,blendFactor);
+        color=rgbStr(lerpRGB(BASE_RGB,accent,inf3));
+        opacity*=1-influence*influence*0.85;
+      }
+      ctx.globalAlpha=opacity; ctx.fillStyle=color;
+      ctx.beginPath(); ctx.arc(dot.x, dot.y, 1+influence*0.5, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+  }
+  window.addEventListener('mousemove', (e) => { const rect=wrap.getBoundingClientRect(); mouse={ x: e.clientX-rect.left, y: e.clientY-rect.top }; });
+  window.addEventListener('mouseleave', () => { mouse=null; });
+  window.addEventListener('touchstart', () => { mouse=null; }, { passive: true });
+  const ro = new ResizeObserver(() => resize());
+  ro.observe(wrap);
+  resize();
+  requestAnimationFrame(frame);
+  requestAnimationFrame(() => { canvas.style.opacity='1'; });
+  const gridTex = wrap.querySelector('.grid-texture') as HTMLElement|null;
+  if (gridTex) gridTex.style.display='none';
+
+  // ─── Aurora for CTA section ──────────────────────────────────────────────
+  {
+    const ctaCardAurora = document.querySelector('.final-cta') as HTMLElement;
+    const aCanvasCta = document.createElement('canvas');
+    aCanvasCta.className = 'aurora-canvas-cta';
+    aCanvasCta.setAttribute('aria-hidden','true');
+    aCanvasCta.style.cssText='position:absolute;inset:0;z-index:0;pointer-events:none;will-change:transform;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+    ctaCardAurora.insertBefore(aCanvasCta, ctaCardAurora.firstChild);
+    const actxC=aCanvasCta.getContext('2d')!;
+    const offC=document.createElement('canvas');
+    const octxC=offC.getContext('2d')!;
+    let aCW=0, aCH=0;
+    function resizeAuroraCta() {
+      const dp=window.devicePixelRatio||1;
+      const rect=ctaCardAurora.getBoundingClientRect();
+      aCW=Math.round(rect.width); aCH=Math.round(rect.height);
+      aCanvasCta.width=aCW*dp; aCanvasCta.height=aCH*dp;
+      aCanvasCta.style.width=`${aCW}px`; aCanvasCta.style.height=`${aCH}px`;
+      offC.width=Math.round(aCW/4); offC.height=Math.round(aCH/4);
+    }
+    function frameAuroraCta() {
+      requestAnimationFrame(frameAuroraCta);
+      const ow=offC.width, oh=offC.height;
+      const t=performance.now()*0.001;
+      octxC.clearRect(0,0,ow,oh);
+      octxC.globalCompositeOperation='lighter';
+      const ctaLayers = [
+        [0.50,0.50,0.55,0.30,-0.06, 52,14,185,0.18,0.08,0.0],
+        [0.50,0.50,0.65,0.25, 0.04, 38,10,165,0.14,0.06,2.6],
+        [0.50,0.50,0.45,0.15,-0.13,100,35,230,0.35,0.18,0.4],
+        [0.50,0.50,0.50,0.12, 0.09,125,45,235,0.30,0.22,1.9],
+        [0.50,0.50,0.40,0.16,-0.07, 75,28,215,0.28,0.14,3.4],
+        [0.50,0.50,0.48,0.11, 0.16,145,40,240,0.26,0.24,5.2],
+        [0.50,0.50,0.33,0.09,-0.11,162,52,250,0.40,0.30,1.3],
+        [0.50,0.50,0.35,0.08, 0.13,188,56,235,0.34,0.35,3.9],
+        [0.50,0.50,0.18,0.14, 0.00,178,88,255,0.45,0.12,0.0],
+        [0.50,0.50,0.14,0.11,-0.04,198,98,255,0.42,0.15,1.6],
+      ];
+      for (const row of ctaLayers) {
+        const [cxF,cyF,rxF,ryF,ang,r,g,b,alpha,spd,ph]=row;
+        const cx=ow*(cxF+Math.sin(t*spd*3+ph)*0.18);
+        const cy=oh*(cyF+Math.sin(t*spd*2.1+ph+1.1)*0.15);
+        const rx=ow*rxF*(1+Math.sin(t*spd*4+ph*1.8)*0.15);
+        const ry=oh*ryF*(1+Math.sin(t*spd*2.5+ph*1.3)*0.18);
+        const angle=ang+Math.sin(t*spd*2.5+ph)*0.2;
+        octxC.save(); octxC.translate(cx,cy); octxC.rotate(angle);
+        const gr=octxC.createRadialGradient(0,0,0,0,0,Math.max(rx,1));
+        gr.addColorStop(0,`rgba(${r},${g},${b},${alpha})`);
+        gr.addColorStop(0.25,`rgba(${r},${g},${b},${alpha*0.7})`);
+        gr.addColorStop(0.55,`rgba(${r},${g},${b},${alpha*0.3})`);
+        gr.addColorStop(1,`rgba(${r},${g},${b},0)`);
+        octxC.fillStyle=gr; octxC.scale(1,ry/(rx||1));
+        octxC.beginPath(); octxC.arc(0,0,rx,0,Math.PI*2); octxC.fill(); octxC.restore();
+      }
+      octxC.globalCompositeOperation='source-over';
+      const dp=window.devicePixelRatio||1;
+      actxC.setTransform(1,0,0,1,0,0); actxC.clearRect(0,0,aCanvasCta.width,aCanvasCta.height);
+      actxC.drawImage(offC,0,0,aCanvasCta.width,aCanvasCta.height);
+      actxC.setTransform(dp,0,0,dp,0,0);
+    }
+    const roCta2=new ResizeObserver(()=>resizeAuroraCta());
+    roCta2.observe(ctaCardAurora);
+    resizeAuroraCta();
+    requestAnimationFrame(frameAuroraCta);
+    requestAnimationFrame(()=>{ aCanvasCta.style.opacity='1'; });
+  }
+
+  // ─── CTA Dot Grid ────────────────────────────────────────────────────────
+  const ctaCard = document.querySelector('.final-cta') as HTMLElement;
+  const canvasCta = document.createElement('canvas');
+  canvasCta.className='dot-grid-canvas-cta';
+  canvasCta.setAttribute('aria-hidden','true');
+  canvasCta.style.cssText='position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity 2s ease-in;';
+  ctaCard.style.position='relative';
+  ctaCard.insertBefore(canvasCta, ctaCard.firstChild);
+  const ctxCta=canvasCta.getContext('2d')!;
+  interface DotCta { gx: number; gy: number; x: number; y: number; }
+  let dotsCta: DotCta[]=[];
+  let mouseCta: { x: number; y: number }|null=null;
+  let dprCta=1;
+  function buildGridCta() {
+    dotsCta=[];
+    const W=canvasCta.width/dprCta, H=canvasCta.height/dprCta;
+    const cols=Math.ceil(W/GRID)+2, rows=Math.ceil(H/GRID)+2;
+    for (let r=0;r<rows;r++) for (let c=0;c<cols;c++) { const gx=c*GRID, gy=r*GRID; dotsCta.push({gx,gy,x:gx,y:gy}); }
+  }
+  function resizeCta() {
+    dprCta=window.devicePixelRatio||1;
+    const rect=ctaCard.getBoundingClientRect();
+    const w=Math.round(rect.width), h=Math.round(rect.height);
+    canvasCta.width=w*dprCta; canvasCta.height=h*dprCta;
+    canvasCta.style.width=`${w}px`; canvasCta.style.height=`${h}px`;
+    ctxCta.setTransform(dprCta,0,0,dprCta,0,0);
+    buildGridCta();
+  }
+  function frameCta() {
+    requestAnimationFrame(frameCta);
+    const W=canvasCta.width/dprCta, H=canvasCta.height/dprCta;
+    const t=performance.now()*NOISE_SPEED;
+    ctxCta.clearRect(0,0,W,H);
+    for (const dot of dotsCta) {
+      let targetX=dot.gx, targetY=dot.gy, influence=0, angleToMouse=0;
+      if (mouseCta) {
+        const dx=dot.gx-mouseCta.x, dy=dot.gy-mouseCta.y;
+        const dist=Math.sqrt(dx*dx+dy*dy);
+        if (dist < INFLUENCE_RADIUS) {
+          const raw=1-dist/INFLUENCE_RADIUS;
+          const s=raw*raw*(3-2*raw);
+          influence=s*s*(3-2*s);
+          const pushMag=Math.pow(influence,3)*PUSH_STRENGTH;
+          const len=dist||1;
+          targetX+=(dx/len)*pushMag; targetY+=(dy/len)*pushMag;
+          const noiseX=noise2(dot.gx*NOISE_SCALE, dot.gy*NOISE_SCALE+t);
+          const noiseY=noise2(dot.gx*NOISE_SCALE+100, dot.gy*NOISE_SCALE+t);
+          const noiseMag=influence*influence*NOISE_STRENGTH;
+          targetX+=noiseX*noiseMag; targetY+=noiseY*noiseMag;
+          angleToMouse=Math.atan2(dy,dx);
+        }
+      }
+      dot.x+=(targetX-dot.x)*LERP_SPEED;
+      dot.y+=(targetY-dot.y)*LERP_SPEED;
+      let opacity=1;
+      if (opacity < 0.01) continue;
+      let color=rgbStr(BASE_RGB);
+      if (influence > 0) {
+        const inf3=influence*influence*influence;
+        const blendFactor=(Math.sin(angleToMouse*2+t*3)+1)*0.5;
+        const accent=lerpRGB(ACCENT1,ACCENT2,blendFactor);
+        color=rgbStr(lerpRGB(BASE_RGB,accent,inf3));
+        opacity*=1-influence*influence*0.85;
+      }
+      ctxCta.globalAlpha=opacity; ctxCta.fillStyle=color;
+      ctxCta.beginPath(); ctxCta.arc(dot.x, dot.y, 1+influence*0.5, 0, Math.PI*2); ctxCta.fill();
+    }
+    ctxCta.globalAlpha=1;
+  }
+  window.addEventListener('mousemove', (e) => {
+    const rect=ctaCard.getBoundingClientRect();
+    const x=e.clientX-rect.left, y=e.clientY-rect.top;
+    if (x>=0&&x<=rect.width&&y>=0&&y<=rect.height) mouseCta={x,y};
+    else mouseCta=null;
+  });
+  const roCta=new ResizeObserver(()=>resizeCta());
+  roCta.observe(ctaCard);
+  resizeCta();
+  requestAnimationFrame(frameCta);
+  requestAnimationFrame(()=>{ canvasCta.style.opacity='1'; });
+  const gridTexCta=ctaCard.querySelector('.grid-texture') as HTMLElement|null;
+  if (gridTexCta) gridTexCta.style.display='none';
+
+  }); // end ric
+</script>
+
+<a id="skip-link" href="#main-content">Skip to main content</a>
+
+<style is:global>
+  #skip-link{position:absolute;top:-100%;left:1rem;z-index:9999;padding:.75rem 1.25rem;background:var(--color-brand-primary);color:white;font-weight:600;border-radius:0 0 .5rem .5rem;text-decoration:none;transition:top .1s}
+  #skip-link:focus{top:0}
+  #dot-grid-wrap .url-input-wrap,.final-cta .url-input-wrap{background:rgba(255,255,255,0.06)!important;backdrop-filter:blur(24px) saturate(1.4);-webkit-backdrop-filter:blur(24px) saturate(1.4);border:1px solid rgba(255,255,255,0.12)!important;box-shadow:0 4px 30px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.05)}
+  #dot-grid-wrap .hero-panel{background:rgba(6,7,18,.55)!important;backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(255,255,255,.12)!important}
+  .final-cta{background:rgba(20,15,40,.35)!important;backdrop-filter:blur(24px) saturate(1.4)!important;-webkit-backdrop-filter:blur(24px) saturate(1.4)!important;border-color:rgba(99,102,241,.15)!important;box-shadow:0 8px 40px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.04)!important;overflow:hidden;position:relative}
+  #hero{background:transparent!important}
+  .wow1-arc-pill{background:rgba(217,70,239,0.1);color:#d946ef;border:1px solid rgba(217,70,239,0.25);border-radius:999px;padding:0.2rem 0.75rem;font-size:0.72rem;font-family:monospace}
+  .wow4-pill{background:rgba(var(--cr),var(--cg),var(--cb),0.1);color:var(--c);border:1px solid rgba(var(--cr),var(--cg),var(--cb),0.25);border-radius:999px;padding:0.15rem 0.6rem;font-size:0.65rem;font-family:monospace}
+  .wow4-portal:hover{transform:translateY(-3px);box-shadow:0 8px 30px rgba(0,0,0,0.3)}
+  @keyframes wow8-pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+  @keyframes wow1-spin{to{transform:rotate(360deg)}}
+</style>
+
+<script>
+(function() {
+  // ── WOW 1: Live Demo Simulator ──────────────────────────────────────────
+  const businesses = [
+    { url: 'neilpatel.com', vertical: 'marketing-agency', headline: "NeilPatel Digital — Your Prospects' Journey", time: '3.8s', cvr: '11.4%' },
+    { url: 'crowdstrike.com', vertical: 'cybersecurity', headline: "CrowdStrike — Your Prospects' Journey", time: '4.1s', cvr: '9.8%' },
+    { url: 'bain.com', vertical: 'consultancy', headline: "Bain & Company — Your Prospects' Journey", time: '4.4s', cvr: '10.2%' },
+  ];
+  const urlEl = document.getElementById('wow1-url');
+  const pipelineEl = document.getElementById('wow1-pipeline');
+  const stagesEl = document.getElementById('wow1-stages');
+  const resultEl = document.getElementById('wow1-result');
+  const btnEl = document.getElementById('wow1-btn');
+  if (urlEl && pipelineEl && stagesEl && resultEl) {
+    let bIdx = 0;
+    function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)); }
+    function typeStr(el: HTMLElement, str: string, delay = 70) {
+      return new Promise<void>(resolve => {
+        el.textContent = '';
+        let i = 0;
+        const t = setInterval(() => {
+          el.textContent += str[i++];
+          if (i >= str.length) { clearInterval(t); resolve(); }
+        }, delay);
+      });
+    }
+    async function runDemo() {
+      const b = businesses[bIdx % businesses.length]; bIdx++;
+      // Reset
+      pipelineEl.style.display = 'none'; resultEl.style.display = 'none';
+      urlEl.textContent = '';
+      await sleep(600);
+      await typeStr(urlEl, b.url, 65);
+      await sleep(400);
+      // Button click animation
+      if (btnEl) { btnEl.style.transform = 'scale(0.95)'; await sleep(150); btnEl.style.transform = ''; }
+      pipelineEl.style.display = 'block';
+      stagesEl.innerHTML = '';
+      const stages = [
+        { label: `Crawling ${b.url}...`, done: `Crawled — 8,432 words extracted`, delay: 900 },
+        { label: 'Analysing business...', done: 'Business intelligence extracted', delay: 700 },
+        { label: 'Detecting vertical...', done: `Vertical: ${b.vertical}`, delay: 600 },
+        { label: 'Generating journey...', done: `Demo ready — ${b.time}`, delay: 800 },
+      ];
+      for (const s of stages) {
+        const el = document.createElement('div');
+        el.style.cssText = 'display:flex;align-items:center;gap:0.75rem;color:rgba(255,255,255,0.5);padding:0.3rem 0;';
+        el.innerHTML = `<span style="width:14px;height:14px;border:1.5px solid #d946ef;border-top-color:transparent;border-radius:50%;animation:wow1-spin 0.7s linear infinite;flex-shrink:0;"></span><span>${s.label}</span>`;
+        stagesEl.appendChild(el);
+        await sleep(s.delay);
+        el.innerHTML = `<span style="color:#34d399;font-size:1rem;flex-shrink:0;">✓</span><span style="color:rgba(255,255,255,0.7);">${s.done}</span>`;
+      }
+      await sleep(400);
+      const badgeEl = document.getElementById('wow1-vertical-badge');
+      const headlineEl = document.getElementById('wow1-result-headline');
+      const timeEl = document.getElementById('wow1-build-time');
+      if (badgeEl) badgeEl.textContent = b.vertical;
+      if (headlineEl) headlineEl.textContent = b.headline;
+      if (timeEl) timeEl.textContent = `Built in ${b.time} · CVR: ${b.cvr}`;
+      resultEl.style.display = 'block';
+      await sleep(4000);
+      runDemo();
+    }
+    runDemo();
+  }
+
+  // ── WOW 2: Prospect Machine ─────────────────────────────────────────────
+  const c2 = document.getElementById('wow2-canvas') as HTMLCanvasElement;
+  if (c2) {
+    const ctx2 = c2.getContext('2d')!;
+    interface Visitor { x: number; y: number; vx: number; vy: number; label: string; color: string; state: 'flying'|'absorbed'|'emitting'; alpha: number; size: number; }
+    interface Page { x: number; y: number; vx: number; vy: number; cvr: string; color: string; alpha: number; w: number; h: number; }
+    const sources = [
+      { label: 'Google Ads · SaaS', color: '#60a5fa' },
+      { label: 'LinkedIn · Fintech', color: '#a78bfa' },
+      { label: 'Cold Email · Agency', color: '#fbbf24' },
+      { label: 'Organic · E-com', color: '#34d399' },
+    ];
+    const cvrs = ['11.2%','9.8%','8.7%','10.4%','11.0%','9.2%'];
+    let visitors: Visitor[] = [];
+    let pages: Page[] = [];
+    let lastSpawn = 0;
+    let pageCount = 12847;
+    const countEl = document.getElementById('wow2-count');
+    function resize2() {
+      const dpr = window.devicePixelRatio || 1;
+      c2.width = c2.offsetWidth * dpr; c2.height = c2.offsetHeight * dpr;
+      ctx2.scale(dpr, dpr);
+    }
+    new ResizeObserver(resize2).observe(c2);
+    resize2();
+    function draw2(ts: number) {
+      const W = c2.offsetWidth, H = c2.offsetHeight;
+      ctx2.clearRect(0, 0, W, H);
+      const cx = W * 0.5, cy = H * 0.5;
+      // Engine glow
+      const t = ts * 0.001;
+      const pulse = 0.04 + Math.sin(t * 2.1) * 0.015;
+      const grd = ctx2.createRadialGradient(cx, cy, 0, cx, cy, 80);
+      grd.addColorStop(0, `rgba(217,70,239,${pulse * 3})`);
+      grd.addColorStop(0.4, `rgba(217,70,239,${pulse})`);
+      grd.addColorStop(1, 'rgba(217,70,239,0)');
+      ctx2.fillStyle = grd; ctx2.beginPath(); ctx2.arc(cx, cy, 80, 0, Math.PI * 2); ctx2.fill();
+      // Engine core
+      ctx2.beginPath(); ctx2.arc(cx, cy, 22 + Math.sin(t * 3) * 3, 0, Math.PI * 2);
+      ctx2.fillStyle = '#d946ef'; ctx2.shadowColor = '#d946ef'; ctx2.shadowBlur = 20; ctx2.fill(); ctx2.shadowBlur = 0;
+      ctx2.fillStyle = 'rgba(255,255,255,0.8)'; ctx2.font = 'bold 9px sans-serif'; ctx2.textAlign = 'center'; ctx2.textBaseline = 'middle';
+      ctx2.fillText('AI', cx, cy);
+      // Spawn visitors
+      if (ts - lastSpawn > 600) {
+        lastSpawn = ts;
+        const src = sources[Math.floor(Math.random() * sources.length)];
+        visitors.push({ x: Math.random() * 60 + 10, y: Math.random() * (H - 40) + 20, vx: 1.5 + Math.random(), vy: (Math.random() - 0.5) * 0.5, label: src.label, color: src.color, state: 'flying', alpha: 1, size: 3 });
+      }
+      // Update/draw visitors
+      visitors = visitors.filter(v => v.alpha > 0.01);
+      for (const v of visitors) {
+        if (v.state === 'flying') {
+          const dx = cx - v.x, dy = cy - v.y, dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < 30) {
+            v.state = 'absorbed'; v.alpha = 0;
+            // Spawn page
+            const src2 = sources[Math.floor(Math.random() * sources.length)];
+            pages.push({ x: cx + 20, y: cy + (Math.random()-0.5)*40, vx: 2 + Math.random() * 1.5, vy: (Math.random()-0.5) * 1.2, cvr: cvrs[Math.floor(Math.random()*cvrs.length)], color: src2.color, alpha: 0.9, w: 56, h: 38 });
+            pageCount++;
+            if (countEl) countEl.textContent = pageCount.toLocaleString();
+          } else {
+            v.vx += dx / dist * 0.06; v.vy += dy / dist * 0.06;
+            v.vx *= 0.98; v.vy *= 0.98;
+            v.x += v.vx; v.y += v.vy;
+          }
+          ctx2.globalAlpha = v.alpha;
+          ctx2.fillStyle = v.color; ctx2.shadowColor = v.color; ctx2.shadowBlur = 6;
+          ctx2.beginPath(); ctx2.arc(v.x, v.y, v.size, 0, Math.PI * 2); ctx2.fill();
+          ctx2.shadowBlur = 0;
+          if (dist > 60) {
+            ctx2.font = '8px "SF Mono","Fira Code",monospace'; ctx2.fillStyle = v.color; ctx2.textAlign = 'left';
+            ctx2.fillText(v.label, v.x + 5, v.y - 4);
+          }
+          ctx2.globalAlpha = 1;
+        }
+      }
+      // Update/draw pages
+      pages = pages.filter(p => p.alpha > 0.01 && p.x < c2.offsetWidth + 80);
+      for (const p of pages) {
+        p.x += p.vx; p.y += p.vy; p.alpha -= 0.004;
+        if (p.x > W * 0.65) p.alpha -= 0.01;
+        ctx2.globalAlpha = Math.min(p.alpha, 0.9);
+        ctx2.strokeStyle = p.color; ctx2.lineWidth = 1;
+        ctx2.shadowColor = p.color; ctx2.shadowBlur = 4;
+        ctx2.beginPath(); ctx2.roundRect(p.x, p.y - p.h/2, p.w, p.h, 3); ctx2.stroke();
+        ctx2.shadowBlur = 0;
+        // Mini page content lines
+        ctx2.fillStyle = p.color; ctx2.globalAlpha = Math.min(p.alpha, 0.6);
+        ctx2.fillRect(p.x + 4, p.y - p.h/2 + 5, p.w * 0.7, 3);
+        ctx2.globalAlpha = Math.min(p.alpha, 0.3);
+        ctx2.fillRect(p.x + 4, p.y - p.h/2 + 11, p.w * 0.9, 2);
+        ctx2.fillRect(p.x + 4, p.y - p.h/2 + 16, p.w * 0.6, 2);
+        ctx2.globalAlpha = Math.min(p.alpha, 0.9);
+        ctx2.fillStyle = '#34d399'; ctx2.font = 'bold 8px monospace'; ctx2.textAlign = 'right';
+        ctx2.fillText(p.cvr, p.x + p.w - 3, p.y - p.h/2 + p.h - 5);
+        ctx2.globalAlpha = 1;
+      }
+      requestAnimationFrame(draw2);
+    }
+    requestAnimationFrame(draw2);
+  }
+
+  // ── WOW 3: Contrast Engine ──────────────────────────────────────────────
+  const wow3Data = [
+    { visitor: 'SaaS founder · Google Ads', headline: 'Scale your Series A SaaS with proven SEO', body: "Built for founders who've found product-market fit. Here's what we'd do for you.", cta: 'Start Your Growth Sprint →', cvr: '11.4%', src: 'SaaS founder · Google Ads · hero-left layout' },
+    { visitor: 'Fintech CMO · LinkedIn', headline: 'Compliant fintech growth, delivered', body: 'FCA-ready marketing for regulated teams. Here is your growth playbook.', cta: 'Book a Demo →', cvr: '9.8%', src: 'Fintech CMO · LinkedIn · trust-heavy layout' },
+    { visitor: 'Agency owner · Cold Email', headline: 'Win more retainers with AI', body: 'Proven playbooks for digital agencies. Your next three clients are already searching.', cta: 'See the Playbook →', cvr: '8.7%', src: 'Agency owner · Cold Email · content-first layout' },
+  ];
+  let w3idx = 0;
+  function wow3Update() {
+    const d = wow3Data[w3idx % wow3Data.length]; w3idx++;
+    const els = ['wow3-visitor-badge','wow3-headline','wow3-body','wow3-cta','wow3-cvr','wow3-source'];
+    els.forEach(id => { const el = document.getElementById(id); if (el) el.style.opacity = '0'; });
+    setTimeout(() => {
+      const badge = document.getElementById('wow3-visitor-badge'); if (badge) { badge.textContent = `Personalised for: ${d.visitor}`; badge.style.opacity = '1'; }
+      const hl = document.getElementById('wow3-headline'); if (hl) { hl.textContent = d.headline; hl.style.opacity = '1'; }
+      const bd = document.getElementById('wow3-body'); if (bd) { bd.textContent = d.body; bd.style.opacity = '1'; }
+      const cta = document.getElementById('wow3-cta'); if (cta) { cta.textContent = d.cta; cta.style.opacity = '1'; }
+      const cvr = document.getElementById('wow3-cvr'); if (cvr) { cvr.textContent = d.cvr; cvr.style.opacity = '1'; }
+      const src = document.getElementById('wow3-source'); if (src) { src.textContent = d.src; src.style.opacity = '1'; }
+    }, 500);
+  }
+  wow3Update();
+  setInterval(wow3Update, 4500);
+
+  // ── WOW 4: Vertical Portals ─────────────────────────────────────────────
+  document.querySelectorAll<HTMLElement>('.wow4-portal').forEach(p => {
+    const accent = p.dataset.accent || '#d946ef';
+    p.addEventListener('mouseenter', () => {
+      p.style.borderColor = accent + '60';
+      p.style.background = accent + '08';
+      p.style.boxShadow = `0 0 30px ${accent}18`;
+    });
+    p.addEventListener('mouseleave', () => {
+      const origAccent = p.dataset.accent || '#d946ef';
+      p.style.borderColor = origAccent + '33';
+      p.style.background = origAccent + '08';
+      p.style.boxShadow = '';
+    });
+  });
+
+  // ── WOW 5: Recognition Wall ─────────────────────────────────────────────
+  const c5 = document.getElementById('wow5-canvas') as HTMLCanvasElement;
+  if (c5) {
+    const ctx5 = c5.getContext('2d')!;
+    const companies = [
+      { name:'TechPulse Ltd', vertical:'saas', color:'#60a5fa', desc:'B2B SaaS platform for project management. Series A, 40 employees.' },
+      { name:'SecureNet Group', vertical:'cybersecurity', color:'#ef4444', desc:'Enterprise cybersecurity. Zero-trust architecture specialists.' },
+      { name:'Meridian Advisory', vertical:'consultancy', color:'#34d399', desc:'Management consulting. Strategy, transformation, and M&A.' },
+      { name:'TalentBridge', vertical:'recruitment-tech', color:'#a78bfa', desc:'Recruitment technology platform. AI-powered candidate matching.' },
+      { name:'GrowthStack', vertical:'saas', color:'#60a5fa', desc:'Marketing analytics SaaS. Helps B2B teams attribute pipeline.' },
+      { name:'CipherShield', vertical:'cybersecurity', color:'#ef4444', desc:'Cloud security company. SIEM and endpoint detection.' },
+      { name:'NorthStar Partners', vertical:'consultancy', color:'#34d399', desc:'Strategy consultancy. Former Big 4 leadership team.' },
+      { name:'HireIQ', vertical:'recruitment-tech', color:'#a78bfa', desc:'AI recruitment. Reduces time-to-hire by 60%.' },
+      { name:'ScaleOps', vertical:'saas', color:'#60a5fa', desc:'DevOps automation platform. Used by 500+ engineering teams.' },
+      { name:'ThreatVault', vertical:'cybersecurity', color:'#ef4444', desc:'Threat intelligence. Real-time feeds for SOC teams.' },
+      { name:'Axiom Strategy', vertical:'consultancy', color:'#34d399', desc:'Digital transformation consultants. 300+ enterprise clients.' },
+      { name:'PeoplePath', vertical:'recruitment-tech', color:'#a78bfa', desc:'Talent sourcing platform. Passive candidate engagement.' },
+      { name:'Leapfrog.io', vertical:'saas', color:'#60a5fa', desc:'Product-led growth tooling. Onboarding + activation.' },
+      { name:'Sentinel Labs', vertical:'cybersecurity', color:'#ef4444', desc:'Application security testing. DAST/SAST automation.' },
+      { name:'Vertex Consulting', vertical:'consultancy', color:'#34d399', desc:'Operations and supply chain. Cost reduction specialists.' },
+    ];
+    interface Bubble { x: number; y: number; vx: number; vy: number; r: number; co: typeof companies[0]; hover: boolean; }
+    let bubbles: Bubble[] = [];
+    let mx5 = -999, my5 = -999;
+    function resize5() {
+      const dpr = window.devicePixelRatio || 1;
+      c5.width = c5.offsetWidth * dpr; c5.height = c5.offsetHeight * dpr;
+      ctx5.scale(dpr, dpr);
+      bubbles = companies.map((co, i) => ({
+        x: 80 + (i % 5) * (c5.offsetWidth / 5) + Math.random() * 60 - 30,
+        y: 40 + Math.floor(i / 5) * 90 + Math.random() * 30 - 15,
+        vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.2,
+        r: 42, co, hover: false,
+      }));
+    }
+    new ResizeObserver(resize5).observe(c5);
+    resize5();
+    c5.addEventListener('mousemove', e => {
+      const rect = c5.getBoundingClientRect();
+      mx5 = e.clientX - rect.left; my5 = e.clientY - rect.top;
+    });
+    c5.addEventListener('mouseleave', () => { mx5 = -999; my5 = -999; });
+    const previewInner = document.getElementById('wow5-preview-inner');
+    const hint = document.getElementById('wow5-hint');
+    let hoveredBubble: Bubble | null = null;
+    function draw5() {
+      const W = c5.offsetWidth, H = c5.offsetHeight;
+      ctx5.clearRect(0, 0, W, H);
+      hoveredBubble = null;
+      for (const b of bubbles) {
+        b.x += b.vx; b.y += b.vy;
+        if (b.x < b.r) b.vx = Math.abs(b.vx);
+        if (b.x > W - b.r) b.vx = -Math.abs(b.vx);
+        if (b.y < b.r) b.vy = Math.abs(b.vy);
+        if (b.y > H - b.r) b.vy = -Math.abs(b.vy);
+        const dx = mx5 - b.x, dy = my5 - b.y;
+        b.hover = Math.sqrt(dx*dx + dy*dy) < b.r;
+        if (b.hover) hoveredBubble = b;
+        const alpha = b.hover ? 1 : 0.6;
+        ctx5.globalAlpha = alpha;
+        ctx5.beginPath(); ctx5.roundRect(b.x - b.r, b.y - 18, b.r * 2, 36, 8);
+        ctx5.fillStyle = b.hover ? b.co.color + '18' : 'rgba(255,255,255,0.03)';
+        ctx5.fill();
+        ctx5.strokeStyle = b.hover ? b.co.color + '80' : 'rgba(255,255,255,0.06)';
+        ctx5.lineWidth = b.hover ? 1.5 : 0.5;
+        if (b.hover) { ctx5.shadowColor = b.co.color; ctx5.shadowBlur = 12; }
+        ctx5.stroke(); ctx5.shadowBlur = 0;
+        ctx5.fillStyle = b.hover ? b.co.color : 'rgba(255,255,255,0.6)';
+        ctx5.font = `${b.hover ? 'bold ' : ''}11px "SF Mono","Fira Code",monospace`;
+        ctx5.textAlign = 'center'; ctx5.textBaseline = 'middle';
+        ctx5.fillText(b.co.name, b.x, b.y - 4);
+        ctx5.fillStyle = b.hover ? b.co.color + 'cc' : 'rgba(255,255,255,0.25)';
+        ctx5.font = '9px "SF Mono","Fira Code",monospace';
+        ctx5.fillText(b.co.vertical, b.x, b.y + 8);
+        ctx5.globalAlpha = 1;
+      }
+      if (hoveredBubble && previewInner && hint) {
+        previewInner.style.opacity = '1'; hint.style.display = 'none';
+        const co = hoveredBubble.co;
+        const cn = document.getElementById('wow5-co'); if (cn) cn.textContent = co.name;
+        const cv = document.getElementById('wow5-vertical'); if (cv) cv.textContent = co.vertical;
+        const cd = document.getElementById('wow5-desc'); if (cd) cd.textContent = co.desc;
+      } else if (previewInner && hint) {
+        previewInner.style.opacity = '0'; hint.style.display = 'block';
+      }
+      requestAnimationFrame(draw5);
+    }
+    requestAnimationFrame(draw5);
+  }
+
+  // ── WOW 6: Signal to Page ───────────────────────────────────────────────
+  const c6 = document.getElementById('wow6-canvas') as HTMLCanvasElement;
+  if (c6) {
+    const ctx6 = c6.getContext('2d')!;
+    function resize6() { const dpr=window.devicePixelRatio||1; c6.width=c6.offsetWidth*dpr; c6.height=c6.offsetHeight*dpr; ctx6.scale(dpr,dpr); }
+    new ResizeObserver(resize6).observe(c6);
+    resize6();
+    const signals6 = [
+      { label: 'Source', val: 'Google Ads', color: '#60a5fa', yOff: -90 },
+      { label: 'Industry', val: 'SaaS', color: '#a78bfa', yOff: 0 },
+      { label: 'Intent', val: '0.87', color: '#34d399', yOff: 90 },
+    ];
+    const visitors6 = [
+      { source:'Google Ads', industry:'SaaS', intent:'0.87', headline:'"Scale your SaaS with AI"', cvr:'11.4%' },
+      { source:'LinkedIn', industry:'Fintech', intent:'0.74', headline:'"Compliant fintech growth"', cvr:'9.8%' },
+      { source:'Cold Email', industry:'Agency', intent:'0.62', headline:'"Win more retainers"', cvr:'8.2%' },
+    ];
+    let vIdx6 = 0, phase6 = 0;
+    interface Particle6 { t: number; sigIdx: number; speed: number; }
+    let particles6: Particle6[] = [];
+    let lastP6 = 0;
+    function draw6(ts: number) {
+      const W = c6.offsetWidth, H = c6.offsetHeight;
+      ctx6.clearRect(0, 0, W, H);
+      const t = ts * 0.001;
+      const orbX = W * 0.5, orbY = H * 0.5;
+      const srcX = W * 0.12, pageX = W * 0.88;
+      // Cycle visitor
+      const cycleT = 5;
+      const vi = Math.floor(t / cycleT) % visitors6.length;
+      const vo = visitors6[vi];
+      signals6[0].val = vo.source;
+      signals6[1].val = vo.industry;
+      signals6[2].val = vo.intent;
+      // Draw orb
+      const orbGrd = ctx6.createRadialGradient(orbX, orbY, 0, orbX, orbY, 55);
+      orbGrd.addColorStop(0, 'rgba(217,70,239,0.5)');
+      orbGrd.addColorStop(0.5, 'rgba(217,70,239,0.15)');
+      orbGrd.addColorStop(1, 'rgba(217,70,239,0)');
+      ctx6.fillStyle = orbGrd; ctx6.beginPath(); ctx6.arc(orbX, orbY, 55, 0, Math.PI*2); ctx6.fill();
+      ctx6.strokeStyle = 'rgba(217,70,239,0.6)'; ctx6.lineWidth = 1.5;
+      ctx6.shadowColor = '#d946ef'; ctx6.shadowBlur = 12;
+      ctx6.beginPath(); ctx6.arc(orbX, orbY, 28, 0, Math.PI*2); ctx6.stroke(); ctx6.shadowBlur = 0;
+      ctx6.fillStyle = 'rgba(255,255,255,0.7)'; ctx6.font = 'bold 8px "SF Mono",monospace'; ctx6.textAlign = 'center'; ctx6.textBaseline = 'middle';
+      ctx6.fillText('AI', orbX, orbY);
+      // Draw signal lines and labels
+      for (let i = 0; i < signals6.length; i++) {
+        const s = signals6[i];
+        const sy = orbY + s.yOff;
+        // Wire
+        ctx6.strokeStyle = s.color + '40'; ctx6.lineWidth = 1.5;
+        ctx6.beginPath(); ctx6.moveTo(srcX + 60, sy);
+        ctx6.bezierCurveTo(srcX + 140, sy, orbX - 80, orbY, orbX - 28, orbY);
+        ctx6.stroke();
+        // Output wire
+        ctx6.strokeStyle = '#d946ef40'; ctx6.lineWidth = 1.5;
+        ctx6.beginPath(); ctx6.moveTo(orbX + 28, orbY);
+        ctx6.bezierCurveTo(orbX + 80, orbY, pageX - 100, sy, pageX - 60, sy);
+        ctx6.stroke();
+        // Label
+        ctx6.fillStyle = s.color; ctx6.font = 'bold 9px "SF Mono",monospace'; ctx6.textAlign = 'right';
+        ctx6.fillText(s.label + ':', srcX + 50, sy - 6);
+        ctx6.fillStyle = 'white'; ctx6.font = '10px "SF Mono",monospace'; ctx6.textAlign = 'left';
+        ctx6.fillText(s.val, srcX + 55, sy + 6);
+      }
+      // Spawn particles
+      if (ts - lastP6 > 300) {
+        lastP6 = ts;
+        const si = Math.floor(Math.random() * 3);
+        particles6.push({ t: 0, sigIdx: si, speed: 0.006 + Math.random() * 0.003 });
+      }
+      // Draw particles
+      particles6 = particles6.filter(p => p.t < 1);
+      for (const p of particles6) {
+        p.t += p.speed;
+        const s = signals6[p.sigIdx];
+        const sy = orbY + s.yOff;
+        let px: number, py: number;
+        if (p.t < 0.5) {
+          const pt = p.t / 0.5;
+          // Bezier along input wire
+          const t0 = 1-pt, t1 = pt;
+          const cp1x = srcX+140, cp2x = orbX-80;
+          px = t0*t0*t0*(srcX+60) + 3*t0*t0*t1*cp1x + 3*t0*t1*t1*cp2x + t1*t1*t1*(orbX-28);
+          py = t0*t0*t0*sy + 3*t0*t0*t1*sy + 3*t0*t1*t1*orbY + t1*t1*t1*orbY;
+        } else {
+          const pt = (p.t - 0.5) / 0.5;
+          const t0 = 1-pt, t1 = pt;
+          const cp1x = orbX+80, cp2x = pageX-100;
+          px = t0*t0*t0*(orbX+28) + 3*t0*t0*t1*cp1x + 3*t0*t1*t1*cp2x + t1*t1*t1*(pageX-60);
+          py = t0*t0*t0*orbY + 3*t0*t0*t1*orbY + 3*t0*t1*t1*sy + t1*t1*t1*sy;
+        }
+        const pcol = p.t > 0.5 ? '#d946ef' : s.color;
+        ctx6.fillStyle = pcol; ctx6.shadowColor = pcol; ctx6.shadowBlur = 8;
+        ctx6.beginPath(); ctx6.arc(px, py, 3.5, 0, Math.PI*2); ctx6.fill(); ctx6.shadowBlur = 0;
+      }
+      // Page output
+      const pgX = pageX - 55, pgY = orbY - 65, pgW = 110, pgH = 130;
+      ctx6.strokeStyle = 'rgba(217,70,239,0.4)'; ctx6.lineWidth = 1;
+      ctx6.shadowColor = '#d946ef'; ctx6.shadowBlur = 8;
+      ctx6.beginPath(); ctx6.roundRect(pgX, pgY, pgW, pgH, 6); ctx6.stroke(); ctx6.shadowBlur = 0;
+      ctx6.fillStyle = 'rgba(6,7,18,0.7)'; ctx6.fill();
+      // Page content
+      ctx6.fillStyle = 'rgba(217,70,239,0.6)'; ctx6.fillRect(pgX+6, pgY+8, pgW-12, 3);
+      ctx6.fillStyle = 'rgba(255,255,255,0.7)'; ctx6.font = 'bold 7px "SF Mono",monospace'; ctx6.textAlign = 'left';
+      const words = vo.headline.replace(/"/g,'').split(' ');
+      const line1 = words.slice(0, Math.ceil(words.length/2)).join(' ');
+      const line2 = words.slice(Math.ceil(words.length/2)).join(' ');
+      ctx6.fillText(line1, pgX+6, pgY+22);
+      ctx6.fillText(line2, pgX+6, pgY+32);
+      ctx6.fillStyle = 'rgba(255,255,255,0.2)'; ctx6.fillRect(pgX+6, pgY+40, pgW-20, 2);
+      ctx6.fillRect(pgX+6, pgY+45, pgW-30, 2);
+      ctx6.fillStyle = '#d946ef'; ctx6.fillRect(pgX+6, pgY+54, 60, 14);
+      ctx6.fillStyle = 'rgba(255,255,255,0.9)'; ctx6.font = 'bold 7px "SF Mono",monospace';
+      ctx6.fillText('Get Started →', pgX+10, pgY+63);
+      ctx6.fillStyle = '#34d399'; ctx6.font = 'bold 9px "SF Mono",monospace'; ctx6.textAlign = 'center';
+      ctx6.fillText(vo.cvr + ' CVR', pageX - 28, pgY + pgH - 8);
+      requestAnimationFrame(draw6);
+    }
+    requestAnimationFrame(draw6);
+  }
+
+  // ── WOW 7: Emotional Map ────────────────────────────────────────────────
+  const c7 = document.getElementById('wow7-canvas') as HTMLCanvasElement;
+  const w7text = document.getElementById('wow7-text');
+  if (c7) {
+    const ctx7 = c7.getContext('2d')!;
+    function resize7() { const dpr=window.devicePixelRatio||1; c7.width=c7.offsetWidth*dpr; c7.height=c7.offsetHeight*dpr; ctx7.scale(dpr,dpr); }
+    new ResizeObserver(resize7).observe(c7);
+    resize7();
+    const sections7 = [
+      { label:'Recognition', name:'FirmHeroSection', y:0.45, desc:'Your prospects arrive curious. PelloPitch shows them themselves — their industry, their problems, their language.' },
+      { label:'Pain', name:'NarrativeSection', y:0.75, desc:'Before the solution, the pain must be felt. Real. Specific. Theirs. Not a generic problem statement.' },
+      { label:'Hope', name:'ShowcaseSection', y:0.25, desc:'The product demo, built from their own website. Not a template. Their reality, improved.' },
+      { label:'Proof', name:'ImpactSection', y:0.18, desc:'60 seconds to build. Zero effort. 24/7 delivery. Infinite scale. Numbers that close deals.' },
+      { label:'Action', name:'SetupSection', y:0.1, desc:'The booking call feels inevitable. They\'ve already experienced the value. This is just the next step.' },
+    ];
+    let mouseX7 = -1;
+    c7.addEventListener('mousemove', e => { const r = c7.getBoundingClientRect(); mouseX7 = e.clientX - r.left; });
+    c7.addEventListener('mouseleave', () => { mouseX7 = -1; });
+    let autoT7 = 0;
+    function draw7(ts: number) {
+      const W = c7.offsetWidth, H = c7.offsetHeight;
+      ctx7.clearRect(0, 0, W, H);
+      const t = ts * 0.001;
+      autoT7 = (t % 6) / 6;
+      const dotX = mouseX7 >= 0 ? mouseX7 / W : autoT7;
+      const pad = 60;
+      const cw = W - pad * 2;
+      // Flat generic line
+      ctx7.strokeStyle = 'rgba(82,82,91,0.4)'; ctx7.lineWidth = 1.5;
+      ctx7.setLineDash([4, 6]);
+      ctx7.beginPath(); ctx7.moveTo(pad, H * 0.6); ctx7.lineTo(W - pad, H * 0.6); ctx7.stroke();
+      ctx7.setLineDash([]);
+      ctx7.fillStyle = 'rgba(82,82,91,0.35)'; ctx7.font = '9px "SF Mono",monospace'; ctx7.textAlign = 'left';
+      ctx7.fillText('Generic page — flat engagement', pad, H * 0.6 - 8);
+      // PelloPitch arc
+      const pts: [number, number][] = sections7.map((s, i) => [pad + (i / (sections7.length - 1)) * cw, H * s.y]);
+      ctx7.strokeStyle = 'rgba(217,70,239,0.25)'; ctx7.lineWidth = 2;
+      ctx7.beginPath(); ctx7.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length; i++) {
+        const mx = (pts[i-1][0] + pts[i][0]) / 2;
+        ctx7.bezierCurveTo(mx, pts[i-1][1], mx, pts[i][1], pts[i][0], pts[i][1]);
+      }
+      ctx7.stroke();
+      // Active portion
+      const activeEndX = pad + dotX * cw;
+      ctx7.strokeStyle = '#d946ef'; ctx7.lineWidth = 2.5;
+      ctx7.shadowColor = '#d946ef'; ctx7.shadowBlur = 6;
+      ctx7.beginPath(); ctx7.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length; i++) {
+        if (pts[i-1][0] > activeEndX) break;
+        const mx = (pts[i-1][0] + pts[i][0]) / 2;
+        const ex = Math.min(pts[i][0], activeEndX);
+        ctx7.bezierCurveTo(mx, pts[i-1][1], mx, pts[i][1], ex, pts[i][1]);
+      }
+      ctx7.stroke(); ctx7.shadowBlur = 0;
+      // Dot
+      const closestSec = sections7.reduce((best, s, i) => {
+        const sx = pad + (i / (sections7.length - 1)) * cw;
+        return Math.abs(sx - activeEndX * W / W) < Math.abs(pad + (best.idx/(sections7.length-1))*cw - activeEndX) ? {idx:i,...s} : best;
+      }, {idx:0,...sections7[0]});
+      const dotIdx = sections7.findIndex((_, i) => Math.abs((pad + i/(sections7.length-1)*cw) - activeEndX) < cw/(sections7.length-1)/2);
+      const activeSec = dotIdx >= 0 ? sections7[dotIdx] : sections7[Math.floor(dotX * (sections7.length - 0.01))];
+      const activeIdx = dotIdx >= 0 ? dotIdx : Math.floor(dotX * (sections7.length - 0.01));
+      const dotPx = pad + activeIdx / (sections7.length - 1) * cw;
+      const dotPy = H * activeSec.y;
+      ctx7.fillStyle = '#d946ef'; ctx7.shadowColor = '#d946ef'; ctx7.shadowBlur = 16;
+      ctx7.beginPath(); ctx7.arc(dotPx, dotPy, 7, 0, Math.PI * 2); ctx7.fill(); ctx7.shadowBlur = 0;
+      // Section labels at bottom
+      sections7.forEach((s, i) => {
+        const sx = pad + (i / (sections7.length - 1)) * cw;
+        const active = i === activeIdx;
+        ctx7.fillStyle = active ? '#d946ef' : 'rgba(255,255,255,0.25)';
+        ctx7.font = `${active ? 'bold ' : ''}10px "SF Mono",monospace`; ctx7.textAlign = 'center';
+        ctx7.fillText(s.label, sx, H - 8);
+        // Tick
+        ctx7.strokeStyle = active ? '#d946ef' : 'rgba(255,255,255,0.1)'; ctx7.lineWidth = 1;
+        ctx7.beginPath(); ctx7.moveTo(sx, H * s.y + (s.y > 0.5 ? -12 : 12)); ctx7.lineTo(sx, H - 20); ctx7.stroke();
+      });
+      // Update text
+      const sn = document.getElementById('wow7-section-name'); if (sn) sn.textContent = activeSec.name;
+      const sd = document.getElementById('wow7-section-desc'); if (sd) sd.textContent = activeSec.desc;
+      requestAnimationFrame(draw7);
+    }
+    requestAnimationFrame(draw7);
+  }
+
+  // ── WOW 8: Build in Public ──────────────────────────────────────────────
+  const w8term = document.getElementById('wow8-terminal');
+  if (w8term) {
+    const visitors8 = [
+      { url:'neilpatel.com', company:'NeilPatel Digital', services:'SEO · Content · PPC', vertical:'marketing-agency', conf:'0.94', stage1:'Prospect Intelligence', stage2:'Market Projections × 3', stage3:'Business Impact', href:'pellopitch.com/demo/neilpatel', time:'4.2s', cvr:'11.4%' },
+      { url:'crowdstrike.com', company:'CrowdStrike', services:'EDR · SIEM · Threat Intel', vertical:'cybersecurity', conf:'0.97', stage1:'Risk Intelligence', stage2:'Threat Landscape', stage3:'Security Impact', href:'pellopitch.com/demo/crowdstrike', time:'3.9s', cvr:'9.8%' },
+      { url:'bain.com', company:'Bain & Company', services:'Strategy · M&A · Operations', vertical:'consultancy', conf:'0.96', stage1:'Client Intelligence', stage2:'Competitive Landscape', stage3:'Business Case', href:'pellopitch.com/demo/bain', time:'4.5s', cvr:'10.2%' },
+    ];
+    let v8idx = 0;
+    function s(cls: string, t: string) { return `<span class="${cls}">${t}</span>`; }
+    function sleep8(ms: number) { return new Promise<void>(r => setTimeout(r, ms)); }
+    async function typeChar(el: HTMLElement, html: string, delay = 18) {
+      const tmp = document.createElement('div'); tmp.innerHTML = html;
+      const text = tmp.textContent || '';
+      // Type plain text but render with colours by reconstructing
+      const line = document.createElement('div'); line.style.cssText = 'min-height:1.8em;';
+      el.appendChild(line); el.scrollTop = el.scrollHeight;
+      let plainIdx = 0;
+      for (let ci = 0; ci < html.length; ci++) {
+        line.innerHTML = html.substring(0, ci + 1) + '<span style="opacity:0.7;color:#d946ef;">▋</span>';
+        el.scrollTop = el.scrollHeight;
+        // Only delay on visible chars (skip tags)
+        if (html[ci] !== '<' && html[ci] !== '>') { await sleep8(delay); plainIdx++; }
+        else if (html[ci] === '<') { while (ci < html.length && html[ci] !== '>') ci++; }
+      }
+      line.innerHTML = html;
+      el.scrollTop = el.scrollHeight;
+    }
+    function addLine(el: HTMLElement, html: string) {
+      const line = document.createElement('div'); line.style.cssText='min-height:1.8em;';
+      line.innerHTML = html; el.appendChild(line); el.scrollTop = el.scrollHeight;
+    }
+    async function runBuild8() {
+      while (true) {
+        const v = visitors8[v8idx % visitors8.length]; v8idx++;
+        w8term.innerHTML = '';
+        addLine(w8term, `<span style="color:rgba(255,255,255,0.2);">╔══════════════════════════════════════════════════════════╗</span>`);
+        addLine(w8term, `<span style="color:rgba(255,255,255,0.2);">║</span>  <span style="color:#d946ef;font-weight:700;">PELLOPITCH BUILD ENGINE v3.2</span>  <span style="color:#34d399;">● LIVE</span>                    <span style="color:rgba(255,255,255,0.2);">║</span>`);
+        addLine(w8term, `<span style="color:rgba(255,255,255,0.2);">╚══════════════════════════════════════════════════════════╝</span>`);
+        addLine(w8term, '');
+        await sleep8(300);
+        await typeChar(w8term, `<span style="color:#d946ef;">$</span> <span style="color:white;">pitch new --url=${v.url}</span>`, 22);
+        addLine(w8term, '');
+        await sleep8(200);
+        addLine(w8term, `  <span style="color:#60a5fa;">↳ Normalising URL...</span>           <span style="color:rgba(255,255,255,0.5);">${v.url}</span> <span style="color:#34d399;">✓</span>`);
+        await sleep8(180);
+        addLine(w8term, `  <span style="color:#60a5fa;">↳ Checking cache...</span>            <span style="color:#fbbf24;">MISS — building fresh</span>`);
+        await sleep8(200);
+        addLine(w8term, `  <span style="color:#60a5fa;">↳ Spawning crawler...</span>          <span style="color:rgba(255,255,255,0.4);">Firecrawl v4.13</span>`);
+        await sleep8(300);
+        addLine(w8term, '');
+        // Progress bars
+        const crawlBar = document.createElement('div'); crawlBar.style.minHeight='1.8em'; w8term.appendChild(crawlBar); w8term.scrollTop = w8term.scrollHeight;
+        for (let i = 0; i <= 10; i++) {
+          const fill = '█'.repeat(i) + '░'.repeat(10-i);
+          crawlBar.innerHTML = `  <span style="color:#a78bfa;">CRAWL</span> <span style="color:#d946ef;">[${fill}]</span> <span style="color:rgba(255,255,255,0.4);">${i*10}%</span>`;
+          await sleep8(80);
+        }
+        await sleep8(150);
+        addLine(w8term, `  <span style="color:#60a5fa;">↳ Pages crawled:</span>               <span style="color:white;">12</span>`);
+        addLine(w8term, `  <span style="color:#60a5fa;">↳ Words extracted:</span>             <span style="color:white;">8,432</span>`);
+        addLine(w8term, `  <span style="color:#34d399;">↳ Markdown generated:</span>          <span style="color:#34d399;">✓</span>`);
+        await sleep8(250); addLine(w8term, '');
+        const anaBar = document.createElement('div'); anaBar.style.minHeight='1.8em'; w8term.appendChild(anaBar); w8term.scrollTop = w8term.scrollHeight;
+        for (let i = 0; i <= 10; i++) {
+          anaBar.innerHTML = `  <span style="color:#a78bfa;">ANALYSE</span> <span style="color:#d946ef;">[${'█'.repeat(i)+'░'.repeat(10-i)}]</span> <span style="color:rgba(255,255,255,0.4);">${i*10}%</span>`;
+          await sleep8(70);
+        }
+        await sleep8(150);
+        addLine(w8term, `  <span style="color:#60a5fa;">↳ Model:</span>                       <span style="color:white;">gpt-4.1-mini</span>`);
+        addLine(w8term, `  <span style="color:#60a5fa;">↳ Company:</span>                     <span style="color:white;">${v.company}</span>`);
+        addLine(w8term, `  <span style="color:#60a5fa;">↳ Services:</span>                    <span style="color:rgba(255,255,255,0.6);">${v.services}</span>`);
+        addLine(w8term, `  <span style="color:#60a5fa;">↳ Vertical detected:</span>           <span style="color:#d946ef;font-weight:700;">${v.vertical}</span>  <span style="color:#34d399;">✓</span>  <span style="color:rgba(255,255,255,0.3);">(conf: ${v.conf})</span>`);
+        await sleep8(250); addLine(w8term, '');
+        const pipBar = document.createElement('div'); pipBar.style.minHeight='1.8em'; w8term.appendChild(pipBar); w8term.scrollTop = w8term.scrollHeight;
+        for (let i = 0; i <= 10; i++) {
+          pipBar.innerHTML = `  <span style="color:#a78bfa;">PIPELINE: ${v.vertical}</span> <span style="color:#d946ef;">[${'█'.repeat(i)+'░'.repeat(10-i)}]</span> <span style="color:rgba(255,255,255,0.4);">${i*10}%</span>`;
+          await sleep8(80);
+        }
+        await sleep8(150);
+        addLine(w8term, `  <span style="color:#60a5fa;">↳ Stage 1</span>  <span style="color:rgba(255,255,255,0.5);">${v.stage1}...</span>       <span style="color:#34d399;">✓</span>  <span style="color:rgba(255,255,255,0.2);">(67ms)</span>`);
+        await sleep8(120);
+        addLine(w8term, `  <span style="color:#60a5fa;">↳ Stage 2</span>  <span style="color:rgba(255,255,255,0.5);">${v.stage2}...</span>  <span style="color:#34d399;">✓</span>  <span style="color:rgba(255,255,255,0.2);">(parallel, 112ms)</span>`);
+        await sleep8(120);
+        addLine(w8term, `  <span style="color:#60a5fa;">↳ Stage 3</span>  <span style="color:rgba(255,255,255,0.5);">${v.stage3}...</span>       <span style="color:#34d399;">✓</span>  <span style="color:rgba(255,255,255,0.2);">(45ms)</span>`);
+        await sleep8(250); addLine(w8term, '');
+        const renBar = document.createElement('div'); renBar.style.minHeight='1.8em'; w8term.appendChild(renBar); w8term.scrollTop = w8term.scrollHeight;
+        for (let i = 0; i <= 10; i++) {
+          renBar.innerHTML = `  <span style="color:#a78bfa;">RENDER</span> <span style="color:#d946ef;">[${'█'.repeat(i)+'░'.repeat(10-i)}]</span> <span style="color:rgba(255,255,255,0.4);">${i*10}%</span>`;
+          await sleep8(60);
+        }
+        await sleep8(150);
+        for (const sec of ['FirmHeroSection','NarrativeSection','ShowcaseSection','ImpactSection','SetupSection']) {
+          addLine(w8term, `  <span style="color:#60a5fa;">↳ ${sec}</span>          <span style="color:#34d399;">✓</span>`);
+          await sleep8(90);
+        }
+        await sleep8(300); addLine(w8term, '');
+        addLine(w8term, `  <span style="color:rgba(255,255,255,0.2);">┌──────────────────────────────────────────────┐</span>`);
+        addLine(w8term, `  <span style="color:rgba(255,255,255,0.2);">│</span>  <span style="color:#d946ef;font-weight:700;">DEMO LIVE</span>  →  <span style="color:rgba(255,255,255,0.6);">${v.href}</span>   <span style="color:rgba(255,255,255,0.2);">│</span>`);
+        addLine(w8term, `  <span style="color:rgba(255,255,255,0.2);">│</span>  <span style="color:rgba(255,255,255,0.4);">Build time:</span> <span style="color:#34d399;">${v.time}</span>   <span style="color:rgba(255,255,255,0.4);">CVR projection:</span> <span style="color:#d946ef;font-weight:700;">${v.cvr}</span>   <span style="color:rgba(255,255,255,0.2);">│</span>`);
+        addLine(w8term, `  <span style="color:rgba(255,255,255,0.2);">└──────────────────────────────────────────────┘</span>`);
+        addLine(w8term, '');
+        addLine(w8term, `<span style="color:#d946ef;">$ </span><span style="animation:wow8-pulse 1s infinite;color:#d946ef;">▋</span>`);
+        await sleep8(3500);
+      }
+    }
+    runBuild8();
+  }
+
+  // ── WOW 9: Living Page ──────────────────────────────────────────────────
+  const wow9Data = [
+    { visitor:'SaaS founder · Google Ads', headline:'Scale your Series A SaaS with proven SEO', sub:"Built for founders who've found product-market fit. Here's the growth playbook for you.", cta:'Start Your Growth Sprint →', feat1:'SEO Architecture', feat2:'Content Pipeline', feat3:'Growth Reporting', proof:'Trusted by 200+ SaaS teams', cvr:'11.4%' },
+    { visitor:'Fintech CMO · LinkedIn', headline:'Compliant fintech growth, delivered', sub:'FCA-ready marketing that builds trust with regulated buyers. Your credibility, amplified.', cta:'Book a Demo →', feat1:'Compliance Messaging', feat2:'Regulated Content', feat3:'Trust Signals', proof:'Trusted by 80+ fintech teams', cvr:'9.8%' },
+    { visitor:'Agency owner · Cold Email', headline:'Win more retainers with AI-powered pitches', sub:'Proven playbooks for digital agencies. Your next three clients are already searching for you.', cta:'See the Playbook →', feat1:'Pitch Optimisation', feat2:'Client Acquisition', feat3:'Retainer Growth', proof:'Used by 150+ agencies globally', cvr:'8.7%' },
+  ];
+  let w9idx = 0;
+  let w9cursor = document.getElementById('wow9-cursor');
+  const w9targets = [
+    { id:'wow9-headline', cx: '45%', cy: '38%' },
+    { id:'wow9-cta', cx: '25%', cy: '55%' },
+    { id:'wow9-feat1', cx: '20%', cy: '72%' },
+    { id:'wow9-proof', cx: '15%', cy: '88%' },
+  ];
+  async function animateW9() {
+    while (true) {
+      const d = wow9Data[w9idx % wow9Data.length]; w9idx++;
+      // Show cursor
+      if (w9cursor) { w9cursor.style.opacity = '1'; }
+      for (const target of w9targets) {
+        if (w9cursor) { w9cursor.style.left = target.cx; w9cursor.style.top = target.cy; }
+        await new Promise<void>(r => setTimeout(r, 600));
+        const el = document.getElementById(target.id);
+        if (el) {
+          el.style.opacity = '0.3';
+          el.style.background = 'rgba(217,70,239,0.15)';
+          el.style.transition = 'all 0.15s';
+          await new Promise<void>(r => setTimeout(r, 150));
+          // Swap content
+          switch(target.id) {
+            case 'wow9-headline': el.textContent = d.headline; break;
+            case 'wow9-cta': el.textContent = d.cta; break;
+            case 'wow9-feat1': el.textContent = d.feat1; break;
+            case 'wow9-proof': el.textContent = d.proof; break;
+          }
+          el.style.opacity = '1'; el.style.background = '';
+          await new Promise<void>(r => setTimeout(r, 400));
+        }
+      }
+      // Update remaining fields
+      const sub = document.getElementById('wow9-sub'); if (sub) { sub.style.opacity='0'; setTimeout(()=>{sub.textContent=d.sub;sub.style.opacity='1';},300); }
+      const vtag = document.getElementById('wow9-visitor-tag'); if (vtag) { vtag.style.opacity='0'; setTimeout(()=>{vtag.textContent=`Optimised for: ${d.visitor}`;vtag.style.opacity='1';},300); }
+      const feat2 = document.getElementById('wow9-feat2'); if (feat2) feat2.textContent=d.feat2;
+      const feat3 = document.getElementById('wow9-feat3'); if (feat3) feat3.textContent=d.feat3;
+      const cvr = document.getElementById('wow9-cvr-badge'); if (cvr) cvr.textContent=`CVR: ${d.cvr}`;
+      if (w9cursor) w9cursor.style.opacity = '0';
+      await new Promise<void>(r => setTimeout(r, 3000));
+    }
+  }
+  animateW9();
+
+  // ── WOW 10: One URL. Infinite Pages. ───────────────────────────────────
+  const c10 = document.getElementById('wow10-canvas') as HTMLCanvasElement;
+  if (c10) {
+    const ctx10 = c10.getContext('2d')!;
+    function resize10() { const dpr=window.devicePixelRatio||1; c10.width=c10.offsetWidth*dpr; c10.height=c10.offsetHeight*dpr; ctx10.scale(dpr,dpr); }
+    new ResizeObserver(resize10).observe(c10);
+    resize10();
+    const sources10 = ['#60a5fa','#a78bfa','#fbbf24','#34d399','#ef4444'];
+    const visitors10 = ['SaaS founder · Google Ads','Fintech CMO · LinkedIn','Agency owner · Cold Email','E-com brand · Organic','B2B startup · Direct'];
+    const cvrs10 = ['11.2%','9.8%','8.7%','10.4%','11.0%'];
+    const headlines10 = ['"Scale your SaaS with AI"','"Compliant fintech growth"','"Win more retainers"','"E-com revenue, amplified"','"Your growth engine, built"'];
+    interface PageThumb { x: number; y: number; vx: number; vy: number; alpha: number; color: string; visitor: string; cvr: string; headline: string; age: number; w: number; h: number; }
+    let thumbs: PageThumb[] = [];
+    let lastSpawn10 = 0;
+    function draw10(ts: number) {
+      const W = c10.offsetWidth, H = c10.offsetHeight;
+      ctx10.clearRect(0, 0, W, H);
+      const cx = W * 0.5, cy = H * 0.5;
+      const t = ts * 0.001;
+      // Centre URL text
+      const urlAlpha = 0.85 + Math.sin(t * 0.5) * 0.1;
+      ctx10.globalAlpha = urlAlpha;
+      ctx10.fillStyle = 'white';
+      ctx10.font = `bold ${Math.min(W * 0.07, 52)}px -apple-system,sans-serif`;
+      ctx10.textAlign = 'center'; ctx10.textBaseline = 'middle';
+      ctx10.fillText('neilpatel.com', cx, cy);
+      ctx10.globalAlpha = 0.3;
+      ctx10.font = `${Math.min(W * 0.022, 16)}px "SF Mono",monospace`;
+      ctx10.fillStyle = '#d946ef';
+      ctx10.fillText('One URL. Infinite pages.', cx, cy + 42);
+      ctx10.globalAlpha = 1;
+      // Subtle glow behind URL
+      const grd = ctx10.createRadialGradient(cx, cy, 0, cx, cy, 120);
+      grd.addColorStop(0, 'rgba(217,70,239,0.06)');
+      grd.addColorStop(1, 'rgba(217,70,239,0)');
+      ctx10.fillStyle = grd; ctx10.beginPath(); ctx10.arc(cx, cy, 120, 0, Math.PI*2); ctx10.fill();
+      // Spawn thumbs
+      if (ts - lastSpawn10 > 800) {
+        lastSpawn10 = ts;
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 0.6 + Math.random() * 0.8;
+        const si = Math.floor(Math.random() * 5);
+        thumbs.push({ x: cx, y: cy, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, alpha: 0.9, color: sources10[si], visitor: visitors10[si], cvr: cvrs10[si], headline: headlines10[si], age: 0, w: 90, h: 62 });
+      }
+      // Update/draw thumbs
+      thumbs = thumbs.filter(p => p.alpha > 0.02);
+      for (const p of thumbs) {
+        p.x += p.vx; p.y += p.vy; p.age += 0.01;
+        const dist = Math.sqrt((p.x-cx)**2 + (p.y-cy)**2);
+        if (dist > 80) p.alpha -= 0.004;
+        if (dist > W * 0.42) p.alpha -= 0.02;
+        ctx10.globalAlpha = Math.min(p.alpha, 0.85);
+        // Card
+        ctx10.strokeStyle = p.color + 'aa'; ctx10.lineWidth = 1;
+        ctx10.shadowColor = p.color; ctx10.shadowBlur = 6;
+        ctx10.beginPath(); ctx10.roundRect(p.x - p.w/2, p.y - p.h/2, p.w, p.h, 5);
+        ctx10.fillStyle = 'rgba(6,7,18,0.9)'; ctx10.fill();
+        ctx10.stroke(); ctx10.shadowBlur = 0;
+        // Content
+        ctx10.fillStyle = p.color; ctx10.fillRect(p.x - p.w/2 + 5, p.y - p.h/2 + 7, p.w - 10, 2);
+        ctx10.fillStyle = 'rgba(255,255,255,0.6)'; ctx10.font = '6.5px "SF Mono",monospace'; ctx10.textAlign = 'left';
+        const words = p.headline.replace(/"/g,'').split(' ');
+        ctx10.fillText(words.slice(0,3).join(' '), p.x - p.w/2 + 5, p.y - p.h/2 + 18);
+        ctx10.fillText(words.slice(3).join(' '), p.x - p.w/2 + 5, p.y - p.h/2 + 27);
+        ctx10.fillStyle = 'rgba(255,255,255,0.2)';
+        ctx10.fillRect(p.x - p.w/2 + 5, p.y - p.h/2 + 33, p.w * 0.6, 1.5);
+        ctx10.fillRect(p.x - p.w/2 + 5, p.y - p.h/2 + 38, p.w * 0.4, 1.5);
+        ctx10.fillStyle = '#34d399'; ctx10.font = 'bold 7px "SF Mono",monospace'; ctx10.textAlign = 'right';
+        ctx10.fillText(p.cvr, p.x + p.w/2 - 4, p.y + p.h/2 - 6);
+        ctx10.fillStyle = p.color + 'aa'; ctx10.font = '6px "SF Mono",monospace'; ctx10.textAlign = 'left';
+        ctx10.fillText(p.visitor, p.x - p.w/2 + 5, p.y + p.h/2 - 6);
+        ctx10.globalAlpha = 1;
+      }
+      requestAnimationFrame(draw10);
+    }
+    requestAnimationFrame(draw10);
+  }
+})();
+</script>
