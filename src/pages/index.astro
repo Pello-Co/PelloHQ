@@ -560,6 +560,23 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
   }
+
+  /* Mobile: fix PelloReach and PelloSocial canvas overflow */
+  @media (max-width: 1023px) {
+    /* Hide the floating Social HUD glass — it overflows on mobile */
+    #soc-hud-glass {
+      display: none !important;
+    }
+    /* Clip bg canvases tightly to card bounds */
+    .product-card[data-product="1"] .product-bg,
+    .product-card[data-product="3"] .product-bg {
+      clip-path: inset(0 round 1.25rem);
+    }
+    /* Prevent canvas tooltip overlays escaping product card */
+    .product-card {
+      isolation: isolate;
+    }
+  }
 </style>
 
 <script>
