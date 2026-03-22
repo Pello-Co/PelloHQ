@@ -175,7 +175,7 @@ const statusBg: Record<string, string> = {
       class={`grid grid-cols-1 lg:grid-cols-2 gap-12 xl:gap-20 items-center ${flip ? 'lg:flex-row-reverse' : ''}`}
     >
       <!-- Info side -->
-      <div class={`ps-info flex flex-col ${flip ? 'lg:order-2' : 'lg:order-1'}`}>
+      <div class={`ps-info flex flex-col ${flip ? 'order-1 lg:order-2' : 'lg:order-1'}`}>
         <!-- Product badge -->
         <div class="flex items-center gap-3 mb-6">
           <div
@@ -274,7 +274,7 @@ const statusBg: Record<string, string> = {
       </div>
 
       <!-- Visual side -->
-      <div class={`ps-visual ${flip ? 'lg:order-1' : 'lg:order-2'}`}>
+      <div class={`ps-visual ${flip ? 'order-2 lg:order-1' : 'lg:order-2'}`}>
         <div class="product-visual-panel" style={`--panel-glow: ${product.color}18;`}>
           <!-- Panel header -->
           <div
