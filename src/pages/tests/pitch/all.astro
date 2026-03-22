@@ -1823,37 +1823,61 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
               <div id="v31-terminal" style="background:rgba(6,7,18,0.98);padding:1.25rem 1.5rem;font-family:'SF Mono','Fira Code',monospace;font-size:0.75rem;line-height:1.8;height:340px;overflow-y:auto;display:none;"></div>
               <!-- Phase 4: Website reveal -->
               <div id="v31-reveal-phase" style="background:rgba(6,7,18,0.98);height:340px;display:none;align-items:center;justify-content:center;overflow:hidden;position:relative;">
-                <!-- Shimmer sweep overlay -->
-                <div id="v31-shimmer" style="position:absolute;inset:0;z-index:10;pointer-events:none;background:linear-gradient(105deg,transparent 35%,rgba(217,70,239,0.18) 50%,transparent 65%);transform:translateX(-100%);transition:transform 0.8s cubic-bezier(0.4,0,0.2,1);"></div>
+                <!-- Glow corona behind page -->
+                <div id="v31-corona" style="position:absolute;inset:0;z-index:0;pointer-events:none;opacity:0;transition:opacity 0.8s ease;background:radial-gradient(ellipse 80% 60% at 50% 50%,rgba(217,70,239,0.08) 0%,transparent 70%);"></div>
+                <!-- Shimmer sweep -->
+                <div id="v31-shimmer" style="position:absolute;inset:0;z-index:11;pointer-events:none;background:linear-gradient(105deg,transparent 20%,rgba(255,255,255,0.06) 40%,rgba(217,70,239,0.22) 50%,rgba(255,255,255,0.06) 60%,transparent 80%);transform:translateX(-150%);transition:transform 0.9s cubic-bezier(0.4,0,0.2,1);"></div>
+                <!-- Second shimmer (delayed) -->
+                <div id="v31-shimmer2" style="position:absolute;inset:0;z-index:11;pointer-events:none;background:linear-gradient(105deg,transparent 20%,rgba(255,255,255,0.03) 40%,rgba(217,70,239,0.1) 50%,rgba(255,255,255,0.03) 60%,transparent 80%);transform:translateX(-150%);transition:transform 0.9s cubic-bezier(0.4,0,0.2,1);"></div>
                 <!-- Mock website -->
-                <div id="v31-site" style="width:100%;height:100%;opacity:0;transform:scale(0.96);transition:opacity 0.5s ease,transform 0.5s ease;overflow:hidden;">
+                <div id="v31-site" style="width:100%;height:100%;opacity:0;transform:scale(0.94) translateY(6px);transition:opacity 0.6s ease,transform 0.6s cubic-bezier(0.34,1.2,0.64,1);overflow:hidden;position:relative;z-index:5;">
                   <!-- Browser chrome -->
-                  <div style="background:rgba(0,0,0,0.5);padding:0.5rem 0.75rem;display:flex;align-items:center;gap:0.6rem;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;">
+                  <div style="background:rgba(0,0,0,0.6);padding:0.5rem 0.75rem;display:flex;align-items:center;gap:0.6rem;border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;">
                     <div style="display:flex;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#ff5f57;display:block;"></span><span style="width:8px;height:8px;border-radius:50%;background:#febc2e;display:block;"></span><span style="width:8px;height:8px;border-radius:50%;background:#28c840;display:block;"></span></div>
                     <div id="v31-site-url" style="flex:1;background:rgba(255,255,255,0.06);border-radius:4px;padding:0.2rem 0.6rem;font-family:monospace;font-size:0.65rem;color:rgba(255,255,255,0.4);text-align:center;"></div>
-                    <span id="v31-cvr-badge" style="font-family:monospace;font-size:0.65rem;font-weight:700;color:#34d399;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);border-radius:999px;padding:0.1rem 0.5rem;"></span>
+                    <span id="v31-cvr-badge" style="font-family:monospace;font-size:0.65rem;font-weight:700;color:#34d399;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);border-radius:999px;padding:0.1rem 0.5rem;opacity:0;transition:opacity 0.4s ease 0.8s;"></span>
                   </div>
-                  <!-- Page content — reveals row by row -->
-                  <div style="padding:1.2rem 1.2rem 0;display:flex;flex-direction:column;gap:0.75rem;">
-                    <div id="v31-r0" style="opacity:0;transform:translateY(8px);transition:all 0.4s ease;">
-                      <div id="v31-site-badge" style="display:inline-block;border-radius:999px;padding:0.15rem 0.7rem;font-family:monospace;font-size:0.62rem;font-weight:700;margin-bottom:0.4rem;"></div>
+                  <!-- Page body -->
+                  <div style="padding:1.1rem 1.2rem 0;display:flex;flex-direction:column;gap:0.6rem;">
+                    <!-- Visitor tag -->
+                    <div id="v31-r0" style="opacity:0;transform:translateY(10px);transition:all 0.45s cubic-bezier(0.34,1.2,0.64,1);">
+                      <div id="v31-site-badge" style="display:inline-block;border-radius:999px;padding:0.15rem 0.7rem;font-family:monospace;font-size:0.6rem;font-weight:700;"></div>
                     </div>
-                    <div id="v31-r1" style="opacity:0;transform:translateY(8px);transition:all 0.4s ease 0.08s;">
-                      <div id="v31-site-headline" style="font-size:1.05rem;font-weight:800;color:white;line-height:1.25;"></div>
+                    <!-- Headline — typewriter -->
+                    <div id="v31-r1" style="opacity:0;transform:translateY(10px);transition:all 0.45s cubic-bezier(0.34,1.2,0.64,1) 0.07s;">
+                      <div id="v31-site-headline" style="font-size:1.1rem;font-weight:800;color:white;line-height:1.2;min-height:1.4rem;"></div>
                     </div>
-                    <div id="v31-r2" style="opacity:0;transform:translateY(8px);transition:all 0.4s ease 0.16s;">
-                      <div id="v31-site-sub" style="font-size:0.72rem;color:rgba(255,255,255,0.45);line-height:1.5;max-width:92%;"></div>
+                    <!-- Subline -->
+                    <div id="v31-r2" style="opacity:0;transform:translateY(10px);transition:all 0.45s cubic-bezier(0.34,1.2,0.64,1) 0.14s;">
+                      <div id="v31-site-sub" style="font-size:0.7rem;color:rgba(255,255,255,0.45);line-height:1.5;max-width:90%;"></div>
                     </div>
-                    <div id="v31-r3" style="opacity:0;transform:translateY(8px);transition:all 0.4s ease 0.24s;">
-                      <div id="v31-site-cta" style="display:inline-block;padding:0.45rem 1.1rem;border-radius:6px;font-size:0.75rem;font-weight:700;color:white;"></div>
+                    <!-- CTA with glow ring -->
+                    <div id="v31-r3" style="opacity:0;transform:translateY(10px);transition:all 0.45s cubic-bezier(0.34,1.2,0.64,1) 0.21s;position:relative;display:inline-flex;align-items:center;">
+                      <div id="v31-cta-glow" style="position:absolute;inset:-4px;border-radius:10px;opacity:0;transition:opacity 0.5s ease;filter:blur(8px);"></div>
+                      <div id="v31-site-cta" style="position:relative;z-index:1;display:inline-block;padding:0.45rem 1.1rem;border-radius:6px;font-size:0.75rem;font-weight:700;color:white;cursor:pointer;"></div>
                     </div>
-                    <div id="v31-r4" style="opacity:0;transform:translateY(8px);transition:all 0.4s ease 0.34s;display:flex;gap:0.5rem;margin-top:0.25rem;">
-                      <div style="flex:1;height:38px;border-radius:5px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);"></div>
-                      <div style="flex:1;height:38px;border-radius:5px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.04);"></div>
-                      <div style="flex:1;height:38px;border-radius:5px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);"></div>
+                    <!-- Feature blocks -->
+                    <div id="v31-r4" style="opacity:0;transform:translateY(10px);transition:all 0.45s cubic-bezier(0.34,1.2,0.64,1) 0.3s;display:flex;gap:0.4rem;margin-top:0.1rem;">
+                      <div id="v31-feat1" style="flex:1;padding:0.4rem 0.5rem;border-radius:5px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);">
+                        <div style="font-size:0.6rem;font-weight:700;color:rgba(255,255,255,0.5);margin-bottom:0.15rem;" id="v31-f1t"></div>
+                        <div style="height:2px;width:60%;border-radius:1px;background:rgba(255,255,255,0.08);"></div>
+                      </div>
+                      <div id="v31-feat2" style="flex:1;padding:0.4rem 0.5rem;border-radius:5px;border:1px solid rgba(255,255,255,0.05);background:rgba(255,255,255,0.015);">
+                        <div style="font-size:0.6rem;font-weight:700;color:rgba(255,255,255,0.4);margin-bottom:0.15rem;" id="v31-f2t"></div>
+                        <div style="height:2px;width:45%;border-radius:1px;background:rgba(255,255,255,0.06);"></div>
+                      </div>
+                      <div id="v31-feat3" style="flex:1;padding:0.4rem 0.5rem;border-radius:5px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.01);">
+                        <div style="font-size:0.6rem;font-weight:700;color:rgba(255,255,255,0.3);margin-bottom:0.15rem;" id="v31-f3t"></div>
+                        <div style="height:2px;width:70%;border-radius:1px;background:rgba(255,255,255,0.05);"></div>
+                      </div>
                     </div>
-                    <div id="v31-r5" style="opacity:0;transform:translateY(8px);transition:all 0.4s ease 0.44s;padding-top:0.25rem;border-top:1px solid rgba(255,255,255,0.05);">
-                      <div id="v31-site-proof" style="font-size:0.65rem;color:rgba(255,255,255,0.25);font-family:monospace;"></div>
+                    <!-- CVR counter + proof -->
+                    <div id="v31-r5" style="opacity:0;transform:translateY(10px);transition:all 0.45s cubic-bezier(0.34,1.2,0.64,1) 0.38s;display:flex;align-items:center;gap:1rem;padding-top:0.4rem;border-top:1px solid rgba(255,255,255,0.05);">
+                      <div>
+                        <span style="font-size:0.6rem;color:rgba(255,255,255,0.2);font-family:monospace;">CVR</span>
+                        <span id="v31-cvr-counter" style="font-size:0.85rem;font-weight:800;margin-left:0.3rem;font-family:monospace;"></span>
+                      </div>
+                      <div id="v31-site-proof" style="font-size:0.6rem;color:rgba(255,255,255,0.2);font-family:monospace;flex:1;text-align:right;"></div>
                     </div>
                   </div>
                 </div>
@@ -4732,9 +4756,9 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
   var journeyEl24=document.getElementById('pov-journey-24');
   if(!cardEl24)return;
   var prospects24=[
-    {url:'neilpatel.com',name:'Sarah \u00b7 TechStart',headline:'\u201cNeilPatel Digital \u2014 built for you.\u201d',lines:["Your content isn\u2019t converting.","Your competitors are outranking you.","Here\u2019s what we\u2019d do for TechStart \u2192"]},
-    {url:'crowdstrike.com',name:'James \u00b7 FinanceHub',headline:'\u201cCrowdStrike \u2014 your threat is our mission.\u201d',lines:["Your endpoints are exposed.","Ransomware targets your sector.","Here\u2019s your threat roadmap \u2192"]},
-    {url:'bain.com',name:'Priya \u00b7 AgencyPro',headline:'\u201cBain & Co \u2014 your growth, accelerated.\u201d',lines:["Your growth is plateauing.","Competitors are outpacing you.","Here\u2019s your growth playbook \u2192"]},
+    {url:'acmegrowth.co',name:'Sarah \u00b7 TechStart',headline:'\u201cNeilPatel Digital \u2014 built for you.\u201d',lines:["Your content isn\u2019t converting.","Your competitors are outranking you.","Here\u2019s what we\u2019d do for TechStart \u2192"]},
+    {url:'vaultshield.com',name:'James \u00b7 FinanceHub',headline:'\u201cCrowdStrike \u2014 your threat is our mission.\u201d',lines:["Your endpoints are exposed.","Ransomware targets your sector.","Here\u2019s your threat roadmap \u2192"]},
+    {url:'peakconsult.io',name:'Priya \u00b7 AgencyPro',headline:'\u201cBain & Co \u2014 your growth, accelerated.\u201d',lines:["Your growth is plateauing.","Competitors are outpacing you.","Here\u2019s your growth playbook \u2192"]},
   ];
   var sl24=function(ms){return new Promise(function(r){setTimeout(r,ms);});};
   async function run24(){
@@ -5910,9 +5934,9 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
   if (!urlPhase || !loadingPhase || !term) return;
 
   const visitors = [
-    { url:'neilpatel.com', vertical:'marketing-agency', conf:'0.94', stage1:'Prospect Intelligence', stage2:'Market Projections x3', stage3:'Business Impact', href:'pellopitch.com/demo/neilpatel', time:'4.2s', cvr:'11.4%' },
-    { url:'crowdstrike.com', vertical:'cybersecurity', conf:'0.97', stage1:'Risk Intelligence', stage2:'Threat Landscape', stage3:'Security Impact', href:'pellopitch.com/demo/crowdstrike', time:'3.9s', cvr:'9.8%' },
-    { url:'bain.com', vertical:'consultancy', conf:'0.96', stage1:'Client Intelligence', stage2:'Competitive Landscape', stage3:'Business Case', href:'pellopitch.com/demo/bain', time:'4.5s', cvr:'10.2%' },
+    { url:'acmegrowth.co', vertical:'marketing-agency', conf:'0.94', stage1:'Prospect Intelligence', stage2:'Market Projections x3', stage3:'Business Impact', href:'pellopitch.com/demo/acmegrowth.co', time:'4.2s', cvr:'11.4%' },
+    { url:'vaultshield.com', vertical:'cybersecurity', conf:'0.97', stage1:'Risk Intelligence', stage2:'Threat Landscape', stage3:'Security Impact', href:'pellopitch.com/demo/vaultshield.com', time:'3.9s', cvr:'9.8%' },
+    { url:'peakconsult.io', vertical:'consultancy', conf:'0.96', stage1:'Client Intelligence', stage2:'Competitive Landscape', stage3:'Business Case', href:'pellopitch.com/demo/peakconsult.io', time:'4.5s', cvr:'10.2%' },
   ];
   let idx = 0;
   let started = false;
@@ -6002,84 +6026,170 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
   }
 
   const revealData = {
-    'marketing-agency': { headline: 'Scale your Series A SaaS with proven SEO', sub: 'Built for founders who\'ve found product-market fit. Here\'s your growth playbook.', cta: 'Start Free Trial →', proof: 'Trusted by 200+ SaaS teams', color: '#60a5fa', badge: 'marketing-agency' },
-    'cybersecurity':    { headline: 'Your endpoints are exposed. We fix that.', sub: 'Enterprise-grade protection, deployed in days. Zero false positives.', cta: 'Book a Demo →', proof: 'Protecting 1,200+ enterprise clients', color: '#ef4444', badge: 'cybersecurity' },
-    'consultancy':      { headline: 'Strategic clarity, delivered fast.', sub: 'Decision-makers choose Bain before the first meeting. Here\'s why.', cta: 'Talk to Our Team →', proof: 'Trusted by 40% of Fortune 500', color: '#34d399', badge: 'consultancy' },
+    'marketing-agency': {
+      company: 'Acme Growth Co.',
+      headline: 'We grew your competitors. Now we grow you.',
+      sub: 'Full-funnel digital marketing for B2B SaaS. SEO, paid, content — all under one roof.',
+      cta: 'Get Your Growth Audit →',
+      proof: 'Avg. 340% organic traffic lift in 6 months',
+      color: '#60a5fa', badge: 'marketing-agency',
+      feat1: 'SEO & Content', feat2: 'Paid Acquisition', feat3: 'CRO'
+    },
+    'cybersecurity': {
+      company: 'VaultShield',
+      headline: 'Your threat surface is bigger than you think.',
+      sub: 'Zero-trust security for modern infrastructure. We find the gaps before attackers do.',
+      cta: 'Run Free Threat Scan →',
+      proof: 'Zero breaches across 1,200+ protected clients',
+      color: '#ef4444', badge: 'cybersecurity',
+      feat1: 'Threat Detection', feat2: 'Zero Trust', feat3: 'Compliance'
+    },
+    'consultancy': {
+      company: 'Peak Consulting',
+      headline: 'Strategy that actually ships.',
+      sub: 'We work alongside your team — not above them. From diagnosis to execution in 90 days.',
+      cta: 'Book a Strategy Call →',
+      proof: 'Avg. 2.4x revenue growth within 12 months',
+      color: '#34d399', badge: 'consultancy',
+      feat1: 'Strategy', feat2: 'Transformation', feat3: 'Execution'
+    },
   };
 
   async function runRevealPhase(v) {
     const revealPhase = document.getElementById('v31-reveal-phase');
     const site = document.getElementById('v31-site');
     const shimmer = document.getElementById('v31-shimmer');
+    const shimmer2 = document.getElementById('v31-shimmer2');
+    const corona = document.getElementById('v31-corona');
     if (!revealPhase) return;
 
-    // Hide terminal, show reveal
     term.style.display = 'none';
     revealPhase.style.display = 'flex';
 
     const rd = revealData[v.vertical] || revealData['marketing-agency'];
 
-    // Populate content
+    // Populate static content
     const siteUrl = document.getElementById('v31-site-url');
     const cvrBadge = document.getElementById('v31-cvr-badge');
     const siteBadge = document.getElementById('v31-site-badge');
-    const siteHeadline = document.getElementById('v31-site-headline');
     const siteSub = document.getElementById('v31-site-sub');
     const siteCta = document.getElementById('v31-site-cta');
+    const ctaGlow = document.getElementById('v31-cta-glow');
     const siteProof = document.getElementById('v31-site-proof');
+    const cvrCounter = document.getElementById('v31-cvr-counter');
+    const siteHeadlineEl = document.getElementById('v31-site-headline');
+    const f1 = document.getElementById('v31-f1t');
+    const f2 = document.getElementById('v31-f2t');
+    const f3 = document.getElementById('v31-f3t');
 
     if (siteUrl) siteUrl.textContent = v.href;
-    if (cvrBadge) cvrBadge.textContent = v.cvr + ' CVR';
-    if (siteBadge) { siteBadge.textContent = rd.badge; siteBadge.style.cssText += ';background:' + rd.color + '18;color:' + rd.color + ';border:1px solid ' + rd.color + '35;'; }
-    if (siteHeadline) siteHeadline.textContent = rd.headline;
+    if (cvrBadge) { cvrBadge.textContent = v.cvr + ' CVR'; cvrBadge.style.opacity = '0'; }
+    if (siteBadge) { siteBadge.textContent = rd.company; siteBadge.style.cssText += ';background:' + rd.color + '15;color:' + rd.color + ';border:1px solid ' + rd.color + '30;'; }
     if (siteSub) siteSub.textContent = rd.sub;
-    if (siteCta) { siteCta.textContent = rd.cta; siteCta.style.background = 'linear-gradient(135deg,' + rd.color + ',' + rd.color + 'bb)'; }
+    if (siteCta) { siteCta.textContent = rd.cta; siteCta.style.background = 'linear-gradient(135deg,' + rd.color + ',' + rd.color + 'cc)'; }
+    if (ctaGlow) ctaGlow.style.background = rd.color;
     if (siteProof) siteProof.textContent = rd.proof;
+    if (cvrCounter) { cvrCounter.textContent = '2.1%'; cvrCounter.style.color = '#71717a'; }
+    if (siteHeadlineEl) siteHeadlineEl.textContent = '';
+    if (f1) f1.textContent = rd.feat1;
+    if (f2) f2.textContent = rd.feat2;
+    if (f3) f3.textContent = rd.feat3;
 
-    // Reset row opacities
+    // Reset rows
     for (let i = 0; i <= 5; i++) {
       const r = document.getElementById('v31-r' + i);
-      if (r) { r.style.opacity = '0'; r.style.transform = 'translateY(8px)'; }
+      if (r) { r.style.opacity = '0'; r.style.transform = 'translateY(10px)'; }
     }
+
+    // Reset shimmer positions
+    if (shimmer) { shimmer.style.transition='none'; shimmer.style.transform='translateX(-150%)'; }
+    if (shimmer2) { shimmer2.style.transition='none'; shimmer2.style.transform='translateX(-150%)'; }
+    if (site) { site.style.opacity='0'; site.style.transform='scale(0.94) translateY(6px)'; }
+    if (corona) corona.style.opacity='0';
 
     await sleep(80);
 
-    // Phase A: site fades + scales in
-    if (site) { site.style.opacity = '1'; site.style.transform = 'scale(1)'; }
-    await sleep(300);
+    // Step 1: Corona glow blooms
+    if (corona) corona.style.opacity = '1';
+    await sleep(150);
 
-    // Phase B: shimmer sweep across
+    // Step 2: Site scales in with spring
+    if (site) { site.style.opacity='1'; site.style.transform='scale(1) translateY(0)'; }
+    await sleep(200);
+
+    // Step 3: First shimmer sweep
     if (shimmer) {
-      shimmer.style.transition = 'none';
-      shimmer.style.transform = 'translateX(-100%)';
-      await sleep(20);
-      shimmer.style.transition = 'transform 0.75s cubic-bezier(0.4,0,0.2,1)';
+      shimmer.style.transition = 'transform 0.85s cubic-bezier(0.4,0,0.2,1)';
       shimmer.style.transform = 'translateX(200%)';
     }
+    await sleep(180);
 
-    // Phase C: rows cascade in
+    // Step 4: Rows cascade in
     for (let i = 0; i <= 5; i++) {
       const r = document.getElementById('v31-r' + i);
-      if (r) { r.style.opacity = '1'; r.style.transform = 'translateY(0)'; }
-      await sleep(90);
+      if (r) { r.style.opacity='1'; r.style.transform='translateY(0)'; }
+      if (i === 1) {
+        // Typewriter the headline
+        await sleep(50);
+        const hl = rd.headline;
+        if (siteHeadlineEl) {
+          siteHeadlineEl.textContent = '';
+          for (let ci = 0; ci < hl.length; ci++) {
+            siteHeadlineEl.textContent = hl.substring(0, ci+1);
+            await sleep(22);
+          }
+        }
+      } else {
+        await sleep(100);
+      }
     }
 
-    // Hold, then glow pulse on CTA
-    await sleep(800);
-    if (siteCta) {
-      siteCta.style.boxShadow = '0 0 20px ' + rd.color + '60, 0 0 40px ' + rd.color + '25';
-      await sleep(600);
-      siteCta.style.boxShadow = '';
+    // Step 5: CVR badge fades in
+    if (cvrBadge) cvrBadge.style.opacity = '1';
+
+    // Step 6: Second shimmer (subtle)
+    await sleep(300);
+    if (shimmer2) {
+      shimmer2.style.transition = 'transform 0.9s cubic-bezier(0.4,0,0.2,1)';
+      shimmer2.style.transform = 'translateX(200%)';
     }
 
-    // Hold on reveal, then restart
-    await sleep(2500);
-
-    // Fade out
-    if (site) { site.style.opacity = '0'; site.style.transform = 'scale(0.96)'; }
+    // Step 7: CTA glow ring pulses
     await sleep(400);
-    revealPhase.style.display = 'none';
+    if (ctaGlow) { ctaGlow.style.opacity='0.6'; }
+    await sleep(350);
+    if (ctaGlow) { ctaGlow.style.opacity='0'; }
+    await sleep(200);
+    if (ctaGlow) { ctaGlow.style.opacity='0.4'; }
+    await sleep(250);
+    if (ctaGlow) { ctaGlow.style.opacity='0'; }
 
+    // Step 8: CVR counter animates from 2.1% up to target
+    await sleep(200);
+    const targetCvr = parseFloat(v.cvr);
+    const startCvr = 2.1;
+    const steps = 30;
+    for (let i = 0; i <= steps; i++) {
+      const val = startCvr + (targetCvr - startCvr) * (i/steps);
+      if (cvrCounter) {
+        cvrCounter.textContent = val.toFixed(1) + '%';
+        const pct = i/steps;
+        const r = Math.round(113 + (52-113)*pct);
+        const g = Math.round(113 + (211-113)*pct);
+        const b = Math.round(113 + (153-113)*pct);
+        cvrCounter.style.color = 'rgb('+r+','+g+','+b+')';
+      }
+      await sleep(40);
+    }
+
+    // Hold
+    await sleep(2200);
+
+    // Fade out everything
+    if (corona) corona.style.opacity='0';
+    if (site) { site.style.opacity='0'; site.style.transform='scale(0.94) translateY(6px)'; }
+    await sleep(500);
+    revealPhase.style.display='none';
     runCycle();
   }
 
