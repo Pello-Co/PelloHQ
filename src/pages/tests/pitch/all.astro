@@ -1805,7 +1805,22 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
                   <span style="font-family:monospace;font-size:0.7rem;color:#34d399;">LIVE</span>
                 </div>
               </div>
-              <div id="v31-terminal" style="background:rgba(6,7,18,0.98);padding:1.25rem 1.5rem;font-family:'SF Mono','Fira Code',monospace;font-size:0.75rem;line-height:1.8;height:340px;overflow-y:auto;"></div>
+              <!-- Phase 1: URL input -->
+              <div id="v31-url-phase" style="background:rgba(6,7,18,0.98);height:340px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;gap:1.5rem;">
+                <p style="font-family:'SF Mono','Fira Code',monospace;font-size:0.7rem;color:rgba(255,255,255,0.3);letter-spacing:0.1em;text-transform:uppercase;">Enter your website to see the demo</p>
+                <div id="v31-url-bar" style="display:flex;align-items:center;gap:0;width:100%;max-width:340px;border:1.5px solid rgba(217,70,239,0.5);border-radius:8px;overflow:hidden;background:rgba(217,70,239,0.04);box-shadow:0 0 20px rgba(217,70,239,0.1);">
+                  <span style="padding:0 0.75rem;color:rgba(217,70,239,0.5);font-size:0.9rem;flex-shrink:0;">🔗</span>
+                  <span id="v31-url-typed" style="flex:1;padding:0.75rem 0.25rem;font-family:'SF Mono','Fira Code',monospace;font-size:0.82rem;color:white;min-height:40px;display:flex;align-items:center;"></span>
+                </div>
+                <div id="v31-analyse-btn" style="opacity:0;background:linear-gradient(135deg,#d946ef,#a21caf);color:white;padding:0.5rem 1.25rem;border-radius:6px;font-family:monospace;font-size:0.78rem;font-weight:700;transition:opacity 0.3s,transform 0.15s;cursor:pointer;">Analyse →</div>
+              </div>
+              <!-- Phase 2: Loading -->
+              <div id="v31-loading-phase" style="background:rgba(6,7,18,0.98);height:340px;display:none;flex-direction:column;align-items:center;justify-content:center;padding:2rem;gap:1rem;">
+                <div id="v31-load-url" style="font-family:monospace;font-size:0.8rem;color:#d946ef;margin-bottom:0.5rem;"></div>
+                <div id="v31-load-stages" style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:0.5rem;font-family:'SF Mono','Fira Code',monospace;font-size:0.75rem;"></div>
+              </div>
+              <!-- Phase 3: Terminal -->
+              <div id="v31-terminal" style="background:rgba(6,7,18,0.98);padding:1.25rem 1.5rem;font-family:'SF Mono','Fira Code',monospace;font-size:0.75rem;line-height:1.8;height:340px;overflow-y:auto;display:none;"></div>
               <div class="px-5 py-4 border-t" style="border-color:rgba(255,255,255,.06);background:rgba(0,0,0,.15);">
                 <div class="flex gap-6 text-xs font-mono">
                   <span style="color:#d946ef;">4.2s avg build</span>
@@ -5848,19 +5863,30 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
 <!-- Variant 31: Build in Public Terminal -->
 <script>
 (function() {
+  const urlPhase = document.getElementById('v31-url-phase');
+  const loadingPhase = document.getElementById('v31-loading-phase');
   const term = document.getElementById('v31-terminal');
-  if (!term) return;
+  const urlTyped = document.getElementById('v31-url-typed');
+  const analyseBtn = document.getElementById('v31-analyse-btn');
+  const loadUrl = document.getElementById('v31-load-url');
+  const loadStages = document.getElementById('v31-load-stages');
+  if (!urlPhase || !loadingPhase || !term) return;
+
   const visitors = [
     { url:'neilpatel.com', vertical:'marketing-agency', conf:'0.94', stage1:'Prospect Intelligence', stage2:'Market Projections x3', stage3:'Business Impact', href:'pellopitch.com/demo/neilpatel', time:'4.2s', cvr:'11.4%' },
     { url:'crowdstrike.com', vertical:'cybersecurity', conf:'0.97', stage1:'Risk Intelligence', stage2:'Threat Landscape', stage3:'Security Impact', href:'pellopitch.com/demo/crowdstrike', time:'3.9s', cvr:'9.8%' },
     { url:'bain.com', vertical:'consultancy', conf:'0.96', stage1:'Client Intelligence', stage2:'Competitive Landscape', stage3:'Business Case', href:'pellopitch.com/demo/bain', time:'4.5s', cvr:'10.2%' },
   ];
   let idx = 0;
+  let started = false;
+
   function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
   function addLine(html) {
     const d = document.createElement('div'); d.style.minHeight='1.8em';
     d.innerHTML = html; term.appendChild(d); term.scrollTop = term.scrollHeight;
   }
+
   async function typeChar(html, delay) {
     delay = delay || 20;
     const line = document.createElement('div'); line.style.minHeight='1.8em';
@@ -5873,68 +5899,146 @@ import FinalCTA from '../../../components/sections/FinalCTA.astro';
     }
     line.innerHTML = html; term.scrollTop = term.scrollHeight;
   }
-  async function run() {
-    while (true) {
-      const v = visitors[idx % visitors.length]; idx++;
-      term.innerHTML = '';
-      await sleep(200);
-      await typeChar('<span style="color:#d946ef;">$</span> <span style="color:white;">pitch new --url=' + v.url + '</span>', 25);
-      addLine('');
-      await sleep(150);
-      addLine('  <span style="color:#60a5fa;">&darr; Normalising...</span>  <span style="color:rgba(255,255,255,0.5);">' + v.url + '</span> <span style="color:#34d399;">&#10003;</span>');
-      await sleep(140);
-      addLine('  <span style="color:#60a5fa;">&darr; Cache check...</span>   <span style="color:#fbbf24;">MISS &mdash; building fresh</span>');
-      await sleep(160);
-      addLine('  <span style="color:#60a5fa;">&darr; Crawling...</span>      <span style="color:rgba(255,255,255,0.3);">Firecrawl v4.13</span>');
-      await sleep(220); addLine('');
-      const crawlBar = document.createElement('div'); crawlBar.style.minHeight='1.8em'; term.appendChild(crawlBar);
-      for (let i = 0; i <= 10; i++) {
-        crawlBar.innerHTML = '  <span style="color:#a78bfa;">CRAWL</span> <span style="color:#d946ef;">[' + '█'.repeat(i) + '░'.repeat(10-i) + ']</span> <span style="color:rgba(255,255,255,0.35);">' + (i*10) + '%</span>';
-        term.scrollTop = term.scrollHeight; await sleep(70);
-      }
-      await sleep(120);
-      addLine('  <span style="color:#34d399;">&darr; Words extracted:</span> <span style="color:white;">8,432</span> <span style="color:#34d399;">&#10003;</span>');
-      await sleep(150); addLine('');
-      const anaBar = document.createElement('div'); anaBar.style.minHeight='1.8em'; term.appendChild(anaBar);
-      for (let i = 0; i <= 10; i++) {
-        anaBar.innerHTML = '  <span style="color:#a78bfa;">ANALYSE</span> <span style="color:#d946ef;">[' + '█'.repeat(i) + '░'.repeat(10-i) + ']</span> <span style="color:rgba(255,255,255,0.35);">' + (i*10) + '%</span>';
-        term.scrollTop = term.scrollHeight; await sleep(60);
-      }
-      await sleep(120);
-      addLine('  <span style="color:#60a5fa;">&darr; Vertical:</span>         <span style="color:#d946ef;font-weight:700;">' + v.vertical + '</span> <span style="color:#34d399;">&#10003;</span> <span style="color:rgba(255,255,255,0.25);">(conf: ' + v.conf + ')</span>');
-      await sleep(180); addLine('');
-      const pipBar = document.createElement('div'); pipBar.style.minHeight='1.8em'; term.appendChild(pipBar);
-      for (let i = 0; i <= 10; i++) {
-        pipBar.innerHTML = '  <span style="color:#a78bfa;">PIPELINE</span> <span style="color:#d946ef;">[' + '█'.repeat(i) + '░'.repeat(10-i) + ']</span> <span style="color:rgba(255,255,255,0.35);">' + (i*10) + '%</span>';
-        term.scrollTop = term.scrollHeight; await sleep(65);
-      }
-      await sleep(100);
-      addLine('  <span style="color:#60a5fa;">&darr; Stage 1</span> <span style="color:rgba(255,255,255,0.4);">' + v.stage1 + '...</span> <span style="color:#34d399;">&#10003;</span> <span style="color:rgba(255,255,255,0.2);">(67ms)</span>');
-      await sleep(100);
-      addLine('  <span style="color:#60a5fa;">&darr; Stage 2</span> <span style="color:rgba(255,255,255,0.4);">' + v.stage2 + '...</span> <span style="color:#34d399;">&#10003;</span> <span style="color:rgba(255,255,255,0.2);">(112ms)</span>');
-      await sleep(100);
-      addLine('  <span style="color:#60a5fa;">&darr; Stage 3</span> <span style="color:rgba(255,255,255,0.4);">' + v.stage3 + '...</span> <span style="color:#34d399;">&#10003;</span> <span style="color:rgba(255,255,255,0.2);">(45ms)</span>');
-      await sleep(180); addLine('');
-      const renBar = document.createElement('div'); renBar.style.minHeight='1.8em'; term.appendChild(renBar);
-      for (let i = 0; i <= 10; i++) {
-        renBar.innerHTML = '  <span style="color:#a78bfa;">RENDER</span> <span style="color:#d946ef;">[' + '█'.repeat(i) + '░'.repeat(10-i) + ']</span> <span style="color:rgba(255,255,255,0.35);">' + (i*10) + '%</span>';
-        term.scrollTop = term.scrollHeight; await sleep(55);
-      }
-      await sleep(100);
-      for (const sec of ['FirmHeroSection','NarrativeSection','ShowcaseSection','ImpactSection','SetupSection']) {
-        addLine('  <span style="color:#60a5fa;">&darr; ' + sec + '</span> <span style="color:#34d399;">&#10003;</span>');
-        await sleep(80);
-      }
-      await sleep(250); addLine('');
-      addLine('  <span style="color:rgba(255,255,255,0.12);">+--------------------------------------+</span>');
-      addLine('  <span style="color:rgba(255,255,255,0.12);">|</span>  <span style="color:#d946ef;font-weight:700;">DEMO LIVE</span> &rarr; <span style="color:rgba(255,255,255,0.5);">' + v.href + '</span>');
-      addLine('  <span style="color:rgba(255,255,255,0.12);">|</span>  <span style="color:rgba(255,255,255,0.35);">Build time:</span> <span style="color:#34d399;">' + v.time + '</span>  <span style="color:rgba(255,255,255,0.35);">CVR:</span> <span style="color:#d946ef;font-weight:700;">' + v.cvr + '</span>');
-      addLine('  <span style="color:rgba(255,255,255,0.12);">+--------------------------------------+</span>');
-      addLine(''); addLine('<span style="color:#d946ef;">$ </span><span style="color:#d946ef;animation:wow8-pulse 1s infinite;">|</span>');
-      await sleep(3000);
+
+  async function runTerminal(v) {
+    // Show terminal phase
+    loadingPhase.style.display = 'none';
+    term.style.display = 'block';
+    term.innerHTML = '';
+    await sleep(200);
+    await typeChar('<span style="color:#d946ef;">$</span> <span style="color:white;">pitch new --url=' + v.url + '</span>', 25);
+    addLine('');
+    await sleep(150);
+    addLine('  <span style="color:#60a5fa;">&darr; Normalising...</span>  <span style="color:rgba(255,255,255,0.5);">' + v.url + '</span> <span style="color:#34d399;">&#10003;</span>');
+    await sleep(140);
+    addLine('  <span style="color:#60a5fa;">&darr; Cache check...</span>   <span style="color:#fbbf24;">MISS &mdash; building fresh</span>');
+    await sleep(160);
+    addLine('  <span style="color:#60a5fa;">&darr; Crawling...</span>      <span style="color:rgba(255,255,255,0.3);">Firecrawl v4.13</span>');
+    await sleep(220); addLine('');
+    const crawlBar = document.createElement('div'); crawlBar.style.minHeight='1.8em'; term.appendChild(crawlBar);
+    for (let i = 0; i <= 10; i++) {
+      crawlBar.innerHTML = '  <span style="color:#a78bfa;">CRAWL</span> <span style="color:#d946ef;">[' + '█'.repeat(i) + '░'.repeat(10-i) + ']</span> <span style="color:rgba(255,255,255,0.35);">' + (i*10) + '%</span>';
+      term.scrollTop = term.scrollHeight; await sleep(70);
     }
+    await sleep(120);
+    addLine('  <span style="color:#34d399;">&darr; Words extracted:</span> <span style="color:white;">8,432</span> <span style="color:#34d399;">&#10003;</span>');
+    await sleep(150); addLine('');
+    const anaBar = document.createElement('div'); anaBar.style.minHeight='1.8em'; term.appendChild(anaBar);
+    for (let i = 0; i <= 10; i++) {
+      anaBar.innerHTML = '  <span style="color:#a78bfa;">ANALYSE</span> <span style="color:#d946ef;">[' + '█'.repeat(i) + '░'.repeat(10-i) + ']</span> <span style="color:rgba(255,255,255,0.35);">' + (i*10) + '%</span>';
+      term.scrollTop = term.scrollHeight; await sleep(60);
+    }
+    await sleep(120);
+    addLine('  <span style="color:#60a5fa;">&darr; Vertical:</span>         <span style="color:#d946ef;font-weight:700;">' + v.vertical + '</span> <span style="color:#34d399;">&#10003;</span> <span style="color:rgba(255,255,255,0.25);">(conf: ' + v.conf + ')</span>');
+    await sleep(180); addLine('');
+    const pipBar = document.createElement('div'); pipBar.style.minHeight='1.8em'; term.appendChild(pipBar);
+    for (let i = 0; i <= 10; i++) {
+      pipBar.innerHTML = '  <span style="color:#a78bfa;">PIPELINE</span> <span style="color:#d946ef;">[' + '█'.repeat(i) + '░'.repeat(10-i) + ']</span> <span style="color:rgba(255,255,255,0.35);">' + (i*10) + '%</span>';
+      term.scrollTop = term.scrollHeight; await sleep(65);
+    }
+    await sleep(100);
+    addLine('  <span style="color:#60a5fa;">&darr; Stage 1</span> <span style="color:rgba(255,255,255,0.4);">' + v.stage1 + '...</span> <span style="color:#34d399;">&#10003;</span> <span style="color:rgba(255,255,255,0.2);">(67ms)</span>');
+    await sleep(100);
+    addLine('  <span style="color:#60a5fa;">&darr; Stage 2</span> <span style="color:rgba(255,255,255,0.4);">' + v.stage2 + '...</span> <span style="color:#34d399;">&#10003;</span> <span style="color:rgba(255,255,255,0.2);">(112ms)</span>');
+    await sleep(100);
+    addLine('  <span style="color:#60a5fa;">&darr; Stage 3</span> <span style="color:rgba(255,255,255,0.4);">' + v.stage3 + '...</span> <span style="color:#34d399;">&#10003;</span> <span style="color:rgba(255,255,255,0.2);">(45ms)</span>');
+    await sleep(180); addLine('');
+    const renBar = document.createElement('div'); renBar.style.minHeight='1.8em'; term.appendChild(renBar);
+    for (let i = 0; i <= 10; i++) {
+      renBar.innerHTML = '  <span style="color:#a78bfa;">RENDER</span> <span style="color:#d946ef;">[' + '█'.repeat(i) + '░'.repeat(10-i) + ']</span> <span style="color:rgba(255,255,255,0.35);">' + (i*10) + '%</span>';
+      term.scrollTop = term.scrollHeight; await sleep(55);
+    }
+    await sleep(100);
+    for (const sec of ['FirmHeroSection','NarrativeSection','ShowcaseSection','ImpactSection','SetupSection']) {
+      addLine('  <span style="color:#60a5fa;">&darr; ' + sec + '</span> <span style="color:#34d399;">&#10003;</span>');
+      await sleep(80);
+    }
+    await sleep(250); addLine('');
+    addLine('  <span style="color:rgba(255,255,255,0.12);">+--------------------------------------+</span>');
+    addLine('  <span style="color:rgba(255,255,255,0.12);">|</span>  <span style="color:#d946ef;font-weight:700;">DEMO LIVE</span> &rarr; <span style="color:rgba(255,255,255,0.5);">' + v.href + '</span>');
+    addLine('  <span style="color:rgba(255,255,255,0.12);">|</span>  <span style="color:rgba(255,255,255,0.35);">Build time:</span> <span style="color:#34d399;">' + v.time + '</span>  <span style="color:rgba(255,255,255,0.35);">CVR:</span> <span style="color:#d946ef;font-weight:700;">' + v.cvr + '</span>');
+    addLine('  <span style="color:rgba(255,255,255,0.12);">+--------------------------------------+</span>');
+    addLine(''); addLine('<span style="color:#d946ef;">$ </span><span style="color:#d946ef;">|</span>');
+    // Pause then restart the full cycle from URL phase
+    await sleep(3500);
+    runCycle();
   }
-  run();
+
+  async function runLoadingPhase(v) {
+    urlPhase.style.display = 'none';
+    loadingPhase.style.display = 'flex';
+    if (loadUrl) loadUrl.textContent = 'Analysing ' + v.url + '...';
+    if (loadStages) loadStages.innerHTML = '';
+    const stages = [
+      { label: 'Crawling ' + v.url + '...', done: 'Crawled — 8,432 words', delay: 900 },
+      { label: 'Analysing business intelligence...', done: 'BusinessIntelligence extracted', delay: 700 },
+      { label: 'Detecting vertical...', done: 'Vertical: ' + v.vertical, delay: 600 },
+      { label: 'Generating journey...', done: 'Demo ready — ' + v.time, delay: 700 },
+    ];
+    for (const s of stages) {
+      const el = document.createElement('div');
+      el.style.cssText = 'display:flex;align-items:center;gap:0.6rem;color:rgba(255,255,255,0.4);';
+      el.innerHTML = '<span style="width:12px;height:12px;border:1.5px solid #d946ef;border-top-color:transparent;border-radius:50%;animation:wow1-spin 0.7s linear infinite;flex-shrink:0;display:inline-block;"></span><span>' + s.label + '</span>';
+      if (loadStages) loadStages.appendChild(el);
+      await sleep(s.delay);
+      el.innerHTML = '<span style="color:#34d399;font-size:1rem;flex-shrink:0;">&#10003;</span><span style="color:rgba(255,255,255,0.65);">' + s.done + '</span>';
+    }
+    await sleep(300);
+    runTerminal(v);
+  }
+
+  async function runUrlPhase(v) {
+    // Reset all phases
+    urlPhase.style.display = 'flex';
+    loadingPhase.style.display = 'none';
+    term.style.display = 'none';
+    if (urlTyped) urlTyped.textContent = '';
+    if (analyseBtn) analyseBtn.style.opacity = '0';
+
+    await sleep(600);
+    // Type URL
+    const url = v.url;
+    for (let i = 0; i <= url.length; i++) {
+      if (urlTyped) urlTyped.innerHTML = url.substring(0, i) + '<span style="color:#d946ef;animation:wow8-pulse 0.8s infinite;">|</span>';
+      await sleep(80);
+    }
+    if (urlTyped) urlTyped.textContent = url;
+    await sleep(300);
+    // Show analyse button
+    if (analyseBtn) {
+      analyseBtn.style.opacity = '1';
+      await sleep(800);
+      // Button click animation
+      analyseBtn.style.transform = 'scale(0.93)';
+      await sleep(150);
+      analyseBtn.style.transform = '';
+    }
+    await sleep(200);
+    runLoadingPhase(v);
+  }
+
+  async function runCycle() {
+    const v = visitors[idx % visitors.length]; idx++;
+    await runUrlPhase(v);
+  }
+
+  // Scroll-triggered start using IntersectionObserver
+  const section = document.getElementById('pitch-variant-31');
+  if (section) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && !started) {
+          started = true;
+          observer.disconnect();
+          runCycle();
+        }
+      });
+    }, { threshold: 0.3 });
+    observer.observe(section);
+  } else {
+    runCycle();
+  }
 })();
 </script>
+
 
