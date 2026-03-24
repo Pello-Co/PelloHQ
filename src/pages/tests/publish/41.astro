@@ -251,7 +251,7 @@ import Footer from '../../../components/layout/Footer.astro';
       tx: engine.x + (Math.random() - 0.5) * 30,
       ty: engine.y + (Math.random() - 0.5) * 30,
       progress: 0,
-      speed: 0.008 + Math.random() * 0.006,
+      speed: 0.004 + Math.random() * 0.003,
       color: INPUTS[ii].color,
       fromInput: ii, toOutput: -1,
       size: 2 + Math.random() * 2,
@@ -268,7 +268,7 @@ import Footer from '../../../components/layout/Footer.astro';
       y: engine.y + (Math.random() - 0.5) * 30,
       tx: op.x, ty: op.y,
       progress: 0,
-      speed: 0.008 + Math.random() * 0.006,
+      speed: 0.004 + Math.random() * 0.003,
       color: OUTPUTS[oi].color,
       fromInput: -1, toOutput: oi,
       size: 2 + Math.random() * 2,
@@ -277,17 +277,15 @@ import Footer from '../../../components/layout/Footer.astro';
     });
   }
 
-  // ── Curved path for particles ──────────────────────────────────────────
-  function curveLerp(sx: number, sy: number, ex: number, ey: number, t: number, curveDir: number) {
-    const midX = (sx + ex) / 2;
-    const midY = (sy + ey) / 2 + curveDir * 40 * Math.sin(t * Math.PI);
-    const t2 = t;
-    const a = (1 - t2) * (1 - t2);
-    const b = 2 * (1 - t2) * t2;
-    const c = t2 * t2;
+  // ── Follow exact connection bezier path ─────────────────────────────────
+  function followConnection(sx: number, sy: number, ex: number, ey: number, t: number) {
+    // Matches drawConnection: quadraticCurveTo(cpx=midX, cpy=sy, ex, ey)
+    const cpx = (sx + ex) / 2;
+    const cpy = sy; // control point Y = start Y (same as drawConnection)
+    const u = 1 - t;
     return {
-      x: a * sx + b * midX + c * ex,
-      y: a * sy + b * midY + c * ey,
+      x: u * u * sx + 2 * u * t * cpx + t * t * ex,
+      y: u * u * sy + 2 * u * t * cpy + t * t * ey,
     };
   }
 
@@ -526,10 +524,14 @@ import Footer from '../../../components/layout/Footer.astro';
       let pos;
       if (p.fromInput >= 0) {
         const ip = getInputPos(p.fromInput);
-        pos = curveLerp(ip.x, ip.y, p.tx, p.ty, p.progress, (p.fromInput % 2 === 0 ? -1 : 1));
+        const engine = getEnginePos();
+        // Follow the exact connection line: from (ip.x+24, ip.y) to (engine.x-44, engine.y)
+        pos = followConnection(ip.x + 24, ip.y, engine.x - 44, engine.y, p.progress);
       } else {
+        const engine = getEnginePos();
         const op = getOutputPos(p.toOutput);
-        pos = curveLerp(p.x, p.y, op.x, op.y, p.progress, (p.toOutput % 2 === 0 ? 1 : -1));
+        // Follow the exact connection line: from (engine.x+44, engine.y) to (op.x-24, op.y)
+        pos = followConnection(engine.x + 44, engine.y, op.x - 24, op.y, p.progress);
       }
 
       const alpha = p.progress < 0.1 ? p.progress / 0.1
