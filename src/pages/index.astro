@@ -2546,6 +2546,18 @@ Zero effort.</h2>
       let hoveredInput = -1, hoveredOutput = -1;
       let hoveredParticle: {x: number; y: number; snippet: string; color: string; richData?: OutputSnippet} | null = null;
 
+      // Auto-highlight: cycles through inputs/outputs when user isn't hovering
+      let autoInput = -1;        // currently auto-highlighted input index
+      let autoOutput = -1;       // currently auto-highlighted output index
+      let autoPhase: 'input' | 'output' = 'input'; // which side is showing
+      let autoTimer = 0;         // time tracking
+      let autoInputDuration = 3; // seconds to show input tooltip
+      let autoOutputDuration = 3;// seconds to show output tooltip  
+      let autoInputIdx = 0;      // cycles through inputs
+      let autoOutputIdx = 0;     // cycles through outputs
+      let userActive = false;    // true when user is hovering something
+      let userLeftAt = 0;        // when user stopped hovering
+
       canvas.addEventListener('mousemove', e => {
         const r = canvas.getBoundingClientRect();
         mx = e.clientX - r.left; my = e.clientY - r.top;
@@ -3171,6 +3183,42 @@ Zero effort.</h2>
         for (let i = 0; i < OUTPUTS.length; i++) {
           const p = getOutputPos(i);
           if (Math.hypot(mx - p.x, my - p.y) < 34) hoveredOutput = i;
+        }
+
+        // Auto-highlight logic
+        const userIsHovering = hoveredInput >= 0 || hoveredOutput >= 0;
+        if (userIsHovering) {
+          userActive = true;
+          userLeftAt = t;
+          autoInput = -1;
+          autoOutput = -1;
+        } else {
+          if (userActive && t - userLeftAt > 1.5) {
+            userActive = false; // resume auto after 1.5s idle
+          }
+          if (!userActive) {
+            autoTimer += 1/60;
+            if (autoPhase === 'input') {
+              autoInput = autoInputIdx % INPUTS.length;
+              autoOutput = -1;
+              if (autoTimer > autoInputDuration) {
+                autoTimer = 0;
+                autoPhase = 'output';
+                autoOutputIdx = autoInputIdx % OUTPUTS.length;
+              }
+            } else {
+              autoInput = -1;
+              autoOutput = autoOutputIdx % OUTPUTS.length;
+              if (autoTimer > autoOutputDuration) {
+                autoTimer = 0;
+                autoPhase = 'input';
+                autoInputIdx = (autoInputIdx + 1) % INPUTS.length;
+              }
+            }
+            // Apply auto-highlight as if user hovered (only if user isn't)
+            if (autoInput >= 0) hoveredInput = autoInput;
+            if (autoOutput >= 0) hoveredOutput = autoOutput;
+          }
         }
 
         // Draw connections (input → engine)
