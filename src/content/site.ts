@@ -35,7 +35,7 @@ export const site = {
     headline: 'Every growth channel.\nOne AI-powered platform.',
     subheadline:
       'Pello unifies SEO, outreach, content, social, ads, and automation into a single growth engine. Enter your website — our AI shows you exactly how each channel drives your growth.',
-    inputPlaceholder: 'https://yoursite.com',
+    inputPlaceholder: 'Enter your website URL',
     inputCta: 'See Your Growth Plan',
     badge: 'Now in Early Access',
   },
