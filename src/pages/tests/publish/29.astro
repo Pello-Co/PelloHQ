@@ -1,0 +1,334 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Data Aquifer | Pello" description="Noisy internet data percolates down through relevance filters into the Memory Base aquifer. AutoPilot pumps purified, business-enriched content back to the surface — ready to publish.">
+  <Header />
+  <main id="main-content">
+    <section class="pub-section" aria-labelledby="pub-headline">
+      <div class="pub-layout">
+        <div class="pub-text">
+          <span class="pub-badge">PelloPublish</span>
+          <h1 id="pub-headline">Pure Signal. Deep Sources.</h1>
+          <p>Web noise percolates down through AutoPilot's filtering layers — relevance, industry, audience, keyword — reaching your Memory Base aquifer deep below. The pump brings back only what's refined, enriched, and ready for your audience.</p>
+          <ul class="pub-pills" role="list">
+            <li>Multi-Layer Filter</li>
+            <li>Deep Enrichment</li>
+            <li>Purity Score</li>
+            <li>Surface Output</li>
+          </ul>
+        </div>
+        <div class="pub-canvas-col">
+          <canvas id="pub-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .pub-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .pub-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .pub-layout { grid-template-columns: 1fr; } }
+  .pub-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .pub-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #f97316; width: fit-content; }
+  .pub-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .pub-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .pub-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pub-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .pub-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #pub-canvas { width: 100%; height: 100%; position: absolute; inset: 0; }
+  #pub-tooltip29 { position: fixed; pointer-events: none; padding: 0.5rem 0.75rem; background: rgba(10,10,20,0.95); border: 1px solid rgba(249,115,22,0.4); border-radius: 10px; font-size: 0.75rem; color: #fff; max-width: 200px; opacity: 0; transition: opacity 0.15s; z-index: 1000; line-height: 1.5; }
+</style>
+
+<div id="pub-tooltip29"></div>
+
+<script>
+const canvas = document.getElementById('pub-canvas') as HTMLCanvasElement;
+const tooltip = document.getElementById('pub-tooltip29') as HTMLDivElement;
+const ctx = canvas.getContext('2d')!;
+
+let W = 0, H = 0;
+function resize() {
+  const col = canvas.parentElement!;
+  W = col.clientWidth; H = col.clientHeight || 560;
+  canvas.width = W * devicePixelRatio; canvas.height = H * devicePixelRatio;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.resetTransform(); ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+window.addEventListener('resize', resize); resize();
+
+const LAYERS = [
+  { label: 'RELEVANCE FILTER', color: '#6366f1', depth: 0.22 },
+  { label: 'INDUSTRY FILTER', color: '#22d3ee', depth: 0.36 },
+  { label: 'AUDIENCE FILTER', color: '#a855f7', depth: 0.50 },
+  { label: 'KEYWORD FILTER', color: '#4ade80', depth: 0.64 },
+];
+const AQUIFER_DEPTH = 0.75;
+const OUTPUT_TITLES = [
+  'AI Strategy: Your Q2 Playbook',
+  'SaaS Pricing in a Rebound Market',
+  'LinkedIn Growth: New Data Insights',
+  'B2B Content That Converts 2025',
+];
+const PLATFORMS = [
+  { name: 'Blog', color: '#f97316' },
+  { name: 'LinkedIn', color: '#0ea5e9' },
+  { name: 'Twitter', color: '#1d9bf0' },
+  { name: 'Email', color: '#a855f7' },
+];
+const SURFACE_NOISE = ['AI surge', 'funding', 'GPT-5', 'trends', 'viral', 'SaaS', 'scale', 'market', 'growth'];
+
+interface Drop { x: number; y: number; speed: number; text: string; color: string; alpha: number; layer: number; }
+interface PumpDrop { y: number; alpha: number; platformIdx: number; }
+interface OutputCard { y: number; targetY: number; title: string; platform: typeof PLATFORMS[0]; alpha: number; }
+interface SurfaceDot { x: number; y: number; vx: number; vy: number; alpha: number; }
+
+let drops: Drop[] = [];
+let pumpDrops: PumpDrop[] = [];
+let outputCards: OutputCard[] = [];
+let surfaceDots: SurfaceDot[] = [];
+let aquiferPulse = 0;
+let pumpAngle = 0;
+let frame = 0;
+let outSeq = 0;
+let mouseX = -9999, mouseY = -9999;
+type HitArea = { x: number; y: number; w: number; h: number; title: string; platform: string };
+let hitAreas: HitArea[] = [];
+
+function surfaceY() { return H * 0.16; }
+function layerY(i: number) { return H * LAYERS[i].depth; }
+function aquiferY() { return H * AQUIFER_DEPTH; }
+function pipeX() { return W * 0.5; }
+function pipeW() { return 10; }
+
+// Init surface dots
+for (let i = 0; i < 30; i++) {
+  surfaceDots.push({ x: Math.random() * W, y: surfaceY() - 30 + Math.random() * 25, vx: (Math.random() - 0.5) * 0.5, vy: Math.random() * 0.2, alpha: 0.2 + Math.random() * 0.4 });
+}
+
+function spawnDrop() {
+  const idx = Math.floor(Math.random() * SURFACE_NOISE.length);
+  const startLayer = 0;
+  drops.push({
+    x: W * 0.1 + Math.random() * W * 0.8,
+    y: surfaceY() + 5,
+    speed: 0.6 + Math.random() * 0.6,
+    text: SURFACE_NOISE[idx],
+    color: LAYERS[startLayer].color,
+    alpha: 0.8,
+    layer: 0,
+  });
+}
+
+function drawCrossSection() {
+  // Sky/surface layer
+  const surfGrad = ctx.createLinearGradient(0, 0, 0, surfaceY());
+  surfGrad.addColorStop(0, '#060712'); surfGrad.addColorStop(1, '#0a0918');
+  ctx.fillStyle = surfGrad; ctx.fillRect(0, 0, W, surfaceY());
+  // Surface label
+  ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.font = 'bold 8px -apple-system, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('INTERNET SURFACE — Web Noise', W / 2, 8);
+  // Geological layers
+  for (let i = 0; i < LAYERS.length; i++) {
+    const y1 = i === 0 ? surfaceY() : layerY(i - 1);
+    const y2 = layerY(i);
+    const g = ctx.createLinearGradient(0, y1, 0, y2);
+    const base = i % 2 === 0 ? '10,8,20' : '8,10,18';
+    g.addColorStop(0, `rgba(${base},0.95)`); g.addColorStop(1, `rgba(${base},0.98)`);
+    ctx.fillStyle = g; ctx.fillRect(0, y1, W, y2 - y1);
+    // Grain texture
+    for (let dy = y1 + 2; dy < y2; dy += 4) {
+      ctx.fillStyle = `rgba(${hexToRgb(LAYERS[i].color)},0.015)`;
+      ctx.fillRect(0, dy, W, 1);
+    }
+    // Filter band separator
+    ctx.fillStyle = `rgba(${hexToRgb(LAYERS[i].color)},0.3)`;
+    ctx.fillRect(0, y2 - 1, W, 2);
+    // Label
+    ctx.fillStyle = `rgba(${hexToRgb(LAYERS[i].color)},0.55)`;
+    ctx.font = 'bold 8px -apple-system, sans-serif';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+    ctx.fillText(LAYERS[i].label, W - 10, y2 - 5);
+  }
+  // Aquifer
+  const aq1 = layerY(LAYERS.length - 1);
+  const aq2 = aquiferY();
+  const aqGrad = ctx.createLinearGradient(0, aq1, 0, aq2);
+  aqGrad.addColorStop(0, 'rgba(8,14,24,0.98)');
+  aqGrad.addColorStop(0.5, `rgba(10,20,35,0.98)`);
+  aqGrad.addColorStop(1, 'rgba(8,14,24,0.98)');
+  ctx.fillStyle = aqGrad; ctx.fillRect(0, aq1, W, aq2 - aq1);
+
+  // Aquifer glow
+  aquiferPulse = (aquiferPulse + 0.04) % (Math.PI * 2);
+  const aqCy = (aq1 + aq2) / 2;
+  const aqGlow = ctx.createRadialGradient(W / 2, aqCy, 0, W / 2, aqCy, W * 0.4);
+  aqGlow.addColorStop(0, `rgba(249,115,22,${0.08 + Math.sin(aquiferPulse) * 0.04})`);
+  aqGlow.addColorStop(0.5, `rgba(99,102,241,${0.04 + Math.sin(aquiferPulse + 1) * 0.02})`);
+  aqGlow.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = aqGlow; ctx.fillRect(0, aq1, W, aq2 - aq1);
+  ctx.fillStyle = 'rgba(249,115,22,0.45)'; ctx.font = 'bold 8px -apple-system, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('MEMORY BASE AQUIFER — Brand Intelligence', W / 2, aqCy);
+
+  // Below aquifer
+  const botGrad = ctx.createLinearGradient(0, aq2, 0, H);
+  botGrad.addColorStop(0, 'rgba(6,5,16,1)'); botGrad.addColorStop(1, '#060712');
+  ctx.fillStyle = botGrad; ctx.fillRect(0, aq2, W, H - aq2);
+}
+
+function drawPipe() {
+  const px = pipeX() - pipeW() / 2;
+  const pipeTop = surfaceY() - 20;
+  // Pipe body
+  ctx.save();
+  ctx.fillStyle = 'rgba(20,16,32,0.95)';
+  ctx.beginPath(); ctx.roundRect(px, pipeTop, pipeW(), aquiferY() - pipeTop, 3); ctx.fill();
+  ctx.strokeStyle = 'rgba(249,115,22,0.35)'; ctx.lineWidth = 1; ctx.stroke();
+  // Pump mechanism at top
+  pumpAngle += 0.03;
+  const pmx = pipeX(), pmy = pipeTop - 10;
+  ctx.fillStyle = 'rgba(15,10,25,0.95)';
+  ctx.beginPath(); ctx.arc(pmx, pmy, 14, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#f97316'; ctx.lineWidth = 1.2;
+  ctx.shadowColor = '#f97316'; ctx.shadowBlur = 8; ctx.stroke(); ctx.shadowBlur = 0;
+  // Pump gear
+  for (let t = 0; t < 8; t++) {
+    const a = pumpAngle + (t / 8) * Math.PI * 2;
+    ctx.beginPath(); ctx.moveTo(pmx + Math.cos(a) * 7, pmy + Math.sin(a) * 7);
+    ctx.lineTo(pmx + Math.cos(a) * 13, pmy + Math.sin(a) * 13);
+    ctx.strokeStyle = 'rgba(249,115,22,0.6)'; ctx.lineWidth = 2; ctx.stroke();
+  }
+  ctx.restore();
+  // Pump drops moving upward
+  pumpDrops.forEach(d => {
+    d.y -= 1.5;
+    if (d.y < pipeTop - 20) d.alpha -= 0.08;
+    ctx.save(); ctx.globalAlpha = d.alpha;
+    ctx.beginPath(); ctx.arc(pipeX(), d.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = PLATFORMS[d.platformIdx].color;
+    ctx.shadowColor = PLATFORMS[d.platformIdx].color; ctx.shadowBlur = 8; ctx.fill(); ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1; ctx.restore();
+  });
+  pumpDrops = pumpDrops.filter(d => d.alpha > 0);
+  // Spawn pump drops
+  if (frame % 25 === 0) {
+    pumpDrops.push({ y: aquiferY() - 5, alpha: 1, platformIdx: Math.floor(Math.random() * PLATFORMS.length) });
+  }
+}
+
+function drawDrops() {
+  drops.forEach(d => {
+    d.y += d.speed;
+    // Change color when crossing a filter layer
+    for (let i = 0; i < LAYERS.length; i++) {
+      if (d.y >= layerY(i) && d.layer === i) {
+        d.layer = Math.min(i + 1, LAYERS.length - 1);
+        d.color = i < LAYERS.length - 1 ? LAYERS[i + 1].color : '#f97316';
+        d.text = d.text; // text stays same as it percolates
+      }
+    }
+    if (d.y >= aquiferY() - 5) d.alpha -= 0.08;
+    ctx.save(); ctx.globalAlpha = d.alpha;
+    ctx.beginPath(); ctx.arc(d.x, d.y, 2, 0, Math.PI * 2);
+    ctx.fillStyle = d.color;
+    ctx.shadowColor = d.color; ctx.shadowBlur = 4; ctx.fill(); ctx.shadowBlur = 0;
+    if (d.alpha > 0.4) {
+      ctx.fillStyle = `rgba(255,255,255,${d.alpha * 0.3})`; ctx.font = '7px -apple-system, sans-serif';
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(d.text, d.x + 5, d.y);
+    }
+    ctx.globalAlpha = 1; ctx.restore();
+  });
+  drops = drops.filter(d => d.alpha > 0);
+}
+
+function drawOutputCards() {
+  const ox = W * 0.62, ow = W * 0.35;
+  hitAreas = [];
+  outputCards.forEach(c => {
+    c.y += (c.targetY - c.y) * 0.1;
+    c.alpha = Math.min(1, c.alpha + 0.03);
+    ctx.save(); ctx.globalAlpha = c.alpha;
+    const ch = 44;
+    ctx.fillStyle = 'rgba(10,8,20,0.9)';
+    ctx.beginPath(); ctx.roundRect(ox, c.y, ow, ch, 6); ctx.fill();
+    ctx.strokeStyle = `rgba(${hexToRgb(c.platform.color)},0.5)`; ctx.lineWidth = 0.75;
+    ctx.shadowColor = c.platform.color; ctx.shadowBlur = 8; ctx.stroke(); ctx.shadowBlur = 0;
+    ctx.beginPath(); ctx.arc(ox + 14, c.y + 14, 5, 0, Math.PI * 2);
+    ctx.fillStyle = c.platform.color; ctx.fill();
+    ctx.fillStyle = c.platform.color; ctx.font = 'bold 8px -apple-system, sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(c.platform.name, ox + 24, c.y + 14);
+    ctx.fillStyle = 'rgba(255,255,255,0.82)'; ctx.font = '8.5px -apple-system, sans-serif';
+    const t = c.title.length > 28 ? c.title.substring(0, 28) + '…' : c.title;
+    ctx.textBaseline = 'top'; ctx.fillText(t, ox + 8, c.y + 26);
+    // Purity badge
+    ctx.fillStyle = 'rgba(74,222,128,0.7)'; ctx.font = 'bold 7px -apple-system, sans-serif';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+    ctx.fillText('PURE ✓', ox + ow - 6, c.y + 4);
+    ctx.globalAlpha = 1; ctx.restore();
+    if (mouseX >= ox && mouseX <= ox + ow && mouseY >= c.y && mouseY <= c.y + ch) {
+      tooltip.innerHTML = `<strong>${c.title}</strong><br><span style="color:rgba(255,255,255,0.5)">${c.platform.name} · Filtered &amp; pure</span>`;
+      tooltip.style.opacity = '1';
+    }
+    hitAreas.push({ x: ox, y: c.y, w: ow, h: ch, title: c.title, platform: c.platform.name });
+  });
+  // Output label
+  ctx.save(); ctx.fillStyle = 'rgba(249,115,22,0.4)'; ctx.font = 'bold 8px -apple-system, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('PURIFIED OUTPUT', W * 0.795, surfaceY() - 20);
+  ctx.restore();
+}
+
+function drawSurface() {
+  surfaceDots.forEach(d => {
+    d.x += d.vx; d.y += d.vy;
+    if (d.x < 0 || d.x > W) d.vx *= -1;
+    if (d.y > surfaceY() - 2) { d.y = surfaceY() - 30; d.x = Math.random() * W; }
+    ctx.beginPath(); ctx.arc(d.x, d.y, 1, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,255,255,${d.alpha})`; ctx.fill();
+  });
+}
+
+function hexToRgb(hex: string) {
+  return `${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)}`;
+}
+
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = e.clientX - r.left; mouseY = e.clientY - r.top;
+  tooltip.style.left = (e.clientX + 14) + 'px'; tooltip.style.top = (e.clientY - 10) + 'px';
+  if (!hitAreas.some(h => mouseX >= h.x && mouseX <= h.x + h.w && mouseY >= h.y && mouseY <= h.y + h.h)) {
+    tooltip.style.opacity = '0';
+  }
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -9999; mouseY = -9999; tooltip.style.opacity = '0'; });
+
+function loop() {
+  ctx.clearRect(0, 0, W, H);
+  drawCrossSection(); drawSurface();
+  if (frame % 18 === 0) spawnDrop();
+  drawDrops(); drawPipe();
+  // Spawn output cards from pump
+  if (frame % 150 === 0 || (outputCards.length === 0 && frame > 60)) {
+    const idx = outSeq++ % OUTPUT_TITLES.length;
+    const lastY = outputCards.length ? Math.min(...outputCards.map(c => c.targetY)) - 52 : surfaceY() + 10;
+    outputCards.unshift({ y: surfaceY() - 20, targetY: Math.max(30, lastY), title: OUTPUT_TITLES[idx], platform: PLATFORMS[idx % PLATFORMS.length], alpha: 0 });
+    if (outputCards.length > 4) outputCards.pop();
+  }
+  drawOutputCards();
+  if (!hitAreas.some(h => mouseX >= h.x && mouseX <= h.x + h.w && mouseY >= h.y && mouseY <= h.y + h.h)) {
+    tooltip.style.opacity = '0';
+  }
+  frame++; requestAnimationFrame(loop);
+}
+loop();
+</script>

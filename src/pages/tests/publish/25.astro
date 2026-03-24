@@ -1,0 +1,307 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Factory Line | Pello" description="Raw news headlines enter on a conveyor belt. Five processing stations transform each story — scanning keywords, matching your audience, drafting copy, optimising for SEO, then stamping it platform-ready.">
+  <Header />
+  <main id="main-content">
+    <section class="pub-section" aria-labelledby="pub-headline">
+      <div class="pub-layout">
+        <div class="pub-text">
+          <span class="pub-badge">PelloPublish</span>
+          <h1 id="pub-headline">The Content Assembly Line.</h1>
+          <p>Raw news enters. Five AutoPilot stations do the work — scanning for relevance, matching your audience profile, drafting the angle, optimising every keyword, and formatting for each platform. Finished content rolls off the line continuously.</p>
+          <ul class="pub-pills" role="list">
+            <li>5-Stage Pipeline</li>
+            <li>Live Processing</li>
+            <li>Zero Bottlenecks</li>
+            <li>Platform Stamping</li>
+          </ul>
+        </div>
+        <div class="pub-canvas-col">
+          <canvas id="pub-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .pub-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .pub-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .pub-layout { grid-template-columns: 1fr; } }
+  .pub-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .pub-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #f97316; width: fit-content; }
+  .pub-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .pub-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .pub-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pub-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .pub-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #pub-canvas { width: 100%; height: 100%; position: absolute; inset: 0; }
+  #pub-tooltip25 { position: fixed; pointer-events: none; padding: 0.5rem 0.75rem; background: rgba(10,10,20,0.95); border: 1px solid rgba(249,115,22,0.4); border-radius: 10px; font-size: 0.75rem; color: #fff; max-width: 200px; opacity: 0; transition: opacity 0.15s; z-index: 1000; line-height: 1.5; }
+</style>
+
+<div id="pub-tooltip25"></div>
+
+<script>
+const canvas = document.getElementById('pub-canvas') as HTMLCanvasElement;
+const tooltip = document.getElementById('pub-tooltip25') as HTMLDivElement;
+const ctx = canvas.getContext('2d')!;
+
+let W = 0, H = 0;
+function resize() {
+  const col = canvas.parentElement!;
+  W = col.clientWidth; H = col.clientHeight || 560;
+  canvas.width = W * devicePixelRatio; canvas.height = H * devicePixelRatio;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.resetTransform(); ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+window.addEventListener('resize', resize); resize();
+
+const STATIONS = [
+  { label: 'SCAN', sub: 'Keywords', color: '#22d3ee', icon: '⌖' },
+  { label: 'MATCH', sub: 'Audience', color: '#a855f7', icon: '◈' },
+  { label: 'DRAFT', sub: 'Copy', color: '#f97316', icon: '✎' },
+  { label: 'OPTIMISE', sub: 'SEO', color: '#4ade80', icon: '↑' },
+  { label: 'FORMAT', sub: 'Platform', color: '#f59e0b', icon: '▦' },
+];
+
+const INPUT_HEADLINES = [
+  'OpenAI GPT-5 Reasoning Leap',
+  'SaaS Valuations Rebound Q2',
+  'AI Overviews Hit Google Search',
+  'B2B Funding Hits 3-Year High',
+  'LinkedIn AI Posts Go Viral',
+  'HubSpot Acquires Outreach AI',
+];
+const OUTPUT_TITLES = [
+  'GPT-5: Your Content Strategy Guide',
+  'SaaS Rebound: 5 Pricing Moves',
+  'AI Search: Marketers Playbook',
+  'B2B Funding Boom: What It Means',
+  'LinkedIn Posts That Convert 2025',
+  'What HubSpot Acquisition Means',
+];
+const PLATFORMS = [
+  { name: 'Blog', color: '#f97316' },
+  { name: 'LinkedIn', color: '#0ea5e9' },
+  { name: 'Twitter', color: '#1d9bf0' },
+];
+
+interface BoxItem {
+  x: number; y: number; label: string; outTitle: string; stage: number; stageProgress: number; alpha: number;
+  id: number; platform: typeof PLATFORMS[0];
+}
+interface EffectParticle { x: number; y: number; vx: number; vy: number; color: string; alpha: number; size: number; }
+
+let boxes: BoxItem[] = [];
+let effectParticles: EffectParticle[] = [];
+let beltOffset = 0;
+let frame = 0;
+let boxSeq = 0;
+let outputCount = 0;
+let mouseX = -9999, mouseY = -9999;
+type HitBox = { x: number; y: number; w: number; h: number; title: string; platform: string };
+let hitBoxes: HitBox[] = [];
+
+function beltY() { return H * 0.55; }
+function beltH() { return 44; }
+function stationX(i: number) { return W * 0.08 + i * (W * 0.84 / (STATIONS.length - 1)); }
+function stationW() { return 62; }
+function stationH() { return 70; }
+function stationTop() { return beltY() - stationH() - 14; }
+
+function drawBackground() {
+  ctx.fillStyle = '#060712'; ctx.fillRect(0, 0, W, H);
+  // Factory floor texture
+  for (let y = H * 0.55 + beltH(); y < H; y += 24) {
+    ctx.fillStyle = y % 48 === Math.floor(y / 24) % 2 * 24 ? 'rgba(255,255,255,0.015)' : 'rgba(255,255,255,0.008)';
+    ctx.fillRect(0, y, W, 12);
+  }
+  // Ceiling pipes
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(0, 28); ctx.lineTo(W, 28); ctx.stroke();
+  ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.beginPath(); ctx.moveTo(0, 36); ctx.lineTo(W, 36); ctx.stroke();
+}
+
+function drawBelt() {
+  const by = beltY(), bh = beltH();
+  beltOffset = (beltOffset + 1.2) % 24;
+  // Belt body
+  ctx.save();
+  ctx.fillStyle = 'rgba(20,18,30,0.95)';
+  ctx.beginPath(); ctx.roundRect(0, by, W, bh, 0); ctx.fill();
+  // Belt stripes (diagonal)
+  ctx.beginPath(); ctx.rect(0, by, W, bh); ctx.clip();
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 8;
+  for (let x = -24 + beltOffset; x < W + 24; x += 24) {
+    ctx.beginPath(); ctx.moveTo(x, by); ctx.lineTo(x + 24, by + bh); ctx.stroke();
+  }
+  // Belt top/bottom edges
+  ctx.strokeStyle = 'rgba(249,115,22,0.3)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(0, by); ctx.lineTo(W, by); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, by + bh); ctx.lineTo(W, by + bh); ctx.stroke();
+  // Drive rollers
+  [W * 0.02, W * 0.98].forEach(rx => {
+    ctx.fillStyle = '#1a1a2e';
+    ctx.beginPath(); ctx.ellipse(rx, by + bh / 2, 10, bh / 2, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(rx, by + bh / 2, 3, bh / 2 - 2, 0, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(249,115,22,0.5)'; ctx.stroke();
+  });
+  ctx.restore();
+}
+
+function drawStations() {
+  const sy = stationTop(), sw = stationW(), sh = stationH();
+  STATIONS.forEach((st, i) => {
+    const sx = stationX(i) - sw / 2;
+    // Station column connector
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(stationX(i), sy + sh); ctx.lineTo(stationX(i), beltY()); ctx.stroke();
+    ctx.setLineDash([]);
+    // Station box
+    ctx.fillStyle = 'rgba(10,8,20,0.9)';
+    ctx.beginPath(); ctx.roundRect(sx, sy, sw, sh, 6); ctx.fill();
+    ctx.strokeStyle = `rgba(${hexToRgb(st.color)},0.5)`; ctx.lineWidth = 1;
+    ctx.shadowColor = st.color; ctx.shadowBlur = 10; ctx.stroke(); ctx.shadowBlur = 0;
+    // Active indicator flash
+    if (frame % 60 < 10) {
+      ctx.fillStyle = `rgba(${hexToRgb(st.color)},0.08)`;
+      ctx.beginPath(); ctx.roundRect(sx, sy, sw, sh, 6); ctx.fill();
+    }
+    ctx.fillStyle = st.color; ctx.font = 'bold 11px -apple-system, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(st.icon, stationX(i), sy + sh * 0.3);
+    ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.font = 'bold 8px -apple-system, sans-serif';
+    ctx.fillText(st.label, stationX(i), sy + sh * 0.58);
+    ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font = '7px -apple-system, sans-serif';
+    ctx.fillText(st.sub, stationX(i), sy + sh * 0.78);
+    ctx.restore();
+  });
+  // Label
+  ctx.save(); ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.font = 'bold 8px -apple-system, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText('PROCESSING STATIONS', W / 2, 16); ctx.restore();
+}
+
+function drawBoxes() {
+  hitBoxes = [];
+  const by = beltY(), bh = beltH();
+  const BW = 90, BH = 36;
+  boxes.forEach(box => {
+    box.x += 1.2; // move with belt
+    if (box.x > W + BW) { box.alpha -= 0.05; }
+    box.alpha = Math.min(1, box.alpha + 0.03);
+    // Process at each station
+    const nearStation = STATIONS.findIndex((_, i) => Math.abs(box.x - stationX(i)) < BW * 0.5 + 5);
+    if (nearStation >= 0 && box.stage === nearStation) {
+      box.stageProgress = Math.min(1, box.stageProgress + 0.015);
+      if (box.stageProgress >= 1) { box.stage++; box.stageProgress = 0; spawnEffect(box.x, by + bh / 2, STATIONS[nearStation].color); }
+    }
+
+    const bx = box.x - BW / 2;
+    const boxY = by + bh / 2 - BH / 2;
+    ctx.save(); ctx.globalAlpha = box.alpha;
+    // Box bg
+    const isProcessing = nearStation >= 0 && box.stage === nearStation;
+    ctx.fillStyle = isProcessing ? 'rgba(20,12,5,0.95)' : 'rgba(14,12,24,0.9)';
+    ctx.beginPath(); ctx.roundRect(bx, boxY, BW, BH, 5); ctx.fill();
+    const stColor = box.stage < STATIONS.length ? STATIONS[Math.min(box.stage, STATIONS.length - 1)].color : '#f97316';
+    ctx.strokeStyle = isProcessing ? stColor : 'rgba(255,255,255,0.15)'; ctx.lineWidth = 0.75; ctx.stroke();
+    // Progress bar if processing
+    if (isProcessing) {
+      ctx.fillStyle = `rgba(${hexToRgb(stColor)},0.3)`;
+      ctx.beginPath(); ctx.roundRect(bx + 2, boxY + BH - 6, (BW - 4) * box.stageProgress, 4, 2); ctx.fill();
+    }
+    // Stage dots
+    STATIONS.forEach((_, i) => {
+      ctx.beginPath(); ctx.arc(bx + 8 + i * 14, boxY + 8, 3, 0, Math.PI * 2);
+      ctx.fillStyle = i < box.stage ? STATIONS[i].color : i === box.stage ? `rgba(${hexToRgb(STATIONS[i].color)},0.5)` : 'rgba(255,255,255,0.1)';
+      ctx.fill();
+    });
+    // Content label
+    const label = box.stage >= STATIONS.length ? box.outTitle.substring(0, 20) + '…' : box.label.substring(0, 20);
+    ctx.fillStyle = box.stage >= STATIONS.length ? 'rgba(249,115,22,0.9)' : 'rgba(255,255,255,0.7)';
+    ctx.font = '8px -apple-system, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(label, bx + 6, boxY + BH / 2 + 3);
+    ctx.globalAlpha = 1; ctx.restore();
+
+    if (box.stage >= STATIONS.length) {
+      hitBoxes.push({ x: bx, y: boxY, w: BW, h: BH, title: box.outTitle, platform: box.platform.name });
+      if (mouseX >= bx && mouseX <= bx + BW && mouseY >= boxY && mouseY <= boxY + BH) {
+        tooltip.innerHTML = `<strong>${box.outTitle}</strong><br><span style="color:rgba(255,255,255,0.5)">${box.platform.name} · Platform ready</span>`;
+        tooltip.style.opacity = '1';
+      }
+    }
+  });
+  boxes = boxes.filter(b => b.alpha > 0);
+}
+
+function spawnEffect(x: number, y: number, color: string) {
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    effectParticles.push({ x, y, vx: Math.cos(a) * (1 + Math.random()), vy: Math.sin(a) * (1 + Math.random()), color, alpha: 0.8, size: 2 + Math.random() * 2 });
+  }
+}
+
+function drawEffects() {
+  effectParticles.forEach(p => {
+    p.x += p.vx; p.y += p.vy; p.alpha -= 0.03; p.size -= 0.05;
+    ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(0.1, p.size), 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${hexToRgb(p.color)},${p.alpha})`; ctx.fill();
+  });
+  effectParticles = effectParticles.filter(p => p.alpha > 0);
+}
+
+function drawOutputBay() {
+  const oy = beltY() + beltH() + 20;
+  ctx.save(); ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.font = 'bold 8px -apple-system, sans-serif';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+  ctx.fillText(`${outputCount} items completed`, W - 12, oy - 2);
+  ctx.restore();
+}
+
+function hexToRgb(hex: string) {
+  return `${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)}`;
+}
+
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = e.clientX - r.left; mouseY = e.clientY - r.top;
+  tooltip.style.left = (e.clientX + 14) + 'px'; tooltip.style.top = (e.clientY - 10) + 'px';
+  if (!hitBoxes.some(h => mouseX >= h.x && mouseX <= h.x + h.w && mouseY >= h.y && mouseY <= h.y + h.h)) {
+    tooltip.style.opacity = '0';
+  }
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -9999; mouseY = -9999; tooltip.style.opacity = '0'; });
+
+// Seed initial boxes
+for (let i = 0; i < 4; i++) {
+  const idx = boxSeq++ % INPUT_HEADLINES.length;
+  boxes.push({ x: -30 + i * -110, y: 0, label: INPUT_HEADLINES[idx], outTitle: OUTPUT_TITLES[idx], stage: 0, stageProgress: 0, alpha: 0, id: idx, platform: PLATFORMS[idx % PLATFORMS.length] });
+}
+
+function loop() {
+  ctx.clearRect(0, 0, W, H);
+  drawBackground(); drawBelt(); drawStations(); drawEffects();
+  const prevCount = boxes.filter(b => b.stage >= STATIONS.length).length;
+  drawBoxes(); drawOutputBay();
+  const newCount = boxes.filter(b => b.stage >= STATIONS.length).length;
+  outputCount += Math.max(0, newCount - prevCount);
+  // Spawn new boxes
+  if (frame % 160 === 0) {
+    const idx = boxSeq++ % INPUT_HEADLINES.length;
+    boxes.push({ x: -60, y: 0, label: INPUT_HEADLINES[idx], outTitle: OUTPUT_TITLES[idx], stage: 0, stageProgress: 0, alpha: 0, id: idx, platform: PLATFORMS[idx % PLATFORMS.length] });
+  }
+  frame++; requestAnimationFrame(loop);
+}
+loop();
+</script>

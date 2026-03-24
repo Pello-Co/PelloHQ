@@ -1,0 +1,414 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Command Centre | Pello" description="AutoPilot runs 24/7 intelligence operations — scanning live feeds, assessing story priority, then deploying mission-ready content to every platform.">
+  <Header />
+  <main id="main-content">
+    <section class="pub-section" aria-labelledby="pub-headline">
+      <div class="pub-layout">
+        <div class="pub-text">
+          <span class="pub-badge">PelloPublish</span>
+          <h1 id="pub-headline">Your Content War Room.</h1>
+          <p>AutoPilot runs 24/7 intelligence operations — scanning live feeds, assessing story priority, then deploying mission-ready content to every platform. Every trending story becomes a strategic asset.</p>
+          <ul class="pub-pills" role="list">
+            <li>Intel Feed</li>
+            <li>Priority Scoring</li>
+            <li>Mission Dispatch</li>
+            <li>Platform Ops</li>
+          </ul>
+        </div>
+        <div class="pub-canvas-col">
+          <canvas id="pub-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .pub-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .pub-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .pub-layout { grid-template-columns: 1fr; } }
+  .pub-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .pub-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #f97316; width: fit-content; }
+  .pub-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .pub-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .pub-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pub-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .pub-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #pub-canvas { width: 100%; height: 100%; position: absolute; inset: 0; }
+  #pub-tooltip21 { position: fixed; pointer-events: none; padding: 0.5rem 0.75rem; background: rgba(10,10,20,0.95); border: 1px solid rgba(249,115,22,0.4); border-radius: 10px; font-size: 0.75rem; color: #fff; max-width: 200px; opacity: 0; transition: opacity 0.15s; z-index: 1000; line-height: 1.5; }
+</style>
+
+<div id="pub-tooltip21"></div>
+
+<script>
+const canvas = document.getElementById('pub-canvas') as HTMLCanvasElement;
+const tooltip = document.getElementById('pub-tooltip21') as HTMLDivElement;
+const ctx = canvas.getContext('2d')!;
+
+let W = 0, H = 0;
+function resize() {
+  const col = canvas.parentElement!;
+  W = col.clientWidth; H = col.clientHeight || 560;
+  canvas.width = W * devicePixelRatio; canvas.height = H * devicePixelRatio;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.resetTransform(); ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+window.addEventListener('resize', resize); resize();
+
+const URGENCY = [
+  { label: 'BREAKING', color: '#ef4444' },
+  { label: 'TRENDING', color: '#f97316' },
+  { label: 'EMERGING', color: '#22d3ee' },
+  { label: 'SIGNAL',   color: '#a855f7' },
+];
+const HEADLINES = [
+  'OpenAI announces GPT-5 reasoning breakthrough',
+  'SaaS valuations rebound as AI adoption surges',
+  'Google rolls out AI Overviews globally',
+  'Series B funding hits 3-year high for B2B',
+  'LinkedIn tests AI post suggestions at scale',
+  'HubSpot acquires AI outreach platform',
+  'Shopify adds agentic commerce features',
+  'Marketing budgets shift to performance AI',
+  'Revenue intelligence market hits $12B',
+  'Zapier automates 50M tasks/day with AI',
+  'B2B content leads outperform paid ads 3×',
+  'Anthropic raises $3B for enterprise push',
+];
+const PLATFORMS = [
+  { name: 'Blog', color: '#f97316' },
+  { name: 'LinkedIn', color: '#0ea5e9' },
+  { name: 'Twitter', color: '#1d9bf0' },
+  { name: 'Newsletter', color: '#a855f7' },
+];
+const OUTPUT_TITLES = [
+  'How GPT-5 Changes Your Content Strategy',
+  '5 Ways SaaS Rebounds Affect Your Pricing',
+  'AI Search: Survival Guide for Marketers',
+  'Series B Trends & Your Growth Roadmap',
+  'Writing LinkedIn Posts That Convert',
+  'The HubSpot Playbook: What to Copy Now',
+  'Commerce AI: Your 90-Day Action Plan',
+  'Performance Marketing in the AI Era',
+  'Revenue Intelligence for SMBs',
+  'Automate at Scale: Lessons from Zapier',
+  'Content That Beats Paid — Here Is Why',
+  'Enterprise AI: Get Ahead of the Curve',
+];
+
+interface IntelItem { text: string; urgency: typeof URGENCY[0]; y: number; alpha: number; age: number; }
+interface DossierCard { title: string; platform: typeof PLATFORMS[0]; y: number; targetY: number; stampAlpha: number; id: number; }
+interface KeywordPart { word: string; x: number; y: number; alpha: number; color: string; }
+
+let intelItems: IntelItem[] = [];
+let dossiers: DossierCard[] = [];
+let keywords: KeywordPart[] = [];
+let radarAngle = 0;
+let activeStory = '';
+let activePlatform = PLATFORMS[0];
+let processProg = 0;
+let processTimer = 0;
+let itemSeq = 0;
+let missionCount = 0;
+let mouseX = -9999, mouseY = -9999;
+
+type HitArea = { x: number; y: number; w: number; h: number; title: string; platform: string };
+let hitAreas: HitArea[] = [];
+
+// Init intel items
+for (let i = 0; i < 5; i++) {
+  intelItems.push({
+    text: HEADLINES[i % HEADLINES.length],
+    urgency: URGENCY[i % URGENCY.length],
+    y: 60 + i * 72,
+    alpha: 1,
+    age: i * 40,
+  });
+}
+
+function drawScanlines() {
+  ctx.save();
+  for (let y = 0; y < H; y += 3) {
+    ctx.fillStyle = 'rgba(0,255,60,0.012)';
+    ctx.fillRect(0, y, W, 1);
+  }
+  ctx.restore();
+}
+
+function drawGrid() {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,255,60,0.04)';
+  ctx.lineWidth = 0.5;
+  const step = 32;
+  for (let x = 0; x < W; x += step) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (let y = 0; y < H; y += step) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  ctx.restore();
+}
+
+function drawRadar() {
+  radarAngle += 0.018;
+  const cx = W * 0.5, cy = H * 0.5, R = Math.min(W, H) * 0.42;
+  ctx.save();
+  // Fading sweep trail
+  const trailSteps = 30;
+  for (let i = 0; i < trailSteps; i++) {
+    const a = radarAngle - (i / trailSteps) * Math.PI * 0.6;
+    const alpha = (1 - i / trailSteps) * 0.06;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, R, a, a + 0.08);
+    ctx.lineTo(cx, cy);
+    ctx.fillStyle = `rgba(249,115,22,${alpha})`;
+    ctx.fill();
+  }
+  // Radar line
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx + Math.cos(radarAngle) * R, cy + Math.sin(radarAngle) * R);
+  ctx.strokeStyle = 'rgba(249,115,22,0.7)';
+  ctx.lineWidth = 1.5;
+  ctx.shadowColor = 'rgba(249,115,22,0.5)';
+  ctx.shadowBlur = 8;
+  ctx.stroke();
+  // Radar circles
+  [0.25, 0.5, 0.75, 1.0].forEach(f => {
+    ctx.beginPath(); ctx.arc(cx, cy, R * f, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(249,115,22,0.07)';
+    ctx.lineWidth = 0.75; ctx.shadowBlur = 0; ctx.stroke();
+  });
+  ctx.restore();
+}
+
+function drawPanelHeaders() {
+  ctx.save();
+  const col = W / 3;
+  ctx.font = 'bold 9px -apple-system, sans-serif';
+  ctx.letterSpacing = '0.1em';
+  ctx.textBaseline = 'middle';
+  const headers = ['INTEL FEED', 'COMMAND TABLE', 'DOSSIERS'];
+  headers.forEach((h, i) => {
+    const x = col * i + col / 2;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = i === 1 ? 'rgba(249,115,22,0.9)' : 'rgba(0,255,60,0.6)';
+    ctx.fillText(h, x, 18);
+    ctx.strokeStyle = i === 1 ? 'rgba(249,115,22,0.2)' : 'rgba(0,255,60,0.08)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(col * i + 8, 30); ctx.lineTo(col * (i + 1) - 8, 30); ctx.stroke();
+  });
+  // Dividers
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 4]);
+  ctx.beginPath(); ctx.moveTo(col, 36); ctx.lineTo(col, H - 20); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(col * 2, 36); ctx.lineTo(col * 2, H - 20); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function drawIntelFeed() {
+  const col = W / 3;
+  const IH = 62, IW = col - 20, IX = 8;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0, 36, col, H - 36); ctx.clip();
+  intelItems.forEach(item => {
+    ctx.globalAlpha = item.alpha;
+    ctx.fillStyle = 'rgba(8,18,12,0.88)';
+    ctx.beginPath(); ctx.roundRect(IX, item.y, IW, IH, 6); ctx.fill();
+    ctx.strokeStyle = `rgba(${item.urgency.color === '#ef4444' ? '239,68,68' : item.urgency.color === '#f97316' ? '249,115,22' : item.urgency.color === '#22d3ee' ? '34,211,238' : '168,85,247'},0.35)`;
+    ctx.lineWidth = 0.75; ctx.stroke();
+    // Badge
+    ctx.fillStyle = item.urgency.color;
+    ctx.font = 'bold 7px -apple-system, sans-serif';
+    ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+    ctx.fillText(item.urgency.label, IX + 8, item.y + 14);
+    // Text
+    ctx.fillStyle = 'rgba(255,255,255,0.82)';
+    ctx.font = '9.5px -apple-system, sans-serif';
+    const words = item.text.split(' ');
+    let line = '', lineY = item.y + 28;
+    for (const w of words) {
+      const test = line ? line + ' ' + w : w;
+      if (ctx.measureText(test).width > IW - 16) {
+        ctx.fillText(line, IX + 8, lineY); line = w; lineY += 13;
+      } else { line = test; }
+    }
+    ctx.fillText(line, IX + 8, lineY);
+    ctx.globalAlpha = 1;
+  });
+  ctx.restore();
+}
+
+function drawCommandTable() {
+  const col = W / 3;
+  const cx = col + col / 2;
+  const cy = H / 2;
+  processProg += 0.008;
+  if (processProg > 1) processProg = 0;
+
+  ctx.save();
+  // Outer ring
+  ctx.beginPath(); ctx.arc(cx, cy, 72, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(249,115,22,0.15)'; ctx.lineWidth = 1; ctx.stroke();
+  // Progress ring
+  ctx.beginPath(); ctx.arc(cx, cy, 72, -Math.PI / 2, -Math.PI / 2 + processProg * Math.PI * 2);
+  ctx.strokeStyle = '#f97316'; ctx.lineWidth = 2.5;
+  ctx.shadowColor = 'rgba(249,115,22,0.6)'; ctx.shadowBlur = 8; ctx.stroke();
+  ctx.shadowBlur = 0;
+  // Inner circle
+  ctx.beginPath(); ctx.arc(cx, cy, 48, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(15,8,4,0.85)'; ctx.fill();
+  ctx.strokeStyle = 'rgba(249,115,22,0.3)'; ctx.lineWidth = 1; ctx.stroke();
+  // Center text
+  ctx.fillStyle = '#f97316'; ctx.font = 'bold 11px -apple-system, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('AUTOPILOT', cx, cy - 6);
+  ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '9px -apple-system, sans-serif';
+  ctx.fillText('ANALYSING', cx, cy + 8);
+  const pct = Math.floor(processProg * 100);
+  ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.font = '8px -apple-system, sans-serif';
+  ctx.fillText(pct + '%', cx, cy + 20);
+
+  // Keyword bursts around ring
+  keywords.forEach((kw, i) => {
+    kw.alpha -= 0.012;
+    ctx.globalAlpha = Math.max(0, kw.alpha);
+    ctx.fillStyle = kw.color; ctx.font = '8px -apple-system, sans-serif';
+    ctx.textAlign = 'center'; ctx.fillText(kw.word, kw.x, kw.y);
+    ctx.globalAlpha = 1;
+  });
+  keywords = keywords.filter(k => k.alpha > 0);
+
+  // Current story label
+  if (activeStory) {
+    ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.font = '8.5px -apple-system, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    const words = activeStory.substring(0, 36).split(' ');
+    let line = '', ly = cy + 58;
+    for (const w of words) {
+      const test = line ? line + ' ' + w : w;
+      if (ctx.measureText(test).width > 120) { ctx.fillText(line, cx, ly); line = w; ly += 12; } else { line = test; }
+    }
+    ctx.fillText(line, cx, ly);
+  }
+
+  ctx.restore();
+}
+
+function drawDossiers() {
+  const col = W / 3;
+  const DX = col * 2 + 8, DW = col - 16, DH = 64;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(col * 2, 36, col, H - 36); ctx.clip();
+  hitAreas = hitAreas.filter(h => h.x < col * 2);
+
+  dossiers.forEach(d => {
+    d.y += (d.targetY - d.y) * 0.1;
+    d.stampAlpha = Math.min(1, d.stampAlpha + 0.04);
+
+    ctx.fillStyle = 'rgba(10,18,8,0.88)';
+    ctx.beginPath(); ctx.roundRect(DX, d.y, DW, DH, 6); ctx.fill();
+    ctx.strokeStyle = d.stampAlpha > 0.8 ? 'rgba(249,115,22,0.4)' : 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 0.75; ctx.stroke();
+
+    // Platform dot
+    ctx.beginPath(); ctx.arc(DX + 14, d.y + 16, 5, 0, Math.PI * 2);
+    ctx.fillStyle = d.platform.color; ctx.fill();
+    ctx.fillStyle = d.platform.color; ctx.font = 'bold 8px -apple-system, sans-serif';
+    ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+    ctx.fillText(d.platform.name.toUpperCase(), DX + 24, d.y + 16);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.82)'; ctx.font = '9.5px -apple-system, sans-serif';
+    const title = d.title.length > 32 ? d.title.substring(0, 32) + '…' : d.title;
+    ctx.fillText(title, DX + 8, d.y + 32);
+
+    // READY stamp
+    ctx.globalAlpha = d.stampAlpha;
+    ctx.save();
+    ctx.translate(DX + DW - 24, d.y + DH - 18);
+    ctx.rotate(-0.2);
+    ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 1.5;
+    ctx.font = 'bold 8px -apple-system, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.strokeText('READY', 0, 0); ctx.fillStyle = 'rgba(34,197,94,0.7)'; ctx.fillText('READY', 0, 0);
+    ctx.restore();
+    ctx.globalAlpha = 1;
+
+    const hx = mouseX, hy = mouseY;
+    if (hx >= DX && hx <= DX + DW && hy >= d.y && hy <= d.y + DH) {
+      tooltip.innerHTML = `<strong>${d.title}</strong><br><span style="color:rgba(255,255,255,0.5)">${d.platform.name} · Mission ready</span>`;
+      tooltip.style.opacity = '1';
+    }
+    hitAreas.push({ x: DX, y: d.y, w: DW, h: DH, title: d.title, platform: d.platform.name });
+  });
+
+  // Mission counter
+  ctx.fillStyle = 'rgba(249,115,22,0.7)'; ctx.font = 'bold 9px -apple-system, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText(`${missionCount} missions deployed`, col * 2 + col / 2, H - 22);
+  ctx.restore();
+}
+
+let frame = 0;
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = e.clientX - r.left; mouseY = e.clientY - r.top;
+  tooltip.style.left = (e.clientX + 14) + 'px'; tooltip.style.top = (e.clientY - 10) + 'px';
+  if (!hitAreas.some(h => mouseX >= h.x && mouseX <= h.x + h.w && mouseY >= h.y && mouseY <= h.y + h.h)) {
+    tooltip.style.opacity = '0';
+  }
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -9999; mouseY = -9999; tooltip.style.opacity = '0'; });
+
+function loop() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#060712'; ctx.fillRect(0, 0, W, H);
+  drawGrid(); drawScanlines(); drawRadar();
+  drawPanelHeaders(); drawIntelFeed(); drawCommandTable(); drawDossiers();
+  frame++;
+  // Scroll intel items
+  if (frame % 3 === 0) intelItems.forEach(item => { item.y -= 0.3; item.age++; });
+  // Fade out items that scroll off screen
+  intelItems.forEach(item => { if (item.y < 30) item.alpha = Math.max(0, item.alpha - 0.05); });
+  intelItems = intelItems.filter(i => i.alpha > 0);
+  // Spawn new intel item
+  if (frame % 120 === 0 || intelItems.length < 4) {
+    const idx = itemSeq++ % HEADLINES.length;
+    const lastY = intelItems.length ? Math.max(...intelItems.map(i => i.y)) : 40;
+    intelItems.push({ text: HEADLINES[idx], urgency: URGENCY[idx % URGENCY.length], y: lastY + 70, alpha: 0, age: 0 });
+    intelItems[intelItems.length - 1].alpha = 0;
+  }
+  intelItems.forEach(item => { if (item.alpha < 1) item.alpha = Math.min(1, item.alpha + 0.04); });
+  // Process cycle
+  processTimer++;
+  if (processTimer % 180 === 0) {
+    const idx = itemSeq % HEADLINES.length;
+    activeStory = HEADLINES[idx % HEADLINES.length];
+    activePlatform = PLATFORMS[idx % PLATFORMS.length];
+    processProg = 0;
+    // Burst keywords
+    const kws = ['TRENDING', 'SEO', 'AUDIENCE', 'BRAND', 'CONVERT'];
+    kws.forEach((w, i) => {
+      const a = (i / kws.length) * Math.PI * 2;
+      const col = W / 3;
+      const cx = col + col / 2, cy = H / 2;
+      keywords.push({ word: w, x: cx + Math.cos(a) * 90, y: cy + Math.sin(a) * 90, alpha: 1, color: URGENCY[i % URGENCY.length].color });
+    });
+    // Spawn dossier
+    const titleIdx = (itemSeq++) % OUTPUT_TITLES.length;
+    const lastDY = dossiers.length ? Math.min(...dossiers.map(d => d.targetY)) - 72 : H - 120;
+    dossiers.unshift({ title: OUTPUT_TITLES[titleIdx], platform: activePlatform, y: H / 2, targetY: Math.max(40, lastDY), stampAlpha: 0, id: titleIdx });
+    if (dossiers.length > 4) dossiers.pop();
+    missionCount++;
+  }
+  requestAnimationFrame(loop);
+}
+loop();
+</script>

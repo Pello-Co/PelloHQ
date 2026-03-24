@@ -1,0 +1,303 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Mixing Board | Pello" description="News feeds arrive as raw audio tracks. AutoPilot blends SEO, voice, audience and platform dimensions on the mixing board — outputting perfectly mastered content every time.">
+  <Header />
+  <main id="main-content">
+    <section class="pub-section" aria-labelledby="pub-headline">
+      <div class="pub-layout">
+        <div class="pub-text">
+          <span class="pub-badge">PelloPublish</span>
+          <h1 id="pub-headline">AutoPilot Is Your Producer.</h1>
+          <p>Raw news feeds arrive as unmastered tracks. AutoPilot's mixing board blends SEO weight, brand voice, audience resonance, and platform format into a single mastered output — every story tuned to perfection before it ships.</p>
+          <ul class="pub-pills" role="list">
+            <li>Multi-Track Input</li>
+            <li>Voice Tuning</li>
+            <li>SEO Mastering</li>
+            <li>Platform Mix</li>
+          </ul>
+        </div>
+        <div class="pub-canvas-col">
+          <canvas id="pub-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .pub-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .pub-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .pub-layout { grid-template-columns: 1fr; } }
+  .pub-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .pub-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #f97316; width: fit-content; }
+  .pub-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .pub-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .pub-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pub-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .pub-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #pub-canvas { width: 100%; height: 100%; position: absolute; inset: 0; }
+  #pub-tooltip23 { position: fixed; pointer-events: none; padding: 0.5rem 0.75rem; background: rgba(10,10,20,0.95); border: 1px solid rgba(249,115,22,0.4); border-radius: 10px; font-size: 0.75rem; color: #fff; max-width: 200px; opacity: 0; transition: opacity 0.15s; z-index: 1000; line-height: 1.5; }
+</style>
+
+<div id="pub-tooltip23"></div>
+
+<script>
+const canvas = document.getElementById('pub-canvas') as HTMLCanvasElement;
+const tooltip = document.getElementById('pub-tooltip23') as HTMLDivElement;
+const ctx = canvas.getContext('2d')!;
+
+let W = 0, H = 0;
+function resize() {
+  const col = canvas.parentElement!;
+  W = col.clientWidth; H = col.clientHeight || 560;
+  canvas.width = W * devicePixelRatio; canvas.height = H * devicePixelRatio;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.resetTransform(); ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+window.addEventListener('resize', resize); resize();
+
+const TRACK_LABELS = ['Tech News', 'SaaS Trends', 'AI Updates', 'Industry Feed'];
+const TRACK_COLORS = ['#6366f1', '#f97316', '#a855f7', '#22d3ee'];
+const FADER_LABELS = ['SEO', 'Voice', 'Audience', 'Platform', 'Tone', 'Length'];
+const FADER_COLORS = ['#22d3ee', '#f97316', '#a855f7', '#4ade80', '#f59e0b', '#ec4899'];
+const OUTPUT_TITLES = ['How AI Trends Affect Your Blog Strategy', 'SaaS Playbook: 5 Moves for Q2', 'Industry Pulse: What to Publish Now'];
+const OUTPUT_PLATFORMS = [{ name: 'Blog', color: '#f97316' }, { name: 'LinkedIn', color: '#0ea5e9' }, { name: 'Twitter', color: '#1d9bf0' }];
+
+interface Track { label: string; color: string; phase: number; amplitude: number; speed: number; scrollX: number; }
+interface Fader { label: string; color: string; level: number; targetLevel: number; vuLevel: number; }
+interface VinylRecord { x: number; y: number; angle: number; title: string; platform: typeof OUTPUT_PLATFORMS[0]; alpha: number; }
+
+const tracks: Track[] = TRACK_LABELS.map((l, i) => ({
+  label: l, color: TRACK_COLORS[i], phase: Math.random() * Math.PI * 2,
+  amplitude: 8 + Math.random() * 10, speed: 0.04 + Math.random() * 0.03, scrollX: 0,
+}));
+
+const faders: Fader[] = FADER_LABELS.map((l, i) => ({
+  label: l, color: FADER_COLORS[i],
+  level: 0.4 + Math.random() * 0.5, targetLevel: 0.4 + Math.random() * 0.5, vuLevel: 0,
+}));
+
+let records: VinylRecord[] = [];
+let outputWavePhase = 0;
+let masterLevel = 0;
+let frame = 0;
+let recordSeq = 0;
+let mouseX = -9999, mouseY = -9999;
+
+function drawBackground() {
+  ctx.save();
+  // Studio gradient
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#060712'); g.addColorStop(1, '#090510');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // Horizontal lines (acoustic panels)
+  for (let y = 0; y < H; y += 18) {
+    ctx.fillStyle = y % 36 === 0 ? 'rgba(255,255,255,0.018)' : 'rgba(255,255,255,0.008)';
+    ctx.fillRect(0, y, W, 1);
+  }
+  ctx.restore();
+}
+
+function drawTracks() {
+  const trackH = H * 0.18;
+  const trackY0 = H * 0.04;
+  const trackW = W * 0.28;
+  const trackX = W * 0.02;
+  ctx.save();
+  ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.font = 'bold 8px -apple-system, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('INPUT TRACKS', trackX + trackW / 2, trackY0 - 16);
+  tracks.forEach((t, i) => {
+    const y = trackY0 + i * (trackH + 6);
+    t.phase += t.speed; t.scrollX += 1.5;
+    // Track bg
+    ctx.fillStyle = 'rgba(12,10,20,0.7)';
+    ctx.beginPath(); ctx.roundRect(trackX, y, trackW, trackH - 2, 4); ctx.fill();
+    ctx.strokeStyle = `rgba(${hexToRgb(t.color)},0.3)`; ctx.lineWidth = 0.75; ctx.stroke();
+    // Label
+    ctx.fillStyle = t.color; ctx.font = 'bold 8px -apple-system, sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText(t.label, trackX + 6, y + 4);
+    // Waveform
+    ctx.save(); ctx.beginPath(); ctx.rect(trackX + 2, y + 2, trackW - 4, trackH - 6); ctx.clip();
+    ctx.beginPath();
+    const step = 2;
+    for (let x = 0; x <= trackW; x += step) {
+      const t2 = (x + t.scrollX) * 0.04;
+      const wave = Math.sin(t2 * 3 + t.phase) * t.amplitude * 0.6 +
+                   Math.sin(t2 * 7 + t.phase * 1.3) * t.amplitude * 0.3 +
+                   Math.sin(t2 * 13 + t.phase * 0.7) * t.amplitude * 0.1;
+      const py = y + trackH / 2 + wave;
+      if (x === 0) ctx.moveTo(trackX + x, py); else ctx.lineTo(trackX + x, py);
+    }
+    ctx.strokeStyle = t.color; ctx.lineWidth = 1.2;
+    ctx.shadowColor = t.color; ctx.shadowBlur = 4; ctx.stroke(); ctx.shadowBlur = 0;
+    ctx.restore();
+  });
+  ctx.restore();
+}
+
+function drawMixer() {
+  const mxW = W * 0.36, mxH = H * 0.82;
+  const mxX = W * 0.32, mxY = H * 0.08;
+  ctx.save();
+  // Board bg
+  ctx.fillStyle = 'rgba(8,6,16,0.9)';
+  ctx.beginPath(); ctx.roundRect(mxX, mxY, mxW, mxH, 8); ctx.fill();
+  ctx.strokeStyle = 'rgba(249,115,22,0.25)'; ctx.lineWidth = 1;
+  ctx.shadowColor = 'rgba(249,115,22,0.15)'; ctx.shadowBlur = 20; ctx.stroke(); ctx.shadowBlur = 0;
+  // Header
+  ctx.fillStyle = 'rgba(249,115,22,0.8)'; ctx.font = 'bold 9px -apple-system, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('AUTOPILOT MIXER', mxX + mxW / 2, mxY + 14);
+
+  const fW = (mxW - 20) / faders.length;
+  faders.forEach((f, i) => {
+    f.level += (f.targetLevel - f.level) * 0.04;
+    f.vuLevel = f.level * (0.7 + Math.sin(frame * 0.07 + i) * 0.3);
+    if (frame % 90 === i * 15) f.targetLevel = 0.35 + Math.random() * 0.55;
+    const fx = mxX + 10 + i * fW;
+    const trackTop = mxY + 30, trackH2 = mxH * 0.55;
+    // Fader track
+    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+    ctx.beginPath(); ctx.roundRect(fx + fW / 2 - 3, trackTop, 6, trackH2, 3); ctx.fill();
+    // Fader fill
+    const fillH = trackH2 * f.level;
+    ctx.fillStyle = f.color;
+    ctx.shadowColor = f.color; ctx.shadowBlur = 6;
+    ctx.beginPath(); ctx.roundRect(fx + fW / 2 - 3, trackTop + trackH2 - fillH, 6, fillH, 3); ctx.fill();
+    ctx.shadowBlur = 0;
+    // Fader knob
+    const knobY = trackTop + trackH2 * (1 - f.level);
+    ctx.fillStyle = '#1a1a2e';
+    ctx.beginPath(); ctx.roundRect(fx + fW / 2 - 9, knobY - 8, 18, 16, 4); ctx.fill();
+    ctx.strokeStyle = f.color; ctx.lineWidth = 1.2; ctx.stroke();
+    // VU meter
+    const vuY = mxY + 30 + trackH2 + 10, vuH = mxH * 0.22;
+    const vuFill = vuH * f.vuLevel;
+    const vuGrad = ctx.createLinearGradient(0, vuY + vuH, 0, vuY);
+    vuGrad.addColorStop(0, '#22d3ee'); vuGrad.addColorStop(0.6, '#f97316'); vuGrad.addColorStop(1, '#ef4444');
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.beginPath(); ctx.roundRect(fx + fW / 2 - 4, vuY, 8, vuH, 2); ctx.fill();
+    ctx.fillStyle = vuGrad;
+    ctx.beginPath(); ctx.roundRect(fx + fW / 2 - 4, vuY + vuH - vuFill, 8, vuFill, 2); ctx.fill();
+    // Label
+    ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '7px -apple-system, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText(f.label, fx + fW / 2, mxY + mxH - 18);
+  });
+  ctx.restore();
+}
+
+function drawOutputTrack() {
+  const outX = W * 0.7, outY = H * 0.08, outW = W * 0.28, outH = H * 0.28;
+  outputWavePhase += 0.05;
+  masterLevel = masterLevel * 0.95 + (faders.reduce((s, f) => s + f.level, 0) / faders.length) * 0.05;
+  ctx.save();
+  ctx.fillStyle = 'rgba(12,10,20,0.8)';
+  ctx.beginPath(); ctx.roundRect(outX, outY, outW, outH, 6); ctx.fill();
+  ctx.strokeStyle = 'rgba(249,115,22,0.3)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.fillStyle = 'rgba(249,115,22,0.8)'; ctx.font = 'bold 8px -apple-system, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('MASTER OUTPUT', outX + outW / 2, outY + 6);
+  // Smooth output waveform
+  ctx.save(); ctx.beginPath(); ctx.rect(outX + 4, outY + 20, outW - 8, outH - 30); ctx.clip();
+  ctx.beginPath();
+  for (let x = 0; x <= outW - 8; x += 1.5) {
+    const t2 = x * 0.03 + outputWavePhase;
+    const amp = (outH - 30) * 0.38 * masterLevel;
+    const wave = Math.sin(t2) * amp * 0.7 + Math.sin(t2 * 2.1) * amp * 0.2 + Math.sin(t2 * 3.7) * amp * 0.1;
+    const py = outY + 20 + (outH - 30) / 2 + wave;
+    if (x === 0) ctx.moveTo(outX + 4 + x, py); else ctx.lineTo(outX + 4 + x, py);
+  }
+  ctx.strokeStyle = '#f97316'; ctx.lineWidth = 1.5;
+  ctx.shadowColor = 'rgba(249,115,22,0.5)'; ctx.shadowBlur = 6; ctx.stroke(); ctx.shadowBlur = 0;
+  ctx.restore();
+  ctx.fillStyle = 'rgba(249,115,22,0.6)'; ctx.font = '7px -apple-system, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText('MASTERED', outX + outW / 2, outY + outH - 4);
+  ctx.restore();
+
+  // Vinyl records
+  const ry0 = H * 0.42;
+  records.forEach((rec, i) => {
+    rec.y += (ry0 + i * 100 - rec.y) * 0.08;
+    rec.alpha = Math.min(1, rec.alpha + 0.02);
+    rec.angle += 0.02;
+    drawVinyl(rec);
+    if (mouseX >= rec.x - 36 && mouseX <= rec.x + 120 && mouseY >= rec.y - 36 && mouseY <= rec.y + 36) {
+      tooltip.innerHTML = `<strong>${rec.title}</strong><br><span style="color:rgba(255,255,255,0.5)">${rec.platform.name} · Ready to publish</span>`;
+      tooltip.style.opacity = '1';
+    }
+  });
+  ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.font = 'bold 8px -apple-system, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('PUBLISHED TRACKS', outX + outW / 2, ry0 - 22);
+}
+
+function drawVinyl(rec: VinylRecord) {
+  ctx.save(); ctx.globalAlpha = rec.alpha;
+  // Record disc
+  ctx.beginPath(); ctx.arc(rec.x, rec.y, 32, 0, Math.PI * 2);
+  ctx.fillStyle = '#0a0a14'; ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 0.5; ctx.stroke();
+  // Groove lines
+  for (let r = 12; r < 30; r += 4) {
+    ctx.beginPath(); ctx.arc(rec.x, rec.y, r, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 0.5; ctx.stroke();
+  }
+  // Highlight arc
+  ctx.beginPath(); ctx.arc(rec.x, rec.y, 28, rec.angle, rec.angle + Math.PI * 0.4);
+  ctx.strokeStyle = `rgba(${hexToRgb(rec.platform.color)},0.5)`; ctx.lineWidth = 2; ctx.stroke();
+  // Label
+  ctx.beginPath(); ctx.arc(rec.x, rec.y, 11, 0, Math.PI * 2);
+  ctx.fillStyle = rec.platform.color; ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 7px -apple-system, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(rec.platform.name.substring(0, 2).toUpperCase(), rec.x, rec.y);
+  // Title
+  ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.font = '8px -apple-system, sans-serif';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  const title = rec.title.length > 28 ? rec.title.substring(0, 28) + '…' : rec.title;
+  ctx.fillText(title, rec.x + 38, rec.y);
+  ctx.globalAlpha = 1; ctx.restore();
+}
+
+function hexToRgb(hex: string) {
+  return `${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)}`;
+}
+
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = e.clientX - r.left; mouseY = e.clientY - r.top;
+  tooltip.style.left = (e.clientX + 14) + 'px'; tooltip.style.top = (e.clientY - 10) + 'px';
+  if (!records.some(rec => mouseX >= rec.x - 36 && mouseX <= rec.x + 120 && mouseY >= rec.y - 36 && mouseY <= rec.y + 36)) {
+    tooltip.style.opacity = '0';
+  }
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -9999; mouseY = -9999; tooltip.style.opacity = '0'; });
+
+// Init records
+for (let i = 0; i < 3; i++) {
+  records.push({ x: W * 0.84, y: H * (0.42 + i * 0.18), angle: Math.random() * Math.PI * 2, title: OUTPUT_TITLES[i % OUTPUT_TITLES.length], platform: OUTPUT_PLATFORMS[i % OUTPUT_PLATFORMS.length], alpha: 0 });
+}
+
+function loop() {
+  ctx.clearRect(0, 0, W, H);
+  drawBackground(); drawTracks(); drawMixer(); drawOutputTrack();
+  if (frame % 220 === 0 && frame > 0) {
+    const idx = recordSeq++ % OUTPUT_TITLES.length;
+    records.unshift({ x: W * 0.84, y: H * 0.36, angle: 0, title: OUTPUT_TITLES[idx], platform: OUTPUT_PLATFORMS[idx % OUTPUT_PLATFORMS.length], alpha: 0 });
+    if (records.length > 3) records.pop();
+  }
+  frame++; requestAnimationFrame(loop);
+}
+loop();
+</script>

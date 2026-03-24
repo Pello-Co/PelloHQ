@@ -1,0 +1,343 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Printing Floor | Pello" description="Stories arrive by teletype. An editor rewrites the angle, the press rolls, and finished content slides off the line. The AutoPilot newsroom never goes to print with the wrong story.">
+  <Header />
+  <main id="main-content">
+    <section class="pub-section" aria-labelledby="pub-headline">
+      <div class="pub-layout">
+        <div class="pub-text">
+          <span class="pub-badge">PelloPublish</span>
+          <h1 id="pub-headline">Stop the Presses. Never.</h1>
+          <p>Stories arrive by teletype. AutoPilot rewrites the angle for your audience, lays out the copy, and runs the presses continuously. Your brand's front page is always fresh — without a single journalist on payroll.</p>
+          <ul class="pub-pills" role="list">
+            <li>Teletype Feed</li>
+            <li>Editorial AI</li>
+            <li>Press Run</li>
+            <li>Continuous Output</li>
+          </ul>
+        </div>
+        <div class="pub-canvas-col">
+          <canvas id="pub-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .pub-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .pub-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .pub-layout { grid-template-columns: 1fr; } }
+  .pub-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .pub-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #f97316; width: fit-content; }
+  .pub-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .pub-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .pub-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pub-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .pub-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #pub-canvas { width: 100%; height: 100%; position: absolute; inset: 0; }
+  #pub-tooltip28 { position: fixed; pointer-events: none; padding: 0.5rem 0.75rem; background: rgba(10,10,20,0.95); border: 1px solid rgba(249,115,22,0.4); border-radius: 10px; font-size: 0.75rem; color: #fff; max-width: 200px; opacity: 0; transition: opacity 0.15s; z-index: 1000; line-height: 1.5; }
+</style>
+
+<div id="pub-tooltip28"></div>
+
+<script>
+const canvas = document.getElementById('pub-canvas') as HTMLCanvasElement;
+const tooltip = document.getElementById('pub-tooltip28') as HTMLDivElement;
+const ctx = canvas.getContext('2d')!;
+
+let W = 0, H = 0;
+function resize() {
+  const col = canvas.parentElement!;
+  W = col.clientWidth; H = col.clientHeight || 560;
+  canvas.width = W * devicePixelRatio; canvas.height = H * devicePixelRatio;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.resetTransform(); ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+window.addEventListener('resize', resize); resize();
+
+const INPUT_HEADLINES = [
+  'BREAKING: OpenAI unveils GPT-5',
+  'TREND: SaaS valuations rising',
+  'AI Overviews shake up Google',
+  'B2B funding hits 3yr high',
+  'LinkedIn AI posts go viral',
+  'HubSpot acquires AI startup',
+  'Shopify adds agentic commerce',
+  'Marketing shifts to perf AI',
+];
+const OUTPUT_TITLES = [
+  'How GPT-5 Changes Your Strategy',
+  '5 Ways SaaS Rebounds Help You',
+  'AI Search: The Marketer\'s Guide',
+  'B2B Boom: Positioning Now',
+  'LinkedIn Posts That Get Results',
+  'The HubSpot Effect on Your Stack',
+  'Commerce AI: Act Before Rivals',
+  'Performance AI: Your Playbook',
+];
+const PLATFORMS = [
+  { name: 'Blog', color: '#f97316' },
+  { name: 'LinkedIn', color: '#0ea5e9' },
+  { name: 'Twitter', color: '#1d9bf0' },
+];
+
+interface TapeChar { char: string; x: number; y: number; alpha: number; }
+interface EditorLine { text: string; progress: number; original: string; revised: string; color: string; }
+interface Newspaper { x: number; y: number; angle: number; vy: number; vx: number; title: string; platform: typeof PLATFORMS[0]; alpha: number; }
+interface InkSplat { x: number; y: number; r: number; alpha: number; }
+
+let tapeChars: TapeChar[] = [];
+let editorLines: EditorLine[] = [];
+let newspapers: Newspaper[] = [];
+let inkSplats: InkSplat[] = [];
+let tapeY = 0;
+let pressRollAngle = 0;
+let frame = 0;
+let storySeq = 0;
+let pressTimer = 0;
+let printCount = 0;
+let mouseX = -9999, mouseY = -9999;
+type HitArea = { x: number; y: number; w: number; h: number; title: string; platform: string };
+let hitAreas: HitArea[] = [];
+
+// Layout zones
+function tapeZone()  { return { x: 4, y: H * 0.08, w: W * 0.24, h: H * 0.5 }; }
+function deskZone()  { return { x: W * 0.28, y: H * 0.08, w: W * 0.44, h: H * 0.5 }; }
+function pressY()    { return H * 0.65; }
+function outZone()   { return { x: W * 0.75, y: H * 0.08, w: W * 0.22, h: H * 0.55 }; }
+
+// Init editor lines
+function refreshEditorLines() {
+  const idx = storySeq % INPUT_HEADLINES.length;
+  editorLines = [
+    { text: '', original: INPUT_HEADLINES[idx], revised: OUTPUT_TITLES[idx], progress: 0, color: '#f97316' },
+    { text: '', original: 'By: NewsWire Reporter', revised: 'For: [Your Business] Readers', progress: 0, color: 'rgba(255,255,255,0.5)' },
+    { text: '', original: 'Platform: General', revised: `Platform: ${PLATFORMS[idx % PLATFORMS.length].name}`, progress: 0, color: PLATFORMS[idx % PLATFORMS.length].color },
+  ];
+  storySeq++;
+}
+refreshEditorLines();
+
+function drawBackground() {
+  ctx.fillStyle = '#060712'; ctx.fillRect(0, 0, W, H);
+  // Ceiling light bars
+  [W * 0.25, W * 0.5, W * 0.75].forEach(lx => {
+    ctx.save();
+    const lg = ctx.createLinearGradient(lx - 20, 0, lx + 20, 0);
+    lg.addColorStop(0, 'rgba(255,255,255,0)'); lg.addColorStop(0.5, 'rgba(255,220,100,0.04)'); lg.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = lg; ctx.fillRect(lx - 20, 0, 40, H * 0.4);
+    ctx.restore();
+  });
+  // Horizontal floor line
+  ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(0, H * 0.62, W, 1);
+}
+
+function drawTeletype() {
+  const tz = tapeZone();
+  ctx.save();
+  // Machine body
+  ctx.fillStyle = 'rgba(10,8,18,0.9)';
+  ctx.beginPath(); ctx.roundRect(tz.x, tz.y, tz.w, tz.h, 6); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font = 'bold 8px monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('TELETYPE', tz.x + tz.w / 2, tz.y + 6);
+  // Paper slot
+  ctx.fillStyle = 'rgba(255,255,255,0.08)';
+  ctx.beginPath(); ctx.roundRect(tz.x + 8, tz.y + 20, tz.w - 16, 5, 2); ctx.fill();
+  // Tape with chars
+  tapeY += 0.5;
+  ctx.save(); ctx.beginPath(); ctx.rect(tz.x + 6, tz.y + 24, tz.w - 12, tz.h - 32); ctx.clip();
+  const tapeBase = tz.y + 26;
+  const charH = 13;
+  // Show scrolling story lines
+  INPUT_HEADLINES.forEach((h, i) => {
+    const lineY = tapeBase + (i * (charH + 6)) - (tapeY % ((charH + 6) * INPUT_HEADLINES.length));
+    const lineY2 = lineY + (charH + 6) * INPUT_HEADLINES.length;
+    [lineY, lineY2].forEach(ly => {
+      if (ly > tz.y + 20 && ly < tz.y + tz.h - 10) {
+        ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.font = '8px monospace';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        ctx.fillText(h.substring(0, 22), tz.x + 10, ly);
+      }
+    });
+  });
+  ctx.restore();
+  // Advancing indicator
+  ctx.fillStyle = 'rgba(249,115,22,0.6)'; ctx.font = '7px monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText('▼ INCOMING FEED ▼', tz.x + tz.w / 2, tz.y + tz.h - 4);
+  ctx.restore();
+}
+
+function drawEditDesk() {
+  const dz = deskZone();
+  ctx.save();
+  // Desk surface
+  ctx.fillStyle = 'rgba(12,10,22,0.85)';
+  ctx.beginPath(); ctx.roundRect(dz.x, dz.y, dz.w, dz.h, 6); ctx.fill();
+  ctx.strokeStyle = 'rgba(249,115,22,0.2)'; ctx.lineWidth = 1;
+  ctx.shadowColor = 'rgba(249,115,22,0.1)'; ctx.shadowBlur = 16; ctx.stroke(); ctx.shadowBlur = 0;
+  ctx.fillStyle = 'rgba(249,115,22,0.7)'; ctx.font = 'bold 8px -apple-system, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('AUTOPILOT EDITORIAL DESK', dz.x + dz.w / 2, dz.y + 8);
+  // Editing lines
+  editorLines.forEach((line, i) => {
+    line.progress = Math.min(1, line.progress + 0.008);
+    const ly = dz.y + 30 + i * 60;
+    // Original struck through
+    ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.font = '8px monospace';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    const orig = line.original.substring(0, 28);
+    ctx.fillText(orig, dz.x + 12, ly);
+    ctx.strokeStyle = 'rgba(239,68,68,0.5)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(dz.x + 12, ly + 5); ctx.lineTo(dz.x + 12 + ctx.measureText(orig).width, ly + 5); ctx.stroke();
+    // Revised text typing in
+    const revealLen = Math.floor(line.progress * line.revised.length);
+    const revealed = line.revised.substring(0, revealLen);
+    ctx.fillStyle = line.color; ctx.font = 'bold 9px monospace';
+    ctx.fillText(revealed, dz.x + 12, ly + 16);
+    // Cursor blink
+    if (revealLen < line.revised.length && frame % 30 < 15) {
+      const tw = ctx.measureText(revealed).width;
+      ctx.fillStyle = line.color; ctx.fillRect(dz.x + 12 + tw, ly + 15, 6, 10);
+    }
+  });
+  // Send to press button area
+  const allDone = editorLines.every(l => l.progress >= 1);
+  if (allDone) {
+    ctx.fillStyle = 'rgba(249,115,22,0.15)';
+    ctx.beginPath(); ctx.roundRect(dz.x + dz.w / 2 - 50, dz.y + dz.h - 28, 100, 20, 10); ctx.fill();
+    ctx.strokeStyle = 'rgba(249,115,22,0.5)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = '#f97316'; ctx.font = 'bold 8px -apple-system, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('SEND TO PRESS →', dz.x + dz.w / 2, dz.y + dz.h - 18);
+  }
+  ctx.restore();
+}
+
+function drawPress() {
+  const py = pressY();
+  pressRollAngle += 0.04;
+  pressTimer++;
+  ctx.save();
+  // Press housing
+  ctx.fillStyle = 'rgba(10,8,18,0.9)';
+  ctx.beginPath(); ctx.roundRect(W * 0.28, py - 28, W * 0.44, 56, 6); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1; ctx.stroke();
+  // Two rollers
+  const r1x = W * 0.37, r2x = W * 0.63;
+  const ry = py;
+  [r1x, r2x].forEach(rx => {
+    ctx.beginPath(); ctx.arc(rx, ry, 18, 0, Math.PI * 2);
+    ctx.fillStyle = '#1a1830'; ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 1.5; ctx.stroke();
+    // Roller spokes
+    for (let s = 0; s < 6; s++) {
+      const a = pressRollAngle + (s / 6) * Math.PI * 2;
+      ctx.beginPath(); ctx.moveTo(rx, ry); ctx.lineTo(rx + Math.cos(a) * 14, ry + Math.sin(a) * 14);
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1; ctx.stroke();
+    }
+  });
+  // Paper going through
+  const paperX = W * 0.37 + ((pressTimer % 120) / 120) * (W * 0.63 - W * 0.37);
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  ctx.beginPath(); ctx.roundRect(W * 0.37, ry - 3, W * 0.26, 6, 1); ctx.fill();
+  ctx.beginPath(); ctx.arc(paperX, ry, 4, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(249,115,22,0.7)'; ctx.fill();
+  // Label
+  ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.font = 'bold 8px -apple-system, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('PRESS ROOM', W * 0.5, py + 22);
+  // Print count
+  ctx.fillStyle = 'rgba(249,115,22,0.6)'; ctx.font = '7px -apple-system, sans-serif';
+  ctx.fillText(`${printCount} editions published`, W * 0.5, py + 33);
+  ctx.restore();
+  // Trigger new print
+  if (pressTimer % 180 === 0) {
+    const allDone = editorLines.every(l => l.progress >= 1);
+    if (allDone) {
+      const idx = (storySeq - 1) % OUTPUT_TITLES.length;
+      newspapers.push({ x: W * 0.63 + 8, y: pressY(), angle: 0, vy: -2 - Math.random(), vx: 1.5 + Math.random(), title: OUTPUT_TITLES[idx], platform: PLATFORMS[idx % PLATFORMS.length], alpha: 1 });
+      inkSplats.push({ x: W * 0.63, y: pressY(), r: 0, alpha: 0.8 });
+      printCount++;
+      refreshEditorLines();
+    }
+  }
+}
+
+function drawNewspapers() {
+  hitAreas = [];
+  newspapers.forEach(n => {
+    n.x += n.vx; n.y += n.vy; n.vy += 0.04; n.angle += 0.02;
+    if (n.y > H * 0.72) { n.vy = 0; n.vx = 0; n.y += (H * 0.72 - n.y) * 0.1; }
+    if (n.y > H + 50) n.alpha -= 0.04;
+    ctx.save(); ctx.globalAlpha = n.alpha;
+    ctx.translate(n.x, n.y); ctx.rotate(n.angle);
+    // Page
+    ctx.fillStyle = 'rgba(255,255,250,0.08)';
+    ctx.beginPath(); ctx.roundRect(-28, -36, 56, 48, 3); ctx.fill();
+    ctx.strokeStyle = n.platform.color; ctx.lineWidth = 1; ctx.stroke();
+    // Platform banner
+    ctx.fillStyle = `rgba(${hexToRgb(n.platform.color)},0.25)`;
+    ctx.beginPath(); ctx.roundRect(-28, -36, 56, 12, [3, 3, 0, 0]); ctx.fill();
+    ctx.fillStyle = n.platform.color; ctx.font = 'bold 7px -apple-system, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(n.platform.name.toUpperCase(), 0, -30);
+    // Headline
+    ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.font = '7px -apple-system, sans-serif';
+    ctx.textBaseline = 'top';
+    const words = n.title.split(' ');
+    let line = '', ly = -22;
+    words.forEach(w => {
+      const test = line ? line + ' ' + w : w;
+      if (ctx.measureText(test).width > 44) { ctx.fillText(line, -22, ly); line = w; ly += 10; } else line = test;
+    });
+    ctx.fillText(line, -22, ly);
+    // Body lines
+    ctx.fillStyle = 'rgba(255,255,255,0.2)'; [0, 1, 2].forEach(row => {
+      ctx.fillRect(-22, ly + 12 + row * 5, 20 + (row % 3) * 10, 2.5);
+    });
+    ctx.translate(-n.x, -n.y); ctx.rotate(-n.angle);
+    hitAreas.push({ x: n.x - 28, y: n.y - 36, w: 56, h: 48, title: n.title, platform: n.platform.name });
+    if (mouseX >= n.x - 28 && mouseX <= n.x + 28 && mouseY >= n.y - 36 && mouseY <= n.y + 12) {
+      tooltip.innerHTML = `<strong>${n.title}</strong><br><span style="color:rgba(255,255,255,0.5)">${n.platform.name} · Published</span>`;
+      tooltip.style.opacity = '1';
+    }
+    ctx.globalAlpha = 1; ctx.restore();
+  });
+  newspapers = newspapers.filter(n => n.alpha > 0);
+  // Ink splats
+  inkSplats.forEach(s => { s.r = Math.min(12, s.r + 0.5); s.alpha -= 0.04; ctx.save(); ctx.globalAlpha = s.alpha; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fillStyle = 'rgba(249,115,22,0.4)'; ctx.fill(); ctx.restore(); });
+  inkSplats = inkSplats.filter(s => s.alpha > 0);
+}
+
+function hexToRgb(hex: string) {
+  return `${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)}`;
+}
+
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = e.clientX - r.left; mouseY = e.clientY - r.top;
+  tooltip.style.left = (e.clientX + 14) + 'px'; tooltip.style.top = (e.clientY - 10) + 'px';
+  if (!hitAreas.some(h => mouseX >= h.x && mouseX <= h.x + h.w && mouseY >= h.y && mouseY <= h.y + h.h)) {
+    tooltip.style.opacity = '0';
+  }
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -9999; mouseY = -9999; tooltip.style.opacity = '0'; });
+
+function loop() {
+  ctx.clearRect(0, 0, W, H);
+  drawBackground(); drawTeletype(); drawEditDesk(); drawPress(); drawNewspapers();
+  frame++; requestAnimationFrame(loop);
+}
+loop();
+</script>

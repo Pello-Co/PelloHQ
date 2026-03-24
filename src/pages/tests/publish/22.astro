@@ -1,0 +1,333 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Chemistry Lab | Pello" description="News stories are raw elements entering as molecular structures. They flow into a central reaction chamber where the Memory Base acts as catalyst, producing refined content compounds.">
+  <Header />
+  <main id="main-content">
+    <section class="pub-section" aria-labelledby="pub-headline">
+      <div class="pub-layout">
+        <div class="pub-text">
+          <span class="pub-badge">PelloPublish</span>
+          <h1 id="pub-headline">News In. Content Out.</h1>
+          <p>Raw web stories enter as volatile elements. Inside AutoPilot's reaction chamber, they bond with your Memory Base — brand voice, audience, keywords — and an exothermic transformation produces refined, publish-ready content compounds.</p>
+          <ul class="pub-pills" role="list">
+            <li>Elemental Parsing</li>
+            <li>Brand Catalyst</li>
+            <li>Reaction Engine</li>
+            <li>Compound Output</li>
+          </ul>
+        </div>
+        <div class="pub-canvas-col">
+          <canvas id="pub-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .pub-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .pub-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .pub-layout { grid-template-columns: 1fr; } }
+  .pub-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .pub-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #f97316; width: fit-content; }
+  .pub-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .pub-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .pub-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pub-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .pub-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #pub-canvas { width: 100%; height: 100%; position: absolute; inset: 0; }
+  #pub-tooltip22 { position: fixed; pointer-events: none; padding: 0.5rem 0.75rem; background: rgba(10,10,20,0.95); border: 1px solid rgba(249,115,22,0.4); border-radius: 10px; font-size: 0.75rem; color: #fff; max-width: 200px; opacity: 0; transition: opacity 0.15s; z-index: 1000; line-height: 1.5; }
+</style>
+
+<div id="pub-tooltip22"></div>
+
+<script>
+const canvas = document.getElementById('pub-canvas') as HTMLCanvasElement;
+const tooltip = document.getElementById('pub-tooltip22') as HTMLDivElement;
+const ctx = canvas.getContext('2d')!;
+
+let W = 0, H = 0;
+function resize() {
+  const col = canvas.parentElement!;
+  W = col.clientWidth; H = col.clientHeight || 560;
+  canvas.width = W * devicePixelRatio; canvas.height = H * devicePixelRatio;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.resetTransform(); ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+window.addEventListener('resize', resize); resize();
+
+const ELEMENT_LABELS = ['Nn', 'Tr', 'Ai', 'Se', 'Mk', 'Fn', 'Vr', 'Bg'];
+const ELEMENT_COLORS = ['#6366f1', '#f97316', '#a855f7', '#22d3ee', '#4ade80', '#f59e0b', '#ec4899', '#14b8a6'];
+const PLATFORM_LABELS = ['Blog', 'LinkedIn', 'Twitter', 'Email'];
+const PLATFORM_COLORS = ['#f97316', '#0ea5e9', '#1d9bf0', '#a855f7'];
+const CONTENT_TITLES = [
+  'AI Trends → Your Growth Playbook',
+  'SaaS Update → 5 Action Points',
+  'Market Shift → Audience Guide',
+  'News Brief → Brand Perspective',
+];
+
+interface Molecule { x: number; y: number; label: string; color: string; vx: number; vy: number; bonds: { dx: number; dy: number }[]; }
+interface Bubble { x: number; y: number; r: number; speed: number; alpha: number; }
+interface Particle { x: number; y: number; vx: number; vy: number; color: string; alpha: number; size: number; phase: 'toReactor' | 'inReactor' | 'toOutput'; targetX: number; targetY: number; }
+interface OutputCompound { x: number; y: number; label: string; platform: string; color: string; alpha: number; nodes: { dx: number; dy: number; elem: string }[]; }
+
+let molecules: Molecule[] = [];
+let bubbles: Bubble[] = [];
+let particles: Particle[] = [];
+let outputs: OutputCompound[] = [];
+let reactorPulse = 0;
+let frame = 0;
+let outputSeq = 0;
+let mouseX = -9999, mouseY = -9999;
+
+// Init molecules
+function initMolecules() {
+  molecules = [];
+  for (let i = 0; i < 3; i++) {
+    const bonds: { dx: number; dy: number }[] = [];
+    const count = 2 + (i % 2);
+    for (let j = 0; j < count; j++) {
+      const a = (j / count) * Math.PI * 2;
+      bonds.push({ dx: Math.cos(a) * 22, dy: Math.sin(a) * 22 });
+    }
+    molecules.push({
+      x: W * 0.14 + (Math.random() - 0.5) * 20,
+      y: H * (0.25 + i * 0.25),
+      label: ELEMENT_LABELS[i % ELEMENT_LABELS.length],
+      color: ELEMENT_COLORS[i % ELEMENT_COLORS.length],
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      bonds,
+    });
+  }
+}
+
+function initBubbles() {
+  const cx = W / 2, bottom = H * 0.82, beakerH = H * 0.38;
+  for (let i = 0; i < 12; i++) {
+    bubbles.push({ x: cx + (Math.random() - 0.5) * 60, y: bottom - Math.random() * beakerH, r: 2 + Math.random() * 5, speed: 0.4 + Math.random() * 0.8, alpha: 0.4 + Math.random() * 0.4 });
+  }
+}
+
+function spawnOutput() {
+  const idx = outputSeq % CONTENT_TITLES.length;
+  const count = 3 + (idx % 2);
+  const ns: { dx: number; dy: number; elem: string }[] = [];
+  for (let i = 0; i < count; i++) {
+    const a = (i / count) * Math.PI * 2;
+    ns.push({ dx: Math.cos(a) * 20, dy: Math.sin(a) * 20, elem: ELEMENT_LABELS[i % ELEMENT_LABELS.length] });
+  }
+  const slot = outputSeq % 3;
+  outputs[slot] = { x: W * 0.86, y: H * (0.22 + slot * 0.26), label: CONTENT_TITLES[idx], platform: PLATFORM_LABELS[idx % PLATFORM_LABELS.length], color: PLATFORM_COLORS[idx % PLATFORM_COLORS.length], alpha: 0, nodes: ns };
+  outputSeq++;
+}
+
+initMolecules(); initBubbles();
+for (let i = 0; i < 3; i++) spawnOutput();
+
+function drawHexGrid() {
+  ctx.save();
+  const R = 22, dx = R * Math.sqrt(3), dy = R * 1.5;
+  ctx.strokeStyle = 'rgba(168,85,247,0.05)'; ctx.lineWidth = 0.5;
+  for (let row = -1; row < H / dy + 2; row++) {
+    for (let col2 = -1; col2 < W / dx + 2; col2++) {
+      const ox = col2 * dx + (row % 2 ? dx / 2 : 0);
+      const oy = row * dy;
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2 - Math.PI / 6;
+        const px = ox + Math.cos(a) * R * 0.85, py = oy + Math.sin(a) * R * 0.85;
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.closePath(); ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+function drawMolecule(m: Molecule) {
+  ctx.save();
+  m.bonds.forEach(b => {
+    ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(m.x + b.dx, m.y + b.dy);
+    ctx.strokeStyle = `rgba(${hexToRgb(m.color)},0.4)`; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(m.x + b.dx, m.y + b.dy, 6, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${hexToRgb(m.color)},0.25)`; ctx.fill();
+  });
+  ctx.beginPath(); ctx.arc(m.x, m.y, 14, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(${hexToRgb(m.color)},0.15)`; ctx.fill();
+  ctx.strokeStyle = m.color; ctx.lineWidth = 1.5;
+  ctx.shadowColor = m.color; ctx.shadowBlur = 10; ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 9px -apple-system, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(m.label, m.x, m.y);
+  ctx.restore();
+}
+
+function drawReactor() {
+  const cx = W / 2, top = H * 0.18, beakerH = H * 0.55, beakerW = 80;
+  reactorPulse = (reactorPulse + 0.05) % (Math.PI * 2);
+  ctx.save();
+  // Beaker shape
+  ctx.beginPath();
+  ctx.moveTo(cx - beakerW / 2 - 8, top);
+  ctx.lineTo(cx - beakerW / 2, top + beakerH * 0.15);
+  ctx.lineTo(cx - beakerW / 2, top + beakerH);
+  ctx.lineTo(cx + beakerW / 2, top + beakerH);
+  ctx.lineTo(cx + beakerW / 2, top + beakerH * 0.15);
+  ctx.lineTo(cx + beakerW / 2 + 8, top);
+  const reactorGrad = ctx.createLinearGradient(cx, top, cx, top + beakerH);
+  reactorGrad.addColorStop(0, 'rgba(249,115,22,0.05)');
+  reactorGrad.addColorStop(0.6, 'rgba(168,85,247,0.12)');
+  reactorGrad.addColorStop(1, 'rgba(249,115,22,0.18)');
+  ctx.fillStyle = reactorGrad; ctx.fill();
+  ctx.strokeStyle = 'rgba(249,115,22,0.45)'; ctx.lineWidth = 1.5;
+  ctx.shadowColor = 'rgba(249,115,22,0.3)'; ctx.shadowBlur = 12; ctx.stroke();
+  ctx.shadowBlur = 0;
+  // Liquid level
+  const liquidY = top + beakerH * 0.35;
+  ctx.beginPath(); ctx.moveTo(cx - beakerW / 2, liquidY); ctx.lineTo(cx + beakerW / 2, liquidY);
+  const surfaceWave = Math.sin(reactorPulse) * 3;
+  ctx.bezierCurveTo(cx - beakerW / 4, liquidY + surfaceWave, cx + beakerW / 4, liquidY - surfaceWave, cx + beakerW / 2, liquidY);
+  ctx.strokeStyle = 'rgba(168,85,247,0.5)'; ctx.lineWidth = 1; ctx.stroke();
+  // Glow inside reactor
+  const glowR = ctx.createRadialGradient(cx, top + beakerH * 0.65, 0, cx, top + beakerH * 0.65, beakerW * 0.6);
+  glowR.addColorStop(0, `rgba(249,115,22,${0.12 + Math.sin(reactorPulse) * 0.08})`);
+  glowR.addColorStop(1, 'rgba(249,115,22,0)');
+  ctx.fillStyle = glowR;
+  ctx.beginPath(); ctx.rect(cx - beakerW / 2, liquidY, beakerW, beakerH - beakerH * 0.35); ctx.fill();
+  // Label
+  ctx.fillStyle = 'rgba(249,115,22,0.8)'; ctx.font = 'bold 9px -apple-system, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('REACTION CHAMBER', cx, top - 16);
+  ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.font = '8px -apple-system, sans-serif';
+  ctx.fillText('Memory Base Catalyst Active', cx, top - 4);
+  ctx.restore();
+  // Bubbles
+  bubbles.forEach(b => {
+    b.y -= b.speed;
+    if (b.y < top + 10) { b.y = top + beakerH - 5; b.x = cx + (Math.random() - 0.5) * 60; }
+    if (b.y < liquidY) {
+      ctx.save();
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(249,115,22,${b.alpha * 0.6})`; ctx.lineWidth = 0.75; ctx.stroke();
+      ctx.restore();
+    }
+  });
+}
+
+function drawOutputCompound(o: OutputCompound) {
+  if (o.alpha < 1) o.alpha = Math.min(1, o.alpha + 0.015);
+  ctx.save(); ctx.globalAlpha = o.alpha;
+  o.nodes.forEach(n => {
+    ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.lineTo(o.x + n.dx, o.y + n.dy);
+    ctx.strokeStyle = `rgba(${hexToRgb(o.color)},0.5)`; ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.beginPath(); ctx.arc(o.x + n.dx, o.y + n.dy, 7, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${hexToRgb(o.color)},0.2)`; ctx.fill();
+    ctx.strokeStyle = o.color; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.font = '7px -apple-system, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(n.elem, o.x + n.dx, o.y + n.dy);
+  });
+  ctx.beginPath(); ctx.arc(o.x, o.y, 16, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(${hexToRgb(o.color)},0.15)`; ctx.fill();
+  ctx.strokeStyle = o.color; ctx.lineWidth = 1.5;
+  ctx.shadowColor = o.color; ctx.shadowBlur = 14; ctx.stroke(); ctx.shadowBlur = 0;
+  ctx.fillStyle = o.color; ctx.font = 'bold 8px -apple-system, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(o.platform.substring(0,2).toUpperCase(), o.x, o.y);
+  // Label
+  ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.font = '8px -apple-system, sans-serif';
+  ctx.textBaseline = 'top';
+  const words = o.label.split(' ');
+  let line = '', ly = o.y + 26;
+  for (const w of words) {
+    const test = line ? line + ' ' + w : w;
+    if (ctx.measureText(test).width > 90) { ctx.fillText(line, o.x, ly); line = w; ly += 11; } else line = test;
+  }
+  ctx.fillText(line, o.x, ly);
+  ctx.globalAlpha = 1; ctx.restore();
+  // Hover check
+  if (mouseX >= o.x - 40 && mouseX <= o.x + 60 && mouseY >= o.y - 20 && mouseY <= o.y + 60) {
+    tooltip.innerHTML = `<strong>${o.label}</strong><br><span style="color:rgba(255,255,255,0.5)">${o.platform} · Published</span>`;
+    tooltip.style.opacity = '1';
+  }
+}
+
+function drawParticles() {
+  const cx = W / 2;
+  particles.forEach(p => {
+    if (p.phase === 'toReactor') {
+      p.x += (cx - p.x) * 0.04; p.y += (H / 2 - p.y) * 0.04;
+      if (Math.abs(p.x - cx) < 50) { p.phase = 'inReactor'; p.targetX = W * 0.86; p.targetY = H * (0.25 + Math.random() * 0.5); }
+    } else if (p.phase === 'inReactor') {
+      p.x += (Math.random() - 0.5) * 2; p.y += (Math.random() - 0.5) * 2;
+      p.alpha -= 0.025; if (p.alpha < 0.3) { p.phase = 'toOutput'; p.color = PLATFORM_COLORS[Math.floor(Math.random() * 4)]; }
+    } else {
+      p.x += (p.targetX - p.x) * 0.05; p.y += (p.targetY - p.y) * 0.05;
+      p.alpha -= 0.015;
+    }
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${hexToRgb(p.color)},${p.alpha})`; ctx.fill();
+  });
+  particles = particles.filter(p => p.alpha > 0);
+  if (frame % 20 === 0) {
+    const m = molecules[frame / 20 % molecules.length | 0];
+    if (m) particles.push({ x: m.x, y: m.y, vx: 0, vy: 0, color: m.color, alpha: 0.9, size: 3, phase: 'toReactor', targetX: W * 0.86, targetY: H / 2 });
+  }
+}
+
+function drawLabels() {
+  ctx.save();
+  ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.font = 'bold 8px -apple-system, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('RAW ELEMENTS', W * 0.14, 16);
+  ctx.fillText('COMPOUNDS', W * 0.86, 16);
+  ctx.restore();
+}
+
+function hexToRgb(hex: string) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `${r},${g},${b}`;
+}
+
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = e.clientX - r.left; mouseY = e.clientY - r.top;
+  tooltip.style.left = (e.clientX + 14) + 'px'; tooltip.style.top = (e.clientY - 10) + 'px';
+  if (!outputs.some(o => mouseX >= o.x - 40 && mouseX <= o.x + 60 && mouseY >= o.y - 20 && mouseY <= o.y + 60)) {
+    tooltip.style.opacity = '0';
+  }
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -9999; mouseY = -9999; tooltip.style.opacity = '0'; });
+
+function loop() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#060712'; ctx.fillRect(0, 0, W, H);
+  drawHexGrid();
+  molecules.forEach(m => {
+    m.x += m.vx; m.y += m.vy;
+    if (m.x < W * 0.04 || m.x > W * 0.28) m.vx *= -1;
+    if (m.y < H * 0.08 || m.y > H * 0.92) m.vy *= -1;
+    drawMolecule(m);
+  });
+  drawReactor(); drawParticles();
+  outputs.forEach(o => drawOutputCompound(o));
+  drawLabels();
+  // Refresh outputs
+  if (frame % 200 === 0) spawnOutput();
+  frame++;
+  requestAnimationFrame(loop);
+}
+loop();
+</script>

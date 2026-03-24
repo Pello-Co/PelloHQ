@@ -1,0 +1,311 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Neural Translation | Pello" description="Raw web content enters as chaotic fragments. A neural bridge fires synapses, translates input language to output language, and delivers polished on-brand content on the other side.">
+  <Header />
+  <main id="main-content">
+    <section class="pub-section" aria-labelledby="pub-headline">
+      <div class="pub-layout">
+        <div class="pub-text">
+          <span class="pub-badge">PelloPublish</span>
+          <h1 id="pub-headline">Every Signal. Translated.</h1>
+          <p>Raw web fragments — headlines, trends, data points — enter a neural bridge that fires continuously. Each synapse translates chaos into clarity: unstructured web noise becomes precise, on-brand content in your audience's language.</p>
+          <ul class="pub-pills" role="list">
+            <li>Signal Parsing</li>
+            <li>Neural Processing</li>
+            <li>Voice Translation</li>
+            <li>Brand Output</li>
+          </ul>
+        </div>
+        <div class="pub-canvas-col">
+          <canvas id="pub-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .pub-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .pub-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .pub-layout { grid-template-columns: 1fr; } }
+  .pub-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .pub-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #f97316; width: fit-content; }
+  .pub-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .pub-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .pub-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pub-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .pub-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #pub-canvas { width: 100%; height: 100%; position: absolute; inset: 0; }
+  #pub-tooltip26 { position: fixed; pointer-events: none; padding: 0.5rem 0.75rem; background: rgba(10,10,20,0.95); border: 1px solid rgba(249,115,22,0.4); border-radius: 10px; font-size: 0.75rem; color: #fff; max-width: 200px; opacity: 0; transition: opacity 0.15s; z-index: 1000; line-height: 1.5; }
+</style>
+
+<div id="pub-tooltip26"></div>
+
+<script>
+const canvas = document.getElementById('pub-canvas') as HTMLCanvasElement;
+const tooltip = document.getElementById('pub-tooltip26') as HTMLDivElement;
+const ctx = canvas.getContext('2d')!;
+
+let W = 0, H = 0;
+function resize() {
+  const col = canvas.parentElement!;
+  W = col.clientWidth; H = col.clientHeight || 560;
+  canvas.width = W * devicePixelRatio; canvas.height = H * devicePixelRatio;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.resetTransform(); ctx.scale(devicePixelRatio, devicePixelRatio);
+  initNetwork();
+}
+window.addEventListener('resize', resize); resize();
+
+const INPUT_WORDS = ['breaking', 'surge', 'global', 'GPT-5', 'funding', 'SaaS', 'AI', 'growth', 'market', 'trend', 'series B', 'pivot', 'scale', 'disrupt'];
+const OUTPUT_WORDS = ['your guide', 'action plan', 'strategy', 'playbook', 'insight', 'framework', 'how-to', 'results', 'opportunity', 'growth path'];
+const PLATFORM_COLORS = ['#f97316', '#0ea5e9', '#1d9bf0', '#a855f7'];
+
+// Neural net: 4 → 6 → 4 layers
+const LAYERS = [4, 6, 4];
+
+interface NeuralNode { x: number; y: number; activation: number; pulse: number; layer: number; idx: number; }
+interface NeuralEdge { from: NeuralNode; to: NeuralNode; weight: number; signal: number; signalPos: number; active: boolean; }
+interface FloatWord { x: number; y: number; vx: number; vy: number; text: string; alpha: number; color: string; size: number; side: 'in' | 'out'; }
+interface DataPacket { x: number; y: number; progress: number; pathEdges: NeuralEdge[]; color: string; alpha: number; }
+
+let nodes: NeuralNode[] = [];
+let edges: NeuralEdge[] = [];
+let floatWords: FloatWord[] = [];
+let packets: DataPacket[] = [];
+let frame = 0;
+let mouseX = -9999, mouseY = -9999;
+
+function initNetwork() {
+  nodes = [];
+  const cx = W / 2;
+  const bridgeW = Math.min(W * 0.36, 160);
+  const totalLayers = LAYERS.length;
+  LAYERS.forEach((count, li) => {
+    const lx = cx - bridgeW / 2 + (li / (totalLayers - 1)) * bridgeW;
+    for (let j = 0; j < count; j++) {
+      const ly = H / 2 - ((count - 1) * 44) / 2 + j * 44;
+      nodes.push({ x: lx, y: ly, activation: Math.random(), pulse: Math.random() * Math.PI * 2, layer: li, idx: j });
+    }
+  });
+  // Edges: fully connect adjacent layers
+  edges = [];
+  for (let li = 0; li < totalLayers - 1; li++) {
+    const fromNodes = nodes.filter(n => n.layer === li);
+    const toNodes = nodes.filter(n => n.layer === li + 1);
+    fromNodes.forEach(fn => {
+      toNodes.forEach(tn => {
+        edges.push({ from: fn, to: tn, weight: 0.3 + Math.random() * 0.7, signal: 0, signalPos: 0, active: false });
+      });
+    });
+  }
+  // Seed float words
+  floatWords = [];
+  for (let i = 0; i < 12; i++) spawnWord('in');
+  for (let i = 0; i < 8; i++) spawnWord('out');
+}
+
+function spawnWord(side: 'in' | 'out') {
+  const zone = side === 'in' ? W * 0.22 : W * 0.78;
+  const spread = W * 0.18;
+  const words = side === 'in' ? INPUT_WORDS : OUTPUT_WORDS;
+  floatWords.push({
+    x: zone + (Math.random() - 0.5) * spread,
+    y: H * 0.1 + Math.random() * H * 0.8,
+    vx: side === 'in' ? (Math.random() - 0.5) * 0.3 + 0.3 : (Math.random() - 0.5) * 0.3 - 0.2,
+    vy: (Math.random() - 0.5) * 0.3,
+    text: words[Math.floor(Math.random() * words.length)],
+    alpha: 0.2 + Math.random() * 0.5,
+    color: side === 'in' ? '#6366f1' : PLATFORM_COLORS[Math.floor(Math.random() * PLATFORM_COLORS.length)],
+    size: 7 + Math.random() * 4,
+    side,
+  });
+}
+
+function drawInputZone() {
+  const zw = W * 0.22;
+  ctx.save();
+  // Zone gradient
+  const g = ctx.createLinearGradient(0, 0, zw * 1.5, 0);
+  g.addColorStop(0, 'rgba(99,102,241,0.06)'); g.addColorStop(1, 'rgba(99,102,241,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, zw * 1.5, H);
+  ctx.fillStyle = 'rgba(99,102,241,0.4)'; ctx.font = 'bold 8px -apple-system, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('INPUT LANGUAGE', zw * 0.85, 18);
+  ctx.fillStyle = 'rgba(99,102,241,0.2)'; ctx.font = '7px -apple-system, sans-serif';
+  ctx.fillText('raw web signals', zw * 0.85, 30);
+  // Chaotic particles
+  for (let i = 0; i < 20; i++) {
+    const px = ((i * 73 + frame * 0.7) % (zw * 1.4));
+    const py = ((i * 137 + frame * 0.4) % H);
+    ctx.beginPath(); ctx.arc(px, py, 1, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(99,102,241,${0.1 + (i % 4) * 0.05})`; ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawOutputZone() {
+  const zx = W * 0.78;
+  ctx.save();
+  const g = ctx.createLinearGradient(zx - W * 0.2, 0, W, 0);
+  g.addColorStop(0, 'rgba(249,115,22,0)'); g.addColorStop(1, 'rgba(249,115,22,0.06)');
+  ctx.fillStyle = g; ctx.fillRect(zx - W * 0.2, 0, W - (zx - W * 0.2), H);
+  ctx.fillStyle = 'rgba(249,115,22,0.4)'; ctx.font = 'bold 8px -apple-system, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('OUTPUT LANGUAGE', W * 0.88, 18);
+  ctx.fillStyle = 'rgba(249,115,22,0.2)'; ctx.font = '7px -apple-system, sans-serif';
+  ctx.fillText('brand content', W * 0.88, 30);
+  // Organized particles (grid-like)
+  for (let i = 0; i < 15; i++) {
+    const col2 = i % 3, row = Math.floor(i / 3);
+    const px = zx + 10 + col2 * 20;
+    const py = H * 0.2 + row * 50 + Math.sin(frame * 0.03 + i) * 4;
+    ctx.beginPath(); ctx.arc(px, py, 1.5, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(249,115,22,${0.25 + (i % 3) * 0.1})`; ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawFloatWords() {
+  floatWords.forEach(w => {
+    w.x += w.vx; w.y += w.vy;
+    // Bounce off zone boundaries
+    if (w.side === 'in') {
+      if (w.x < 4 || w.x > W * 0.38) w.vx *= -1;
+    } else {
+      if (w.x < W * 0.62 || w.x > W - 4) w.vx *= -1;
+    }
+    if (w.y < 20 || w.y > H - 20) w.vy *= -1;
+    ctx.save(); ctx.globalAlpha = w.alpha;
+    ctx.fillStyle = w.color; ctx.font = `${w.size}px -apple-system, sans-serif`;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(w.text, w.x, w.y);
+    ctx.globalAlpha = 1; ctx.restore();
+  });
+  if (floatWords.length < 20 && frame % 60 === 0) {
+    spawnWord(frame % 120 < 60 ? 'in' : 'out');
+  }
+  floatWords = floatWords.filter(w => w.alpha > 0);
+}
+
+function drawEdges() {
+  edges.forEach(e => {
+    ctx.save();
+    const alpha = e.weight * 0.15 + (e.active ? 0.3 : 0);
+    ctx.beginPath(); ctx.moveTo(e.from.x, e.from.y); ctx.lineTo(e.to.x, e.to.y);
+    ctx.strokeStyle = `rgba(249,115,22,${alpha})`; ctx.lineWidth = e.weight * 1.2; ctx.stroke();
+    if (e.active && e.signalPos > 0) {
+      const t = e.signalPos;
+      const px = e.from.x + (e.to.x - e.from.x) * t;
+      const py = e.from.y + (e.to.y - e.from.y) * t;
+      ctx.beginPath(); ctx.arc(px, py, 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#f97316'; ctx.shadowColor = '#f97316'; ctx.shadowBlur = 8; ctx.fill(); ctx.shadowBlur = 0;
+    }
+    ctx.restore();
+  });
+}
+
+function drawNodes() {
+  nodes.forEach(n => {
+    n.pulse = (n.pulse + 0.04) % (Math.PI * 2);
+    n.activation = 0.4 + 0.5 * Math.sin(n.pulse + frame * 0.02 + n.idx);
+    const r = 8 + n.activation * 4;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+    const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, r);
+    const hue = n.layer === 0 ? '99,102,241' : n.layer === 1 ? '249,115,22' : '249,115,22';
+    g.addColorStop(0, `rgba(${hue},${0.6 * n.activation})`);
+    g.addColorStop(1, `rgba(${hue},0)`);
+    ctx.fillStyle = g; ctx.fill();
+    ctx.beginPath(); ctx.arc(n.x, n.y, 6, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${n.layer === 0 ? '99,102,241' : '249,115,22'},${0.7 + n.activation * 0.3})`; ctx.fill();
+    ctx.strokeStyle = n.layer === 0 ? '#6366f1' : '#f97316'; ctx.lineWidth = 1;
+    ctx.shadowColor = n.layer === 0 ? '#6366f1' : '#f97316'; ctx.shadowBlur = 8; ctx.stroke(); ctx.shadowBlur = 0;
+    ctx.restore();
+  });
+}
+
+function drawPackets() {
+  packets.forEach(p => {
+    if (p.pathEdges.length === 0) { p.alpha -= 0.05; return; }
+    const totalEdges = p.pathEdges.length;
+    const globalT = p.progress * totalEdges;
+    const edgeIdx = Math.floor(globalT);
+    const edgeT = globalT - edgeIdx;
+    if (edgeIdx >= totalEdges) { p.alpha -= 0.04; return; }
+    const e = p.pathEdges[edgeIdx];
+    p.x = e.from.x + (e.to.x - e.from.x) * edgeT;
+    p.y = e.from.y + (e.to.y - e.from.y) * edgeT;
+    p.progress += 0.006;
+    // Color transition: input color → output color
+    const blend = p.progress;
+    const r = Math.floor(99 + (249 - 99) * blend);
+    const g2 = Math.floor(102 + (115 - 102) * blend);
+    const b2 = Math.floor(241 + (22 - 241) * blend);
+    ctx.save(); ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${r},${g2},${b2},${p.alpha})`;
+    ctx.shadowColor = `rgb(${r},${g2},${b2})`; ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0; ctx.restore();
+  });
+  packets = packets.filter(p => p.alpha > 0 && p.progress < 1.2);
+}
+
+function spawnPacket() {
+  const inputNodes = nodes.filter(n => n.layer === 0);
+  const start = inputNodes[Math.floor(Math.random() * inputNodes.length)];
+  const path: NeuralEdge[] = [];
+  let current = start;
+  for (let li = 0; li < LAYERS.length - 1; li++) {
+    const nextEdges = edges.filter(e => e.from === current && e.to.layer === li + 1);
+    if (nextEdges.length === 0) break;
+    const chosen = nextEdges[Math.floor(Math.random() * nextEdges.length)];
+    chosen.active = true; chosen.signalPos = 0;
+    path.push(chosen); current = chosen.to;
+  }
+  packets.push({ x: start.x, y: start.y, progress: 0, pathEdges: path, color: '#6366f1', alpha: 0.9 });
+}
+
+function drawBridgeLabel() {
+  const cx = W / 2;
+  ctx.save();
+  ctx.fillStyle = 'rgba(249,115,22,0.5)'; ctx.font = 'bold 8px -apple-system, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText('NEURAL TRANSLATION BRIDGE', cx, H * 0.9);
+  ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.font = '7px -apple-system, sans-serif';
+  ctx.fillText('Memory Base · Brand Voice · SEO Layer', cx, H * 0.9 + 12);
+  ctx.restore();
+}
+
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = e.clientX - r.left; mouseY = e.clientY - r.top;
+  tooltip.style.left = (e.clientX + 14) + 'px'; tooltip.style.top = (e.clientY - 10) + 'px';
+  const hovered = nodes.find(n => Math.hypot(n.x - mouseX, n.y - mouseY) < 14);
+  if (hovered) {
+    const labels = ['Scan', 'Match', 'Draft', 'Format'];
+    tooltip.innerHTML = `<strong>${hovered.layer === 0 ? 'Input Node' : hovered.layer === 1 ? 'Processing Node' : 'Output Node'}</strong><br><span style="color:rgba(255,255,255,0.5)">Layer ${hovered.layer + 1} · ${labels[hovered.idx % labels.length]}</span>`;
+    tooltip.style.opacity = '1';
+  } else { tooltip.style.opacity = '0'; }
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -9999; mouseY = -9999; tooltip.style.opacity = '0'; });
+
+function loop() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#060712'; ctx.fillRect(0, 0, W, H);
+  drawInputZone(); drawOutputZone(); drawFloatWords();
+  drawEdges(); drawNodes(); drawPackets(); drawBridgeLabel();
+  // Animate edge signals
+  edges.forEach(e => {
+    if (e.active) { e.signalPos = Math.min(1, e.signalPos + 0.03); if (e.signalPos >= 1) { e.active = false; e.signalPos = 0; } }
+  });
+  if (frame % 40 === 0) spawnPacket();
+  frame++; requestAnimationFrame(loop);
+}
+loop();
+</script>

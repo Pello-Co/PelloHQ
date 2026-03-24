@@ -1,0 +1,332 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Satellite Network | Pello" description="News events burst from locations across the globe. Satellites intercept signals and beam them to your ground station — which processes and broadcasts finished content to every platform.">
+  <Header />
+  <main id="main-content">
+    <section class="pub-section" aria-labelledby="pub-headline">
+      <div class="pub-layout">
+        <div class="pub-text">
+          <span class="pub-badge">PelloPublish</span>
+          <h1 id="pub-headline">Global Signals. Local Authority.</h1>
+          <p>AutoPilot maintains a satellite network above the noise — intercepting trending signals from every corner of the web, routing them through your Memory Base ground station, and broadcasting platform-ready content back to your audience.</p>
+          <ul class="pub-pills" role="list">
+            <li>Global Monitoring</li>
+            <li>Signal Intercept</li>
+            <li>Ground Processing</li>
+            <li>Broadcast Ready</li>
+          </ul>
+        </div>
+        <div class="pub-canvas-col">
+          <canvas id="pub-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .pub-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .pub-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .pub-layout { grid-template-columns: 1fr; } }
+  .pub-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .pub-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #f97316; width: fit-content; }
+  .pub-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .pub-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .pub-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pub-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .pub-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #pub-canvas { width: 100%; height: 100%; position: absolute; inset: 0; }
+  #pub-tooltip24 { position: fixed; pointer-events: none; padding: 0.5rem 0.75rem; background: rgba(10,10,20,0.95); border: 1px solid rgba(249,115,22,0.4); border-radius: 10px; font-size: 0.75rem; color: #fff; max-width: 200px; opacity: 0; transition: opacity 0.15s; z-index: 1000; line-height: 1.5; }
+</style>
+
+<div id="pub-tooltip24"></div>
+
+<script>
+const canvas = document.getElementById('pub-canvas') as HTMLCanvasElement;
+const tooltip = document.getElementById('pub-tooltip24') as HTMLDivElement;
+const ctx = canvas.getContext('2d')!;
+
+let W = 0, H = 0;
+function resize() {
+  const col = canvas.parentElement!;
+  W = col.clientWidth; H = col.clientHeight || 560;
+  canvas.width = W * devicePixelRatio; canvas.height = H * devicePixelRatio;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.resetTransform(); ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+window.addEventListener('resize', resize); resize();
+
+const PLATFORMS = [
+  { name: 'Blog', color: '#f97316' },
+  { name: 'LinkedIn', color: '#0ea5e9' },
+  { name: 'Twitter', color: '#1d9bf0' },
+  { name: 'Email', color: '#a855f7' },
+];
+const NEWS_HEADLINES = [
+  'AI Regulation Wave Hits Europe',
+  'Startup Valuations Rebound Q2',
+  'Google SGE Rewrites SEO Rules',
+  'B2B SaaS M&A Activity Spikes',
+  'Creator Economy Hits $500B',
+  'Remote Work Policy Shifts Again',
+];
+
+interface Satellite { angle: number; orbitA: number; orbitB: number; speed: number; x: number; y: number; }
+interface SignalBurst { lat: number; lon: number; r: number; maxR: number; alpha: number; headline: string; toSat: number; }
+interface SignalArc { x1: number; y1: number; x2: number; y2: number; prog: number; color: string; }
+interface BroadcastBeam { angle: number; color: string; length: number; alpha: number; label: string; }
+
+const GLOBE_POINTS = [
+  { lat: 0.3, lon: 0.15 }, { lat: -0.2, lon: 0.35 }, { lat: 0.5, lon: 0.6 },
+  { lat: -0.4, lon: 0.7 }, { lat: 0.1, lon: 0.85 }, { lat: 0.6, lon: 0.4 },
+];
+
+let satellites: Satellite[] = [];
+let bursts: SignalBurst[] = [];
+let arcs: SignalArc[] = [];
+let beams: BroadcastBeam[] = [];
+let frame = 0;
+let burstSeq = 0;
+let mouseX = -9999, mouseY = -9999;
+
+function globeCenter() { return { cx: W / 2, cy: H * 0.36 }; }
+function globeR() { return Math.min(W, H) * 0.22; }
+
+// Init satellites on orbital ellipses
+satellites = [
+  { angle: 0, orbitA: 1.5, orbitB: 0.55, speed: 0.012, x: 0, y: 0 },
+  { angle: Math.PI * 0.67, orbitA: 1.3, orbitB: 0.45, speed: -0.016, x: 0, y: 0 },
+  { angle: Math.PI * 1.33, orbitA: 1.6, orbitB: 0.5, speed: 0.009, x: 0, y: 0 },
+];
+
+function latLonToXY(lat: number, lon: number) {
+  const { cx, cy } = globeCenter(); const R = globeR();
+  const a = lon * Math.PI * 2;
+  const x = cx + Math.cos(a) * R * Math.cos(lat * Math.PI * 0.6);
+  const y = cy + Math.sin(lat * Math.PI * 0.6) * R * 0.7;
+  return { x, y };
+}
+
+function updateSatellites() {
+  const { cx, cy } = globeCenter(); const R = globeR();
+  satellites.forEach(s => {
+    s.angle += s.speed;
+    s.x = cx + Math.cos(s.angle) * R * s.orbitA;
+    s.y = cy + Math.sin(s.angle) * R * s.orbitB;
+  });
+}
+
+function drawStarfield() {
+  ctx.save();
+  ctx.fillStyle = '#060712'; ctx.fillRect(0, 0, W, H);
+  for (let i = 0; i < 80; i++) {
+    const sx = (((i * 137 + 71) % W));
+    const sy = (((i * 97 + 23) % (H * 0.75)));
+    const alpha = 0.1 + (i % 5) * 0.1;
+    ctx.beginPath(); ctx.arc(sx, sy, 0.7, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,255,255,${alpha})`; ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawGlobe() {
+  const { cx, cy } = globeCenter(); const R = globeR();
+  ctx.save();
+  // Atmosphere glow
+  const atmo = ctx.createRadialGradient(cx, cy, R * 0.9, cx, cy, R * 1.15);
+  atmo.addColorStop(0, 'rgba(34,211,238,0.12)'); atmo.addColorStop(1, 'rgba(34,211,238,0)');
+  ctx.fillStyle = atmo; ctx.beginPath(); ctx.arc(cx, cy, R * 1.15, 0, Math.PI * 2); ctx.fill();
+  // Globe base
+  const globeGrad = ctx.createRadialGradient(cx - R * 0.3, cy - R * 0.3, R * 0.1, cx, cy, R);
+  globeGrad.addColorStop(0, '#0d2845'); globeGrad.addColorStop(0.5, '#081520'); globeGrad.addColorStop(1, '#030a10');
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fillStyle = globeGrad; ctx.fill();
+  // Lat/lon grid
+  ctx.strokeStyle = 'rgba(34,211,238,0.1)'; ctx.lineWidth = 0.5;
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    ctx.beginPath(); ctx.moveTo(cx, cy - R); ctx.quadraticCurveTo(cx + Math.cos(a) * R * 0.7, cy, cx, cy + R); ctx.stroke();
+  }
+  [-0.5, 0, 0.5].forEach(lat => {
+    const y2 = cy + lat * R * 0.7;
+    const r2 = Math.sqrt(Math.max(0, R * R - (y2 - cy) * (y2 - cy)));
+    ctx.beginPath(); ctx.ellipse(cx, y2, r2, r2 * 0.3, 0, 0, Math.PI * 2); ctx.stroke();
+  });
+  // Rim
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(34,211,238,0.3)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.restore();
+}
+
+function drawOrbits() {
+  const { cx, cy } = globeCenter(); const R = globeR();
+  ctx.save();
+  ctx.setLineDash([3, 5]);
+  satellites.forEach(s => {
+    ctx.beginPath(); ctx.ellipse(cx, cy, R * s.orbitA, R * s.orbitB, 0, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(34,211,238,0.1)'; ctx.lineWidth = 0.75; ctx.stroke();
+  });
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function drawSatellites() {
+  ctx.save();
+  satellites.forEach(s => {
+    // Satellite body
+    ctx.fillStyle = '#1a2a3a';
+    ctx.beginPath(); ctx.roundRect(s.x - 7, s.y - 4, 14, 8, 2); ctx.fill();
+    ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 0.75; ctx.stroke();
+    // Solar panels
+    ctx.fillStyle = 'rgba(99,102,241,0.4)';
+    ctx.beginPath(); ctx.roundRect(s.x - 18, s.y - 2, 8, 4, 1); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(s.x + 10, s.y - 2, 8, 4, 1); ctx.fill();
+    ctx.strokeStyle = 'rgba(99,102,241,0.8)'; ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(s.x - 14, s.y - 2); ctx.lineTo(s.x - 14, s.y + 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(s.x + 14, s.y - 2); ctx.lineTo(s.x + 14, s.y + 2); ctx.stroke();
+    // Signal dot
+    ctx.beginPath(); ctx.arc(s.x, s.y, 2, 0, Math.PI * 2);
+    ctx.fillStyle = '#22d3ee'; ctx.fill();
+  });
+  ctx.restore();
+}
+
+function drawBursts() {
+  GLOBE_POINTS.forEach((pt, i) => {
+    const { x, y } = latLonToXY(pt.lat, pt.lon);
+    ctx.save();
+    ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(249,115,22,0.7)';
+    ctx.shadowColor = '#f97316'; ctx.shadowBlur = 6; ctx.fill(); ctx.shadowBlur = 0;
+    ctx.restore();
+  });
+  bursts.forEach(b => {
+    const { x, y } = latLonToXY(b.lat, b.lon);
+    b.r += 1.2; b.alpha = Math.max(0, 1 - b.r / b.maxR);
+    ctx.save();
+    ctx.beginPath(); ctx.arc(x, y, b.r, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(249,115,22,${b.alpha * 0.8})`; ctx.lineWidth = 1; ctx.stroke();
+    ctx.restore();
+  });
+  bursts = bursts.filter(b => b.alpha > 0);
+}
+
+function drawArcs() {
+  arcs.forEach(a => { a.prog = Math.min(1, a.prog + 0.02); });
+  arcs.forEach(a => {
+    const pts = bezier(a.x1, a.y1, a.x2, a.y2, 30);
+    const end = Math.floor(pts.length * a.prog);
+    if (end < 2) return;
+    ctx.save(); ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < end; i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.strokeStyle = a.color; ctx.lineWidth = 1.2;
+    ctx.shadowColor = a.color; ctx.shadowBlur = 6;
+    ctx.setLineDash([4, 4]); ctx.stroke(); ctx.shadowBlur = 0; ctx.setLineDash([]);
+    // Arrow
+    const tip = pts[end - 1], prev = pts[Math.max(0, end - 3)];
+    const ang = Math.atan2(tip.y - prev.y, tip.x - prev.x);
+    ctx.setLineDash([]); ctx.fillStyle = a.color;
+    ctx.beginPath();
+    ctx.moveTo(tip.x + Math.cos(ang) * 5, tip.y + Math.sin(ang) * 5);
+    ctx.lineTo(tip.x + Math.cos(ang + 2.4) * 4, tip.y + Math.sin(ang + 2.4) * 4);
+    ctx.lineTo(tip.x + Math.cos(ang - 2.4) * 4, tip.y + Math.sin(ang - 2.4) * 4);
+    ctx.fill(); ctx.restore();
+  });
+  arcs = arcs.filter(a => a.prog < 1 || frame % 60 !== 0);
+}
+
+function drawGroundStation() {
+  const gx = W / 2, gy = H * 0.88;
+  ctx.save();
+  // Base
+  ctx.fillStyle = 'rgba(8,12,24,0.9)';
+  ctx.beginPath(); ctx.roundRect(gx - 55, gy - 22, 110, 44, 6); ctx.fill();
+  ctx.strokeStyle = 'rgba(249,115,22,0.4)'; ctx.lineWidth = 1;
+  ctx.shadowColor = 'rgba(249,115,22,0.2)'; ctx.shadowBlur = 12; ctx.stroke(); ctx.shadowBlur = 0;
+  ctx.fillStyle = 'rgba(249,115,22,0.8)'; ctx.font = 'bold 8px -apple-system, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('MEMORY BASE', gx, gy - 8);
+  ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font = '7px -apple-system, sans-serif';
+  ctx.fillText('GROUND STATION', gx, gy + 6);
+  // Dish
+  ctx.beginPath(); ctx.ellipse(gx - 30, gy - 38, 14, 8, -0.3, 0, Math.PI);
+  ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(gx - 30, gy - 30); ctx.lineTo(gx - 30, gy - 22);
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.restore();
+
+  // Broadcast beams downward
+  PLATFORMS.forEach((p, i) => {
+    const bAngle = (Math.PI * 0.25) + (i / (PLATFORMS.length - 1)) * Math.PI * 0.5;
+    const blen = 80 + i * 10;
+    const tx = gx + Math.cos(bAngle) * blen;
+    const ty = gy + Math.sin(bAngle) * blen * 0.4 + 20;
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(gx, gy);
+    const grad = ctx.createLinearGradient(gx, gy, tx, ty);
+    grad.addColorStop(0, p.color); grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.strokeStyle = grad; ctx.lineWidth = 1.5;
+    ctx.shadowColor = p.color; ctx.shadowBlur = 5; ctx.lineTo(tx, ty); ctx.stroke(); ctx.shadowBlur = 0;
+    // Platform label
+    ctx.beginPath(); ctx.arc(tx, ty, 12, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${hexToRgb(p.color)},0.15)`; ctx.fill();
+    ctx.strokeStyle = p.color; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = p.color; ctx.font = 'bold 7px -apple-system, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(p.name.substring(0, 2).toUpperCase(), tx, ty);
+    ctx.restore();
+  });
+}
+
+function bezier(x1: number, y1: number, x2: number, y2: number, steps: number) {
+  const pts: { x: number; y: number }[] = [];
+  const mx = (x1 + x2) / 2, my = (y1 + y2) / 2 - 60;
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps, u = 1 - t;
+    pts.push({ x: u*u*x1 + 2*u*t*mx + t*t*x2, y: u*u*y1 + 2*u*t*my + t*t*y2 });
+  }
+  return pts;
+}
+
+function hexToRgb(hex: string) {
+  return `${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)}`;
+}
+
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = e.clientX - r.left; mouseY = e.clientY - r.top;
+  tooltip.style.left = (e.clientX + 14) + 'px'; tooltip.style.top = (e.clientY - 10) + 'px';
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -9999; mouseY = -9999; tooltip.style.opacity = '0'; });
+
+function loop() {
+  ctx.clearRect(0, 0, W, H);
+  drawStarfield(); drawOrbits(); drawGlobe();
+  updateSatellites();
+  drawBursts(); drawArcs();
+  drawSatellites(); drawGroundStation();
+
+  // Spawn bursts
+  if (frame % 80 === 0) {
+    const pt = GLOBE_POINTS[burstSeq % GLOBE_POINTS.length];
+    bursts.push({ lat: pt.lat, lon: pt.lon, r: 0, maxR: 30, alpha: 1, headline: NEWS_HEADLINES[burstSeq % NEWS_HEADLINES.length], toSat: 0 });
+    // Arc from globe point to nearest satellite
+    const { x: bx, y: by } = latLonToXY(pt.lat, pt.lon);
+    const sat = satellites[burstSeq % satellites.length];
+    arcs.push({ x1: bx, y1: by, x2: sat.x, y2: sat.y, prog: 0, color: 'rgba(249,115,22,0.8)' });
+    // Arc from satellite to ground station
+    setTimeout(() => {
+      arcs.push({ x1: sat.x, y1: sat.y, x2: W / 2, y2: H * 0.88, prog: 0, color: 'rgba(34,211,238,0.8)' });
+    }, 1200);
+    burstSeq++;
+  }
+  frame++; requestAnimationFrame(loop);
+}
+loop();
+</script>
