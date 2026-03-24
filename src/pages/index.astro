@@ -2395,190 +2395,1007 @@ Zero effort.</h2>
     }
   }
 
-  // ── PelloPublish Flow Canvas ──────────────────────────────────────────────
+  // ── PelloPublish Flow Canvas (full interactive version) ─────────────────
   (function() {
-    const pubCanvas = document.getElementById('pub-flow-canvas') as HTMLCanvasElement;
-    if (!pubCanvas) return;
-    const pubCtx = pubCanvas.getContext('2d')!;
-    const pubWrap = pubCanvas.parentElement!;
-    let pW = 0, pH = 0, pDpr = 1;
+    (function() {
+      const canvas = document.getElementById('pub-flow-canvas') as HTMLCanvasElement;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d')!;
+      const wrap = canvas.parentElement!;
 
-    function pubResize() {
-      const r = pubWrap.getBoundingClientRect();
-      pDpr = window.devicePixelRatio || 1;
-      pW = r.width; pH = r.height || 480;
-      pubCanvas.width = pW * pDpr; pubCanvas.height = pH * pDpr;
-      pubCanvas.style.width = pW + 'px'; pubCanvas.style.height = pH + 'px';
-      pubCtx.setTransform(pDpr, 0, 0, pDpr, 0, 0);
-    }
-    pubResize();
-    window.addEventListener('resize', pubResize);
+      let W = 0, H = 0, dpr = 1;
 
-    // SVG paths for icons
-    const PUB_PATHS: Record<string, {path: string; vb: number}> = {
-      x:    {path:'M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z',vb:24},
-      ig:   {path:'M7.03.084c-1.277.06-2.149.264-2.911.563a4.1 4.1 0 0 0-2.123 1.388 4.1 4.1 0 0 0-1.38 2.127c-.296.764-.496 1.637-.552 2.914C.007 8.353-.006 8.764 0 12.001c.006 3.259.02 3.667.082 4.947.061 1.277.264 2.148.564 2.911.308.789.72 1.457 1.388 2.123a4.1 4.1 0 0 0 2.128 1.38c.764.295 1.636.496 2.914.552C8.353 23.993 8.764 24.006 12 24s3.668-.02 4.948-.082c1.28-.06 2.147-.265 2.91-.563a4.1 4.1 0 0 0 2.123-1.388 4.1 4.1 0 0 0 1.38-2.128c.295-.764.496-1.636.552-2.912.056-1.281.069-1.69.063-4.948-.006-3.258-.021-3.667-.082-4.947-.06-1.28-.264-2.149-.563-2.912a4.1 4.1 0 0 0-1.388-2.123A4.1 4.1 0 0 0 19.838.617c-.51-.198-1.092-.333-1.943-.372C16.617.009 16.208-.005 12.971.001 9.712.008 9.304.022 8.024.084M16.953 5.586a1.44 1.44 0 1 0 1.437-1.442 1.44 1.44 0 0 0-1.437 1.442M5.838 12.012a6.17 6.17 0 1 0 12.324-.024 6.17 6.17 0 0 0-12.324.024M8 12.008a4 4 0 1 1 4.008 3.992A4 4 0 0 1 8 12.008',vb:24},
-      tt:   {path:'M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z',vb:24},
-      li:   {path:'M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854zm4.943 12.248V6.169H2.542v7.225zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248S2.4 3.226 2.4 3.934c0 .694.521 1.248 1.327 1.248zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016l.016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225z',vb:16},
-      rss:  {path:'M19.199 24C19.199 13.467 10.533 4.8 0 4.8V0c13.165 0 24 10.835 24 24h-4.801zM3.291 17.415c1.814 0 3.293 1.479 3.293 3.295 0 1.813-1.485 3.29-3.301 3.29C1.47 24 0 22.526 0 20.71s1.475-3.294 3.291-3.295zM15.909 24h-4.665c0-6.169-5.075-11.245-11.244-11.245V8.09c8.727 0 15.909 7.184 15.909 15.91z',vb:24},
-      globe:{path:'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z',vb:24},
-      search:{path:'M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z',vb:24},
-      mail: {path:'M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z',vb:24},
-      blog: {path:'M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z',vb:24},
-    };
-    const pubPathCache: Record<string, Path2D> = {};
-    for (const [k, v] of Object.entries(PUB_PATHS)) pubPathCache[k] = new Path2D(v.path);
-
-    function pubIcon(x: number, y: number, type: string, sz: number, color: string) {
-      const e = PUB_PATHS[type]; if (!e) return;
-      pubCtx.save();
-      pubCtx.translate(x - sz/2, y - sz/2);
-      pubCtx.scale(sz/e.vb, sz/e.vb);
-      pubCtx.fillStyle = color;
-      pubCtx.fill(pubPathCache[type]);
-      pubCtx.restore();
-    }
-
-    const PUB_INPUTS = [
-      { label: 'Scrape', color: '#6366f1', icon: 'globe' },
-      { label: 'News',   color: '#22d3ee', icon: 'rss' },
-      { label: 'X Feed', color: '#ffffff', icon: 'x' },
-      { label: 'Keywords',color:'#4ade80', icon: 'search' },
-    ];
-    const PUB_OUTPUTS = [
-      { label: 'Newsletter', color: '#f97316', icon: 'mail' },
-      { label: 'Instagram',  color: '#E1306C', icon: 'ig' },
-      { label: 'TikTok',     color: '#00f2ea', icon: 'tt' },
-      { label: 'X',          color: '#1d9bf0', icon: 'x' },
-      { label: 'LinkedIn',   color: '#0A66C2', icon: 'li' },
-      { label: 'Blog',       color: '#a855f7', icon: 'blog' },
-    ];
-
-    function pubInputPos(i: number) { return { x: 40, y: (pH/(PUB_INPUTS.length+1))*(i+1) }; }
-    function pubOutputPos(i: number) { return { x: pW - 40, y: (pH/(PUB_OUTPUTS.length+1))*(i+1) }; }
-    function pubEnginePos() { return { x: pW/2, y: pH/2 }; }
-
-    interface PubPart { x:number; y:number; tx:number; ty:number; prog:number; spd:number; color:string; fromI:number; toO:number; sz:number; }
-    const pubParts: PubPart[] = [];
-    let pubLastSpawn = 0;
-
-    function pubBezier(sx:number,sy:number,ex:number,ey:number,t:number) {
-      const cx=(sx+ex)/2, cy=sy, u=1-t;
-      return { x: u*u*sx+2*u*t*cx+t*t*ex, y: u*u*sy+2*u*t*cy+t*t*ey };
-    }
-
-    function pubRender(time: number) {
-      requestAnimationFrame(pubRender);
-      if (pW < 10) return;
-      const t = time * 0.001;
-      pubCtx.clearRect(0, 0, pW, pH);
-
-      const eng = pubEnginePos();
-
-      // Subtle grid
-      pubCtx.strokeStyle = 'rgba(255,255,255,0.015)';
-      pubCtx.lineWidth = 0.5;
-      for (let gx = 0; gx < pW; gx += 30) { pubCtx.beginPath(); pubCtx.moveTo(gx,0); pubCtx.lineTo(gx,pH); pubCtx.stroke(); }
-      for (let gy = 0; gy < pH; gy += 30) { pubCtx.beginPath(); pubCtx.moveTo(0,gy); pubCtx.lineTo(pW,gy); pubCtx.stroke(); }
-
-      // Connections
-      for (let i = 0; i < PUB_INPUTS.length; i++) {
-        const p = pubInputPos(i);
-        pubCtx.beginPath(); pubCtx.moveTo(p.x+16, p.y);
-        pubCtx.quadraticCurveTo((p.x+16+eng.x-30)/2, p.y, eng.x-30, eng.y);
-        pubCtx.strokeStyle = PUB_INPUTS[i].color + '15'; pubCtx.lineWidth = 1; pubCtx.stroke();
+      function resize() {
+        const r = wrap.getBoundingClientRect();
+        dpr = window.devicePixelRatio || 1;
+        W = r.width; H = r.height || 480;
+        canvas.width = W * dpr; canvas.height = H * dpr;
+        canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       }
-      for (let i = 0; i < PUB_OUTPUTS.length; i++) {
-        const p = pubOutputPos(i);
-        pubCtx.beginPath(); pubCtx.moveTo(eng.x+30, eng.y);
-        pubCtx.quadraticCurveTo((eng.x+30+p.x-16)/2, eng.y, p.x-16, p.y);
-        pubCtx.strokeStyle = PUB_OUTPUTS[i].color + '15'; pubCtx.lineWidth = 1; pubCtx.stroke();
-      }
+      resize();
+      window.addEventListener('resize', resize);
 
-      // Spawn
-      if (t - pubLastSpawn > 0.2) {
-        pubLastSpawn = t;
-        const ii = Math.floor(Math.random()*PUB_INPUTS.length);
-        const ip = pubInputPos(ii);
-        pubParts.push({ x:ip.x+16,y:ip.y, tx:eng.x-30,ty:eng.y, prog:0, spd:0.004+Math.random()*0.003, color:PUB_INPUTS[ii].color, fromI:ii, toO:-1, sz:1.5+Math.random()*1.5 });
-        const oi = Math.floor(Math.random()*PUB_OUTPUTS.length);
-        const op = pubOutputPos(oi);
-        pubParts.push({ x:eng.x+30,y:eng.y, tx:op.x-16,ty:op.y, prog:0, spd:0.004+Math.random()*0.003, color:PUB_OUTPUTS[oi].color, fromI:-1, toO:oi, sz:1.5+Math.random()*1.5 });
-      }
+      // ── Input sources ──────────────────────────────────────────────────────
+      const INPUTS = [
+        { label: 'Website\nScrape', color: '#6366f1', icon: 'globe', feed: [
+          { tag: 'PAGE', text: '/about — "We help B2B SaaS scale revenue"' },
+          { tag: 'PAGE', text: '/pricing — 3 tiers, enterprise custom' },
+          { tag: 'BRAND', text: 'Tone: professional, data-driven' },
+          { tag: 'PRODUCT', text: '4 products detected, 12 features' },
+          { tag: 'META', text: '47 pages crawled in 3.2s' },
+        ]},
+        { label: 'News\nFeed', color: '#22d3ee', icon: 'rss', feed: [
+          { tag: 'TRENDING', text: 'OpenAI announces GPT-5 reasoning' },
+          { tag: 'BREAKING', text: 'Google rolls out AI Overviews globally' },
+          { tag: 'INDUSTRY', text: 'B2B content leads outperform paid 3x' },
+          { tag: 'EMERGING', text: 'Agentic commerce reshaping SaaS' },
+          { tag: 'FINANCE', text: 'Series B funding hits 3-year high' },
+        ]},
+        { label: 'X Feed', color: '#ffffff', icon: 'x', feed: [
+          { tag: '@rival', text: '"Just shipped AI outreach — 4x reply rates"' },
+          { tag: '#SaaS', text: 'Thread: Why PLG is dead in 2026' },
+          { tag: 'VIRAL', text: '"Our content strategy costs $0/month" — 12k likes' },
+          { tag: '@user', text: '"Anyone tried PelloPublish? Need reviews"' },
+          { tag: '#AI', text: 'AI content tools compared — 28 thread' },
+        ]},
+        { label: 'Keywords', color: '#4ade80', icon: 'search', feed: [
+          { tag: '2.4k/mo', text: '"b2b content marketing strategy"' },
+          { tag: '1.8k/mo', text: '"ai content generation tools"' },
+          { tag: '890/mo', text: '"automated social media posting"' },
+          { tag: '3.1k/mo', text: '"how to scale content production"' },
+          { tag: '720/mo', text: '"content repurposing workflow"' },
+        ]},
+      ];
 
-      // Particles
-      for (let i = pubParts.length-1; i >= 0; i--) {
-        const p = pubParts[i];
-        p.prog += p.spd;
-        if (p.prog >= 1) { pubParts.splice(i,1); continue; }
-        const pos = pubBezier(p.x, p.y, p.tx, p.ty, p.prog);
-        const alpha = p.prog < 0.1 ? p.prog/0.1 : p.prog > 0.85 ? (1-p.prog)/0.15 : 1;
-        pubCtx.globalAlpha = alpha * 0.7;
-        pubCtx.beginPath(); pubCtx.arc(pos.x, pos.y, p.sz, 0, Math.PI*2);
-        pubCtx.fillStyle = p.color; pubCtx.fill();
-        pubCtx.globalAlpha = 1;
-      }
-      while (pubParts.length > 120) pubParts.shift();
+      // ── Output platforms ───────────────────────────────────────────────────
+      const OUTPUTS = [
+        { label: 'Newsletter', color: '#f97316', icon: 'mail', feed: [
+          { tag: 'SUBJECT', text: '"5 AI Trends Reshaping B2B This Week"' },
+          { tag: 'OPEN RATE', text: '42.3% — sent to 8,400 subscribers' },
+          { tag: 'SECTION', text: 'News digest + product tie-in + CTA' },
+        ]},
+        { label: 'Instagram', color: '#E1306C', icon: 'instagram', feed: [
+          { tag: 'CAROUSEL', text: '"7 Signs Your Content Strategy is Broken"' },
+          { tag: 'REEL', text: '15s hook: "Stop writing content manually"' },
+          { tag: 'STORY', text: 'Poll: "How many posts/week?" — 2.1k votes' },
+        ]},
+        { label: 'TikTok', color: '#00f2ea', icon: 'tiktok', feed: [
+          { tag: 'HOOK', text: '"POV: Your competitor just posted 30x more"' },
+          { tag: 'SCRIPT', text: '45s explainer, 3-part series on AI content' },
+          { tag: 'TRENDING', text: 'Duet format — reacting to rival claims' },
+        ]},
+        { label: 'Twitter', color: '#1d9bf0', icon: 'x', feed: [
+          { tag: 'THREAD', text: '"We analysed 10k B2B posts. Here\'s what works:"' },
+          { tag: 'TWEET', text: '"Content at scale isn\'t spam. It\'s strategy." — 847 likes' },
+          { tag: 'REPLY', text: 'Engaging with industry conversation on AI' },
+        ]},
+        { label: 'LinkedIn', color: '#0A66C2', icon: 'linkedin', feed: [
+          { tag: 'ARTICLE', text: '"Why We Bet Everything on Content Automation"' },
+          { tag: 'POST', text: 'Thought leadership: "The 3-layer content stack"' },
+          { tag: 'ENGAGE', text: '2.4k impressions, 89 comments this week' },
+        ]},
+        { label: 'Blog', color: '#a855f7', icon: 'blog', feed: [
+          { tag: '2,400w', text: '"The Complete Guide to AI Content in 2026"' },
+          { tag: 'SEO', text: 'Targeting 3 keywords, 8 internal links added' },
+          { tag: 'RANK', text: 'Page 1 for "ai content generation" in 14 days' },
+        ]},
+      ];
 
-      // Engine
-      const eg = pubCtx.createRadialGradient(eng.x,eng.y,0,eng.x,eng.y,50);
-      eg.addColorStop(0,'rgba(168,85,247,0.08)'); eg.addColorStop(1,'transparent');
-      pubCtx.fillStyle = eg; pubCtx.beginPath(); pubCtx.arc(eng.x,eng.y,50,0,Math.PI*2); pubCtx.fill();
-      // Spinning ring
-      pubCtx.save(); pubCtx.translate(eng.x,eng.y); pubCtx.rotate(t*0.5);
-      pubCtx.beginPath(); pubCtx.arc(0,0,28,0,Math.PI*1.2);
-      pubCtx.strokeStyle = 'rgba(168,85,247,0.3)'; pubCtx.lineWidth = 1.5; pubCtx.stroke();
-      pubCtx.beginPath(); pubCtx.arc(0,0,28,Math.PI,Math.PI*2.2);
-      pubCtx.strokeStyle = 'rgba(168,85,247,0.15)'; pubCtx.stroke();
-      pubCtx.restore();
-      // Circle
-      pubCtx.beginPath(); pubCtx.arc(eng.x,eng.y,22,0,Math.PI*2);
-      pubCtx.fillStyle = 'rgba(6,7,18,0.9)'; pubCtx.fill();
-      pubCtx.strokeStyle = '#a855f7'; pubCtx.lineWidth = 1.5; pubCtx.stroke();
-      pubCtx.font = 'bold 8px -apple-system,sans-serif';
-      pubCtx.textAlign = 'center'; pubCtx.textBaseline = 'middle';
-      pubCtx.fillStyle = '#a855f7'; pubCtx.fillText('AutoPilot', eng.x, eng.y - 3);
-      pubCtx.font = '6px -apple-system,sans-serif';
-      pubCtx.fillStyle = 'rgba(255,255,255,0.35)'; pubCtx.fillText('ENGINE', eng.x, eng.y + 7);
+      // ── Draw SVG icons ─────────────────────────────────────────────────────
+      // Official SVG paths (24x24 viewBox) from Simple Icons / Bootstrap Icons
+      const SVG_PATHS: Record<string, {path: string; viewBox: number}> = {
+        // X (Twitter) — Simple Icons
+        x:         {path: 'M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z', viewBox: 24},
+        // Instagram — Simple Icons
+        instagram: {path: 'M7.0301.084c-1.2768.0602-2.1487.264-2.911.5634-.7888.3075-1.4575.72-2.1228 1.3877-.6652.6677-1.075 1.3368-1.3802 2.127-.2954.7638-.4956 1.6365-.552 2.914-.0564 1.2775-.0689 1.6882-.0626 4.947.0062 3.2586.0206 3.6671.0825 4.9473.061 1.2765.264 2.1482.5635 2.9107.308.7889.72 1.4573 1.388 2.1228.6679.6655 1.3365 1.0743 2.1285 1.38.7632.295 1.6361.4961 2.9134.552 1.2773.056 1.6884.069 4.9462.0627 3.2578-.0062 3.668-.0207 4.9478-.0814 1.28-.0607 2.147-.2652 2.9098-.5633.7889-.3086 1.4578-.72 2.1228-1.3881.665-.6682 1.0745-1.3378 1.3795-2.1284.2957-.7632.4966-1.636.552-2.9124.056-1.2809.0692-1.6898.063-4.948-.0063-3.2583-.021-3.6668-.0817-4.9465-.0607-1.2797-.264-2.1487-.5633-2.9117-.3084-.7889-.72-1.4568-1.3876-2.1228C21.2982 1.33 20.628.9208 19.8378.6165 19.074.321 18.2017.1197 16.9244.0645 15.6471.0093 15.236-.005 11.977.0014 8.718.0076 8.31.0215 7.0301.0839m.1402 21.6932c-1.17-.0509-1.8053-.2453-2.2287-.408-.5606-.216-.96-.4771-1.3819-.895-.422-.4178-.6811-.8186-.9-1.378-.1644-.4234-.3624-1.058-.4171-2.228-.0595-1.2645-.072-1.6442-.079-4.848-.007-3.2037.0053-3.583.0607-4.848.05-1.169.2456-1.805.408-2.2282.216-.5613.4762-.96.895-1.3816.4188-.4217.8184-.6814 1.3783-.9003.423-.1651 1.0575-.3614 2.227-.4171 1.2655-.06 1.6447-.072 4.848-.079 3.2033-.007 3.5835.005 4.8495.0608 1.169.0508 1.8053.2445 2.228.408.5608.216.96.4754 1.3816.895.4217.4194.6816.8176.9005 1.3787.1653.4217.3617 1.056.4169 2.2263.0602 1.2655.0739 1.645.0796 4.848.0058 3.203-.0055 3.5834-.061 4.848-.051 1.17-.245 1.8055-.408 2.2294-.216.5604-.4763.96-.8954 1.3814-.419.4215-.8181.6811-1.3783.9-.4224.1649-1.0577.3617-2.2262.4174-1.2656.0595-1.6448.072-4.8493.079-3.2045.007-3.5825-.006-4.848-.0608M16.953 5.5864A1.44 1.44 0 1 0 18.39 4.144a1.44 1.44 0 0 0-1.437 1.4424M5.8385 12.012c.0067 3.4032 2.7706 6.1557 6.173 6.1493 3.4026-.0065 6.157-2.7701 6.1506-6.1733-.0065-3.4032-2.771-6.1565-6.174-6.1498-3.403.0067-6.156 2.771-6.1496 6.1738M8 12.0077a4 4 0 1 1 4.008 3.9921A3.9996 3.9996 0 0 1 8 12.0077', viewBox: 24},
+        // TikTok — Simple Icons
+        tiktok:    {path: 'M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z', viewBox: 24},
+        // LinkedIn — Bootstrap Icons (16x16)
+        linkedin:  {path: 'M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854zm4.943 12.248V6.169H2.542v7.225zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248S2.4 3.226 2.4 3.934c0 .694.521 1.248 1.327 1.248zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016l.016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225z', viewBox: 16},
+        // RSS — Simple Icons
+        rss:       {path: 'M19.199 24C19.199 13.467 10.533 4.8 0 4.8V0c13.165 0 24 10.835 24 24h-4.801zM3.291 17.415c1.814 0 3.293 1.479 3.293 3.295 0 1.813-1.485 3.29-3.301 3.29C1.47 24 0 22.526 0 20.71s1.475-3.294 3.291-3.295zM15.909 24h-4.665c0-6.169-5.075-11.245-11.244-11.245V8.09c8.727 0 15.909 7.184 15.909 15.91z', viewBox: 24},
+        // Globe (website) — custom
+        globe:     {path: 'M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 1.5c1.87 0 3.47 3.2 3.87 7.5H8.13c.4-4.3 2-7.5 3.87-7.5zM8.13 13h7.74c-.4 4.3-2 7.5-3.87 7.5s-3.47-3.2-3.87-7.5zM3.5 12c0-1.39.34-2.7.93-3.86C5.09 8.05 5.85 8 6.63 8H7.6c-.22 1.28-.35 2.62-.38 4h-3.72zm.93 3.86c-.59-1.16-.93-2.47-.93-3.86h3.72c.03 1.38.16 2.72.38 4H6.63c-.78 0-1.54-.05-2.2-.14zM20.5 12c0 1.39-.34 2.7-.93 3.86-.66.09-1.42.14-2.2.14h-.77c.22-1.28.35-2.62.38-4h3.52zm-.93-3.86c.59 1.16.93 2.47.93 3.86h-3.52c-.03-1.38-.16-2.72-.38-4h.77c.78 0 1.54.05 2.2.14z', viewBox: 24},
+        // Search/Keywords — magnifying glass
+        search:    {path: 'M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z', viewBox: 24},
+        // Mail/Newsletter — envelope
+        mail:      {path: 'M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z', viewBox: 24},
+        // Blog/Article — document
+        blog:      {path: 'M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z', viewBox: 24},
+      };
 
-      // Input nodes
-      for (let i = 0; i < PUB_INPUTS.length; i++) {
-        const p = pubInputPos(i);
-        pubCtx.beginPath(); pubCtx.arc(p.x, p.y, 16, 0, Math.PI*2);
-        pubCtx.fillStyle = 'rgba(6,7,18,0.85)'; pubCtx.fill();
-        pubCtx.strokeStyle = PUB_INPUTS[i].color + '50'; pubCtx.lineWidth = 1; pubCtx.stroke();
-        pubIcon(p.x, p.y, PUB_INPUTS[i].icon, 13, PUB_INPUTS[i].color + 'cc');
-        pubCtx.font = '600 7px -apple-system,sans-serif';
-        pubCtx.textAlign = 'center'; pubCtx.fillStyle = 'rgba(255,255,255,0.5)';
-        pubCtx.fillText(PUB_INPUTS[i].label, p.x, p.y + 24);
+      // Pre-build Path2D objects (done once)
+      const pathCache: Record<string, Path2D> = {};
+      for (const [key, val] of Object.entries(SVG_PATHS)) {
+        pathCache[key] = new Path2D(val.path);
       }
 
-      // Output nodes
-      for (let i = 0; i < PUB_OUTPUTS.length; i++) {
-        const p = pubOutputPos(i);
-        pubCtx.beginPath(); pubCtx.arc(p.x, p.y, 16, 0, Math.PI*2);
-        pubCtx.fillStyle = 'rgba(6,7,18,0.85)'; pubCtx.fill();
-        pubCtx.strokeStyle = PUB_OUTPUTS[i].color + '50'; pubCtx.lineWidth = 1; pubCtx.stroke();
-        pubIcon(p.x, p.y, PUB_OUTPUTS[i].icon, 13, PUB_OUTPUTS[i].color + 'cc');
-        pubCtx.font = '600 7px -apple-system,sans-serif';
-        pubCtx.textAlign = 'center'; pubCtx.fillStyle = 'rgba(255,255,255,0.5)';
-        pubCtx.fillText(PUB_OUTPUTS[i].label, p.x, p.y + 24);
+      function drawIcon(x: number, y: number, type: string, size: number, color: string) {
+        const entry = SVG_PATHS[type];
+        if (!entry) return;
+        const p2d = pathCache[type];
+        if (!p2d) return;
+        ctx.save();
+        const scale = size / entry.viewBox;
+        ctx.translate(x - size/2, y - size/2);
+        ctx.scale(scale, scale);
+        ctx.fillStyle = color;
+        ctx.fill(p2d);
+        ctx.restore();
       }
 
-      // Column labels
-      pubCtx.font = '600 6px -apple-system,sans-serif';
-      pubCtx.letterSpacing = '0.08em';
-      pubCtx.textAlign = 'center';
-      pubCtx.fillStyle = 'rgba(255,255,255,0.15)';
-      pubCtx.fillText('INPUTS', 40, 16);
-      pubCtx.fillText('CONTENT CREATED', pW - 40, 16);
-    }
+        // ── Particle system ────────────────────────────────────────────────────
+      interface Particle {
+        x: number; y: number;
+        tx: number; ty: number;
+        progress: number;
+        speed: number;
+        color: string;
+        fromInput: number;  // -1 if from engine
+        toOutput: number;   // -1 if to engine
+        size: number;
+        alive: boolean;
+        snippet: string;
+        richData?: OutputSnippet;
+      }
 
-    // Only start when visible
-    const pubObs = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) { requestAnimationFrame(pubRender); pubObs.disconnect(); }
-    }, { rootMargin: '200px' });
-    pubObs.observe(pubCanvas);
+      const particles: Particle[] = [];
+      let lastSpawn = 0;
+      let mx = -999, my = -999;
+      let hoveredInput = -1, hoveredOutput = -1;
+      let hoveredParticle: {x: number; y: number; snippet: string; color: string; richData?: OutputSnippet} | null = null;
+
+      canvas.addEventListener('mousemove', e => {
+        const r = canvas.getBoundingClientRect();
+        mx = e.clientX - r.left; my = e.clientY - r.top;
+      });
+      canvas.addEventListener('mouseleave', () => { mx = -999; my = -999; hoveredInput = -1; hoveredOutput = -1; });
+
+      // ── Layout positions ───────────────────────────────────────────────────
+      function getInputPos(i: number) {
+        const gap = H / (INPUTS.length + 1);
+        return { x: 70, y: gap * (i + 1) };
+      }
+
+      function getOutputPos(i: number) {
+        const gap = H / (OUTPUTS.length + 1);
+        return { x: W - 70, y: gap * (i + 1) };
+      }
+
+      function getEnginePos() {
+        return { x: W / 2, y: H / 2 };
+      }
+
+      // ── Spawn particles ────────────────────────────────────────────────────
+      // Content snippets that flow along particles
+      const INPUT_SNIPPETS = [
+        // Website Scrape
+        ['Crawling /about...', 'Found 47 pages', 'Brand tone: professional', 'Products: 4 detected', 'Extracting meta tags', 'Parsing testimonials'],
+        // News Feed
+        ['GPT-5 reasoning announced', 'Google AI Overviews live', 'B2B content beats paid 3x', 'Series B funding surges', 'Agentic commerce rises', 'HubSpot AI acquisition'],
+        // X Feed
+        ['@rival: "4x reply rates"', '#SaaS trending: PLG is dead', '"$0 content strategy" 12k likes', 'AI tools thread: 28 replies', '#ContentMarketing trending'],
+        // Keywords
+        ['"b2b content marketing" 2.4k/mo', '"ai content tools" 1.8k/mo', '"content repurposing" 720/mo', '"scale content production" 3.1k/mo', '"automated posting" 890/mo'],
+      ];
+      interface OutputSnippet {
+        platform: string;
+        icon: string;
+        color: string;
+        title: string;
+        body: string;
+        meta: string;
+        stats: string;
+      }
+      const OUTPUT_SNIPPET_DATA: OutputSnippet[][] = [
+        // Newsletter
+        [
+          { platform: 'Newsletter', icon: 'mail', color: '#f97316', title: '5 AI Trends Reshaping B2B This Week', body: 'GPT-5 dropped and B2B is shifting fast. Here are 5 trends to act on...', meta: '8,400 subscribers  \u00b7  9am Tue', stats: '42.3% open  \u00b7  12.1% CTR' },
+          { platform: 'Newsletter', icon: 'mail', color: '#f97316', title: 'Your Weekly Growth Digest', body: 'This week: 3 content wins, 1 competitor move, and a strategy shift...', meta: '8,400 subscribers  \u00b7  9am Tue', stats: '38.7% open  \u00b7  9.8% CTR' },
+        ],
+        // Instagram
+        [
+          { platform: 'Instagram', icon: 'instagram', color: '#E1306C', title: '7 Signs Your Content Strategy is Broken', body: 'Swipe to see if you are making these mistakes \u2192', meta: 'Carousel  \u00b7  7 slides  \u00b7  4:30pm', stats: '\u2764 1,247  \u00b7  \ud83d\udcac 89  \u00b7  \u2197 342' },
+          { platform: 'Instagram', icon: 'instagram', color: '#E1306C', title: 'Stop writing content manually', body: '15s Reel  \u00b7  Hook + Problem + Solution', meta: 'Reel  \u00b7  9:16 vertical  \u00b7  Draft', stats: '\u25b6 24.1k  \u00b7  \u2764 3,891  \u00b7  \ud83d\udd01 847' },
+        ],
+        // TikTok
+        [
+          { platform: 'TikTok', icon: 'tiktok', color: '#00f2ea', title: 'POV: Your competitor posted 30x more', body: '0-3s Hook \u2192 3-15s Problem \u2192 15-35s Solution \u2192 CTA', meta: '45s  \u00b7  Vertical  \u00b7  \u266b Trending audio', stats: '\u25b6 89.2k  \u00b7  \u2764 12.4k  \u00b7  \ud83d\udcac 1.2k' },
+          { platform: 'TikTok', icon: 'tiktok', color: '#00f2ea', title: 'AI wrote all our content for 30 days', body: 'Part 2 of 3  \u00b7  Duet with @competitor  \u00b7  Results reveal', meta: '60s  \u00b7  Series  \u00b7  \u266b Original sound', stats: '\u25b6 142k  \u00b7  \u2764 28.3k  \u00b7  Saves 4.1k' },
+        ],
+        // Twitter/X
+        [
+          { platform: 'X', icon: 'x', color: '#1d9bf0', title: '@acmegrowth', body: 'We analysed 10,000 B2B posts. The #1 predictor of engagement? Publishing velocity. \ud83e\uddf5 (1/8)', meta: 'Thread  \u00b7  8 posts  \u00b7  Scheduled', stats: '\ud83d\udcac 247  \u00b7  \ud83d\udd01 1.8k  \u00b7  \u2764 4.3k  \u00b7  89k views' },
+          { platform: 'X', icon: 'x', color: '#1d9bf0', title: '@acmegrowth', body: 'Content at scale is not spam. It is strategy. Here is why the best B2B brands publish 5x/day \u2193', meta: 'Tweet  \u00b7  With image  \u00b7  Peak hours', stats: '\ud83d\udcac 89  \u00b7  \ud83d\udd01 412  \u00b7  \u2764 847  \u00b7  22k views' },
+        ],
+        // LinkedIn
+        [
+          { platform: 'LinkedIn', icon: 'linkedin', color: '#0A66C2', title: 'Acme Growth Co.', body: 'We used to spend 40 hours/week on content. Now we spend 2. Here is the 3-layer stack...', meta: '12,400 followers  \u00b7  Just now', stats: '\ud83d\udc4d 2.8k  \u00b7  89 comments  \u00b7  148k views' },
+          { platform: 'LinkedIn', icon: 'linkedin', color: '#0A66C2', title: 'Acme Growth Co.', body: 'Hot take: Most B2B brands are writing for Google, not humans. The algorithm rewards both...', meta: '12,400 followers  \u00b7  Article', stats: '\ud83d\udc4d 1.4k  \u00b7  156 comments  \u00b7  92k views' },
+        ],
+        // Blog
+        [
+          { platform: 'Blog', icon: 'blog', color: '#a855f7', title: 'The Complete Guide to AI Content in 2026', body: '2,400 words  \u00b7  8 min read  \u00b7  SEO score: 94/100', meta: '3 keywords  \u00b7  8 internal links  \u00b7  Schema', stats: '4.2k views  \u00b7  2:47 avg  \u00b7  Rank #4 \u2192 #1' },
+          { platform: 'Blog', icon: 'blog', color: '#a855f7', title: 'Why Publishing Velocity Beats Quality (With Data)', body: '1,800 words  \u00b7  6 min read  \u00b7  SEO score: 91/100', meta: '5 keywords  \u00b7  12 internal links  \u00b7  FAQ schema', stats: '6.8k views  \u00b7  3:12 avg  \u00b7  12 backlinks' },
+        ],
+      ];
+
+      function spawnParticle(t: number) {
+        const engine = getEnginePos();
+
+        // Input → Engine
+        const ii = Math.floor(Math.random() * INPUTS.length);
+        const ip = getInputPos(ii);
+        const iSnips = INPUT_SNIPPETS[ii];
+        particles.push({
+          x: ip.x, y: ip.y,
+          tx: engine.x + (Math.random() - 0.5) * 30,
+          ty: engine.y + (Math.random() - 0.5) * 30,
+          progress: 0,
+          speed: 0.004 + Math.random() * 0.003,
+          color: INPUTS[ii].color,
+          fromInput: ii, toOutput: -1,
+          size: 2 + Math.random() * 2,
+          alive: true,
+          snippet: iSnips[Math.floor(Math.random() * iSnips.length)],
+        });
+
+        // Engine → Output
+        const oi = Math.floor(Math.random() * OUTPUTS.length);
+        const op = getOutputPos(oi);
+        const oData = OUTPUT_SNIPPET_DATA[oi];
+        const oSnip = oData[Math.floor(Math.random() * oData.length)];
+        particles.push({
+          x: engine.x + (Math.random() - 0.5) * 30,
+          y: engine.y + (Math.random() - 0.5) * 30,
+          tx: op.x, ty: op.y,
+          progress: 0,
+          speed: 0.004 + Math.random() * 0.003,
+          color: OUTPUTS[oi].color,
+          fromInput: -1, toOutput: oi,
+          size: 2 + Math.random() * 2,
+          alive: true,
+          snippet: oSnip.title,
+          richData: oSnip,
+        });
+      }
+
+      // ── Follow exact connection bezier path ─────────────────────────────────
+      function followConnection(sx: number, sy: number, ex: number, ey: number, t: number) {
+        // Matches drawConnection: quadraticCurveTo(cpx=midX, cpy=sy, ex, ey)
+        const cpx = (sx + ex) / 2;
+        const cpy = sy; // control point Y = start Y (same as drawConnection)
+        const u = 1 - t;
+        return {
+          x: u * u * sx + 2 * u * t * cpx + t * t * ex,
+          y: u * u * sy + 2 * u * t * cpy + t * t * ey,
+        };
+      }
+
+      // ── Draw node (circle + icon + label) ──────────────────────────────────
+      function drawNode(x: number, y: number, label: string, color: string, icon: string, hovered: boolean, radius: number) {
+        const r = hovered ? radius + 4 : radius;
+
+        // Glow
+        if (hovered) {
+          const g = ctx.createRadialGradient(x, y, 0, x, y, r * 2.5);
+          g.addColorStop(0, color + '30');
+          g.addColorStop(1, 'transparent');
+          ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(x, y, r * 2.5, 0, Math.PI * 2); ctx.fill();
+        }
+
+        // Background circle
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = hovered ? color + '25' : 'rgba(6,7,18,0.85)';
+        ctx.fill();
+        ctx.strokeStyle = hovered ? color : color + '50';
+        ctx.lineWidth = hovered ? 2 : 1;
+        ctx.stroke();
+
+        // Icon
+        drawIcon(x, y, icon, r * 0.9, hovered ? color : color + 'cc');
+
+        // Label
+        ctx.font = '600 11px -apple-system, BlinkMacSystemFont, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = hovered ? '#fff' : 'rgba(255,255,255,0.7)';
+        const lines = label.split('\n');
+        lines.forEach((line, li) => {
+          ctx.fillText(line, x, y + r + 16 + li * 14);
+        });
+      }
+
+      // ── Draw connection lines ──────────────────────────────────────────────
+      function drawConnection(sx: number, sy: number, ex: number, ey: number, color: string, highlighted: boolean) {
+        ctx.save();
+        ctx.beginPath();
+        const cpx = (sx + ex) / 2;
+        ctx.moveTo(sx, sy);
+        ctx.quadraticCurveTo(cpx, sy, ex, ey);
+        ctx.strokeStyle = highlighted ? color + '40' : color + '12';
+        ctx.lineWidth = highlighted ? 2 : 1;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // ── Engine (centre) ────────────────────────────────────────────────────
+      function drawEngine(t: number, hoverAny: boolean) {
+        const { x, y } = getEnginePos();
+        const r = 44;
+
+        // Outer glow
+        const g = ctx.createRadialGradient(x, y, 0, x, y, r * 3);
+        g.addColorStop(0, 'rgba(249,115,22,0.12)');
+        g.addColorStop(1, 'transparent');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(x, y, r * 3, 0, Math.PI * 2); ctx.fill();
+
+        // Spinning ring
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(t * 0.5);
+        ctx.beginPath();
+        ctx.arc(0, 0, r + 8, 0, Math.PI * 1.2);
+        ctx.strokeStyle = 'rgba(249,115,22,0.3)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, 0, r + 8, Math.PI, Math.PI * 2.2);
+        ctx.strokeStyle = 'rgba(249,115,22,0.15)';
+        ctx.stroke();
+        ctx.restore();
+
+        // Main circle
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(6,7,18,0.9)';
+        ctx.fill();
+        ctx.strokeStyle = '#f97316';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Text
+        ctx.font = 'bold 13px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#f97316';
+        ctx.fillText('AutoPilot', x, y - 6);
+        ctx.font = '10px -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.45)';
+        ctx.fillText('ENGINE', x, y + 10);
+      }
+
+      // ── Rich post preview per platform ──────────────────────────────────────
+      function drawRichPostPreview(idx: number, nodeX: number, nodeY: number, color: string, t: number) {
+        const TW = 280;
+        let TH = 0;
+        let tx = nodeX - TW - 40;
+        let ty = nodeY;
+
+        ctx.save();
+
+        switch(idx) {
+          case 0: // Newsletter
+            TH = 220;
+            ty = Math.max(8, Math.min(H - TH - 8, nodeY - TH/2));
+            tx = Math.max(8, Math.min(W - TW - 8, tx));
+            drawGlassCard(tx, ty, TW, TH, color);
+            // Email header
+            drawPlatformIcon(tx + 12, ty + 16, 'mail', 14, color);
+            ctx.font = 'bold 10px -apple-system, sans-serif';
+            ctx.fillStyle = color; ctx.textAlign = 'left';
+            ctx.fillText('NEWSLETTER', tx + 32, ty + 24);
+            ctx.fillStyle = 'rgba(255,255,255,0.35)';
+            ctx.font = '9px -apple-system, sans-serif';
+            ctx.fillText('8,400 subscribers  •  Scheduled 9am Tue', tx + 32, ty + 38);
+            // Divider
+            ctx.beginPath(); ctx.moveTo(tx+12, ty+48); ctx.lineTo(tx+TW-12, ty+48);
+            ctx.strokeStyle = color+'18'; ctx.lineWidth = 0.5; ctx.stroke();
+            // Subject
+            ctx.font = 'bold 13px -apple-system, sans-serif';
+            ctx.fillStyle = '#fff';
+            ctx.fillText('5 AI Trends Reshaping B2B', tx + 14, ty + 68);
+            ctx.fillText('This Week', tx + 14, ty + 84);
+            // Preview text
+            ctx.font = '10px -apple-system, sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.55)';
+            wrapText(ctx, 'OpenAI just dropped GPT-5 and the B2B landscape is shifting fast. Here are the 5 trends you need to act on before your competitors do...', tx+14, ty+102, TW-28, 14);
+            // Stats bar
+            ctx.beginPath(); ctx.moveTo(tx+12, ty+165); ctx.lineTo(tx+TW-12, ty+165);
+            ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.stroke();
+            drawStatPill(tx+14, ty+175, '42.3% open', color);
+            drawStatPill(tx+100, ty+175, '12.1% CTR', color);
+            drawStatPill(tx+180, ty+175, '847 clicks', color);
+            // CTA button
+            ctx.beginPath(); ctx.roundRect(tx+14, ty+198, TW-28, 14, 3);
+            ctx.fillStyle = color+'20'; ctx.fill();
+            ctx.font = 'bold 9px -apple-system, sans-serif';
+            ctx.fillStyle = color; ctx.textAlign = 'center';
+            ctx.fillText('Read the full breakdown →', tx+TW/2, ty+208);
+            break;
+
+          case 1: // Instagram
+            TH = 240;
+            ty = Math.max(8, Math.min(H - TH - 8, nodeY - TH/2));
+            tx = Math.max(8, Math.min(W - TW - 8, tx));
+            drawGlassCard(tx, ty, TW, TH, color);
+            // Header row
+            drawPlatformIcon(tx + 12, ty + 16, 'instagram', 14, color);
+            ctx.font = 'bold 10px -apple-system, sans-serif';
+            ctx.fillStyle = color; ctx.textAlign = 'left';
+            ctx.fillText('INSTAGRAM CAROUSEL', tx + 32, ty + 24);
+            ctx.fillStyle = 'rgba(255,255,255,0.35)';
+            ctx.font = '9px -apple-system, sans-serif';
+            ctx.fillText('Scheduled  •  4:30pm Today', tx + 32, ty + 38);
+            // Fake image area
+            ctx.beginPath(); ctx.roundRect(tx+12, ty+50, TW-24, 90, 6);
+            const imgGrad = ctx.createLinearGradient(tx, ty+50, tx+TW, ty+140);
+            imgGrad.addColorStop(0, color+'25'); imgGrad.addColorStop(1, '#6366f120');
+            ctx.fillStyle = imgGrad; ctx.fill();
+            ctx.font = 'bold 16px -apple-system, sans-serif';
+            ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+            ctx.fillText('7 Signs Your Content', tx+TW/2, ty+90);
+            ctx.fillText('Strategy is Broken', tx+TW/2, ty+110);
+            // Slide dots
+            for (let d = 0; d < 7; d++) {
+              ctx.beginPath(); ctx.arc(tx+TW/2-24+d*8, ty+132, 2.5, 0, Math.PI*2);
+              ctx.fillStyle = d===0 ? color : 'rgba(255,255,255,0.2)'; ctx.fill();
+            }
+            // Caption
+            ctx.textAlign = 'left';
+            ctx.font = '10px -apple-system, sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.65)';
+            wrapText(ctx, 'Most B2B brands waste 80% of their content budget. Swipe to see if you are making these mistakes →', tx+14, ty+158, TW-28, 13);
+            // Engagement
+            ctx.font = '9px -apple-system, sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.35)';
+            ctx.fillText('♥ 1,247   💬 89   ↗ 342   🔖 561', tx+14, ty+205);
+            // Hashtags
+            ctx.fillStyle = color+'80';
+            ctx.fillText('#ContentMarketing #B2B #AIContent #Growth', tx+14, ty+222);
+            break;
+
+          case 2: // TikTok
+            TH = 230;
+            ty = Math.max(8, Math.min(H - TH - 8, nodeY - TH/2));
+            tx = Math.max(8, Math.min(W - TW - 8, tx));
+            drawGlassCard(tx, ty, TW, TH, color);
+            drawPlatformIcon(tx + 12, ty + 16, 'tiktok', 14, color);
+            ctx.font = 'bold 10px -apple-system, sans-serif';
+            ctx.fillStyle = color; ctx.textAlign = 'left';
+            ctx.fillText('TIKTOK VIDEO', tx + 32, ty + 24);
+            ctx.fillStyle = 'rgba(255,255,255,0.35)';
+            ctx.font = '9px -apple-system, sans-serif';
+            ctx.fillText('45s  •  Vertical 9:16  •  Draft ready', tx + 32, ty + 38);
+            // Video thumbnail area
+            ctx.beginPath(); ctx.roundRect(tx+12, ty+50, TW-24, 80, 6);
+            ctx.fillStyle = 'rgba(0,242,234,0.08)'; ctx.fill();
+            ctx.strokeStyle = color+'30'; ctx.lineWidth = 1; ctx.stroke();
+            // Play button
+            ctx.beginPath(); ctx.moveTo(tx+TW/2-8, ty+78); ctx.lineTo(tx+TW/2+10, ty+90); ctx.lineTo(tx+TW/2-8, ty+102); ctx.closePath();
+            ctx.fillStyle = color; ctx.fill();
+            // Hook text
+            ctx.font = 'bold 11px -apple-system, sans-serif';
+            ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
+            ctx.fillText('🎬 HOOK (0-3s):', tx+14, ty+148);
+            ctx.font = '11px -apple-system, sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.8)';
+            wrapText(ctx, '"POV: Your competitor just posted 30 pieces of content this week and you are still writing one blog"', tx+14, ty+164, TW-28, 14);
+            // Script breakdown
+            ctx.font = '9px "SF Mono", monospace';
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.fillText('0-3s Hook  →  3-15s Problem  →  15-35s Solution  →  35-45s CTA', tx+14, ty+208);
+            // Trending sound
+            ctx.fillStyle = color+'60';
+            ctx.fillText('♫ Trending: "Oh No" remix  •  2.1M uses', tx+14, ty+222);
+            break;
+
+          case 3: // Twitter/X
+            TH = 200;
+            ty = Math.max(8, Math.min(H - TH - 8, nodeY - TH/2));
+            tx = Math.max(8, Math.min(W - TW - 8, tx));
+            drawGlassCard(tx, ty, TW, TH, color);
+            drawPlatformIcon(tx + 12, ty + 14, 'x', 12, color);
+            ctx.font = 'bold 10px -apple-system, sans-serif';
+            ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
+            ctx.fillText('Acme Growth Co.', tx + 30, ty + 20);
+            ctx.fillStyle = 'rgba(255,255,255,0.35)';
+            ctx.font = '9px -apple-system, sans-serif';
+            ctx.fillText('@acmegrowth  •  2m ago', tx + 30, ty + 33);
+            // Tweet body
+            ctx.font = '12px -apple-system, sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            wrapText(ctx, 'We analysed 10,000 B2B posts across LinkedIn, X, and blogs.\nThe #1 predictor of engagement? Not length, not format.\nIt is publishing velocity. 🧵 (1/8)', tx+14, ty+52, TW-28, 16);
+            // Engagement bar
+            ctx.beginPath(); ctx.moveTo(tx+12, ty+152); ctx.lineTo(tx+TW-12, ty+152);
+            ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 0.5; ctx.stroke();
+            ctx.font = '9px -apple-system, sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.fillText('💬 247    🔁 1,832    ♥ 4,291    📊 89.2k views', tx+14, ty+170);
+            // Thread indicator
+            ctx.beginPath(); ctx.roundRect(tx+14, ty+180, 70, 14, 3);
+            ctx.fillStyle = color+'18'; ctx.fill();
+            ctx.font = 'bold 8px -apple-system, sans-serif';
+            ctx.fillStyle = color;
+            ctx.fillText('🧵 Thread 1/8', tx+22, ty+190);
+            break;
+
+          case 4: // LinkedIn
+            TH = 220;
+            ty = Math.max(8, Math.min(H - TH - 8, nodeY - TH/2));
+            tx = Math.max(8, Math.min(W - TW - 8, tx));
+            drawGlassCard(tx, ty, TW, TH, color);
+            drawPlatformIcon(tx + 12, ty + 14, 'linkedin', 14, color);
+            ctx.font = 'bold 10px -apple-system, sans-serif';
+            ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
+            ctx.fillText('Acme Growth Co.', tx + 32, ty + 20);
+            ctx.fillStyle = 'rgba(255,255,255,0.35)';
+            ctx.font = '9px -apple-system, sans-serif';
+            ctx.fillText('12,400 followers  •  Just now', tx + 32, ty + 33);
+            // Post body
+            ctx.font = '11px -apple-system, sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.85)';
+            wrapText(ctx, 'We used to spend 40 hours/week on content.\nNow we spend 2.\nHere is the 3-layer content stack that let us 20x our output without hiring a single writer:', tx+14, ty+52, TW-28, 15);
+            // See more
+            ctx.fillStyle = color;
+            ctx.font = '10px -apple-system, sans-serif';
+            ctx.fillText('...see more', tx+14, ty+140);
+            // Reactions bar
+            ctx.beginPath(); ctx.moveTo(tx+12, ty+152); ctx.lineTo(tx+TW-12, ty+152);
+            ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 0.5; ctx.stroke();
+            ctx.font = '9px -apple-system, sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.fillText('👍 💡 🔥  2,847 reactions  •  89 comments  •  342 reposts', tx+14, ty+168);
+            // Engagement stats
+            drawStatPill(tx+14, ty+185, '148k impressions', color);
+            drawStatPill(tx+130, ty+185, '3.2% engagement', color);
+            // Hashtags
+            ctx.font = '9px -apple-system, sans-serif';
+            ctx.fillStyle = color+'70';
+            ctx.fillText('#ContentStrategy #B2BMarketing #AIContent', tx+14, ty+210);
+            break;
+
+          case 5: // Blog
+            TH = 230;
+            ty = Math.max(8, Math.min(H - TH - 8, nodeY - TH/2));
+            tx = Math.max(8, Math.min(W - TW - 8, tx));
+            drawGlassCard(tx, ty, TW, TH, color);
+            drawPlatformIcon(tx + 12, ty + 16, 'blog', 14, color);
+            ctx.font = 'bold 10px -apple-system, sans-serif';
+            ctx.fillStyle = color; ctx.textAlign = 'left';
+            ctx.fillText('BLOG ARTICLE', tx + 32, ty + 24);
+            ctx.fillStyle = 'rgba(255,255,255,0.35)';
+            ctx.font = '9px -apple-system, sans-serif';
+            ctx.fillText('2,400 words  •  8 min read  •  SEO optimised', tx + 32, ty + 38);
+            // Title
+            ctx.beginPath(); ctx.moveTo(tx+12, ty+48); ctx.lineTo(tx+TW-12, ty+48);
+            ctx.strokeStyle = color+'18'; ctx.lineWidth = 0.5; ctx.stroke();
+            ctx.font = 'bold 14px -apple-system, sans-serif';
+            ctx.fillStyle = '#fff';
+            ctx.fillText('The Complete Guide to', tx + 14, ty + 68);
+            ctx.fillText('AI Content in 2026', tx + 14, ty + 86);
+            // Meta
+            ctx.font = '9px "SF Mono", monospace';
+            ctx.fillStyle = 'rgba(255,255,255,0.35)';
+            ctx.fillText('Published: Today 09:00  •  Author: AutoPilot', tx+14, ty+104);
+            // SEO stats
+            ctx.beginPath(); ctx.moveTo(tx+12, ty+114); ctx.lineTo(tx+TW-12, ty+114);
+            ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.stroke();
+            ctx.font = '9px -apple-system, sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            ctx.fillText('SEO SCORE', tx+14, ty+130);
+            // SEO bar
+            ctx.beginPath(); ctx.roundRect(tx+14, ty+134, TW-28, 6, 3);
+            ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fill();
+            ctx.beginPath(); ctx.roundRect(tx+14, ty+134, (TW-28)*0.94, 6, 3);
+            ctx.fillStyle = '#4ade80'; ctx.fill();
+            ctx.fillStyle = '#4ade80';
+            ctx.fillText('94/100', tx+TW-40, ty+130);
+            // Keywords
+            ctx.font = '9px -apple-system, sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.fillText('Primary: "ai content generation"  •  Rank: #4 → #1', tx+14, ty+156);
+            ctx.fillText('8 internal links  •  3 external citations', tx+14, ty+170);
+            // Structure
+            ctx.font = '8px "SF Mono", monospace';
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.fillText('H1 → 6×H2 → 12×H3 → 3 images → 1 CTA → schema', tx+14, ty+188);
+            // Performance
+            drawStatPill(tx+14, ty+202, '4.2k views', color);
+            drawStatPill(tx+90, ty+202, '2:47 avg read', color);
+            drawStatPill(tx+186, ty+202, '12 backlinks', color);
+            break;
+        }
+
+        ctx.restore();
+      }
+
+      // Helper: glass card background
+      function drawGlassCard(x: number, y: number, w: number, h: number, color: string) {
+        ctx.shadowColor = color + '25'; ctx.shadowBlur = 24;
+        ctx.beginPath(); ctx.roundRect(x, y, w, h, 10);
+        ctx.fillStyle = 'rgba(6,7,18,0.92)'; ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.beginPath(); ctx.roundRect(x, y, w, h, 10);
+        ctx.fillStyle = color + '08'; ctx.fill();
+        ctx.strokeStyle = color + '30'; ctx.lineWidth = 1; ctx.stroke();
+        // Top accent
+        ctx.beginPath(); ctx.roundRect(x, y, w, 3, [10,10,0,0]);
+        ctx.fillStyle = color; ctx.globalAlpha = 0.7; ctx.fill(); ctx.globalAlpha = 1;
+      }
+
+      // Helper: platform icon in tooltip
+      function drawPlatformIcon(x: number, y: number, type: string, size: number, color: string) {
+        drawIcon(x + size/2, y + size/2, type, size, color);
+      }
+
+      // Helper: stat pill
+      function drawStatPill(x: number, y: number, text: string, color: string) {
+        ctx.font = '8px "SF Mono", monospace';
+        const tw = ctx.measureText(text).width + 10;
+        ctx.beginPath(); ctx.roundRect(x, y, tw, 16, 3);
+        ctx.fillStyle = color + '12'; ctx.fill();
+        ctx.strokeStyle = color + '25'; ctx.lineWidth = 0.5; ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.65)';
+        ctx.fillText(text, x + 5, y + 11);
+      }
+
+      // Helper: word wrap
+      function wrapText(c: CanvasRenderingContext2D, text: string, x: number, y: number, maxW: number, lineH: number) {
+        const paragraphs = text.split('\n');
+        let cy = y;
+        for (const para of paragraphs) {
+          if (para === '') { cy += lineH * 0.6; continue; }
+          const words = para.split(' ');
+          let line = '';
+          for (const word of words) {
+            const test = line + (line ? ' ' : '') + word;
+            if (c.measureText(test).width > maxW && line) {
+              c.fillText(line, x, cy);
+              line = word; cy += lineH;
+            } else { line = test; }
+          }
+          if (line) { c.fillText(line, x, cy); cy += lineH; }
+        }
+      }
+
+      // ── Feed tooltip ────────────────────────────────────────────────────────
+      function drawFeedTooltip(tx: number, ty: number, feed: {tag: string; text: string}[], color: string, title: string) {
+        const TW = 240;
+        const rowH = 28;
+        const padY = 12;
+        const padX = 14;
+        const TH = padY * 2 + 24 + feed.length * rowH + 4;
+
+        // Clamp to canvas
+        tx = Math.max(8, Math.min(W - TW - 8, tx));
+        ty = Math.max(8, Math.min(H - TH - 8, ty));
+
+        // Glass background
+        ctx.save();
+        ctx.shadowColor = color + '30';
+        ctx.shadowBlur = 20;
+        ctx.beginPath();
+        ctx.roundRect(tx, ty, TW, TH, 10);
+        ctx.fillStyle = 'rgba(6,7,18,0.88)';
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Tinted overlay
+        ctx.beginPath();
+        ctx.roundRect(tx, ty, TW, TH, 10);
+        ctx.fillStyle = color + '0a';
+        ctx.fill();
+
+        // Border
+        ctx.strokeStyle = color + '35';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Top accent bar
+        ctx.beginPath();
+        ctx.roundRect(tx, ty, TW, 3, [10, 10, 0, 0]);
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.7;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+
+        // Title
+        ctx.font = 'bold 11px -apple-system, sans-serif';
+        ctx.fillStyle = color;
+        ctx.textAlign = 'left';
+        ctx.fillText(title.toUpperCase(), tx + padX, ty + 20);
+
+        // Separator
+        ctx.beginPath();
+        ctx.moveTo(tx + padX, ty + 28);
+        ctx.lineTo(tx + TW - padX, ty + 28);
+        ctx.strokeStyle = color + '18';
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+
+        // Feed items
+        feed.forEach((item, i) => {
+          const iy = ty + 36 + i * rowH;
+
+          // Tag badge
+          ctx.font = 'bold 8px "SF Mono", monospace, sans-serif';
+          const tagW = ctx.measureText(item.tag).width + 10;
+          ctx.beginPath();
+          ctx.roundRect(tx + padX, iy, tagW, 16, 3);
+          ctx.fillStyle = color + '18';
+          ctx.fill();
+          ctx.fillStyle = color;
+          ctx.fillText(item.tag, tx + padX + 5, iy + 11);
+
+          // Text (clipped)
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(tx + padX + tagW + 6, iy - 2, TW - padX * 2 - tagW - 6, 20);
+          ctx.clip();
+          ctx.font = '10px -apple-system, sans-serif';
+          ctx.fillStyle = 'rgba(255,255,255,0.75)';
+          ctx.fillText(item.text, tx + padX + tagW + 6, iy + 11);
+          ctx.restore();
+        });
+
+        ctx.restore();
+      }
+
+      // ── Main render ────────────────────────────────────────────────────────
+      function render(time: number) {
+        requestAnimationFrame(render);
+        const t = time * 0.001;
+        ctx.clearRect(0, 0, W, H);
+
+        // Subtle grid
+        ctx.strokeStyle = 'rgba(255,255,255,0.02)';
+        ctx.lineWidth = 0.5;
+        for (let gx = 0; gx < W; gx += 40) {
+          ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke();
+        }
+        for (let gy = 0; gy < H; gy += 40) {
+          ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+        }
+
+        const engine = getEnginePos();
+
+        // Hit testing
+        hoveredInput = -1;
+        hoveredOutput = -1;
+        for (let i = 0; i < INPUTS.length; i++) {
+          const p = getInputPos(i);
+          if (Math.hypot(mx - p.x, my - p.y) < 34) hoveredInput = i;
+        }
+        for (let i = 0; i < OUTPUTS.length; i++) {
+          const p = getOutputPos(i);
+          if (Math.hypot(mx - p.x, my - p.y) < 34) hoveredOutput = i;
+        }
+
+        // Draw connections (input → engine)
+        for (let i = 0; i < INPUTS.length; i++) {
+          const p = getInputPos(i);
+          const hl = hoveredInput === i;
+          drawConnection(p.x + 24, p.y, engine.x - 44, engine.y, INPUTS[i].color, hl);
+        }
+
+        // Draw connections (engine → output)
+        for (let i = 0; i < OUTPUTS.length; i++) {
+          const p = getOutputPos(i);
+          const hl = hoveredOutput === i;
+          drawConnection(engine.x + 44, engine.y, p.x - 24, p.y, OUTPUTS[i].color, hl);
+        }
+
+        // Spawn particles
+        if (t - lastSpawn > 0.15) {
+          spawnParticle(t);
+          lastSpawn = t;
+        }
+
+        // Update & draw particles
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.progress += p.speed;
+          if (p.progress >= 1) { particles.splice(i, 1); continue; }
+
+          let pos;
+          if (p.fromInput >= 0) {
+            const ip = getInputPos(p.fromInput);
+            const engine = getEnginePos();
+            // Follow the exact connection line: from (ip.x+24, ip.y) to (engine.x-44, engine.y)
+            pos = followConnection(ip.x + 24, ip.y, engine.x - 44, engine.y, p.progress);
+          } else {
+            const engine = getEnginePos();
+            const op = getOutputPos(p.toOutput);
+            // Follow the exact connection line: from (engine.x+44, engine.y) to (op.x-24, op.y)
+            pos = followConnection(engine.x + 44, engine.y, op.x - 24, op.y, p.progress);
+          }
+
+          const alpha = p.progress < 0.1 ? p.progress / 0.1
+                       : p.progress > 0.85 ? (1 - p.progress) / 0.15
+                       : 1;
+
+          // Highlight if hovered
+          let isHighlighted = false;
+          if (hoveredInput >= 0 && p.fromInput === hoveredInput) isHighlighted = true;
+          if (hoveredOutput >= 0 && p.toOutput === hoveredOutput) isHighlighted = true;
+
+          // Check if mouse is near this particle
+          const distToMouse = Math.hypot(mx - pos.x, my - pos.y);
+          if (distToMouse < 18 && hoveredInput < 0 && hoveredOutput < 0) {
+            isHighlighted = true;
+            hoveredParticle = { x: pos.x, y: pos.y, snippet: p.snippet, color: p.color, richData: p.richData };
+          }
+
+          ctx.globalAlpha = alpha * (isHighlighted ? 1 : 0.6);
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y, p.size * (isHighlighted ? 1.8 : 1), 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.fill();
+
+          // Trail glow
+          if (isHighlighted) {
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, p.size * 4, 0, Math.PI * 2);
+            ctx.fillStyle = p.color + '20';
+            ctx.fill();
+          }
+
+          ctx.globalAlpha = 1;
+        }
+
+        // Engine
+        drawEngine(t, hoveredInput >= 0 || hoveredOutput >= 0);
+
+        // Input nodes
+        for (let i = 0; i < INPUTS.length; i++) {
+          const p = getInputPos(i);
+          drawNode(p.x, p.y, INPUTS[i].label, INPUTS[i].color, INPUTS[i].icon, hoveredInput === i, 26);
+        }
+
+        // Output nodes
+        for (let i = 0; i < OUTPUTS.length; i++) {
+          const p = getOutputPos(i);
+          drawNode(p.x, p.y, OUTPUTS[i].label, OUTPUTS[i].color, OUTPUTS[i].icon, hoveredOutput === i, 26);
+        }
+
+        // ── Tooltip popup ──────────────────────────────────────────────────
+        if (hoveredInput >= 0) {
+          const inp = INPUTS[hoveredInput];
+          const p = getInputPos(hoveredInput);
+          drawFeedTooltip(p.x + 40, p.y - 20, inp.feed, inp.color, inp.label.replace('\n', ' '));
+        }
+        if (hoveredOutput >= 0) {
+          const out = OUTPUTS[hoveredOutput];
+          const p = getOutputPos(hoveredOutput);
+          drawRichPostPreview(hoveredOutput, p.x, p.y, out.color, t);
+        }
+
+        // "INPUTS" and "OUTPUTS" labels
+        ctx.font = '600 10px -apple-system, sans-serif';
+        ctx.letterSpacing = '0.1em';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(255,255,255,0.2)';
+        ctx.fillText('I N P U T S', 70, 26);
+        ctx.fillText('O U T P U T S', W - 70, 26);
+
+        // ── Particle tooltip ──────────────────────────────────────────────
+        if (hoveredParticle && hoveredInput < 0 && hoveredOutput < 0) {
+          const hp = hoveredParticle;
+
+          if (hp.richData) {
+            // Rich mini post card for output particles
+            const rd = hp.richData;
+            const tw = 220;
+            const th = 110;
+            let ptx = hp.x - tw / 2;
+            let pty = hp.y - th - 14;
+            ptx = Math.max(8, Math.min(W - tw - 8, ptx));
+            if (pty < 8) pty = hp.y + 14;
+
+            ctx.save();
+            // Glass card
+            ctx.shadowColor = rd.color + '30'; ctx.shadowBlur = 16;
+            ctx.beginPath(); ctx.roundRect(ptx, pty, tw, th, 8);
+            ctx.fillStyle = 'rgba(6,7,18,0.93)'; ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.beginPath(); ctx.roundRect(ptx, pty, tw, th, 8);
+            ctx.fillStyle = rd.color + '08'; ctx.fill();
+            ctx.strokeStyle = rd.color + '35'; ctx.lineWidth = 1; ctx.stroke();
+
+            // Top accent
+            ctx.beginPath(); ctx.roundRect(ptx, pty, tw, 2.5, [8,8,0,0]);
+            ctx.fillStyle = rd.color; ctx.globalAlpha = 0.7; ctx.fill(); ctx.globalAlpha = 1;
+
+            // Platform icon + name
+            drawIcon(ptx + 16, pty + 16, rd.icon, 12, rd.color);
+            ctx.font = 'bold 9px -apple-system, sans-serif';
+            ctx.fillStyle = rd.color; ctx.textAlign = 'left';
+            ctx.fillText(rd.platform.toUpperCase(), ptx + 28, pty + 20);
+
+            // Meta (right-aligned)
+            ctx.font = '8px -apple-system, sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.textAlign = 'right';
+            ctx.fillText(rd.meta, ptx + tw - 10, pty + 20);
+
+            // Title
+            ctx.textAlign = 'left';
+            ctx.font = 'bold 11px -apple-system, sans-serif';
+            ctx.fillStyle = '#fff';
+            // Truncate if needed
+            let titleText = rd.title;
+            while (ctx.measureText(titleText).width > tw - 20 && titleText.length > 10) {
+              titleText = titleText.slice(0, -4) + '...';
+            }
+            ctx.fillText(titleText, ptx + 10, pty + 40);
+
+            // Body
+            ctx.font = '9px -apple-system, sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.55)';
+            // Simple 2-line wrap
+            const words = rd.body.split(' ');
+            let line1 = '', line2 = '';
+            for (const w of words) {
+              const test = line1 + (line1 ? ' ' : '') + w;
+              if (ctx.measureText(test).width > tw - 20 && !line2) {
+                line2 = w;
+                continue;
+              }
+              if (line2) { line2 += ' ' + w; }
+              else { line1 = test; }
+            }
+            ctx.fillText(line1, ptx + 10, pty + 56);
+            if (line2) {
+              if (ctx.measureText(line2).width > tw - 20) line2 = line2.slice(0, 35) + '...';
+              ctx.fillText(line2, ptx + 10, pty + 68);
+            }
+
+            // Divider
+            ctx.beginPath(); ctx.moveTo(ptx + 10, pty + 78);
+            ctx.lineTo(ptx + tw - 10, pty + 78);
+            ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 0.5; ctx.stroke();
+
+            // Stats
+            ctx.font = '8px "SF Mono", monospace';
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            ctx.textAlign = 'left';
+            ctx.fillText(rd.stats, ptx + 10, pty + 93);
+
+            ctx.restore();
+          } else {
+            // Simple pill for input particles
+            const tw = ctx.measureText(hp.snippet).width + 24;
+            let ptx = hp.x - tw / 2;
+            let pty = hp.y - 36;
+            ptx = Math.max(8, Math.min(W - tw - 8, ptx));
+            if (pty < 8) pty = hp.y + 16;
+
+            ctx.save();
+            ctx.shadowColor = hp.color + '30'; ctx.shadowBlur = 12;
+            ctx.beginPath(); ctx.roundRect(ptx, pty, tw, 26, 6);
+            ctx.fillStyle = 'rgba(6,7,18,0.92)'; ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.beginPath(); ctx.roundRect(ptx, pty, tw, 26, 6);
+            ctx.fillStyle = hp.color + '0c'; ctx.fill();
+            ctx.strokeStyle = hp.color + '40'; ctx.lineWidth = 1; ctx.stroke();
+            ctx.beginPath(); ctx.roundRect(ptx, pty, tw, 2.5, [6,6,0,0]);
+            ctx.fillStyle = hp.color; ctx.globalAlpha = 0.6; ctx.fill(); ctx.globalAlpha = 1;
+            ctx.font = '10px "SF Mono", "Fira Code", monospace';
+            ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.textAlign = 'center';
+            ctx.fillText(hp.snippet, ptx + tw / 2, pty + 18);
+            ctx.restore();
+          }
+        }
+        hoveredParticle = null;
+
+        // Keep particle count manageable
+        while (particles.length > 200) particles.shift();
+      }
+
+      requestAnimationFrame(render);
+    })();
   })();
 
   // ── Wire up card canvases ────────────────────────────────────────────────
