@@ -1,0 +1,645 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Tree of Content | Pello" description="AutoPilot draws nutrients from four sources — your website, breaking news, social conversations, and target keywords — channelling them through one engine that branches into every platform you publish on.">
+  <Header />
+  <main id="main-content">
+    <section class="pub-section" aria-labelledby="pub-headline">
+      <div class="pub-layout">
+        <div class="pub-text">
+          <span class="pub-badge">PelloPublish</span>
+          <h1 id="pub-headline">Your Content Grows From Every Root.</h1>
+          <p>AutoPilot draws nutrients from four sources — your website, breaking news, social conversations, and target keywords — channelling them through one engine that branches into every platform you publish on.</p>
+          <ul class="pub-pills" role="list">
+            <li>Root Intelligence</li>
+            <li>Living Content Engine</li>
+            <li>Branch to Every Platform</li>
+            <li>Always Growing</li>
+          </ul>
+        </div>
+        <div class="pub-canvas-col">
+          <canvas id="pub-canvas" aria-hidden="true"></canvas>
+          <div id="pub-tooltip" role="tooltip" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .pub-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .pub-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .pub-layout { grid-template-columns: 1fr; } }
+  .pub-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .pub-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #f97316; width: fit-content; }
+  .pub-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .pub-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .pub-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pub-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .pub-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #pub-canvas { width: 100%; height: 100%; position: absolute; inset: 0; }
+  #pub-tooltip {
+    position: fixed;
+    background: rgba(10, 10, 20, 0.95);
+    border: 1px solid rgba(249,115,22,0.4);
+    border-radius: 8px;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #fff;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 1000;
+    white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+  #pub-tooltip.visible { opacity: 1; }
+</style>
+
+<script>
+  const INPUTS = [
+    { label: 'Website Scrape', color: '#6366f1' },
+    { label: 'News Feed',      color: '#22d3ee' },
+    { label: 'X Feed',         color: '#1d9bf0' },
+    { label: 'Keywords',       color: '#4ade80' },
+  ] as const;
+
+  const OUTPUTS = [
+    { label: 'Newsletter', color: '#f97316' },
+    { label: 'Instagram',  color: '#e1306c' },
+    { label: 'TikTok',     color: '#00f2ea' },
+    { label: 'Twitter',    color: '#1d9bf0' },
+    { label: 'LinkedIn',   color: '#0a66c2' },
+    { label: 'Blog',       color: '#a855f7' },
+  ] as const;
+
+  interface Particle {
+    t: number;       // progress 0..1 along path
+    speed: number;
+    size: number;
+    opacity: number;
+    pathType: 'root' | 'branch';
+    pathIndex: number;
+    color: string;
+  }
+
+  interface Sparkle {
+    x: number;
+    y: number;
+    life: number;
+    maxLife: number;
+    size: number;
+    color: string;
+    vx: number;
+    vy: number;
+  }
+
+  interface BranchHitArea {
+    outputIndex: number;
+    x1: number; y1: number;
+    x2: number; y2: number;
+  }
+
+  const canvas = document.getElementById('pub-canvas') as HTMLCanvasElement;
+  const tooltip = document.getElementById('pub-tooltip') as HTMLDivElement;
+  const ctx = canvas.getContext('2d')!;
+
+  let W = 0, H = 0;
+  let dpr = window.devicePixelRatio || 1;
+  let time = 0;
+  let mouseX = -9999, mouseY = -9999;
+  let hoveredBranch = -1;
+  let hoveredRoot = -1;
+
+  // Particles flowing through the tree
+  const particles: Particle[] = [];
+  const sparkles: Sparkle[] = [];
+  const branchHitAreas: BranchHitArea[] = [];
+
+  function resize(): void {
+    const col = canvas.parentElement!;
+    W = col.offsetWidth;
+    H = col.offsetHeight;
+    dpr = window.devicePixelRatio || 1;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+  }
+
+  // Tree geometry — computed each frame so it's responsive
+  function getTrunkX(): number { return W * 0.48; }
+  function getTrunkYTop(): number { return H * 0.18; }
+  function getTrunkYBottom(): number { return H * 0.82; }
+  function getTrunkCenterY(): number { return H * 0.5; }
+
+  // Root: from left edge to trunk base, organic cubic bezier
+  function getRootPath(i: number): [number, number, number, number, number, number, number, number] {
+    const totalRoots = INPUTS.length;
+    const spreadY = H * 0.55;
+    const startY = (H / 2) - (spreadY / 2) + (i / (totalRoots - 1)) * spreadY;
+    const startX = 0;
+    const endX = getTrunkX();
+    const endY = getTrunkCenterY() + (i - (totalRoots - 1) / 2) * (H * 0.06);
+    const cp1x = startX + W * 0.18;
+    const cp1y = startY + (Math.sin(i * 1.3) * H * 0.06);
+    const cp2x = endX - W * 0.1;
+    const cp2y = endY - H * 0.04;
+    return [startX, startY, cp1x, cp1y, cp2x, cp2y, endX, endY];
+  }
+
+  // Branch: from trunk to right edge
+  function getBranchPath(i: number): [number, number, number, number, number, number, number, number] {
+    const totalBranches = OUTPUTS.length;
+    const spreadY = H * 0.72;
+    const endY = (H / 2) - (spreadY / 2) + (i / (totalBranches - 1)) * spreadY;
+    const startX = getTrunkX();
+    const startY = getTrunkCenterY() + (i - (totalBranches - 1) / 2) * (H * 0.045);
+    const endX = W;
+    const cp1x = startX + W * 0.1;
+    const cp1y = startY + (Math.sin(i * 0.9 + 1) * H * 0.05);
+    const cp2x = endX - W * 0.18;
+    const cp2y = endY + (Math.cos(i * 1.1) * H * 0.04);
+    return [startX, startY, cp1x, cp1y, cp2x, cp2y, endX, endY];
+  }
+
+  // Evaluate cubic bezier at t
+  function bezierPoint(
+    t: number,
+    x0: number, y0: number,
+    cx1: number, cy1: number,
+    cx2: number, cy2: number,
+    x1: number, y1: number
+  ): { x: number; y: number } {
+    const mt = 1 - t;
+    const x = mt*mt*mt*x0 + 3*mt*mt*t*cx1 + 3*mt*t*t*cx2 + t*t*t*x1;
+    const y = mt*mt*mt*y0 + 3*mt*mt*t*cy1 + 3*mt*t*t*cy2 + t*t*t*y1;
+    return { x, y };
+  }
+
+  // Spawn particles
+  function spawnParticle(): void {
+    const isRoot = Math.random() < 0.5;
+    const idx = Math.floor(Math.random() * (isRoot ? INPUTS.length : OUTPUTS.length));
+    particles.push({
+      t: 0,
+      speed: 0.003 + Math.random() * 0.004,
+      size: 2 + Math.random() * 3,
+      opacity: 0.6 + Math.random() * 0.4,
+      pathType: isRoot ? 'root' : 'branch',
+      pathIndex: idx,
+      color: isRoot ? INPUTS[idx].color : OUTPUTS[idx].color,
+    });
+  }
+
+  function spawnSparkle(x: number, y: number): void {
+    const colors = ['#f97316', '#fff', '#fbbf24'];
+    sparkles.push({
+      x, y,
+      life: 0,
+      maxLife: 40 + Math.random() * 40,
+      size: 1.5 + Math.random() * 2.5,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      vx: (Math.random() - 0.5) * 1.5,
+      vy: -0.5 - Math.random() * 1.5,
+    });
+  }
+
+  // Draw trunk with living glow and sway
+  function drawTrunk(t: number): void {
+    const cx = getTrunkX();
+    const topY = getTrunkYTop();
+    const botY = getTrunkYBottom();
+    const sway = Math.sin(t * 0.6) * 4;
+    const trunkW = 18;
+
+    // Outer glow layers
+    for (let g = 4; g >= 1; g--) {
+      const gw = trunkW + g * 10;
+      const alpha = 0.07 / g;
+      const grad = ctx.createLinearGradient(cx - gw, 0, cx + gw, 0);
+      grad.addColorStop(0, `rgba(249,115,22,0)`);
+      grad.addColorStop(0.5, `rgba(249,115,22,${alpha})`);
+      grad.addColorStop(1, `rgba(249,115,22,0)`);
+      ctx.beginPath();
+      ctx.moveTo(cx + sway - gw * 0.5, topY);
+      ctx.bezierCurveTo(
+        cx + sway * 1.2 - 5, topY + (botY - topY) * 0.33,
+        cx + sway * 0.8 + 5, topY + (botY - topY) * 0.66,
+        cx + sway * 0.5, botY
+      );
+      ctx.lineWidth = gw;
+      ctx.strokeStyle = grad;
+      ctx.stroke();
+    }
+
+    // Core trunk
+    const coreGrad = ctx.createLinearGradient(0, topY, 0, botY);
+    coreGrad.addColorStop(0, '#f97316');
+    coreGrad.addColorStop(0.4, '#fb923c');
+    coreGrad.addColorStop(0.7, '#f97316');
+    coreGrad.addColorStop(1, '#ea580c');
+    ctx.beginPath();
+    ctx.moveTo(cx + sway, topY);
+    ctx.bezierCurveTo(
+      cx + sway * 1.2, topY + (botY - topY) * 0.33,
+      cx + sway * 0.8, topY + (botY - topY) * 0.66,
+      cx + sway * 0.5, botY
+    );
+    ctx.lineWidth = trunkW;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = coreGrad;
+    ctx.stroke();
+
+    // Pulse ring at center
+    const pulse = 0.5 + 0.5 * Math.sin(t * 2.2);
+    const ringR = 28 + pulse * 12;
+    const ringAlpha = 0.15 + pulse * 0.1;
+    const ringGrad = ctx.createRadialGradient(cx, getTrunkCenterY(), 0, cx, getTrunkCenterY(), ringR);
+    ringGrad.addColorStop(0, `rgba(249,115,22,${ringAlpha + 0.15})`);
+    ringGrad.addColorStop(1, `rgba(249,115,22,0)`);
+    ctx.beginPath();
+    ctx.arc(cx, getTrunkCenterY(), ringR, 0, Math.PI * 2);
+    ctx.fillStyle = ringGrad;
+    ctx.fill();
+  }
+
+  // Draw a root or branch line
+  function drawPath(
+    path: [number, number, number, number, number, number, number, number],
+    color: string,
+    lineWidth: number,
+    alpha: number,
+    highlighted: boolean
+  ): void {
+    const [x0, y0, cx1, cy1, cx2, cy2, x1, y1] = path;
+
+    // Glow
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.bezierCurveTo(cx1, cy1, cx2, cy2, x1, y1);
+    ctx.lineWidth = lineWidth + 8;
+    ctx.strokeStyle = highlighted
+      ? color.replace(')', ', 0.25)').replace('rgb', 'rgba').replace('#', 'rgba(') + '0.3'
+      : `${color}22`;
+    // Simple hex alpha glow
+    const glowAlpha = highlighted ? 0.25 : 0.08;
+    ctx.strokeStyle = hexToRgba(color, glowAlpha);
+    ctx.stroke();
+
+    // Core line
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.bezierCurveTo(cx1, cy1, cx2, cy2, x1, y1);
+    ctx.lineWidth = highlighted ? lineWidth + 2 : lineWidth;
+    ctx.strokeStyle = hexToRgba(color, highlighted ? 1 : alpha);
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  }
+
+  function hexToRgba(hex: string, alpha: number): string {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  // Draw node at end of root/branch
+  function drawEndNode(
+    x: number, y: number,
+    color: string,
+    label: string,
+    isOutput: boolean,
+    highlighted: boolean,
+    outputIndex?: number
+  ): void {
+    const r = highlighted ? 10 : 8;
+
+    // Glow
+    const glow = ctx.createRadialGradient(x, y, 0, x, y, r * 3);
+    glow.addColorStop(0, hexToRgba(color, 0.3));
+    glow.addColorStop(1, hexToRgba(color, 0));
+    ctx.beginPath();
+    ctx.arc(x, y, r * 3, 0, Math.PI * 2);
+    ctx.fillStyle = glow;
+    ctx.fill();
+
+    // Node circle
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = highlighted ? color : hexToRgba(color, 0.8);
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Draw output icon inside node
+    if (isOutput && outputIndex !== undefined) {
+      drawOutputIcon(x, y, outputIndex, r * 0.6);
+    }
+
+    // Label
+    ctx.save();
+    ctx.font = `${highlighted ? 600 : 500} 11px -apple-system, sans-serif`;
+    ctx.fillStyle = highlighted ? '#fff' : 'rgba(255,255,255,0.75)';
+    ctx.textBaseline = 'middle';
+    if (isOutput) {
+      ctx.textAlign = 'left';
+      ctx.fillText(label, x + r + 6, y);
+    } else {
+      ctx.textAlign = 'right';
+      ctx.fillText(label, x - r - 6, y);
+    }
+    ctx.restore();
+  }
+
+  // Draw small platform icons inside output nodes
+  function drawOutputIcon(x: number, y: number, idx: number, size: number): void {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+    ctx.lineWidth = 1.2;
+    ctx.fillStyle = 'transparent';
+    switch (idx) {
+      case 0: { // Newsletter — envelope
+        ctx.beginPath();
+        ctx.rect(x - size, y - size * 0.65, size * 2, size * 1.3);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x - size, y - size * 0.65);
+        ctx.lineTo(x, y + size * 0.15);
+        ctx.lineTo(x + size, y - size * 0.65);
+        ctx.stroke();
+        break;
+      }
+      case 1: { // Instagram — rounded square
+        ctx.beginPath();
+        ctx.roundRect(x - size, y - size, size * 2, size * 2, size * 0.4);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(x, y, size * 0.45, 0, Math.PI * 2);
+        ctx.stroke();
+        break;
+      }
+      case 2: { // TikTok — music note
+        ctx.beginPath();
+        ctx.arc(x - size * 0.15, y + size * 0.4, size * 0.45, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x + size * 0.3, y - size * 0.7);
+        ctx.lineTo(x + size * 0.3, y + size * 0.2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x - size * 0.15 + size * 0.45, y + size * 0.4);
+        ctx.lineTo(x + size * 0.3, y + size * 0.2);
+        ctx.stroke();
+        break;
+      }
+      case 3: { // Twitter — simple bird shape
+        ctx.beginPath();
+        ctx.ellipse(x - size * 0.1, y, size * 0.7, size * 0.45, -0.3, 0, Math.PI * 2);
+        ctx.stroke();
+        break;
+      }
+      case 4: { // LinkedIn — "in" text
+        ctx.font = `bold ${Math.round(size * 1.4)}px sans-serif`;
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('in', x, y);
+        break;
+      }
+      case 5: { // Blog — document
+        ctx.beginPath();
+        ctx.rect(x - size * 0.7, y - size, size * 1.4, size * 2);
+        ctx.stroke();
+        for (let l = 0; l < 3; l++) {
+          ctx.beginPath();
+          ctx.moveTo(x - size * 0.4, y - size * 0.35 + l * size * 0.45);
+          ctx.lineTo(x + size * 0.4, y - size * 0.35 + l * size * 0.45);
+          ctx.stroke();
+        }
+        break;
+      }
+    }
+    ctx.restore();
+  }
+
+  // AutoPilot center label
+  function drawAutoLabel(t: number): void {
+    const cx = getTrunkX();
+    const cy = getTrunkCenterY();
+    const pulse = 0.5 + 0.5 * Math.sin(t * 1.8);
+
+    ctx.save();
+    ctx.font = `bold 11px -apple-system, sans-serif`;
+    ctx.fillStyle = `rgba(255,255,255,${0.6 + pulse * 0.35})`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('AutoPilot', cx, cy - 6);
+    ctx.font = `500 9px -apple-system, sans-serif`;
+    ctx.fillStyle = `rgba(249,115,22,${0.7 + pulse * 0.25})`;
+    ctx.fillText('ENGINE', cx, cy + 8);
+    ctx.restore();
+  }
+
+  // Update and draw branch hit areas for hover detection
+  function updateBranchHitAreas(): void {
+    branchHitAreas.length = 0;
+    for (let i = 0; i < OUTPUTS.length; i++) {
+      const path = getBranchPath(i);
+      const end = bezierPoint(1, ...path);
+      const mid = bezierPoint(0.7, ...path);
+      branchHitAreas.push({
+        outputIndex: i,
+        x1: mid.x, y1: mid.y - 20,
+        x2: end.x, y2: end.y + 20,
+      });
+    }
+  }
+
+  function checkHover(mx: number, my: number): void {
+    hoveredBranch = -1;
+    hoveredRoot = -1;
+
+    // Check branches
+    for (let i = 0; i < OUTPUTS.length; i++) {
+      const path = getBranchPath(i);
+      // Sample points along branch
+      for (let s = 0; s <= 20; s++) {
+        const pt = bezierPoint(s / 20, ...path);
+        const dx = pt.x - mx;
+        const dy = pt.y - my;
+        if (Math.sqrt(dx * dx + dy * dy) < 16) {
+          hoveredBranch = i;
+          break;
+        }
+      }
+    }
+
+    // Check roots
+    for (let i = 0; i < INPUTS.length; i++) {
+      const path = getRootPath(i);
+      for (let s = 0; s <= 20; s++) {
+        const pt = bezierPoint(s / 20, ...path);
+        const dx = pt.x - mx;
+        const dy = pt.y - my;
+        if (Math.sqrt(dx * dx + dy * dy) < 16) {
+          hoveredRoot = i;
+          break;
+        }
+      }
+    }
+  }
+
+  function draw(): void {
+    ctx.clearRect(0, 0, W, H);
+
+    const t = time * 0.016;
+
+    // Draw roots (inputs)
+    for (let i = 0; i < INPUTS.length; i++) {
+      const path = getRootPath(i);
+      const highlighted = hoveredRoot === i;
+      drawPath(path, INPUTS[i].color, highlighted ? 5 : 3, 0.55, highlighted);
+      const start = bezierPoint(0, ...path);
+      drawEndNode(start.x, start.y, INPUTS[i].color, INPUTS[i].label, false, highlighted);
+    }
+
+    // Draw branches (outputs)
+    for (let i = 0; i < OUTPUTS.length; i++) {
+      const path = getBranchPath(i);
+      const highlighted = hoveredBranch === i;
+      drawPath(path, OUTPUTS[i].color, highlighted ? 5 : 3, 0.55, highlighted);
+      const end = bezierPoint(1, ...path);
+      drawEndNode(end.x, end.y, OUTPUTS[i].color, OUTPUTS[i].label, true, highlighted, i);
+    }
+
+    // Draw trunk on top
+    drawTrunk(t);
+    drawAutoLabel(t);
+
+    // Update and draw particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.t += p.speed;
+
+      if (p.t > 1) {
+        particles.splice(i, 1);
+        continue;
+      }
+
+      let pt: { x: number; y: number };
+      if (p.pathType === 'root') {
+        const path = getRootPath(p.pathIndex);
+        pt = bezierPoint(p.t, ...path);
+      } else {
+        const path = getBranchPath(p.pathIndex);
+        pt = bezierPoint(p.t, ...path);
+      }
+
+      // Spawn sparkle near trunk center
+      if (Math.abs(p.t - 0.5) < 0.01 && Math.random() < 0.1) {
+        spawnSparkle(pt.x, pt.y);
+      }
+
+      const fadeIn = Math.min(p.t * 6, 1);
+      const fadeOut = Math.min((1 - p.t) * 6, 1);
+      const alpha = p.opacity * fadeIn * fadeOut;
+
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = hexToRgba(p.color, alpha);
+      ctx.fill();
+
+      // Glow on particle
+      const grd = ctx.createRadialGradient(pt.x, pt.y, 0, pt.x, pt.y, p.size * 2.5);
+      grd.addColorStop(0, hexToRgba(p.color, alpha * 0.4));
+      grd.addColorStop(1, hexToRgba(p.color, 0));
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, p.size * 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = grd;
+      ctx.fill();
+    }
+
+    // Update and draw sparkles
+    for (let i = sparkles.length - 1; i >= 0; i--) {
+      const s = sparkles[i];
+      s.life++;
+      s.x += s.vx;
+      s.y += s.vy;
+      s.vy += 0.03;
+
+      if (s.life > s.maxLife) {
+        sparkles.splice(i, 1);
+        continue;
+      }
+
+      const fade = 1 - s.life / s.maxLife;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.size * fade, 0, Math.PI * 2);
+      ctx.fillStyle = hexToRgba(s.color, fade * 0.8);
+      ctx.fill();
+    }
+
+    // Spawn particles periodically
+    if (time % 4 === 0) spawnParticle();
+    if (time % 6 === 0) spawnParticle();
+
+    time++;
+    updateBranchHitAreas();
+    requestAnimationFrame(draw);
+  }
+
+  // Mouse tracking (canvas-relative → actual coords)
+  canvas.addEventListener('mousemove', (e: MouseEvent) => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+    checkHover(mouseX, mouseY);
+
+    if (hoveredBranch >= 0) {
+      const out = OUTPUTS[hoveredBranch];
+      tooltip.textContent = out.label;
+      tooltip.style.left = (e.clientX + 14) + 'px';
+      tooltip.style.top = (e.clientY - 10) + 'px';
+      tooltip.classList.add('visible');
+      canvas.style.cursor = 'pointer';
+    } else if (hoveredRoot >= 0) {
+      const inp = INPUTS[hoveredRoot];
+      tooltip.textContent = inp.label;
+      tooltip.style.left = (e.clientX + 14) + 'px';
+      tooltip.style.top = (e.clientY - 10) + 'px';
+      tooltip.classList.add('visible');
+      canvas.style.cursor = 'pointer';
+    } else {
+      tooltip.classList.remove('visible');
+      canvas.style.cursor = 'default';
+    }
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    mouseX = -9999;
+    mouseY = -9999;
+    hoveredBranch = -1;
+    hoveredRoot = -1;
+    tooltip.classList.remove('visible');
+  });
+
+  // Init
+  resize();
+  // Pre-spawn some particles
+  for (let i = 0; i < 20; i++) {
+    spawnParticle();
+    particles[particles.length - 1].t = Math.random();
+  }
+  window.addEventListener('resize', resize);
+  draw();
+</script>

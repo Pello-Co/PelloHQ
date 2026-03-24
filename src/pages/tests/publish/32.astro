@@ -1,0 +1,756 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Circuit Board | Pello" description="Four input signals route through the AutoPilot processor — website intelligence, live news, social trends, and search keywords — compiled into six platform-optimised content streams in real time.">
+  <Header />
+  <main id="main-content">
+    <section class="pub-section" aria-labelledby="pub-headline">
+      <div class="pub-layout">
+        <div class="pub-text">
+          <span class="pub-badge">PelloPublish</span>
+          <h1 id="pub-headline">Your Content Pipeline on a Single Chip.</h1>
+          <p>Four input signals route through the AutoPilot processor — website intelligence, live news, social trends, and search keywords — compiled into six platform-optimised content streams in real time.</p>
+          <ul class="pub-pills" role="list">
+            <li>Signal Processing</li>
+            <li>AutoPilot CPU</li>
+            <li>Multi-Channel Output</li>
+            <li>Real-time Routing</li>
+          </ul>
+        </div>
+        <div class="pub-canvas-col">
+          <canvas id="pub-canvas" aria-hidden="true"></canvas>
+          <div id="pub-tooltip" class="pub-tooltip" aria-hidden="true"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .pub-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .pub-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .pub-layout { grid-template-columns: 1fr; } }
+  .pub-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .pub-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #f97316; width: fit-content; }
+  .pub-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .pub-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .pub-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pub-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .pub-canvas-col { position: relative; width: 100%; min-height: 580px; }
+  #pub-canvas { width: 100%; height: 100%; position: absolute; inset: 0; }
+  .pub-tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: rgba(6,7,18,0.94);
+    border: 1px solid rgba(249,115,22,0.35);
+    border-radius: 8px;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8125rem;
+    color: #fff;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.15s;
+    backdrop-filter: blur(8px);
+    z-index: 10;
+  }
+  .pub-tooltip.visible { opacity: 1; }
+</style>
+
+<script>
+  interface InputDef {
+    label: string;
+    color: string;
+    traceWidth: number;
+    dashed: boolean;
+  }
+
+  interface OutputDef {
+    label: string;
+    color: string;
+  }
+
+  interface Pulse {
+    t: number;           // 0..1 along trace
+    speed: number;
+    color: string;
+    side: 'input' | 'output';
+    index: number;
+    size: number;
+    tail: number;        // tail length as fraction of t
+    brightness: number;
+  }
+
+  interface LED {
+    x: number;
+    y: number;
+    color: string;
+    phase: number;
+    speed: number;
+    size: number;
+  }
+
+  const INPUTS: InputDef[] = [
+    { label: 'Website Scrape', color: '#6366f1', traceWidth: 3,   dashed: false },
+    { label: 'News Feed',      color: '#22d3ee', traceWidth: 2,   dashed: false },
+    { label: 'X Feed',         color: '#1d9bf0', traceWidth: 1.5, dashed: false },
+    { label: 'Keywords',       color: '#4ade80', traceWidth: 2,   dashed: true  },
+  ];
+
+  const OUTPUTS: OutputDef[] = [
+    { label: 'Newsletter', color: '#f97316' },
+    { label: 'Instagram',  color: '#e1306c' },
+    { label: 'TikTok',     color: '#00f2ea' },
+    { label: 'Twitter',    color: '#1d9bf0' },
+    { label: 'LinkedIn',   color: '#0a66c2' },
+    { label: 'Blog',       color: '#a855f7' },
+  ];
+
+  const canvas = document.getElementById('pub-canvas') as HTMLCanvasElement;
+  const tooltip = document.getElementById('pub-tooltip') as HTMLDivElement;
+  const ctx = canvas.getContext('2d')!;
+  const dpr = window.devicePixelRatio || 1;
+
+  let W = 0, H = 0;
+  let mouse = { x: -9999, y: -9999 };
+  type HoverTarget = { type: 'input' | 'output' | 'chip'; index: number } | null;
+  let hoveredItem: HoverTarget = null;
+  let time = 0;
+
+  const pulses: Pulse[] = [];
+  const leds: LED[] = [];
+  let cpuProcessBar = 0;
+
+  // Chip geometry
+  const CHIP_W = 120;
+  const CHIP_H = 200;
+
+  function resize() {
+    const col = canvas.parentElement!;
+    W = col.offsetWidth;
+    H = Math.max(580, col.offsetHeight);
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+    initLEDs();
+  }
+
+  function getChipRect(): { x: number; y: number; w: number; h: number } {
+    return { x: W * 0.5 - CHIP_W / 2, y: H * 0.5 - CHIP_H / 2, w: CHIP_W, h: CHIP_H };
+  }
+
+  // Input pin positions (left side of chip)
+  function getInputPin(i: number): [number, number] {
+    const chip = getChipRect();
+    const spacing = chip.h / (INPUTS.length + 1);
+    return [chip.x, chip.y + spacing * (i + 1)];
+  }
+
+  // Output pin positions (right side of chip)
+  function getOutputPin(i: number): [number, number] {
+    const chip = getChipRect();
+    const spacing = chip.h / (OUTPUTS.length + 1);
+    return [chip.x + chip.w, chip.y + spacing * (i + 1)];
+  }
+
+  // Input connector positions (left edge of canvas)
+  function getInputConnector(i: number): [number, number] {
+    const spacing = H / (INPUTS.length + 1);
+    return [W * 0.04, spacing * (i + 1)];
+  }
+
+  // Output connector positions (right edge of canvas)
+  function getOutputConnector(i: number): [number, number] {
+    const spacing = H / (OUTPUTS.length + 1);
+    return [W * 0.96, spacing * (i + 1)];
+  }
+
+  function hexToRgb(hex: string): [number, number, number] {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return [r, g, b];
+  }
+
+  // Route: horizontal run then 90deg turn then horizontal to pin
+  // Returns an array of points describing the L-shaped or Z-shaped trace
+  function buildInputTrace(i: number): [number, number][] {
+    const [cx, cy] = getInputConnector(i);
+    const [px, py] = getInputPin(i);
+    // Route: go right to midX, then vertical to py, then right to px
+    const midX = cx + (px - cx) * 0.5;
+    return [[cx, cy], [midX, cy], [midX, py], [px, py]];
+  }
+
+  function buildOutputTrace(i: number): [number, number][] {
+    const [px, py] = getOutputPin(i);
+    const [cx, cy] = getOutputConnector(i);
+    const midX = px + (cx - px) * 0.5;
+    return [[px, py], [midX, py], [midX, cy], [cx, cy]];
+  }
+
+  // Point along polyline trace
+  function tracePoint(pts: [number, number][], t: number): [number, number] {
+    // Compute total length segments
+    const segs: number[] = [];
+    let total = 0;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const dx = pts[i + 1][0] - pts[i][0];
+      const dy = pts[i + 1][1] - pts[i][1];
+      const d = Math.sqrt(dx * dx + dy * dy);
+      segs.push(d);
+      total += d;
+    }
+    let dist = t * total;
+    for (let i = 0; i < segs.length; i++) {
+      if (dist <= segs[i]) {
+        const frac = dist / segs[i];
+        return [
+          pts[i][0] + frac * (pts[i + 1][0] - pts[i][0]),
+          pts[i][1] + frac * (pts[i + 1][1] - pts[i][1]),
+        ];
+      }
+      dist -= segs[i];
+    }
+    return pts[pts.length - 1];
+  }
+
+  function isNearTrace(mx: number, my: number, pts: [number, number][], thresh: number): boolean {
+    for (let t = 0; t <= 1; t += 0.02) {
+      const [px, py] = tracePoint(pts, t);
+      if ((mx - px) ** 2 + (my - py) ** 2 < thresh * thresh) return true;
+    }
+    return false;
+  }
+
+  function isInChip(mx: number, my: number): boolean {
+    const c = getChipRect();
+    return mx >= c.x - 10 && mx <= c.x + c.w + 10 && my >= c.y - 10 && my <= c.y + c.h + 10;
+  }
+
+  function initLEDs() {
+    leds.length = 0;
+    const chip = getChipRect();
+    const colors = ['#f97316', '#6366f1', '#22d3ee', '#4ade80', '#f97316'];
+    for (let i = 0; i < 8; i++) {
+      leds.push({
+        x: chip.x + 14 + (i % 4) * 22,
+        y: chip.y + 14 + Math.floor(i / 4) * 16,
+        color: colors[i % colors.length],
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.04 + Math.random() * 0.06,
+        size: 3.5,
+      });
+    }
+  }
+
+  function spawnPulse(side: 'input' | 'output', index: number) {
+    const color = side === 'input' ? INPUTS[index].color : OUTPUTS[index].color;
+    pulses.push({
+      t: 0,
+      speed: 0.004 + Math.random() * 0.003,
+      color,
+      side,
+      index,
+      size: side === 'input' ? 3.5 : 3,
+      tail: 0.08,
+      brightness: 0.8 + Math.random() * 0.2,
+    });
+  }
+
+  // Pre-populate
+  for (let i = 0; i < INPUTS.length; i++) {
+    for (let j = 0; j < 4; j++) {
+      const p: Pulse = {
+        t: j / 4,
+        speed: 0.004 + Math.random() * 0.003,
+        color: INPUTS[i].color,
+        side: 'input',
+        index: i,
+        size: 3.5,
+        tail: 0.08,
+        brightness: 0.85,
+      };
+      pulses.push(p);
+    }
+  }
+  for (let i = 0; i < OUTPUTS.length; i++) {
+    for (let j = 0; j < 3; j++) {
+      const p: Pulse = {
+        t: j / 3,
+        speed: 0.004 + Math.random() * 0.003,
+        color: OUTPUTS[i].color,
+        side: 'output',
+        index: i,
+        size: 3,
+        tail: 0.06,
+        brightness: 0.85,
+      };
+      pulses.push(p);
+    }
+  }
+
+  function drawGrid() {
+    // Main grid
+    const step = 28;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(80,255,120,0.028)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += step) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    }
+    for (let y = 0; y < H; y += step) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+    // Solder points at intersections (sparse)
+    ctx.fillStyle = 'rgba(100,255,140,0.07)';
+    for (let x = step; x < W; x += step * 3) {
+      for (let y = step; y < H; y += step * 3) {
+        ctx.beginPath();
+        ctx.arc(x, y, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+
+  function drawTrace(pts: [number, number][], color: string, width: number, dashed: boolean, highlighted: boolean) {
+    const [r, g, b] = hexToRgb(color);
+    const alpha = highlighted ? 0.85 : 0.4;
+    const glowAlpha = highlighted ? 0.45 : 0.15;
+    const lw = width * (highlighted ? 1.6 : 1);
+
+    // Glow layer
+    ctx.save();
+    ctx.shadowColor = color;
+    ctx.shadowBlur = highlighted ? 20 : 8;
+    ctx.strokeStyle = `rgba(${r},${g},${b},${glowAlpha})`;
+    ctx.lineWidth = lw + 4;
+    ctx.lineCap = 'square';
+    ctx.lineJoin = 'miter';
+    if (dashed) ctx.setLineDash([6, 5]);
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+    ctx.stroke();
+    ctx.restore();
+
+    // Main trace
+    ctx.save();
+    ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
+    ctx.lineWidth = lw;
+    ctx.lineCap = 'square';
+    ctx.lineJoin = 'miter';
+    if (dashed) ctx.setLineDash([6, 5]);
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+    ctx.stroke();
+    ctx.restore();
+
+    // Solder joints at corners
+    pts.forEach(([x, y], idx) => {
+      if (idx === 0 || idx === pts.length - 1) return; // skip endpoints
+      ctx.save();
+      ctx.shadowColor = color;
+      ctx.shadowBlur = highlighted ? 14 : 6;
+      const jg = ctx.createRadialGradient(x, y, 0.5, x, y, 5);
+      jg.addColorStop(0, `rgba(255,255,255,0.9)`);
+      jg.addColorStop(0.4, color);
+      jg.addColorStop(1, `rgba(${r},${g},${b},0)`);
+      ctx.beginPath();
+      ctx.arc(x, y, 4.5, 0, Math.PI * 2);
+      ctx.fillStyle = jg;
+      ctx.fill();
+      ctx.restore();
+    });
+  }
+
+  function drawConnectorPin(x: number, y: number, color: string, label: string, side: 'left' | 'right', highlighted: boolean) {
+    const [r, g, b] = hexToRgb(color);
+    const pw = 18;
+    const ph = 10;
+
+    ctx.save();
+    ctx.shadowColor = color;
+    ctx.shadowBlur = highlighted ? 18 : 8;
+    const px = side === 'left' ? x : x - pw;
+    ctx.fillStyle = `rgba(${r},${g},${b},${highlighted ? 0.55 : 0.28})`;
+    ctx.strokeStyle = `rgba(${r},${g},${b},${highlighted ? 0.9 : 0.6})`;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.rect(px, y - ph / 2, pw, ph);
+    ctx.fill();
+    ctx.stroke();
+
+    // Pin notch
+    ctx.fillStyle = `rgba(${r},${g},${b},0.8)`;
+    if (side === 'left') {
+      ctx.beginPath();
+      ctx.rect(px + pw, y - 3, 5, 6);
+      ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.rect(px - 5, y - 3, 5, 6);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // Label
+    ctx.save();
+    ctx.font = `600 11px -apple-system, sans-serif`;
+    ctx.fillStyle = highlighted ? '#fff' : 'rgba(255,255,255,0.8)';
+    ctx.textBaseline = 'middle';
+    if (side === 'left') {
+      ctx.textAlign = 'left';
+      ctx.fillText(label, x + pw + 10, y);
+    } else {
+      ctx.textAlign = 'right';
+      ctx.fillText(label, x - pw - 10, y);
+    }
+    ctx.restore();
+  }
+
+  function drawChip() {
+    const chip = getChipRect();
+    const { x, y, w, h } = chip;
+    const isHovered = hoveredItem?.type === 'chip';
+    const pulse = Math.sin(time * 0.03) * 0.07 + 0.93;
+
+    // Outer glow
+    ctx.save();
+    const og = ctx.createRadialGradient(x + w / 2, y + h / 2, w * 0.2, x + w / 2, y + h / 2, w * 1.2);
+    og.addColorStop(0, `rgba(249,115,22,${isHovered ? 0.2 : 0.09})`);
+    og.addColorStop(1, 'rgba(249,115,22,0)');
+    ctx.fillStyle = og;
+    ctx.fillRect(x - w * 0.6, y - h * 0.3, w * 2.2, h * 1.6);
+    ctx.restore();
+
+    // Chip body
+    ctx.save();
+    ctx.shadowColor = isHovered ? '#f97316' : 'rgba(249,115,22,0.5)';
+    ctx.shadowBlur = isHovered ? 30 : 14;
+    const bodyGrad = ctx.createLinearGradient(x, y, x, y + h);
+    bodyGrad.addColorStop(0, 'rgba(20,22,45,0.98)');
+    bodyGrad.addColorStop(1, 'rgba(12,14,30,0.98)');
+    ctx.fillStyle = bodyGrad;
+    ctx.strokeStyle = isHovered ? 'rgba(249,115,22,0.9)' : 'rgba(249,115,22,0.55)';
+    ctx.lineWidth = isHovered ? 2 : 1.5;
+    roundRect(ctx, x, y, w, h, 6);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+
+    // Internal circuit lines (decorative)
+    ctx.save();
+    ctx.strokeStyle = 'rgba(249,115,22,0.12)';
+    ctx.lineWidth = 1;
+    // Horizontal divider
+    ctx.beginPath(); ctx.moveTo(x + 8, y + h * 0.38); ctx.lineTo(x + w - 8, y + h * 0.38); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x + 8, y + h * 0.65); ctx.lineTo(x + w - 8, y + h * 0.65); ctx.stroke();
+    // Vertical lines
+    ctx.beginPath(); ctx.moveTo(x + w * 0.33, y + 8); ctx.lineTo(x + w * 0.33, y + h - 8); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x + w * 0.67, y + 8); ctx.lineTo(x + w * 0.67, y + h - 8); ctx.stroke();
+    ctx.restore();
+
+    // Processing bar
+    const barX = x + 10;
+    const barY = y + h * 0.7;
+    const barW = w - 20;
+    const barH = 5;
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,255,255,0.06)';
+    roundRect(ctx, barX, barY, barW, barH, 3);
+    ctx.fill();
+    const fillW = barW * ((cpuProcessBar % 1));
+    if (fillW > 0) {
+      const barGrad = ctx.createLinearGradient(barX, barY, barX + fillW, barY);
+      barGrad.addColorStop(0, '#f97316');
+      barGrad.addColorStop(1, '#fbbf24');
+      ctx.fillStyle = barGrad;
+      ctx.shadowColor = '#f97316';
+      ctx.shadowBlur = 6;
+      roundRect(ctx, barX, barY, fillW, barH, 3);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // LEDs
+    leds.forEach((led) => {
+      const blink = (Math.sin(time * led.speed + led.phase) + 1) / 2;
+      const [r, g, b] = hexToRgb(led.color);
+      ctx.save();
+      ctx.shadowColor = led.color;
+      ctx.shadowBlur = blink * 8;
+      ctx.beginPath();
+      ctx.arc(led.x, led.y, led.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${r},${g},${b},${0.3 + blink * 0.7})`;
+      ctx.fill();
+      // Bright center
+      ctx.beginPath();
+      ctx.arc(led.x, led.y, led.size * 0.4, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${blink * 0.9})`;
+      ctx.fill();
+      ctx.restore();
+    });
+
+    // Logic gate symbols (simple)
+    ctx.save();
+    ctx.strokeStyle = 'rgba(249,115,22,0.35)';
+    ctx.lineWidth = 1;
+    ctx.fillStyle = 'rgba(249,115,22,0.08)';
+    // AND gate at center-left
+    const gx = x + 18, gy = y + h * 0.5 - 8;
+    ctx.beginPath();
+    ctx.rect(gx, gy, 14, 16);
+    ctx.fill(); ctx.stroke();
+    // OR gate shape at center-right
+    const gx2 = x + w - 32, gy2 = y + h * 0.5 - 8;
+    ctx.beginPath();
+    ctx.moveTo(gx2, gy2);
+    ctx.lineTo(gx2 + 14, gy2);
+    ctx.arc(gx2 + 14, gy2 + 8, 8, -Math.PI / 2, Math.PI / 2);
+    ctx.lineTo(gx2, gy2 + 16);
+    ctx.fill(); ctx.stroke();
+    ctx.restore();
+
+    // Pin stubs on left and right
+    INPUTS.forEach((inp, i) => {
+      const [px, py] = getInputPin(i);
+      const [r, g, b] = hexToRgb(inp.color);
+      ctx.save();
+      ctx.fillStyle = `rgba(${r},${g},${b},0.7)`;
+      ctx.beginPath();
+      ctx.rect(x - 8, py - 2, 8, 4);
+      ctx.fill();
+      ctx.restore();
+    });
+    OUTPUTS.forEach((out, i) => {
+      const [px, py] = getOutputPin(i);
+      const [r, g, b] = hexToRgb(out.color);
+      ctx.save();
+      ctx.fillStyle = `rgba(${r},${g},${b},0.7)`;
+      ctx.beginPath();
+      ctx.rect(px, py - 2, 8, 4);
+      ctx.fill();
+      ctx.restore();
+    });
+
+    // Labels
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = `bold 13px -apple-system, sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.fillText('AutoPilot', x + w / 2, y + h * 0.21);
+    ctx.font = `600 10px -apple-system, sans-serif`;
+    ctx.fillStyle = '#f97316';
+    ctx.fillText('CPU', x + w / 2, y + h * 0.32);
+    ctx.restore();
+
+    // Hover overlay
+    if (isHovered) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(249,115,22,0.06)';
+      roundRect(ctx, x, y, w, h, 6);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function roundRect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r);
+    c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r);
+    c.lineTo(x, y + r);
+    c.quadraticCurveTo(x, y, x + r, y);
+    c.closePath();
+  }
+
+  function drawPulses() {
+    pulses.forEach((p) => {
+      const pts = p.side === 'input'
+        ? buildInputTrace(p.index)
+        : buildOutputTrace(p.index);
+      const [px, py] = tracePoint(pts, p.t);
+      const [r, g, b] = hexToRgb(p.color);
+
+      // Tail
+      const numTailPts = 12;
+      for (let k = numTailPts; k >= 1; k--) {
+        const tailT = p.t - (p.tail * k) / numTailPts;
+        if (tailT < 0) continue;
+        const [tx, ty] = tracePoint(pts, tailT);
+        const tailAlpha = (1 - k / numTailPts) * 0.5 * p.brightness;
+        const tailSize = p.size * (1 - k / numTailPts) * 0.7;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(tx, ty, tailSize, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${r},${g},${b},${tailAlpha})`;
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Head glow
+      ctx.save();
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur = 16;
+      const hg = ctx.createRadialGradient(px, py, 0, px, py, p.size * 2.5);
+      hg.addColorStop(0, `rgba(${r},${g},${b},${p.brightness})`);
+      hg.addColorStop(1, `rgba(${r},${g},${b},0)`);
+      ctx.beginPath();
+      ctx.arc(px, py, p.size * 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = hg;
+      ctx.fill();
+      // Bright core
+      ctx.beginPath();
+      ctx.arc(px, py, p.size * 0.5, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${p.brightness * 0.95})`;
+      ctx.fill();
+      ctx.restore();
+    });
+  }
+
+  function updatePulses() {
+    if (Math.random() < 0.2) spawnPulse('input', Math.floor(Math.random() * INPUTS.length));
+    if (Math.random() < 0.2) spawnPulse('output', Math.floor(Math.random() * OUTPUTS.length));
+
+    for (let i = pulses.length - 1; i >= 0; i--) {
+      pulses[i].t += pulses[i].speed;
+      if (pulses[i].t > 1 + pulses[i].tail) pulses.splice(i, 1);
+    }
+
+    if (pulses.length > 80) pulses.splice(0, pulses.length - 80);
+  }
+
+  function detectHover() {
+    if (isInChip(mouse.x, mouse.y)) {
+      if (!hoveredItem || hoveredItem.type !== 'chip') {
+        hoveredItem = { type: 'chip', index: 0 };
+        showTooltip('AutoPilot CPU', 'Processing 4 inputs → 6 platform outputs at 60fps');
+      }
+      return;
+    }
+    for (let i = 0; i < INPUTS.length; i++) {
+      if (isNearTrace(mouse.x, mouse.y, buildInputTrace(i), 10)) {
+        if (!hoveredItem || hoveredItem.type !== 'input' || hoveredItem.index !== i) {
+          hoveredItem = { type: 'input', index: i };
+          showTooltip(INPUTS[i].label, `Input signal routed to AutoPilot CPU`);
+        }
+        return;
+      }
+    }
+    for (let i = 0; i < OUTPUTS.length; i++) {
+      if (isNearTrace(mouse.x, mouse.y, buildOutputTrace(i), 10)) {
+        if (!hoveredItem || hoveredItem.type !== 'output' || hoveredItem.index !== i) {
+          hoveredItem = { type: 'output', index: i };
+          showTooltip(OUTPUTS[i].label, 'Platform-optimised content stream');
+        }
+        return;
+      }
+    }
+    hoveredItem = null;
+    hideTooltip();
+  }
+
+  function showTooltip(title: string, desc: string) {
+    tooltip.innerHTML = `<strong style="color:#f97316">${title}</strong><br><span style="color:rgba(255,255,255,0.65);font-size:0.75rem">${desc}</span>`;
+    tooltip.classList.add('visible');
+    positionTooltip();
+  }
+
+  function hideTooltip() {
+    tooltip.classList.remove('visible');
+  }
+
+  function positionTooltip() {
+    let tx = mouse.x + 14;
+    let ty = mouse.y - 10;
+    if (tx + 220 > W) tx = mouse.x - 230;
+    if (ty + 60 > H) ty = mouse.y - 70;
+    tooltip.style.left = tx + 'px';
+    tooltip.style.top = ty + 'px';
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    drawGrid();
+
+    // Draw input traces
+    for (let i = 0; i < INPUTS.length; i++) {
+      const pts = buildInputTrace(i);
+      const highlighted = hoveredItem?.type === 'input' && hoveredItem.index === i;
+      drawTrace(pts, INPUTS[i].color, INPUTS[i].traceWidth, INPUTS[i].dashed, highlighted);
+    }
+
+    // Draw output traces
+    for (let i = 0; i < OUTPUTS.length; i++) {
+      const pts = buildOutputTrace(i);
+      const highlighted = hoveredItem?.type === 'output' && hoveredItem.index === i;
+      drawTrace(pts, OUTPUTS[i].color, 2, false, highlighted);
+    }
+
+    // Chip (drawn above traces)
+    drawChip();
+
+    // Input connector pins
+    for (let i = 0; i < INPUTS.length; i++) {
+      const [x, y] = getInputConnector(i);
+      const highlighted = hoveredItem?.type === 'input' && hoveredItem.index === i;
+      drawConnectorPin(x, y, INPUTS[i].color, INPUTS[i].label, 'left', highlighted);
+    }
+
+    // Output connector pins
+    for (let i = 0; i < OUTPUTS.length; i++) {
+      const [x, y] = getOutputConnector(i);
+      const highlighted = hoveredItem?.type === 'output' && hoveredItem.index === i;
+      drawConnectorPin(x, y, OUTPUTS[i].color, OUTPUTS[i].label, 'right', highlighted);
+    }
+
+    // Pulses on top
+    drawPulses();
+  }
+
+  function loop() {
+    time++;
+    cpuProcessBar += 0.006;
+    updatePulses();
+    detectHover();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = e.clientX - rect.left;
+    mouse.y = e.clientY - rect.top;
+    positionTooltip();
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    mouse.x = -9999;
+    mouse.y = -9999;
+    hoveredItem = null;
+    hideTooltip();
+  });
+
+  window.addEventListener('resize', () => {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    resize();
+  });
+
+  resize();
+  loop();
+</script>

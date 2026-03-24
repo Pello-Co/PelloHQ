@@ -1,0 +1,649 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — DNA Recombination | Pello" description="AutoPilot sequences your website data, news feeds, social signals, and keywords — recombining them at a molecular level into six platform-native content strands.">
+  <Header />
+  <main id="main-content">
+    <section class="pub-section" aria-labelledby="pub-headline">
+      <div class="pub-layout">
+        <div class="pub-text">
+          <span class="pub-badge">PelloPublish</span>
+          <h1 id="pub-headline">Recombined Into Something Better.</h1>
+          <p>AutoPilot sequences your website data, news feeds, social signals, and keywords — recombining them at a molecular level into six platform-native content strands, each optimised for its destination.</p>
+          <ul class="pub-pills" role="list">
+            <li>Source Sequencing</li>
+            <li>AI Recombination</li>
+            <li>Platform-Optimised Output</li>
+            <li>Molecular Precision</li>
+          </ul>
+        </div>
+        <div class="pub-canvas-col">
+          <canvas id="pub-canvas" aria-hidden="true"></canvas>
+          <div id="pub-tooltip" role="tooltip" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .pub-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .pub-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .pub-layout { grid-template-columns: 1fr; } }
+  .pub-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .pub-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #f97316; width: fit-content; }
+  .pub-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .pub-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .pub-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pub-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .pub-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #pub-canvas { width: 100%; height: 100%; position: absolute; inset: 0; display: block; }
+  #pub-tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: rgba(6,7,18,0.92);
+    border: 1px solid rgba(249,115,22,0.4);
+    border-radius: 8px;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8125rem;
+    color: #fff;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+  }
+  #pub-tooltip.visible { opacity: 1; }
+</style>
+
+<script>
+  type InputNode = {
+    label: string;
+    color: string;
+  };
+  type OutputNode = {
+    label: string;
+    color: string;
+  };
+  type Particle = {
+    x: number;
+    y: number;
+    progress: number;
+    speed: number;
+    isInput: boolean;
+    sourceIndex: number;
+    targetIndex: number;
+    size: number;
+    opacity: number;
+  };
+  type OrbitFragment = {
+    angle: number;
+    radius: number;
+    speed: number;
+    color: string;
+    size: number;
+    opacity: number;
+  };
+
+  const INPUTS: InputNode[] = [
+    { label: 'Website Scrape', color: '#6366f1' },
+    { label: 'News Feed',      color: '#22d3ee' },
+    { label: 'X Feed',         color: '#1d9bf0' },
+    { label: 'Keywords',       color: '#4ade80' },
+  ];
+  const OUTPUTS: OutputNode[] = [
+    { label: 'Newsletter', color: '#f97316' },
+    { label: 'Instagram',  color: '#e1306c' },
+    { label: 'TikTok',     color: '#00f2ea' },
+    { label: 'Twitter',    color: '#1d9bf0' },
+    { label: 'LinkedIn',   color: '#0a66c2' },
+    { label: 'Blog',       color: '#a855f7' },
+  ];
+
+  const canvas = document.getElementById('pub-canvas') as HTMLCanvasElement;
+  const tooltip = document.getElementById('pub-tooltip') as HTMLDivElement;
+  const ctx = canvas.getContext('2d')!;
+
+  let W = 0, H = 0, dpr = 1;
+  let t = 0;
+  let hoveredInput = -1;
+  let hoveredOutput = -1;
+  let mouseX = 0, mouseY = 0;
+
+  // Particles flowing along helices toward/from chamber
+  const particles: Particle[] = [];
+  const orbitFragments: OrbitFragment[] = [];
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = canvas.parentElement!.getBoundingClientRect();
+    W = rect.width;
+    H = Math.max(rect.height, 560);
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+    initParticles();
+    initOrbitFragments();
+  }
+
+  function initParticles() {
+    particles.length = 0;
+    for (let i = 0; i < INPUTS.length; i++) {
+      for (let k = 0; k < 3; k++) {
+        particles.push({
+          x: 0, y: 0,
+          progress: (k / 3),
+          speed: 0.004 + Math.random() * 0.002,
+          isInput: true,
+          sourceIndex: i,
+          targetIndex: 0,
+          size: 2.5 + Math.random() * 1.5,
+          opacity: 0.7 + Math.random() * 0.3,
+        });
+      }
+    }
+    for (let i = 0; i < OUTPUTS.length; i++) {
+      for (let k = 0; k < 3; k++) {
+        particles.push({
+          x: 0, y: 0,
+          progress: (k / 3),
+          speed: 0.003 + Math.random() * 0.002,
+          isInput: false,
+          sourceIndex: 0,
+          targetIndex: i,
+          size: 2.5 + Math.random() * 1.5,
+          opacity: 0.7 + Math.random() * 0.3,
+        });
+      }
+    }
+  }
+
+  function initOrbitFragments() {
+    orbitFragments.length = 0;
+    const allColors = [...INPUTS.map(i => i.color), ...OUTPUTS.map(o => o.color)];
+    for (let i = 0; i < 18; i++) {
+      orbitFragments.push({
+        angle: (i / 18) * Math.PI * 2,
+        radius: 28 + Math.random() * 22,
+        speed: (0.008 + Math.random() * 0.012) * (Math.random() < 0.5 ? 1 : -1),
+        color: allColors[i % allColors.length],
+        size: 3 + Math.random() * 3,
+        opacity: 0.5 + Math.random() * 0.5,
+      });
+    }
+  }
+
+  function getHelixPositions() {
+    const centerX = W / 2;
+    const centerY = H / 2;
+    const chamberR = Math.min(W, H) * 0.13;
+
+    const inputX = W * 0.08;
+    const outputX = W * 0.92;
+
+    const inputSpacing = H / (INPUTS.length + 1);
+    const outputSpacing = H / (OUTPUTS.length + 1);
+
+    const inputPositions = INPUTS.map((_, i) => ({
+      x: inputX,
+      y: inputSpacing * (i + 1),
+    }));
+    const outputPositions = OUTPUTS.map((_, i) => ({
+      x: outputX,
+      y: outputSpacing * (i + 1),
+    }));
+
+    return { centerX, centerY, chamberR, inputPositions, outputPositions };
+  }
+
+  function drawHelix(
+    x1: number, y1: number,
+    x2: number, y2: number,
+    color: string,
+    phase: number,
+    highlight: boolean,
+    amplitude: number = 14
+  ) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    const steps = Math.ceil(len / 4);
+    const perp = { x: -dy / len, y: dx / len };
+
+    // Draw two backbone strands
+    for (let strand = 0; strand < 2; strand++) {
+      const strandPhase = strand === 0 ? 0 : Math.PI;
+      ctx.beginPath();
+      for (let i = 0; i <= steps; i++) {
+        const p = i / steps;
+        const bx = x1 + dx * p;
+        const by = y1 + dy * p;
+        const angle = phase + strandPhase + p * Math.PI * 6;
+        const offset = Math.sin(angle) * amplitude;
+        const px = bx + perp.x * offset;
+        const py = by + perp.y * offset;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      const alpha = highlight ? 0.95 : 0.7;
+      ctx.strokeStyle = color + Math.round(alpha * 255).toString(16).padStart(2, '0');
+      ctx.lineWidth = highlight ? 2.5 : 1.8;
+      ctx.stroke();
+    }
+
+    // Draw base pair rungs
+    const rungSpacing = 8;
+    const numRungs = Math.floor(len / rungSpacing);
+    for (let r = 0; r < numRungs; r++) {
+      const p = r / numRungs;
+      const bx = x1 + dx * p;
+      const by = y1 + dy * p;
+      const angle = phase + p * Math.PI * 6;
+      const offset1 = Math.sin(angle) * amplitude;
+      const offset2 = Math.sin(angle + Math.PI) * amplitude;
+      const px1 = bx + perp.x * offset1;
+      const py1 = by + perp.y * offset1;
+      const px2 = bx + perp.x * offset2;
+      const py2 = by + perp.y * offset2;
+
+      const rungAlpha = highlight ? 0.6 : 0.3;
+      ctx.beginPath();
+      ctx.moveTo(px1, py1);
+      ctx.lineTo(px2, py2);
+      ctx.strokeStyle = color + Math.round(rungAlpha * 255).toString(16).padStart(2, '0');
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+  }
+
+  function drawChamber(cx: number, cy: number, r: number) {
+    // Outer glow
+    const glowGrad = ctx.createRadialGradient(cx, cy, r * 0.2, cx, cy, r * 1.5);
+    glowGrad.addColorStop(0, 'rgba(249,115,22,0.18)');
+    glowGrad.addColorStop(0.5, 'rgba(249,115,22,0.06)');
+    glowGrad.addColorStop(1, 'rgba(249,115,22,0)');
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 1.5, 0, Math.PI * 2);
+    ctx.fillStyle = glowGrad;
+    ctx.fill();
+
+    // Chamber body
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+    grad.addColorStop(0, 'rgba(249,115,22,0.25)');
+    grad.addColorStop(0.5, 'rgba(99,102,241,0.12)');
+    grad.addColorStop(1, 'rgba(249,115,22,0.08)');
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(249,115,22,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Inner ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.6, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(249,115,22,0.25)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Scissors animation (CRISPR-style)
+    const scissorAngle = t * 0.8;
+    const bladeLen = r * 0.45;
+    ctx.save();
+    ctx.translate(cx, cy);
+    const openAmount = Math.abs(Math.sin(t * 1.2)) * 0.35;
+
+    for (let b = 0; b < 2; b++) {
+      const sign = b === 0 ? 1 : -1;
+      ctx.save();
+      ctx.rotate(scissorAngle + sign * openAmount);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(bladeLen, 0);
+      ctx.strokeStyle = `rgba(249,115,22,${0.7 + Math.sin(t * 2) * 0.2})`;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      // Blade tip circle
+      ctx.beginPath();
+      ctx.arc(bladeLen, 0, 3, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(249,115,22,0.9)';
+      ctx.fill();
+      ctx.restore();
+
+      ctx.save();
+      ctx.rotate(scissorAngle + Math.PI + sign * openAmount);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(bladeLen, 0);
+      ctx.strokeStyle = `rgba(249,115,22,${0.7 + Math.sin(t * 2) * 0.2})`;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(bladeLen, 0, 3, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(249,115,22,0.9)';
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+
+    // Orbiting molecular fragments
+    for (const frag of orbitFragments) {
+      frag.angle += frag.speed;
+      const fx = cx + Math.cos(frag.angle) * frag.radius;
+      const fy = cy + Math.sin(frag.angle) * frag.radius;
+      ctx.beginPath();
+      ctx.arc(fx, fy, frag.size, 0, Math.PI * 2);
+      ctx.fillStyle = frag.color + Math.round(frag.opacity * 255).toString(16).padStart(2, '0');
+      ctx.fill();
+    }
+
+    // Label
+    ctx.font = 'bold 10px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(249,115,22,0.9)';
+    ctx.textAlign = 'center';
+    ctx.fillText('SPLICING', cx, cy + r + 16);
+    ctx.fillText('CHAMBER', cx, cy + r + 28);
+  }
+
+  function lerp(a: number, b: number, t: number) {
+    return a + (b - a) * t;
+  }
+
+  function catmullRomPoint(p0: {x:number,y:number}, p1: {x:number,y:number}, p2: {x:number,y:number}, p3: {x:number,y:number}, t: number) {
+    const t2 = t * t;
+    const t3 = t2 * t;
+    return {
+      x: 0.5 * ((2*p1.x) + (-p0.x+p2.x)*t + (2*p0.x-5*p1.x+4*p2.x-p3.x)*t2 + (-p0.x+3*p1.x-3*p2.x+p3.x)*t3),
+      y: 0.5 * ((2*p1.y) + (-p0.y+p2.y)*t + (2*p0.y-5*p1.y+4*p2.y-p3.y)*t2 + (-p0.y+3*p1.y-3*p2.y+p3.y)*t3),
+    };
+  }
+
+  function getConnectorPath(from: {x:number,y:number}, to: {x:number,y:number}, isInput: boolean): {x:number,y:number}[] {
+    const midX = (from.x + to.x) / 2;
+    const cp1 = isInput
+      ? { x: midX * 0.6 + from.x * 0.4, y: from.y }
+      : { x: midX * 0.4 + to.x * 0.6, y: to.y };
+    const cp2 = isInput
+      ? { x: to.x - (to.x - from.x) * 0.15, y: to.y }
+      : { x: from.x + (to.x - from.x) * 0.15, y: from.y };
+    const pts: {x:number,y:number}[] = [];
+    const steps = 60;
+    for (let i = 0; i <= steps; i++) {
+      const tVal = i / steps;
+      // Bezier
+      const bx = Math.pow(1-tVal,3)*from.x + 3*Math.pow(1-tVal,2)*tVal*cp1.x + 3*(1-tVal)*tVal*tVal*cp2.x + tVal*tVal*tVal*to.x;
+      const by = Math.pow(1-tVal,3)*from.y + 3*Math.pow(1-tVal,2)*tVal*cp1.y + 3*(1-tVal)*tVal*tVal*cp2.y + tVal*tVal*tVal*to.y;
+      pts.push({x: bx, y: by});
+    }
+    return pts;
+  }
+
+  function drawConnector(from: {x:number,y:number}, to: {x:number,y:number}, color: string, highlight: boolean) {
+    const pts = getConnectorPath(from, to, true);
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) {
+      ctx.lineTo(pts[i].x, pts[i].y);
+    }
+    ctx.strokeStyle = color + (highlight ? 'cc' : '55');
+    ctx.lineWidth = highlight ? 2 : 1.2;
+    ctx.stroke();
+  }
+
+  function updateParticles(
+    inputPositions: {x:number,y:number}[],
+    outputPositions: {x:number,y:number}[],
+    cx: number, cy: number
+  ) {
+    for (const p of particles) {
+      p.progress += p.speed;
+      if (p.progress > 1) p.progress -= 1;
+
+      if (p.isInput) {
+        const from = inputPositions[p.sourceIndex];
+        const to = { x: cx, y: cy };
+        const pts = getConnectorPath(from, to, true);
+        const idx = Math.min(Math.floor(p.progress * pts.length), pts.length - 1);
+        p.x = pts[idx].x;
+        p.y = pts[idx].y;
+      } else {
+        const from = { x: cx, y: cy };
+        const to = outputPositions[p.targetIndex];
+        const pts = getConnectorPath(from, to, false);
+        const idx = Math.min(Math.floor(p.progress * pts.length), pts.length - 1);
+        p.x = pts[idx].x;
+        p.y = pts[idx].y;
+      }
+    }
+  }
+
+  function drawParticles() {
+    for (const p of particles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      let color: string;
+      if (p.isInput) {
+        color = INPUTS[p.sourceIndex].color;
+      } else {
+        color = OUTPUTS[p.targetIndex].color;
+      }
+      ctx.fillStyle = color + Math.round(p.opacity * 255).toString(16).padStart(2, '0');
+      ctx.fill();
+      // glow
+      const glowGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 3);
+      glowGrad.addColorStop(0, color + '60');
+      glowGrad.addColorStop(1, 'transparent');
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
+      ctx.fillStyle = glowGrad;
+      ctx.fill();
+    }
+  }
+
+  function drawLabel(text: string, x: number, y: number, color: string, align: CanvasTextAlign = 'center') {
+    ctx.font = '600 11px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.textAlign = align;
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fillText(text, x, y);
+    // Color underline
+    const metrics = ctx.measureText(text);
+    const tw = metrics.width;
+    const startX = align === 'left' ? x : align === 'right' ? x - tw : x - tw / 2;
+    ctx.beginPath();
+    ctx.moveTo(startX, y + 3);
+    ctx.lineTo(startX + tw, y + 3);
+    ctx.strokeStyle = color + 'aa';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  function drawInputHelix(pos: {x:number,y:number}, input: InputNode, index: number, highlight: boolean) {
+    const helixLen = W * 0.13;
+    const startX = 0;
+    const endX = pos.x + helixLen * 0.5;
+    const y = pos.y;
+    const phase = t * 1.2 + index * 0.8;
+    drawHelix(startX, y, endX, y, input.color, phase, highlight, 12);
+
+    // Endpoint node
+    const nodeR = highlight ? 7 : 5;
+    const nodeGrad = ctx.createRadialGradient(pos.x, y, 0, pos.x, y, nodeR * 2);
+    nodeGrad.addColorStop(0, input.color + 'ff');
+    nodeGrad.addColorStop(1, input.color + '00');
+    ctx.beginPath();
+    ctx.arc(pos.x, y, nodeR * 2, 0, Math.PI * 2);
+    ctx.fillStyle = nodeGrad;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(pos.x, y, nodeR, 0, Math.PI * 2);
+    ctx.fillStyle = input.color;
+    ctx.fill();
+
+    drawLabel(input.label, pos.x, y + 22, input.color, 'center');
+  }
+
+  function drawOutputHelix(pos: {x:number,y:number}, output: OutputNode, index: number, highlight: boolean) {
+    const helixLen = W * 0.13;
+    const startX = pos.x - helixLen * 0.5;
+    const endX = W;
+    const y = pos.y;
+    const phase = t * 1.2 + index * 0.6 + 2.0;
+    drawHelix(startX, y, endX, y, output.color, phase, highlight, 12);
+
+    // Endpoint node
+    const nodeR = highlight ? 7 : 5;
+    const nodeGrad = ctx.createRadialGradient(pos.x, y, 0, pos.x, y, nodeR * 2);
+    nodeGrad.addColorStop(0, output.color + 'ff');
+    nodeGrad.addColorStop(1, output.color + '00');
+    ctx.beginPath();
+    ctx.arc(pos.x, y, nodeR * 2, 0, Math.PI * 2);
+    ctx.fillStyle = nodeGrad;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(pos.x, y, nodeR, 0, Math.PI * 2);
+    ctx.fillStyle = output.color;
+    ctx.fill();
+
+    drawLabel(output.label, pos.x, y + 22, output.color, 'center');
+  }
+
+  function hitTestInput(mx: number, my: number, inputPositions: {x:number,y:number}[]): number {
+    for (let i = 0; i < inputPositions.length; i++) {
+      const p = inputPositions[i];
+      const dx = mx - p.x;
+      const dy = my - p.y;
+      if (Math.sqrt(dx*dx + dy*dy) < 24) return i;
+    }
+    return -1;
+  }
+
+  function hitTestOutput(mx: number, my: number, outputPositions: {x:number,y:number}[]): number {
+    for (let i = 0; i < outputPositions.length; i++) {
+      const p = outputPositions[i];
+      const dx = mx - p.x;
+      const dy = my - p.y;
+      if (Math.sqrt(dx*dx + dy*dy) < 24) return i;
+    }
+    return -1;
+  }
+
+  function showTooltip(text: string, x: number, y: number) {
+    tooltip.textContent = text;
+    tooltip.style.left = (x + 12) + 'px';
+    tooltip.style.top = (y - 10) + 'px';
+    tooltip.classList.add('visible');
+  }
+
+  function hideTooltip() {
+    tooltip.classList.remove('visible');
+  }
+
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+    const { inputPositions, outputPositions } = getHelixPositions();
+    const hi = hitTestInput(mouseX, mouseY, inputPositions);
+    const ho = hitTestOutput(mouseX, mouseY, outputPositions);
+    if (hi !== -1) {
+      hoveredInput = hi;
+      hoveredOutput = -1;
+      showTooltip(`Source: ${INPUTS[hi].label}`, e.clientX, e.clientY);
+    } else if (ho !== -1) {
+      hoveredOutput = ho;
+      hoveredInput = -1;
+      showTooltip(`Platform: ${OUTPUTS[ho].label}`, e.clientX, e.clientY);
+    } else {
+      hoveredInput = -1;
+      hoveredOutput = -1;
+      hideTooltip();
+    }
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    hoveredInput = -1;
+    hoveredOutput = -1;
+    hideTooltip();
+  });
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    const { centerX, centerY, chamberR, inputPositions, outputPositions } = getHelixPositions();
+
+    // Background subtle grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.025)';
+    ctx.lineWidth = 1;
+    const gridSize = 40;
+    for (let gx = 0; gx < W; gx += gridSize) {
+      ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke();
+    }
+    for (let gy = 0; gy < H; gy += gridSize) {
+      ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+    }
+
+    // Draw connectors input → chamber
+    for (let i = 0; i < INPUTS.length; i++) {
+      const highlight = hoveredInput === i;
+      drawConnector(inputPositions[i], { x: centerX, y: centerY }, INPUTS[i].color, highlight);
+    }
+    // Draw connectors chamber → output
+    for (let i = 0; i < OUTPUTS.length; i++) {
+      const highlight = hoveredOutput === i;
+      drawConnector({ x: centerX, y: centerY }, outputPositions[i], OUTPUTS[i].color, highlight);
+    }
+
+    // Update and draw particles
+    updateParticles(inputPositions, outputPositions, centerX, centerY);
+    drawParticles();
+
+    // Draw input helices
+    for (let i = 0; i < INPUTS.length; i++) {
+      drawInputHelix(inputPositions[i], INPUTS[i], i, hoveredInput === i);
+    }
+
+    // Draw output helices
+    for (let i = 0; i < OUTPUTS.length; i++) {
+      drawOutputHelix(outputPositions[i], OUTPUTS[i], i, hoveredOutput === i);
+    }
+
+    // Draw splicing chamber on top
+    drawChamber(centerX, centerY, chamberR);
+
+    // Section labels
+    ctx.font = '600 10px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.textAlign = 'center';
+    ctx.fillText('4 SOURCES', W * 0.12, 24);
+    ctx.fillText('6 PLATFORMS', W * 0.88, 24);
+
+    t += 0.016;
+  }
+
+  let rafId: number;
+  function loop() {
+    draw();
+    rafId = requestAnimationFrame(loop);
+  }
+
+  resize();
+  window.addEventListener('resize', () => {
+    cancelAnimationFrame(rafId);
+    resize();
+    loop();
+  });
+  loop();
+</script>

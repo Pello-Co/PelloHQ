@@ -1,0 +1,751 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Space Station | Pello" description="Four supply ships carry intelligence from your website, live news, social signals, and keyword research to the AutoPilot station. Six deployment pods carry content to every platform in orbit.">
+  <Header />
+  <main id="main-content">
+    <section class="pub-section" aria-labelledby="pub-headline">
+      <div class="pub-layout">
+        <div class="pub-text">
+          <span class="pub-badge">PelloPublish</span>
+          <h1 id="pub-headline">Content Launched From a Single Station.</h1>
+          <p>Four supply ships carry intelligence from your website, live news, social signals, and keyword research to the AutoPilot station. From there, six deployment pods carry perfectly crafted content to every platform in orbit.</p>
+          <ul class="pub-pills" role="list">
+            <li>4 Docking Ports</li>
+            <li>AutoPilot Station</li>
+            <li>6 Deployment Pods</li>
+            <li>Deep Space Publishing</li>
+          </ul>
+        </div>
+        <div class="pub-canvas-col">
+          <canvas id="pub-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<div id="pub-tooltip" role="tooltip" aria-live="polite"></div>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .pub-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .pub-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .pub-layout { grid-template-columns: 1fr; } }
+  .pub-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .pub-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #f97316; width: fit-content; }
+  .pub-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .pub-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .pub-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pub-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .pub-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #pub-canvas { width: 100%; height: 100%; position: absolute; inset: 0; }
+  #pub-tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: rgba(6,7,18,0.95);
+    border: 1px solid rgba(249,115,22,0.4);
+    border-radius: 8px;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8125rem;
+    color: #fff;
+    white-space: nowrap;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.15s;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+  }
+  #pub-tooltip.visible { opacity: 1; }
+</style>
+
+<script>
+  const INPUTS = [
+    { label: 'Website Scrape', color: '#6366f1' },
+    { label: 'News Feed',      color: '#22d3ee' },
+    { label: 'X Feed',         color: '#1d9bf0' },
+    { label: 'Keywords',       color: '#4ade80' },
+  ] as const;
+
+  const OUTPUTS = [
+    { label: 'Newsletter', color: '#f97316' },
+    { label: 'Instagram',  color: '#e1306c' },
+    { label: 'TikTok',     color: '#00f2ea' },
+    { label: 'Twitter',    color: '#1d9bf0' },
+    { label: 'LinkedIn',   color: '#0a66c2' },
+    { label: 'Blog',       color: '#a855f7' },
+  ] as const;
+
+  interface Star {
+    x: number; y: number; r: number; speed: number; opacity: number;
+  }
+
+  interface ExhaustParticle {
+    x: number; y: number; vx: number; vy: number;
+    life: number; maxLife: number; color: string; r: number;
+  }
+
+  interface CargoParticle {
+    x: number; y: number; tx: number; ty: number;
+    progress: number; speed: number; color: string; r: number; active: boolean;
+  }
+
+  interface Ship {
+    x: number; y: number;
+    tx: number; ty: number;
+    dockX: number; dockY: number;
+    progress: number;
+    docked: boolean;
+    dockedTime: number;
+    returning: boolean;
+    exhaust: ExhaustParticle[];
+    cargo: CargoParticle[];
+    inputIdx: number;
+    hovered: boolean;
+  }
+
+  interface Pod {
+    x: number; y: number;
+    sx: number; sy: number;
+    tx: number; ty: number;
+    destX: number; destY: number;
+    progress: number;
+    launched: boolean;
+    launchDelay: number;
+    exhaust: ExhaustParticle[];
+    outputIdx: number;
+    hovered: boolean;
+  }
+
+  const canvas = document.getElementById('pub-canvas') as HTMLCanvasElement;
+  const tooltip = document.getElementById('pub-tooltip') as HTMLDivElement;
+  const ctx = canvas.getContext('2d')!;
+  const dpr = window.devicePixelRatio || 1;
+
+  let W = 0, H = 0, cx = 0, cy = 0;
+  let stars: Star[] = [];
+  let ships: Ship[] = [];
+  let pods: Pod[] = [];
+  let stationAngle = 0;
+  let mouseX = 0, mouseY = 0;
+  let raf = 0;
+
+  // Planet shapes
+  const planets = [
+    { rx: 0.82, ry: 0.12, r: 28, color: '#1a1a3e', ringColor: '#2a2a5a' },
+    { rx: 0.1, ry: 0.8, r: 18, color: '#1e1a2e', ringColor: '' },
+  ];
+
+  function resize() {
+    const rect = canvas.parentElement!.getBoundingClientRect();
+    W = rect.width;
+    H = Math.max(rect.height, 560);
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+    cx = W / 2;
+    cy = H / 2;
+    init();
+  }
+
+  function init() {
+    // Stars
+    stars = [];
+    for (let i = 0; i < 160; i++) {
+      stars.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: Math.random() * 1.5 + 0.3,
+        speed: Math.random() * 0.02 + 0.005,
+        opacity: Math.random() * 0.7 + 0.3,
+      });
+    }
+
+    // Ships — dock ports on left side of station
+    ships = INPUTS.map((inp, i) => {
+      const dockY = cy + (i - 1.5) * 52;
+      const dockX = cx - 58;
+      return {
+        x: W * 0.04,
+        y: dockY,
+        tx: dockX,
+        ty: dockY,
+        dockX,
+        dockY,
+        progress: (i * 0.28) % 1,
+        docked: false,
+        dockedTime: 0,
+        returning: false,
+        exhaust: [],
+        cargo: [],
+        inputIdx: i,
+        hovered: false,
+      } satisfies Ship;
+    });
+
+    // Pods — launch from right side of station to orbital destinations
+    const destX = W * 0.92;
+    pods = OUTPUTS.map((out, i) => {
+      const destY = cy + (i - 2.5) * 72;
+      const stX = cx + 58;
+      const stY = cy + (i - 2.5) * 38;
+      return {
+        x: stX,
+        y: stY,
+        sx: stX,
+        sy: stY,
+        tx: destX,
+        ty: destY,
+        destX,
+        destY,
+        progress: (i * 0.18) % 1,
+        launched: true,
+        launchDelay: i * 0.14,
+        exhaust: [],
+        outputIdx: i,
+        hovered: false,
+      } satisfies Pod;
+    });
+  }
+
+  function spawnExhaust(arr: ExhaustParticle[], x: number, y: number, vx: number, color: string) {
+    for (let i = 0; i < 2; i++) {
+      arr.push({
+        x, y,
+        vx: vx + (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.6,
+        life: 1, maxLife: 1,
+        color,
+        r: Math.random() * 2 + 1,
+      });
+    }
+  }
+
+  function updateExhaust(arr: ExhaustParticle[]) {
+    for (let i = arr.length - 1; i >= 0; i--) {
+      const p = arr[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.life -= 0.04;
+      p.r *= 0.97;
+      if (p.life <= 0) arr.splice(i, 1);
+    }
+  }
+
+  function drawExhaust(arr: ExhaustParticle[]) {
+    for (const p of arr) {
+      ctx.save();
+      ctx.globalAlpha = p.life * 0.7;
+      ctx.fillStyle = p.color;
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur = 4;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function drawStar(x: number, y: number, r: number, opacity: number) {
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.fillStyle = '#fff';
+    ctx.shadowColor = '#aaccff';
+    ctx.shadowBlur = 2;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawSpaceStation(x: number, y: number, angle: number) {
+    ctx.save();
+    ctx.translate(x, y);
+
+    // Ambient glow
+    const grd = ctx.createRadialGradient(0, 0, 10, 0, 0, 90);
+    grd.addColorStop(0, 'rgba(249,115,22,0.08)');
+    grd.addColorStop(1, 'rgba(249,115,22,0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(0, 0, 90, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Solar panel arrays (rotate)
+    ctx.save();
+    ctx.rotate(angle);
+    for (const sign of [-1, 1]) {
+      // Panel arm
+      ctx.strokeStyle = '#888';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, sign * 20);
+      ctx.lineTo(0, sign * 55);
+      ctx.stroke();
+      // Panel cells
+      const panelY = sign * 55;
+      const panelH = 30;
+      ctx.fillStyle = '#162040';
+      ctx.strokeStyle = '#2244aa';
+      ctx.lineWidth = 1;
+      ctx.fillRect(-24, panelY - (sign === 1 ? panelH : 0), 48, panelH);
+      ctx.strokeRect(-24, panelY - (sign === 1 ? panelH : 0), 48, panelH);
+      // Cell grid lines
+      ctx.strokeStyle = 'rgba(100,140,255,0.3)';
+      for (let col = 1; col < 4; col++) {
+        ctx.beginPath();
+        ctx.moveTo(-24 + col * 12, panelY - (sign === 1 ? panelH : 0));
+        ctx.lineTo(-24 + col * 12, panelY - (sign === 1 ? panelH : 0) + panelH);
+        ctx.stroke();
+      }
+      for (let row = 1; row < 3; row++) {
+        ctx.beginPath();
+        ctx.moveTo(-24, panelY - (sign === 1 ? panelH : 0) + row * 10);
+        ctx.lineTo(24, panelY - (sign === 1 ? panelH : 0) + row * 10);
+        ctx.stroke();
+      }
+      // Solar reflection shimmer
+      const shimmer = (Math.sin(Date.now() * 0.002 + sign) + 1) * 0.5;
+      ctx.globalAlpha = shimmer * 0.2;
+      ctx.fillStyle = '#6699ff';
+      ctx.fillRect(-24, panelY - (sign === 1 ? panelH : 0), 48, panelH);
+      ctx.globalAlpha = 1;
+    }
+    ctx.restore();
+
+    // Central module
+    const mw = 56, mh = 36;
+    ctx.fillStyle = '#1a1e30';
+    ctx.strokeStyle = '#3a4060';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(-mw / 2, -mh / 2, mw, mh, 5);
+    ctx.fill();
+    ctx.stroke();
+
+    // Module detail panels
+    ctx.fillStyle = '#12162a';
+    ctx.fillRect(-mw / 2 + 4, -mh / 2 + 4, mw - 8, 10);
+    ctx.fillRect(-mw / 2 + 4, mh / 2 - 14, mw - 8, 10);
+
+    // Windows — amber glow
+    const winPulse = 0.7 + Math.sin(Date.now() * 0.003) * 0.3;
+    for (let i = 0; i < 4; i++) {
+      const wx = -14 + i * 10;
+      ctx.save();
+      ctx.shadowColor = '#f97316';
+      ctx.shadowBlur = 8;
+      ctx.globalAlpha = winPulse;
+      ctx.fillStyle = '#f97316';
+      ctx.beginPath();
+      ctx.arc(wx, 0, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Docking ports left
+    for (let i = 0; i < 4; i++) {
+      const py = (i - 1.5) * 52;
+      ctx.strokeStyle = '#4a5080';
+      ctx.lineWidth = 1.5;
+      ctx.fillStyle = '#0e1228';
+      ctx.beginPath();
+      ctx.roundRect(-mw / 2 - 12, py - 7, 12, 14, 2);
+      ctx.fill();
+      ctx.stroke();
+      // Port light
+      ctx.save();
+      ctx.shadowColor = INPUTS[i].color;
+      ctx.shadowBlur = 6;
+      ctx.fillStyle = INPUTS[i].color;
+      ctx.globalAlpha = 0.8;
+      ctx.beginPath();
+      ctx.arc(-mw / 2 - 4, py, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Launch ports right
+    for (let i = 0; i < 6; i++) {
+      const py = (i - 2.5) * 38;
+      ctx.strokeStyle = '#4a5080';
+      ctx.lineWidth = 1.5;
+      ctx.fillStyle = '#0e1228';
+      ctx.beginPath();
+      ctx.roundRect(mw / 2, py - 6, 12, 12, 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.save();
+      ctx.shadowColor = OUTPUTS[i].color;
+      ctx.shadowBlur = 6;
+      ctx.fillStyle = OUTPUTS[i].color;
+      ctx.globalAlpha = 0.8;
+      ctx.beginPath();
+      ctx.arc(mw / 2 + 8, py, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // "AutoPilot" label
+    ctx.save();
+    ctx.font = '600 8px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.textAlign = 'center';
+    ctx.fillText('AUTOPILOT', 0, 3);
+    ctx.restore();
+
+    ctx.restore();
+  }
+
+  function drawShip(ship: Ship) {
+    const inp = INPUTS[ship.inputIdx];
+    const col = inp.color;
+    ctx.save();
+    ctx.translate(ship.x, ship.y);
+
+    // Ship glow if hovered
+    if (ship.hovered) {
+      ctx.shadowColor = col;
+      ctx.shadowBlur = 20;
+    }
+
+    // Body (rounded rect)
+    ctx.fillStyle = '#1a1e30';
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(-14, -8, 28, 16, 4);
+    ctx.fill();
+    ctx.stroke();
+
+    // Nose (triangle pointing right)
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.moveTo(14, 0);
+    ctx.lineTo(8, -6);
+    ctx.lineTo(8, 6);
+    ctx.closePath();
+    ctx.fill();
+
+    // Engine glow (left side)
+    const engPulse = 0.6 + Math.sin(Date.now() * 0.008 + ship.inputIdx) * 0.4;
+    ctx.save();
+    ctx.shadowColor = col;
+    ctx.shadowBlur = 10;
+    ctx.globalAlpha = engPulse;
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.ellipse(-14, -3, 4, 2.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(-14, 3, 4, 2.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Cockpit window
+    ctx.save();
+    ctx.shadowColor = col;
+    ctx.shadowBlur = 5;
+    ctx.fillStyle = col;
+    ctx.globalAlpha = 0.7;
+    ctx.beginPath();
+    ctx.arc(2, 0, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.restore();
+
+    // Label below ship
+    ctx.save();
+    ctx.font = `${ship.hovered ? '700' : '500'} 10px -apple-system, sans-serif`;
+    ctx.fillStyle = ship.hovered ? col : 'rgba(255,255,255,0.6)';
+    ctx.textAlign = 'center';
+    ctx.fillText(inp.label, ship.x, ship.y + 18);
+    ctx.restore();
+  }
+
+  function drawPod(pod: Pod) {
+    const out = OUTPUTS[pod.outputIdx];
+    const col = out.color;
+    ctx.save();
+    ctx.translate(pod.x, pod.y);
+
+    if (pod.hovered) {
+      ctx.shadowColor = col;
+      ctx.shadowBlur = 20;
+    }
+
+    // Capsule body
+    ctx.fillStyle = '#1a1e30';
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(-10, -7, 22, 14, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    // Nose cone (right)
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.moveTo(12, 0);
+    ctx.lineTo(6, -5);
+    ctx.lineTo(6, 5);
+    ctx.closePath();
+    ctx.fill();
+
+    // Engine exhaust glow (left)
+    const engP = 0.5 + Math.sin(Date.now() * 0.01 + pod.outputIdx) * 0.5;
+    ctx.save();
+    ctx.shadowColor = col;
+    ctx.shadowBlur = 8;
+    ctx.globalAlpha = engP * 0.8;
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.ellipse(-10, 0, 4, 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.restore();
+
+    // Label
+    ctx.save();
+    ctx.font = `${pod.hovered ? '700' : '500'} 10px -apple-system, sans-serif`;
+    ctx.fillStyle = pod.hovered ? col : 'rgba(255,255,255,0.6)';
+    ctx.textAlign = 'center';
+    ctx.fillText(out.label, pod.x, pod.y + 17);
+    ctx.restore();
+  }
+
+  function drawDestinationOrbit(pod: Pod) {
+    const out = OUTPUTS[pod.outputIdx];
+    const col = out.color;
+    const px = pod.destX;
+    const py = pod.destY;
+    const pulse = 0.4 + Math.sin(Date.now() * 0.002 + pod.outputIdx * 0.8) * 0.3;
+
+    ctx.save();
+    ctx.strokeStyle = col;
+    ctx.globalAlpha = pulse * 0.5;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(px, py, 18, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // Center dot
+    ctx.shadowColor = col;
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = col;
+    ctx.globalAlpha = 0.6;
+    ctx.beginPath();
+    ctx.arc(px, py, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawPlanet(rx: number, ry: number, r: number, color: string, ringColor: string) {
+    const x = W * rx, y = H * ry;
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    if (ringColor) {
+      ctx.strokeStyle = ringColor;
+      ctx.lineWidth = 3;
+      ctx.globalAlpha = 0.4;
+      ctx.beginPath();
+      ctx.ellipse(x, y, r * 2, r * 0.4, -0.3, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function lerp(a: number, b: number, t: number): number {
+    return a + (b - a) * t;
+  }
+
+  function easeInOut(t: number): number {
+    return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+  }
+
+  function hitTestShip(ship: Ship, mx: number, my: number): boolean {
+    return Math.abs(mx - ship.x) < 20 && Math.abs(my - ship.y) < 14;
+  }
+
+  function hitTestPod(pod: Pod, mx: number, my: number): boolean {
+    return Math.abs(mx - pod.x) < 16 && Math.abs(my - pod.y) < 12;
+  }
+
+  function showTooltip(text: string, ex: number, ey: number) {
+    tooltip.textContent = text;
+    tooltip.classList.add('visible');
+    tooltip.style.left = (ex + 14) + 'px';
+    tooltip.style.top = (ey - 12) + 'px';
+  }
+
+  function hideTooltip() {
+    tooltip.classList.remove('visible');
+  }
+
+  function frame() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Background
+    ctx.fillStyle = '#060712';
+    ctx.fillRect(0, 0, W, H);
+
+    // Planets
+    for (const p of planets) drawPlanet(p.rx, p.ry, p.r, p.color, p.ringColor);
+
+    // Stars with slow drift
+    for (const s of stars) {
+      s.x -= s.speed;
+      if (s.x < 0) { s.x = W; s.y = Math.random() * H; }
+      const twinkle = s.opacity * (0.7 + Math.sin(Date.now() * 0.001 + s.x) * 0.3);
+      drawStar(s.x, s.y, s.r, twinkle);
+    }
+
+    stationAngle += 0.002;
+
+    // Update and draw ships
+    let tooltipShown = false;
+    for (const ship of ships) {
+      if (!ship.docked && !ship.returning) {
+        ship.progress = Math.min(1, ship.progress + 0.003);
+        const t = easeInOut(ship.progress);
+        ship.x = lerp(W * 0.06, ship.dockX, t);
+        ship.y = lerp(ship.dockY, ship.dockY, t);
+        if (ship.progress >= 1) {
+          ship.docked = true;
+          ship.dockedTime = 0;
+          // Spawn cargo particles
+          for (let i = 0; i < 8; i++) {
+            ship.cargo.push({
+              x: ship.x,
+              y: ship.y,
+              tx: cx,
+              ty: cy,
+              progress: i * 0.12,
+              speed: 0.008 + Math.random() * 0.004,
+              color: INPUTS[ship.inputIdx].color,
+              r: 2 + Math.random() * 2,
+              active: true,
+            });
+          }
+        }
+        spawnExhaust(ship.exhaust, ship.x - 14, ship.y, -0.5, INPUTS[ship.inputIdx].color);
+      } else if (ship.docked) {
+        ship.x = ship.dockX;
+        ship.y = ship.dockY;
+        ship.dockedTime += 1;
+        if (ship.dockedTime > 120) {
+          ship.returning = true;
+          ship.docked = false;
+          ship.progress = 0;
+        }
+      } else if (ship.returning) {
+        ship.progress = Math.min(1, ship.progress + 0.003);
+        const t = easeInOut(ship.progress);
+        ship.x = lerp(ship.dockX, W * 0.06, t);
+        if (ship.progress >= 1) {
+          ship.returning = false;
+          ship.progress = 0;
+          ship.cargo = [];
+        }
+        spawnExhaust(ship.exhaust, ship.x + 14, ship.y, 0.5, INPUTS[ship.inputIdx].color);
+      }
+
+      // Cargo particles
+      for (const c of ship.cargo) {
+        if (!c.active) continue;
+        c.progress = Math.min(1, c.progress + c.speed);
+        c.x = lerp(ship.dockX, cx, easeInOut(c.progress));
+        c.y = lerp(ship.dockY, cy, easeInOut(c.progress));
+        if (c.progress >= 1) c.active = false;
+      }
+
+      updateExhaust(ship.exhaust);
+
+      // Draw cargo
+      for (const c of ship.cargo) {
+        if (!c.active) continue;
+        ctx.save();
+        ctx.shadowColor = c.color;
+        ctx.shadowBlur = 8;
+        ctx.fillStyle = c.color;
+        ctx.globalAlpha = 1 - c.progress * 0.5;
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      drawExhaust(ship.exhaust);
+
+      ship.hovered = hitTestShip(ship, mouseX, mouseY);
+      if (ship.hovered && !tooltipShown) {
+        showTooltip(INPUTS[ship.inputIdx].label + ' — Supply Ship', mouseX, mouseY);
+        tooltipShown = true;
+      }
+
+      drawShip(ship);
+    }
+
+    // Update and draw pods
+    for (const pod of pods) {
+      pod.progress = (pod.progress + 0.0025) % 1;
+      const t = easeInOut(pod.progress);
+      pod.x = lerp(pod.sx, pod.destX, t);
+      pod.y = lerp(pod.sy, pod.destY, t);
+      spawnExhaust(pod.exhaust, pod.x - 10, pod.y, -0.4, OUTPUTS[pod.outputIdx].color);
+      updateExhaust(pod.exhaust);
+
+      drawDestinationOrbit(pod);
+      drawExhaust(pod.exhaust);
+
+      pod.hovered = hitTestPod(pod, mouseX, mouseY);
+      if (pod.hovered && !tooltipShown) {
+        showTooltip(OUTPUTS[pod.outputIdx].label + ' — Deployment Pod', mouseX, mouseY);
+        tooltipShown = true;
+      }
+
+      drawPod(pod);
+    }
+
+    if (!tooltipShown) hideTooltip();
+
+    // Space station (drawn last so it's on top)
+    drawSpaceStation(cx, cy, stationAngle);
+
+    raf = requestAnimationFrame(frame);
+  }
+
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = (e.clientX - rect.left);
+    mouseY = (e.clientY - rect.top);
+    tooltip.style.left = (e.clientX + 14) + 'px';
+    tooltip.style.top = (e.clientY - 12) + 'px';
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    mouseX = -999;
+    mouseY = -999;
+    hideTooltip();
+  });
+
+  window.addEventListener('resize', () => {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    resize();
+  });
+
+  resize();
+  frame();
+</script>

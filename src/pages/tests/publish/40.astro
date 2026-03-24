@@ -1,0 +1,916 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Alchemist's Workshop | Pello" description="Like an alchemist who transforms raw materials into gold, AutoPilot takes four source ingredients and transmutes them into six powerful content potions, one for every platform.">
+  <Header />
+  <main id="main-content">
+    <section class="pub-section" aria-labelledby="pub-headline">
+      <div class="pub-layout">
+        <div class="pub-text">
+          <span class="pub-badge">PelloPublish</span>
+          <h1 id="pub-headline">Ancient Craft, Modern Magic.</h1>
+          <p>Like an alchemist who transforms raw materials into gold, AutoPilot takes four source ingredients — web data, news, social signals, and keywords — and transmutes them into six powerful content potions, one for every platform.</p>
+          <ul class="pub-pills" role="list">
+            <li>Source Ingredients</li>
+            <li>AutoPilot Cauldron</li>
+            <li>Platform Potions</li>
+            <li>Pure Transmutation</li>
+          </ul>
+        </div>
+        <div class="pub-canvas-col">
+          <canvas id="pub-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<div id="pub-tooltip" role="tooltip" aria-live="polite"></div>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .pub-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .pub-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .pub-layout { grid-template-columns: 1fr; } }
+  .pub-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .pub-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #f97316; width: fit-content; }
+  .pub-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .pub-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .pub-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pub-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .pub-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #pub-canvas { width: 100%; height: 100%; position: absolute; inset: 0; }
+  #pub-tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: rgba(6,7,18,0.95);
+    border: 1px solid rgba(249,115,22,0.4);
+    border-radius: 8px;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8125rem;
+    color: #fff;
+    white-space: nowrap;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.15s;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+  }
+  #pub-tooltip.visible { opacity: 1; }
+</style>
+
+<script>
+  const INPUTS = [
+    { label: 'Website Scrape', color: '#6366f1', symbol: '🕸', name: 'Web Essence' },
+    { label: 'News Feed',      color: '#22d3ee', symbol: '📰', name: 'News Extract' },
+    { label: 'X Feed',         color: '#1d9bf0', symbol: '◈',  name: 'Social Tincture' },
+    { label: 'Keywords',       color: '#4ade80', symbol: '◎',  name: 'Keyword Dust' },
+  ] as const;
+
+  const OUTPUTS = [
+    { label: 'Newsletter', color: '#f97316' },
+    { label: 'Instagram',  color: '#e1306c' },
+    { label: 'TikTok',     color: '#00f2ea' },
+    { label: 'Twitter',    color: '#1d9bf0' },
+    { label: 'LinkedIn',   color: '#0a66c2' },
+    { label: 'Blog',       color: '#a855f7' },
+  ] as const;
+
+  interface Bubble {
+    x: number; y: number; r: number; vy: number; opacity: number; color: string;
+  }
+
+  interface DripParticle {
+    x: number; y: number; vx: number; vy: number;
+    life: number; color: string; r: number;
+  }
+
+  interface MysticSymbol {
+    x: number; y: number; text: string;
+    angle: number; speed: number; r: number; opacity: number; color: string;
+  }
+
+  interface Sparkle {
+    x: number; y: number; vx: number; vy: number;
+    life: number; maxLife: number; color: string; r: number;
+  }
+
+  interface ChannelDrop {
+    progress: number; speed: number; color: string;
+    fromX: number; fromY: number; toX: number; toY: number;
+  }
+
+  interface Vial {
+    x: number; y: number;
+    fillLevel: number; targetFill: number;
+    sparkles: Sparkle[];
+    hovered: boolean;
+    outputIdx: number;
+  }
+
+  interface Flask {
+    x: number; y: number;
+    bubbles: Bubble[];
+    drips: DripParticle[];
+    channelDrops: ChannelDrop[];
+    inputIdx: number;
+    hovered: boolean;
+    liquidLevel: number;
+  }
+
+  const canvas = document.getElementById('pub-canvas') as HTMLCanvasElement;
+  const tooltip = document.getElementById('pub-tooltip') as HTMLDivElement;
+  const ctx = canvas.getContext('2d')!;
+  const dpr = window.devicePixelRatio || 1;
+
+  let W = 0, H = 0, cx = 0, cy = 0;
+  let flasks: Flask[] = [];
+  let vials: Vial[] = [];
+  let cauldronBubbles: Bubble[] = [];
+  let mysticSymbols: MysticSymbol[] = [];
+  let globalSparkles: Sparkle[] = [];
+  let mouseX = -999, mouseY = -999;
+  let raf = 0;
+  let t = 0;
+
+  // Ambient mote particles floating in scene
+  interface Mote { x: number; y: number; vx: number; vy: number; opacity: number; r: number; color: string; }
+  let motes: Mote[] = [];
+
+  function resize() {
+    const rect = canvas.parentElement!.getBoundingClientRect();
+    W = rect.width;
+    H = Math.max(rect.height, 560);
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+    cx = W / 2;
+    cy = H / 2;
+    init();
+  }
+
+  function init() {
+    // Flask positions — left side, spread vertically
+    flasks = INPUTS.map((inp, i) => ({
+      x: W * 0.12,
+      y: cy + (i - 1.5) * 100,
+      bubbles: [],
+      drips: [],
+      channelDrops: [],
+      inputIdx: i,
+      hovered: false,
+      liquidLevel: 0.45 + Math.random() * 0.2,
+    }));
+
+    // Vial positions — right side
+    vials = OUTPUTS.map((out, i) => ({
+      x: W * 0.88,
+      y: cy + (i - 2.5) * 76,
+      fillLevel: 0,
+      targetFill: 0.6 + Math.random() * 0.3,
+      sparkles: [],
+      hovered: false,
+      outputIdx: i,
+    }));
+
+    // Cauldron bubbles
+    cauldronBubbles = [];
+    for (let i = 0; i < 12; i++) {
+      cauldronBubbles.push(makeCauldronBubble());
+    }
+
+    // Mystic symbols orbiting cauldron
+    const symbols = ['∞', '⚗', '✦', '⋆', '◈', '※'];
+    mysticSymbols = symbols.map((sym, i) => ({
+      x: cx,
+      y: cy,
+      text: sym,
+      angle: (i / symbols.length) * Math.PI * 2,
+      speed: 0.008 + Math.random() * 0.004,
+      r: 72 + Math.random() * 16,
+      opacity: 0.3 + Math.random() * 0.4,
+      color: i % 2 === 0 ? '#f97316' : '#fbbf24',
+    }));
+
+    // Ambient motes
+    motes = [];
+    for (let i = 0; i < 40; i++) {
+      motes.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        vx: (Math.random() - 0.5) * 0.2,
+        vy: -Math.random() * 0.3 - 0.1,
+        opacity: Math.random() * 0.4 + 0.1,
+        r: Math.random() * 1.5 + 0.5,
+        color: ['#f97316', '#fbbf24', '#a855f7', '#6366f1'][Math.floor(Math.random() * 4)],
+      });
+    }
+  }
+
+  function makeCauldronBubble(): Bubble {
+    return {
+      x: cx + (Math.random() - 0.5) * 40,
+      y: cy + 10 + Math.random() * 15,
+      r: 2 + Math.random() * 4,
+      vy: -(0.4 + Math.random() * 0.5),
+      opacity: 0.6 + Math.random() * 0.4,
+      color: Math.random() > 0.5 ? '#f97316' : '#fbbf24',
+    };
+  }
+
+  function spawnFlaskBubble(flask: Flask) {
+    if (Math.random() < 0.05) {
+      const inp = INPUTS[flask.inputIdx];
+      flask.bubbles.push({
+        x: flask.x + (Math.random() - 0.5) * 20,
+        y: flask.y + 16,
+        r: 1.5 + Math.random() * 2.5,
+        vy: -(0.5 + Math.random() * 0.5),
+        opacity: 0.7,
+        color: inp.color,
+      });
+    }
+  }
+
+  function spawnChannelDrop(flask: Flask) {
+    if (Math.random() < 0.03) {
+      flask.channelDrops.push({
+        progress: 0,
+        speed: 0.006 + Math.random() * 0.004,
+        color: INPUTS[flask.inputIdx].color,
+        fromX: flask.x,
+        fromY: flask.y,
+        toX: cx - 38,
+        toY: cy,
+      });
+    }
+  }
+
+  function spawnVialSparkle(vial: Vial) {
+    if (Math.random() < 0.04) {
+      const col = OUTPUTS[vial.outputIdx].color;
+      vial.sparkles.push({
+        x: vial.x + (Math.random() - 0.5) * 18,
+        y: vial.y - 24,
+        vx: (Math.random() - 0.5) * 0.8,
+        vy: -(Math.random() * 1.2 + 0.3),
+        life: 1,
+        maxLife: 1,
+        color: col,
+        r: 1.5 + Math.random() * 2,
+      });
+    }
+  }
+
+  function spawnGlobalSparkle(x: number, y: number, color: string) {
+    globalSparkles.push({
+      x, y,
+      vx: (Math.random() - 0.5) * 1.5,
+      vy: (Math.random() - 0.5) * 1.5 - 0.5,
+      life: 1, maxLife: 1,
+      color, r: 1 + Math.random() * 2.5,
+    });
+  }
+
+  function lerp(a: number, b: number, t: number): number {
+    return a + (b - a) * t;
+  }
+
+  function easeInOut(t: number): number {
+    return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+  }
+
+  // ─── DRAW FLASK ────────────────────────────────────────────────────────────
+  function drawFlask(flask: Flask) {
+    const inp = INPUTS[flask.inputIdx];
+    const col = inp.color;
+    const x = flask.x, y = flask.y;
+
+    ctx.save();
+    ctx.translate(x, y);
+
+    if (flask.hovered) {
+      const hg = ctx.createRadialGradient(0, 0, 0, 0, 0, 40);
+      hg.addColorStop(0, col + '33');
+      hg.addColorStop(1, 'transparent');
+      ctx.fillStyle = hg;
+      ctx.beginPath();
+      ctx.arc(0, 0, 40, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Flask glass outline
+    const flaskPath = new Path2D();
+    // Body (round bottom)
+    flaskPath.arc(0, 18, 22, 0, Math.PI * 2);
+    ctx.save();
+    ctx.clip(flaskPath);
+    // Liquid fill
+    const liquidY = 18 + 22 - flask.liquidLevel * 44;
+    const liqGrad = ctx.createLinearGradient(0, liquidY, 0, 40);
+    liqGrad.addColorStop(0, col + 'aa');
+    liqGrad.addColorStop(1, col + '55');
+    ctx.fillStyle = liqGrad;
+    ctx.fillRect(-22, liquidY, 44, 40 - liquidY + 22);
+    ctx.restore();
+
+    // Flask body stroke
+    ctx.strokeStyle = col + '88';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(0, 18, 22, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Neck
+    ctx.beginPath();
+    ctx.moveTo(-7, -4);
+    ctx.lineTo(-5, -22);
+    ctx.lineTo(5, -22);
+    ctx.lineTo(7, -4);
+    ctx.strokeStyle = col + '88';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // Neck fill (glass)
+    ctx.fillStyle = col + '18';
+    ctx.fill();
+
+    // Rim
+    ctx.strokeStyle = col + 'cc';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-7, -22);
+    ctx.lineTo(7, -22);
+    ctx.stroke();
+
+    // Glass reflection
+    ctx.save();
+    ctx.globalAlpha = 0.12;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.ellipse(-6, 4, 4, 12, -0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Symbol inside
+    ctx.save();
+    ctx.font = '14px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = col;
+    ctx.globalAlpha = 0.7;
+    ctx.fillText(inp.symbol, 0, 18);
+    ctx.restore();
+
+    ctx.restore();
+
+    // Label
+    ctx.save();
+    ctx.font = `${flask.hovered ? '700' : '500'} 10px -apple-system, sans-serif`;
+    ctx.fillStyle = flask.hovered ? col : 'rgba(255,255,255,0.6)';
+    ctx.textAlign = 'center';
+    ctx.fillText(inp.name, x, y + 46);
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.fillText(inp.label, x, y + 58);
+    ctx.restore();
+  }
+
+  // ─── DRAW CAULDRON ─────────────────────────────────────────────────────────
+  function drawCauldron() {
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    // Outer amber glow
+    const glow = ctx.createRadialGradient(0, 0, 10, 0, 0, 100);
+    glow.addColorStop(0, 'rgba(249,115,22,0.15)');
+    glow.addColorStop(0.5, 'rgba(251,191,36,0.06)');
+    glow.addColorStop(1, 'transparent');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(0, 0, 100, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Cauldron body
+    ctx.save();
+    // Iron body — rounded trapezoid
+    ctx.shadowColor = '#f97316';
+    ctx.shadowBlur = 16;
+    ctx.strokeStyle = '#4a3a20';
+    ctx.lineWidth = 2;
+
+    // Body shape
+    ctx.beginPath();
+    ctx.moveTo(-42, -24);
+    ctx.quadraticCurveTo(-46, 20, -36, 36);
+    ctx.lineTo(36, 36);
+    ctx.quadraticCurveTo(46, 20, 42, -24);
+    ctx.closePath();
+
+    // Iron gradient fill
+    const ironGrad = ctx.createLinearGradient(-42, -24, 42, 36);
+    ironGrad.addColorStop(0, '#2a2010');
+    ironGrad.addColorStop(0.5, '#1a1408');
+    ironGrad.addColorStop(1, '#2a2010');
+    ctx.fillStyle = ironGrad;
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+
+    // Cauldron rim
+    ctx.save();
+    ctx.strokeStyle = '#5a4830';
+    ctx.lineWidth = 3;
+    ctx.shadowColor = '#f97316';
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.ellipse(0, -24, 44, 10, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    // Rim fill
+    ctx.fillStyle = '#2a2010';
+    ctx.fill();
+    ctx.restore();
+
+    // Liquid surface inside — glowing orange
+    const liquidPulse = Math.sin(t * 0.04) * 3;
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(0, -20 + liquidPulse, 34, 8, 0, 0, Math.PI * 2);
+    const liqSurf = ctx.createRadialGradient(0, -20 + liquidPulse, 0, 0, -20 + liquidPulse, 34);
+    liqSurf.addColorStop(0, 'rgba(249,180,40,0.9)');
+    liqSurf.addColorStop(0.5, 'rgba(249,115,22,0.7)');
+    liqSurf.addColorStop(1, 'rgba(180,60,0,0.4)');
+    ctx.fillStyle = liqSurf;
+    ctx.fill();
+    // Glow below surface
+    ctx.shadowColor = '#f97316';
+    ctx.shadowBlur = 20;
+    ctx.fill();
+    ctx.restore();
+
+    // Bubbles on surface
+    for (const b of cauldronBubbles) {
+      ctx.save();
+      ctx.globalAlpha = b.opacity * 0.8;
+      ctx.strokeStyle = b.color;
+      ctx.lineWidth = 1;
+      ctx.shadowColor = b.color;
+      ctx.shadowBlur = 5;
+      ctx.beginPath();
+      ctx.arc(b.x - cx, b.y - cy, b.r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Philosopher's stone — glowing gem
+    const gemPulse = 0.7 + Math.sin(t * 0.06) * 0.3;
+    ctx.save();
+    ctx.shadowColor = '#f97316';
+    ctx.shadowBlur = 30 * gemPulse;
+    const gemGrad = ctx.createRadialGradient(0, 4, 0, 0, 4, 10);
+    gemGrad.addColorStop(0, '#fde68a');
+    gemGrad.addColorStop(0.4, '#f97316');
+    gemGrad.addColorStop(1, '#c2410c');
+    ctx.fillStyle = gemGrad;
+    // Octagon gem
+    ctx.beginPath();
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2 - Math.PI / 8;
+      const r = 9;
+      i === 0 ? ctx.moveTo(Math.cos(angle) * r, 4 + Math.sin(angle) * r)
+              : ctx.lineTo(Math.cos(angle) * r, 4 + Math.sin(angle) * r);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // "AutoPilot" label
+    ctx.save();
+    ctx.font = '600 8px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,220,120,0.7)';
+    ctx.textAlign = 'center';
+    ctx.fillText('AUTOPILOT', 0, -36);
+    ctx.restore();
+
+    // Flames at base
+    for (let i = 0; i < 5; i++) {
+      const fx = (i - 2) * 14;
+      const flameH = 10 + Math.sin(t * 0.08 + i) * 5;
+      ctx.save();
+      const flameGrad = ctx.createLinearGradient(fx, 36, fx, 36 + flameH);
+      flameGrad.addColorStop(0, 'rgba(249,115,22,0.9)');
+      flameGrad.addColorStop(0.5, 'rgba(251,191,36,0.6)');
+      flameGrad.addColorStop(1, 'rgba(239,68,68,0)');
+      ctx.fillStyle = flameGrad;
+      ctx.shadowColor = '#f97316';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.ellipse(fx, 36, 5, flameH / 2, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.restore();
+  }
+
+  // ─── DRAW VIAL ─────────────────────────────────────────────────────────────
+  function drawVial(vial: Vial) {
+    const out = OUTPUTS[vial.outputIdx];
+    const col = out.color;
+    const x = vial.x, y = vial.y;
+
+    // Smoothly fill vial
+    if (vial.fillLevel < vial.targetFill) {
+      vial.fillLevel = Math.min(vial.targetFill, vial.fillLevel + 0.002);
+    }
+
+    ctx.save();
+    ctx.translate(x, y);
+
+    if (vial.hovered) {
+      const hg = ctx.createRadialGradient(0, 0, 0, 0, 0, 36);
+      hg.addColorStop(0, col + '33');
+      hg.addColorStop(1, 'transparent');
+      ctx.fillStyle = hg;
+      ctx.beginPath();
+      ctx.arc(0, 0, 36, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Crystal vial body
+    const vialH = 36;
+    const vialW = 12;
+
+    // Clip to vial shape for liquid
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(-vialW / 2, -vialH / 2 + 6);
+    ctx.lineTo(-vialW / 2, vialH / 2);
+    ctx.quadraticCurveTo(-vialW / 2, vialH / 2 + 6, 0, vialH / 2 + 8);
+    ctx.quadraticCurveTo(vialW / 2, vialH / 2 + 6, vialW / 2, vialH / 2);
+    ctx.lineTo(vialW / 2, -vialH / 2 + 6);
+    ctx.quadraticCurveTo(vialW / 2, -vialH / 2, vialW / 2 - 3, -vialH / 2);
+    ctx.lineTo(-(vialW / 2 - 3), -vialH / 2);
+    ctx.quadraticCurveTo(-vialW / 2, -vialH / 2, -vialW / 2, -vialH / 2 + 6);
+    ctx.clip();
+
+    // Liquid fill
+    const fillTop = vialH / 2 + 8 - vial.fillLevel * (vialH + 14);
+    const liquidGrad = ctx.createLinearGradient(0, fillTop, 0, vialH / 2 + 8);
+    liquidGrad.addColorStop(0, col + 'cc');
+    liquidGrad.addColorStop(1, col + '66');
+    ctx.fillStyle = liquidGrad;
+    ctx.shadowColor = col;
+    ctx.shadowBlur = 12;
+    ctx.fillRect(-vialW / 2, fillTop, vialW, vialH + 8);
+
+    // Shimmer on liquid surface
+    const shimmer = Math.sin(t * 0.05 + vial.outputIdx) * 0.15 + 0.85;
+    ctx.globalAlpha = shimmer * 0.3;
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(-vialW / 2, fillTop, vialW, 2);
+    ctx.globalAlpha = 1;
+
+    ctx.restore();
+
+    // Glass outline
+    ctx.strokeStyle = col + '66';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-vialW / 2, -vialH / 2 + 6);
+    ctx.lineTo(-vialW / 2, vialH / 2);
+    ctx.quadraticCurveTo(-vialW / 2, vialH / 2 + 6, 0, vialH / 2 + 8);
+    ctx.quadraticCurveTo(vialW / 2, vialH / 2 + 6, vialW / 2, vialH / 2);
+    ctx.lineTo(vialW / 2, -vialH / 2 + 6);
+    ctx.quadraticCurveTo(vialW / 2, -vialH / 2, vialW / 2 - 3, -vialH / 2);
+    ctx.lineTo(-(vialW / 2 - 3), -vialH / 2);
+    ctx.quadraticCurveTo(-vialW / 2, -vialH / 2, -vialW / 2, -vialH / 2 + 6);
+    ctx.stroke();
+
+    // Cork stopper
+    ctx.fillStyle = '#8B6914';
+    ctx.strokeStyle = '#6B4E0E';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(-4, -vialH / 2 - 6, 8, 8, 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Glass reflection
+    ctx.save();
+    ctx.globalAlpha = 0.15;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.ellipse(-3, 0, 2, 10, -0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.restore();
+
+    // Labels
+    ctx.save();
+    ctx.font = `${vial.hovered ? '700' : '500'} 10px -apple-system, sans-serif`;
+    ctx.fillStyle = vial.hovered ? col : 'rgba(255,255,255,0.65)';
+    ctx.textAlign = 'center';
+    ctx.fillText(out.label, x, y + 54);
+    ctx.restore();
+  }
+
+  // ─── DRAW CHANNEL LINE ─────────────────────────────────────────────────────
+  function drawChannel(
+    fx: number, fy: number, tx: number, ty: number, color: string, drops: ChannelDrop[]
+  ) {
+    // Curved channel
+    const mx = (fx + tx) / 2;
+    ctx.save();
+    ctx.strokeStyle = color + '30';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 8]);
+    ctx.beginPath();
+    ctx.moveTo(fx, fy);
+    ctx.quadraticCurveTo(mx, (fy + ty) / 2, tx, ty);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Channel drops
+    for (const d of drops) {
+      const et = easeInOut(d.progress);
+      const bx = lerp(d.fromX, (d.fromX + d.toX) / 2, et * 2 > 1 ? 1 : et * 2);
+      const by = lerp(d.fromY, (d.fromY + d.toY) / 2, et * 2 > 1 ? 1 : et * 2);
+      const ex = lerp((d.fromX + d.toX) / 2, d.toX, et * 2 - 1 > 0 ? et * 2 - 1 : 0);
+      const ey = lerp((d.fromY + d.toY) / 2, d.toY, et * 2 - 1 > 0 ? et * 2 - 1 : 0);
+      const px = et < 0.5 ? bx : ex;
+      const py = et < 0.5 ? by : ey;
+      ctx.save();
+      ctx.shadowColor = d.color;
+      ctx.shadowBlur = 8;
+      ctx.fillStyle = d.color;
+      ctx.globalAlpha = 0.9 - d.progress * 0.5;
+      ctx.beginPath();
+      ctx.arc(px, py, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  // Right-side channels: cauldron → vials
+  function drawOutputChannel(
+    fromX: number, fromY: number, toX: number, toY: number, color: string
+  ) {
+    const mx = (fromX + toX) / 2;
+    ctx.save();
+    ctx.strokeStyle = color + '35';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 7]);
+    ctx.beginPath();
+    ctx.moveTo(fromX, fromY);
+    ctx.quadraticCurveTo(mx, (fromY + toY) / 2, toX, toY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  function hitTestFlask(flask: Flask, mx: number, my: number): boolean {
+    return Math.abs(mx - flask.x) < 28 && Math.abs(my - flask.y) < 36;
+  }
+
+  function hitTestVial(vial: Vial, mx: number, my: number): boolean {
+    return Math.abs(mx - vial.x) < 16 && Math.abs(my - vial.y) < 36;
+  }
+
+  function showTooltip(text: string) {
+    tooltip.textContent = text;
+    tooltip.classList.add('visible');
+    tooltip.style.left = (mouseX + 14) + 'px';
+    tooltip.style.top = (mouseY - 12) + 'px';
+  }
+
+  function hideTooltip() {
+    tooltip.classList.remove('visible');
+  }
+
+  function frame() {
+    ctx.clearRect(0, 0, W, H);
+    t++;
+
+    // Background
+    ctx.fillStyle = '#060712';
+    ctx.fillRect(0, 0, W, H);
+
+    // Ambient center glow
+    const ambGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 220);
+    ambGlow.addColorStop(0, 'rgba(120,50,0,0.12)');
+    ambGlow.addColorStop(0.5, 'rgba(80,30,0,0.06)');
+    ambGlow.addColorStop(1, 'transparent');
+    ctx.fillStyle = ambGlow;
+    ctx.fillRect(0, 0, W, H);
+
+    // Ambient motes
+    for (const m of motes) {
+      m.x += m.vx;
+      m.y += m.vy;
+      if (m.y < -10) { m.y = H + 10; m.x = Math.random() * W; }
+      if (m.x < -10) m.x = W + 10;
+      if (m.x > W + 10) m.x = -10;
+      ctx.save();
+      ctx.globalAlpha = m.opacity * (0.5 + Math.sin(t * 0.02 + m.x) * 0.5);
+      ctx.shadowColor = m.color;
+      ctx.shadowBlur = 4;
+      ctx.fillStyle = m.color;
+      ctx.beginPath();
+      ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Mystic symbols orbiting cauldron
+    for (const sym of mysticSymbols) {
+      sym.angle += sym.speed;
+      const sx = cx + Math.cos(sym.angle) * sym.r;
+      const sy = cy + Math.sin(sym.angle) * sym.r * 0.4;
+      ctx.save();
+      const pulse = sym.opacity * (0.6 + Math.sin(t * 0.03 + sym.angle) * 0.4);
+      ctx.globalAlpha = pulse;
+      ctx.font = '14px serif';
+      ctx.fillStyle = sym.color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = sym.color;
+      ctx.shadowBlur = 8;
+      ctx.fillText(sym.text, sx, sy);
+      ctx.restore();
+
+      // Occasional sparkle from symbols
+      if (Math.random() < 0.01) {
+        spawnGlobalSparkle(sx, sy, sym.color);
+      }
+    }
+
+    // Channels: flasks → cauldron
+    for (const flask of flasks) {
+      drawChannel(flask.x, flask.y, cx - 40, cy, INPUTS[flask.inputIdx].color, flask.channelDrops);
+    }
+
+    // Channels: cauldron → vials
+    for (const vial of vials) {
+      drawOutputChannel(cx + 40, cy, vial.x - 14, vial.y, OUTPUTS[vial.outputIdx].color);
+    }
+
+    // Update cauldron bubbles
+    for (let i = cauldronBubbles.length - 1; i >= 0; i--) {
+      const b = cauldronBubbles[i];
+      b.y += b.vy;
+      b.opacity -= 0.012;
+      b.r *= 1.01;
+      if (b.opacity <= 0 || b.y < cy - 40) {
+        cauldronBubbles[i] = makeCauldronBubble();
+      }
+    }
+
+    // Draw cauldron
+    drawCauldron();
+
+    // Global sparkles
+    for (let i = globalSparkles.length - 1; i >= 0; i--) {
+      const s = globalSparkles[i];
+      s.x += s.vx;
+      s.y += s.vy;
+      s.life -= 0.025;
+      if (s.life <= 0) { globalSparkles.splice(i, 1); continue; }
+      ctx.save();
+      ctx.globalAlpha = s.life;
+      ctx.shadowColor = s.color;
+      ctx.shadowBlur = 6;
+      ctx.fillStyle = s.color;
+      ctx.beginPath();
+      // Star shape
+      for (let p = 0; p < 4; p++) {
+        const a = (p / 4) * Math.PI * 2;
+        const r1 = s.r, r2 = s.r * 0.3;
+        p === 0 ? ctx.moveTo(s.x + Math.cos(a) * r1, s.y + Math.sin(a) * r1)
+                : ctx.lineTo(s.x + Math.cos(a) * r1, s.y + Math.sin(a) * r1);
+        const a2 = a + Math.PI / 4;
+        ctx.lineTo(s.x + Math.cos(a2) * r2, s.y + Math.sin(a2) * r2);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Update and draw flasks
+    let tooltipShown = false;
+    for (const flask of flasks) {
+      spawnFlaskBubble(flask);
+      spawnChannelDrop(flask);
+
+      // Update bubbles
+      for (let i = flask.bubbles.length - 1; i >= 0; i--) {
+        const b = flask.bubbles[i];
+        b.y += b.vy;
+        b.opacity -= 0.015;
+        if (b.opacity <= 0 || b.y < flask.y - 32) flask.bubbles.splice(i, 1);
+      }
+      for (const b of flask.bubbles) {
+        ctx.save();
+        ctx.globalAlpha = b.opacity * 0.6;
+        ctx.strokeStyle = b.color;
+        ctx.lineWidth = 1;
+        ctx.shadowColor = b.color;
+        ctx.shadowBlur = 4;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Update channel drops
+      for (let i = flask.channelDrops.length - 1; i >= 0; i--) {
+        const d = flask.channelDrops[i];
+        d.progress += d.speed;
+        if (d.progress >= 1) {
+          flask.channelDrops.splice(i, 1);
+          // Spawn cauldron sparkle
+          for (let j = 0; j < 3; j++) spawnGlobalSparkle(cx, cy, INPUTS[flask.inputIdx].color);
+        }
+      }
+
+      flask.hovered = hitTestFlask(flask, mouseX, mouseY);
+      if (flask.hovered && !tooltipShown) {
+        showTooltip(INPUTS[flask.inputIdx].name + ' — ' + INPUTS[flask.inputIdx].label);
+        tooltipShown = true;
+      }
+
+      drawFlask(flask);
+    }
+
+    // Occasionally spawn global sparkles near cauldron
+    if (Math.random() < 0.06) {
+      const ang = Math.random() * Math.PI * 2;
+      const rad = 20 + Math.random() * 30;
+      spawnGlobalSparkle(cx + Math.cos(ang) * rad, cy + Math.sin(ang) * rad * 0.5, '#f97316');
+    }
+
+    // Update and draw vials
+    for (const vial of vials) {
+      spawnVialSparkle(vial);
+
+      // Update vial sparkles
+      for (let i = vial.sparkles.length - 1; i >= 0; i--) {
+        const s = vial.sparkles[i];
+        s.x += s.vx;
+        s.y += s.vy;
+        s.life -= 0.02;
+        if (s.life <= 0) { vial.sparkles.splice(i, 1); continue; }
+        ctx.save();
+        ctx.globalAlpha = s.life * 0.8;
+        ctx.shadowColor = s.color;
+        ctx.shadowBlur = 5;
+        ctx.fillStyle = s.color;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      vial.hovered = hitTestVial(vial, mouseX, mouseY);
+      if (vial.hovered && !tooltipShown) {
+        showTooltip(OUTPUTS[vial.outputIdx].label + ' Potion');
+        tooltipShown = true;
+      }
+
+      drawVial(vial);
+    }
+
+    if (!tooltipShown) hideTooltip();
+
+    raf = requestAnimationFrame(frame);
+  }
+
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+    tooltip.style.left = (e.clientX + 14) + 'px';
+    tooltip.style.top = (e.clientY - 12) + 'px';
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    mouseX = -999;
+    mouseY = -999;
+    hideTooltip();
+  });
+
+  window.addEventListener('resize', () => {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    resize();
+  });
+
+  resize();
+  frame();
+</script>

@@ -1,0 +1,668 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Content Intelligence That Never Sleeps | Pello" description="Like a nervous system that never tires, AutoPilot receives signals from four sensory channels — website, news, social, and search — processes them in its central intelligence core, and fires outputs to six platform endpoints continuously.">
+  <Header />
+  <main id="main-content">
+    <section class="pub-section" aria-labelledby="pub-headline">
+      <div class="pub-layout">
+        <div class="pub-text">
+          <span class="pub-badge">PelloPublish</span>
+          <h1 id="pub-headline">Content Intelligence That Never Sleeps.</h1>
+          <p>Like a nervous system that never tires, AutoPilot receives signals from four sensory channels — website, news, social, and search — processes them in its central intelligence core, and fires outputs to six platform endpoints continuously.</p>
+          <ul class="pub-pills" role="list">
+            <li>Sensory Input</li>
+            <li>Neural Processing</li>
+            <li>Motor Output</li>
+            <li>Always Firing</li>
+          </ul>
+        </div>
+        <div class="pub-canvas-col">
+          <canvas id="pub-canvas" aria-hidden="true"></canvas>
+          <div id="pub-tooltip"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #040a0f; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .pub-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .pub-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .pub-layout { grid-template-columns: 1fr; } }
+  .pub-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .pub-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #f97316; width: fit-content; }
+  .pub-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .pub-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .pub-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pub-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .pub-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #pub-canvas { width: 100%; height: 100%; position: absolute; inset: 0; }
+  #pub-tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: rgba(4,10,15,0.93);
+    border: 1px solid rgba(249,115,22,0.4);
+    border-radius: 8px;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8125rem;
+    color: #fff;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+  }
+  #pub-tooltip.visible { opacity: 1; }
+</style>
+
+<script>
+  const INPUTS = [
+    { label: 'Website Scrape', color: '#6366f1', sense: 'visual' },
+    { label: 'News Feed',      color: '#22d3ee', sense: 'auditory' },
+    { label: 'X Feed',         color: '#1d9bf0', sense: 'touch' },
+    { label: 'Keywords',       color: '#4ade80', sense: 'language' },
+  ];
+  const OUTPUTS = [
+    { label: 'Newsletter', color: '#f97316' },
+    { label: 'Instagram',  color: '#e1306c' },
+    { label: 'TikTok',     color: '#00f2ea' },
+    { label: 'Twitter',    color: '#1d9bf0' },
+    { label: 'LinkedIn',   color: '#0a66c2' },
+    { label: 'Blog',       color: '#a855f7' },
+  ];
+
+  const canvas = document.getElementById('pub-canvas') as HTMLCanvasElement;
+  const tooltip = document.getElementById('pub-tooltip') as HTMLDivElement;
+  const ctx = canvas.getContext('2d')!;
+
+  let W = 0, H = 0, dpr = 1;
+  let t = 0;
+  let hoveredInput = -1;
+  let hoveredOutput = -1;
+
+  function resize() {
+    const rect = canvas.parentElement!.getBoundingClientRect();
+    dpr = window.devicePixelRatio || 1;
+    W = rect.width;
+    H = rect.height || 560;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+    rebuildNeuralPaths();
+  }
+
+  // ─── Neural path geometry ────────────────────────────────────────────────────
+
+  interface NeuralBranch {
+    points: { x: number; y: number }[];
+    color: string;
+    width: number;
+  }
+
+  const inputBranches: NeuralBranch[][] = [];
+  const outputBranches: NeuralBranch[][] = [];
+
+  function getInputPos(i: number) {
+    const x = W * 0.1;
+    const spacing = H / (INPUTS.length + 1);
+    return { x, y: spacing * (i + 1) };
+  }
+
+  function getOutputPos(i: number) {
+    const x = W * 0.9;
+    const spacing = H / (OUTPUTS.length + 1);
+    return { x, y: spacing * (i + 1) };
+  }
+
+  function getCenterPos() {
+    return { x: W * 0.5, y: H * 0.5 };
+  }
+
+  function buildBranchPath(
+    startX: number, startY: number,
+    endX: number, endY: number,
+    color: string, depth: number, maxDepth: number
+  ): NeuralBranch[] {
+    const branches: NeuralBranch[] = [];
+    // Main trunk
+    const midX = (startX + endX) * 0.5 + (Math.random() - 0.5) * W * 0.06;
+    const midY = (startY + endY) * 0.5 + (Math.random() - 0.5) * H * 0.12;
+    branches.push({
+      points: [{ x: startX, y: startY }, { x: midX, y: midY }, { x: endX, y: endY }],
+      color,
+      width: Math.max(0.4, 1.8 - depth * 0.35),
+    });
+
+    if (depth < maxDepth) {
+      // Side branches
+      const numSide = depth === 0 ? 3 : 2;
+      for (let s = 0; s < numSide; s++) {
+        const tBranch = 0.3 + Math.random() * 0.4;
+        const bx = startX + (midX - startX) * tBranch + (endX - startX) * 0.1 * tBranch;
+        const by = startY + (midY - startY) * tBranch + (Math.random() - 0.5) * H * 0.05;
+        const branchLen = W * (0.04 + Math.random() * 0.05);
+        const angle = Math.random() * Math.PI * 0.5 - Math.PI * 0.25 + (startX < endX ? 0 : Math.PI);
+        const bex = bx + Math.cos(angle) * branchLen;
+        const bey = by + Math.sin(angle) * branchLen;
+        branches.push(...buildBranchPath(bx, by, bex, bey, color, depth + 1, maxDepth));
+      }
+    }
+    return branches;
+  }
+
+  function rebuildNeuralPaths() {
+    inputBranches.length = 0;
+    outputBranches.length = 0;
+    const c = getCenterPos();
+
+    for (let i = 0; i < INPUTS.length; i++) {
+      const p = getInputPos(i);
+      // Start from receptor node toward brain
+      const branches = buildBranchPath(p.x + 28, p.y, c.x - 48, c.y + (i - 1.5) * 18, INPUTS[i].color, 0, 2);
+      inputBranches.push(branches);
+    }
+
+    for (let i = 0; i < OUTPUTS.length; i++) {
+      const p = getOutputPos(i);
+      const branches = buildBranchPath(c.x + 48, c.y + (i - 2.5) * 16, p.x - 28, p.y, OUTPUTS[i].color, 0, 2);
+      outputBranches.push(branches);
+    }
+  }
+
+  resize();
+  window.addEventListener('resize', resize);
+
+  // ─── Signal pulse system ─────────────────────────────────────────────────────
+
+  interface SignalPulse {
+    branchIdx: number;      // which input or output group
+    segIdx: number;         // which branch in that group
+    t: number;              // 0..1 along the branch
+    speed: number;
+    color: string;
+    size: number;
+    direction: 'in' | 'out';
+    active: boolean;
+  }
+
+  const pulses: SignalPulse[] = [];
+
+  function spawnPulse(dir: 'in' | 'out') {
+    const groupArr = dir === 'in' ? inputBranches : outputBranches;
+    if (groupArr.length === 0) return;
+    const branchIdx = Math.floor(Math.random() * groupArr.length);
+    const group = groupArr[branchIdx];
+    const segIdx = Math.floor(Math.random() * group.length);
+    const color = dir === 'in' ? INPUTS[branchIdx]?.color ?? '#fff' : OUTPUTS[branchIdx]?.color ?? '#fff';
+    pulses.push({
+      branchIdx, segIdx, t: 0,
+      speed: 0.006 + Math.random() * 0.005,
+      color, size: 3 + Math.random() * 2,
+      direction: dir,
+      active: true,
+    });
+  }
+
+  function evalBranch(branch: NeuralBranch, t: number): { x: number; y: number } {
+    // Catmull-rom style along points
+    const pts = branch.points;
+    if (pts.length === 2) {
+      return { x: pts[0].x + (pts[1].x - pts[0].x) * t, y: pts[0].y + (pts[1].y - pts[0].y) * t };
+    }
+    // 3-point quadratic
+    const mt = 1 - t;
+    return {
+      x: mt * mt * pts[0].x + 2 * mt * t * pts[1].x + t * t * pts[2].x,
+      y: mt * mt * pts[0].y + 2 * mt * t * pts[1].y + t * t * pts[2].y,
+    };
+  }
+
+  // ─── Neural node (receptor/motor) ────────────────────────────────────────────
+
+  function drawReceptor(x: number, y: number, color: string, sense: string, idx: number, hovered: boolean) {
+    const r = hovered ? 22 : 18;
+    const breathe = Math.sin(t * 1.8 + idx * 1.1) * 0.08 + 1;
+    ctx.save();
+
+    // Outer dendrite halos
+    for (let d = 0; d < 3; d++) {
+      const dr = r * (1.5 + d * 0.7) * breathe;
+      ctx.beginPath();
+      ctx.arc(x, y, dr, 0, Math.PI * 2);
+      ctx.strokeStyle = `${color}${d === 0 ? '44' : d === 1 ? '22' : '11'}`;
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+    }
+
+    // Bioluminescent glow
+    const glow = ctx.createRadialGradient(x, y, 0, x, y, r * 2.5);
+    glow.addColorStop(0, color + '55');
+    glow.addColorStop(0.5, color + '22');
+    glow.addColorStop(1, 'transparent');
+    ctx.beginPath();
+    ctx.arc(x, y, r * 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = glow;
+    ctx.fill();
+
+    // Core node
+    const core = ctx.createRadialGradient(x, y, 0, x, y, r * breathe);
+    core.addColorStop(0, '#ffffff');
+    core.addColorStop(0.3, color);
+    core.addColorStop(1, color + 'aa');
+    ctx.beginPath();
+    ctx.arc(x, y, r * breathe, 0, Math.PI * 2);
+    ctx.fillStyle = core;
+    ctx.fill();
+
+    // Sense-specific overlay symbol
+    ctx.font = `${Math.round(r * 0.85)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    if (sense === 'visual') {
+      // Eye shape
+      ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(x, y, r * 0.55, r * 0.35, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(x, y, r * 0.2, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.fill();
+    } else if (sense === 'auditory') {
+      // Wave curves
+      ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+      ctx.lineWidth = 1.5;
+      for (let w = 0; w < 3; w++) {
+        const wr = r * (0.25 + w * 0.2);
+        ctx.beginPath();
+        ctx.arc(x - r * 0.15, y, wr, -Math.PI * 0.65, Math.PI * 0.65);
+        ctx.stroke();
+      }
+    } else if (sense === 'touch') {
+      // Fingertip rings
+      ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+      ctx.lineWidth = 1.2;
+      for (let w = 0; w < 3; w++) {
+        ctx.beginPath();
+        ctx.arc(x, y, r * (0.2 + w * 0.22), 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    } else {
+      // Language — text lines
+      ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+      ctx.lineWidth = 1.5;
+      for (let l = 0; l < 3; l++) {
+        const lw = r * (l === 1 ? 0.7 : 0.5);
+        const ly = y - r * 0.28 + l * r * 0.28;
+        ctx.beginPath();
+        ctx.moveTo(x - lw, ly);
+        ctx.lineTo(x + lw, ly);
+        ctx.stroke();
+      }
+    }
+
+    // Label
+    ctx.textBaseline = 'alphabetic';
+    ctx.font = `${hovered ? 600 : 500} 10px -apple-system, sans-serif`;
+    ctx.fillStyle = hovered ? '#fff' : 'rgba(255,255,255,0.75)';
+    ctx.textAlign = 'center';
+    ctx.fillText(INPUTS[idx].label, x, y + r + 16);
+    ctx.restore();
+  }
+
+  function drawMotorNode(x: number, y: number, output: typeof OUTPUTS[0], idx: number, hovered: boolean) {
+    const r = hovered ? 22 : 17;
+    const breathe = Math.sin(t * 1.5 + idx * 1.3) * 0.07 + 1;
+    ctx.save();
+
+    // Bioluminescent halo
+    const glow = ctx.createRadialGradient(x, y, 0, x, y, r * 2.8);
+    glow.addColorStop(0, output.color + '55');
+    glow.addColorStop(0.4, output.color + '22');
+    glow.addColorStop(1, 'transparent');
+    ctx.beginPath();
+    ctx.arc(x, y, r * 2.8, 0, Math.PI * 2);
+    ctx.fillStyle = glow;
+    ctx.fill();
+
+    // Core
+    const core = ctx.createRadialGradient(x, y, 0, x, y, r * breathe);
+    core.addColorStop(0, '#ffffff');
+    core.addColorStop(0.4, output.color);
+    core.addColorStop(1, output.color + '99');
+    ctx.beginPath();
+    ctx.arc(x, y, r * breathe, 0, Math.PI * 2);
+    ctx.fillStyle = core;
+    ctx.fill();
+
+    // Firing ring when hovered
+    if (hovered) {
+      const fireR = r + Math.sin(t * 8) * 4 + 8;
+      ctx.beginPath();
+      ctx.arc(x, y, fireR, 0, Math.PI * 2);
+      ctx.strokeStyle = output.color + '88';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    // Label
+    ctx.font = `${hovered ? 600 : 500} 10px -apple-system, sans-serif`;
+    ctx.fillStyle = hovered ? '#fff' : 'rgba(255,255,255,0.75)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(output.label, x, y + r + 16);
+    ctx.restore();
+  }
+
+  // ─── Brain node ───────────────────────────────────────────────────────────────
+
+  // Brain firing particles inside
+  interface BrainFire {
+    x: number; y: number; life: number; maxLife: number;
+    color: string; size: number;
+  }
+  const brainFires: BrainFire[] = [];
+
+  function spawnBrainFire(cx: number, cy: number, r: number) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = Math.random() * r * 0.7;
+    brainFires.push({
+      x: cx + Math.cos(angle) * dist,
+      y: cy + Math.sin(angle) * dist,
+      life: 0, maxLife: 20 + Math.random() * 20,
+      color: Math.random() > 0.5 ? '#f97316' : '#ffffff',
+      size: 1.5 + Math.random() * 3,
+    });
+  }
+
+  function drawBrain(cx: number, cy: number) {
+    const breathe = Math.sin(t * 0.9) * 0.025 + 1;
+    const r = 54 * breathe;
+    ctx.save();
+
+    // Deep glow layers
+    for (let g = 4; g >= 1; g--) {
+      const gr = r * (1 + g * 0.45);
+      const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, gr);
+      glow.addColorStop(0, `rgba(249,115,22,${0.12 / g})`);
+      glow.addColorStop(0.5, `rgba(249,115,22,${0.05 / g})`);
+      glow.addColorStop(1, 'transparent');
+      ctx.beginPath();
+      ctx.arc(cx, cy, gr, 0, Math.PI * 2);
+      ctx.fillStyle = glow;
+      ctx.fill();
+    }
+
+    // Brain body — rounded form with "folds"
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, r, r * 0.88, 0, 0, Math.PI * 2);
+    const bodyGrad = ctx.createRadialGradient(cx - r * 0.2, cy - r * 0.2, 0, cx, cy, r);
+    bodyGrad.addColorStop(0, 'rgba(35,20,8,0.98)');
+    bodyGrad.addColorStop(0.6, 'rgba(20,10,4,0.97)');
+    bodyGrad.addColorStop(1, 'rgba(12,6,2,0.97)');
+    ctx.fillStyle = bodyGrad;
+    ctx.fill();
+    ctx.strokeStyle = '#f97316';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Brain fold curves (gyri)
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, r, r * 0.88, 0, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.strokeStyle = 'rgba(249,115,22,0.25)';
+    ctx.lineWidth = 1.2;
+    const folds = [
+      [0.0, -0.5, 0.3, -0.7, 0.6, -0.5],
+      [0.0, -0.2, 0.35, -0.35, 0.65, -0.15],
+      [0.0,  0.1, 0.3,  -0.05, 0.6,  0.2],
+      [0.0,  0.4, 0.35,  0.25, 0.65, 0.45],
+      [-0.3, -0.6, 0.0, -0.5, 0.3, -0.65],
+    ];
+    for (const fold of folds) {
+      ctx.beginPath();
+      ctx.moveTo(cx + fold[0] * r, cy + fold[1] * r * 0.88);
+      ctx.bezierCurveTo(
+        cx + fold[2] * r, cy + fold[3] * r * 0.88,
+        cx + fold[4] * r, cy + fold[5] * r * 0.88,
+        cx + (fold[4] + 0.1) * r, cy + fold[5] * r * 0.88
+      );
+      ctx.stroke();
+      // Mirror left side
+      ctx.beginPath();
+      ctx.moveTo(cx - fold[0] * r, cy + fold[1] * r * 0.88);
+      ctx.bezierCurveTo(
+        cx - fold[2] * r, cy + fold[3] * r * 0.88,
+        cx - fold[4] * r, cy + fold[5] * r * 0.88,
+        cx - (fold[4] + 0.1) * r, cy + fold[5] * r * 0.88
+      );
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Neural fires inside brain
+    if (Math.random() < 0.18) spawnBrainFire(cx, cy, r * 0.7);
+    for (let i = brainFires.length - 1; i >= 0; i--) {
+      const f = brainFires[i];
+      f.life++;
+      if (f.life > f.maxLife) { brainFires.splice(i, 1); continue; }
+      const alpha = f.life < 5 ? f.life / 5 : f.life > f.maxLife - 5 ? (f.maxLife - f.life) / 5 : 1;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(f.x, f.y, f.size, 0, Math.PI * 2);
+      ctx.fillStyle = f.color;
+      ctx.globalAlpha = alpha * 0.85;
+      ctx.shadowColor = f.color;
+      ctx.shadowBlur = f.size * 3;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Central dot
+    ctx.beginPath();
+    ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+    ctx.fillStyle = '#f97316';
+    ctx.shadowColor = '#f97316';
+    ctx.shadowBlur = 12;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Label
+    ctx.font = '700 10px -apple-system, sans-serif';
+    ctx.fillStyle = '#f97316';
+    ctx.textAlign = 'center';
+    ctx.fillText('AUTOPILOT', cx, cy - r - 14);
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fillText('NEURAL CORE', cx, cy - r - 4);
+
+    ctx.restore();
+  }
+
+  // ─── Draw neural branches ────────────────────────────────────────────────────
+
+  function drawBranches(branches: NeuralBranch[][], hoveredIdx: number) {
+    ctx.save();
+    for (let gi = 0; gi < branches.length; gi++) {
+      const group = branches[gi];
+      const hov = hoveredIdx === gi;
+      for (const branch of group) {
+        const pts = branch.points;
+        ctx.beginPath();
+        if (pts.length === 2) {
+          ctx.moveTo(pts[0].x, pts[0].y);
+          ctx.lineTo(pts[1].x, pts[1].y);
+        } else {
+          ctx.moveTo(pts[0].x, pts[0].y);
+          ctx.quadraticCurveTo(pts[1].x, pts[1].y, pts[2].x, pts[2].y);
+        }
+        ctx.strokeStyle = hov ? branch.color + 'cc' : branch.color + '33';
+        ctx.lineWidth = hov ? branch.width * 1.6 : branch.width;
+        if (hov) {
+          ctx.shadowColor = branch.color;
+          ctx.shadowBlur = 6;
+        }
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+    }
+    ctx.restore();
+  }
+
+  // ─── Update and draw pulses ──────────────────────────────────────────────────
+
+  function updatePulses() {
+    if (Math.random() < 0.07) spawnPulse('in');
+    if (Math.random() < 0.07) spawnPulse('out');
+
+    for (let i = pulses.length - 1; i >= 0; i--) {
+      pulses[i].t += pulses[i].speed;
+      if (pulses[i].t >= 1) pulses.splice(i, 1);
+    }
+  }
+
+  function drawPulses() {
+    for (const p of pulses) {
+      const groupArr = p.direction === 'in' ? inputBranches : outputBranches;
+      if (p.branchIdx >= groupArr.length) continue;
+      const group = groupArr[p.branchIdx];
+      if (p.segIdx >= group.length) continue;
+      const branch = group[p.segIdx];
+      const pos = evalBranch(branch, p.t);
+
+      const alpha = p.t < 0.1 ? p.t / 0.1 : p.t > 0.9 ? (1 - p.t) / 0.1 : 1;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      // Glow trail
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, p.size * 1.8, 0, Math.PI * 2);
+      ctx.fillStyle = p.color + '44';
+      ctx.fill();
+      // Core pulse
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur = 10;
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // ─── Main render loop ─────────────────────────────────────────────────────────
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Deep dark background with subtle blue-green tint
+    ctx.fillStyle = '#040a0f';
+    ctx.fillRect(0, 0, W, H);
+
+    // Subtle ambient vignette
+    const vignette = ctx.createRadialGradient(W * 0.5, H * 0.5, H * 0.1, W * 0.5, H * 0.5, H * 0.75);
+    vignette.addColorStop(0, 'transparent');
+    vignette.addColorStop(1, 'rgba(0,8,20,0.55)');
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, W, H);
+
+    // Ambient bioluminescent mist
+    const mist = ctx.createRadialGradient(W * 0.5, H * 0.5, 0, W * 0.5, H * 0.5, W * 0.4);
+    mist.addColorStop(0, `rgba(249,115,22,${0.04 + Math.sin(t * 0.7) * 0.01})`);
+    mist.addColorStop(0.4, `rgba(99,102,241,${0.025 + Math.sin(t * 0.5) * 0.008})`);
+    mist.addColorStop(1, 'transparent');
+    ctx.fillStyle = mist;
+    ctx.fillRect(0, 0, W, H);
+
+    // Neural branches (behind nodes)
+    drawBranches(inputBranches, hoveredInput);
+    drawBranches(outputBranches, hoveredOutput);
+
+    updatePulses();
+    drawPulses();
+
+    const c = getCenterPos();
+
+    // Input sensory nodes
+    for (let i = 0; i < INPUTS.length; i++) {
+      const p = getInputPos(i);
+      drawReceptor(p.x, p.y, INPUTS[i].color, INPUTS[i].sense, i, hoveredInput === i);
+    }
+
+    // Output motor nodes
+    for (let i = 0; i < OUTPUTS.length; i++) {
+      const p = getOutputPos(i);
+      drawMotorNode(p.x, p.y, OUTPUTS[i], i, hoveredOutput === i);
+    }
+
+    // Central brain
+    drawBrain(c.x, c.y);
+
+    t += 0.016;
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+
+  // ─── Mouse interactivity ──────────────────────────────────────────────────────
+
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    let newHovIn = -1;
+    let newHovOut = -1;
+    let tipText = '';
+
+    for (let i = 0; i < INPUTS.length; i++) {
+      const p = getInputPos(i);
+      const dx = mx - p.x, dy = my - p.y;
+      if (Math.sqrt(dx * dx + dy * dy) < 32) {
+        newHovIn = i;
+        tipText = INPUTS[i].label;
+        break;
+      }
+    }
+
+    if (newHovIn === -1) {
+      for (let i = 0; i < OUTPUTS.length; i++) {
+        const p = getOutputPos(i);
+        const dx = mx - p.x, dy = my - p.y;
+        if (Math.sqrt(dx * dx + dy * dy) < 30) {
+          newHovOut = i;
+          tipText = OUTPUTS[i].label;
+          break;
+        }
+      }
+    }
+
+    hoveredInput = newHovIn;
+    hoveredOutput = newHovOut;
+
+    if (tipText) {
+      tooltip.textContent = tipText;
+      tooltip.style.left = (e.clientX + 14) + 'px';
+      tooltip.style.top = (e.clientY - 10) + 'px';
+      tooltip.classList.add('visible');
+    } else {
+      tooltip.classList.remove('visible');
+    }
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    hoveredInput = -1;
+    hoveredOutput = -1;
+    tooltip.classList.remove('visible');
+  });
+</script>

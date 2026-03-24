@@ -1,0 +1,656 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Subway Map | Pello" description="Like a transit hub at the heart of a city, AutoPilot is the interchange where four content streams converge — and six platform routes depart. Your content is always in service, always on time.">
+  <Header />
+  <main id="main-content">
+    <section class="pub-section" aria-labelledby="pub-headline">
+      <div class="pub-layout">
+        <div class="pub-text">
+          <span class="pub-badge">PelloPublish</span>
+          <h1 id="pub-headline">Every Signal, One Station.</h1>
+          <p>Like a transit hub at the heart of a city, AutoPilot is the interchange where four content streams converge — and six platform routes depart. Your content is always in service, always on time.</p>
+          <ul class="pub-pills" role="list">
+            <li>4 Input Lines</li>
+            <li>AutoPilot Station</li>
+            <li>6 Destination Platforms</li>
+            <li>Always In Service</li>
+          </ul>
+        </div>
+        <div class="pub-canvas-col">
+          <canvas id="pub-canvas" aria-hidden="true"></canvas>
+          <div id="pub-tooltip" role="tooltip" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .pub-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .pub-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .pub-layout { grid-template-columns: 1fr; } }
+  .pub-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .pub-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #f97316; width: fit-content; }
+  .pub-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .pub-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .pub-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pub-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .pub-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #pub-canvas { width: 100%; height: 100%; position: absolute; inset: 0; }
+  #pub-tooltip {
+    position: fixed;
+    background: rgba(6, 7, 18, 0.96);
+    border: 1px solid rgba(249,115,22,0.45);
+    border-radius: 6px;
+    padding: 0.45rem 0.8rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #fff;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+    z-index: 1000;
+    white-space: nowrap;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+  }
+  #pub-tooltip.visible { opacity: 1; }
+</style>
+
+<script>
+  const INPUTS = [
+    { label: 'Website Scrape', color: '#6366f1' },
+    { label: 'News Feed',      color: '#22d3ee' },
+    { label: 'X Feed',         color: '#1d9bf0' },
+    { label: 'Keywords',       color: '#4ade80' },
+  ] as const;
+
+  const OUTPUTS = [
+    { label: 'Newsletter', color: '#f97316' },
+    { label: 'Instagram',  color: '#e1306c' },
+    { label: 'TikTok',     color: '#00f2ea' },
+    { label: 'Twitter',    color: '#1d9bf0' },
+    { label: 'LinkedIn',   color: '#0a66c2' },
+    { label: 'Blog',       color: '#a855f7' },
+  ] as const;
+
+  // A train moving along a line segment
+  interface Train {
+    lineType: 'input' | 'output';
+    lineIndex: number;
+    t: number;          // 0 = start of line, 1 = end of line
+    speed: number;
+    length: number;     // fraction of path
+    phase: 'approach' | 'loading' | 'depart';
+    loadTimer: number;
+    color: string;
+  }
+
+  // A line defined as a polyline (array of points)
+  interface LinePoint { x: number; y: number; }
+  type LinePath = LinePoint[];
+
+  const canvas = document.getElementById('pub-canvas') as HTMLCanvasElement;
+  const tooltip = document.getElementById('pub-tooltip') as HTMLDivElement;
+  const ctx = canvas.getContext('2d')!;
+
+  let W = 0, H = 0;
+  let dpr = window.devicePixelRatio || 1;
+  let time = 0;
+  let mouseX = -9999, mouseY = -9999;
+  let hoveredLine = -1;
+  let hoveredLineType: 'input' | 'output' | null = null;
+  let stationFlash = 0; // countdown for station flash
+
+  const trains: Train[] = [];
+
+  function resize(): void {
+    const col = canvas.parentElement!;
+    W = col.offsetWidth;
+    H = col.offsetHeight;
+    dpr = window.devicePixelRatio || 1;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+  }
+
+  // Station center
+  function stX(): number { return W * 0.49; }
+  function stY(): number { return H * 0.5; }
+  const STATION_R = 36;
+
+  // Input line paths: approach from left, hit 45° elbow, arrive at station
+  // Transit map style: only horizontal + 45° diagonal segments
+  function getInputPath(i: number): LinePath {
+    const cx = stX();
+    const cy = stY();
+    const spreadY = H * 0.5;
+    const startY = cy - spreadY * 0.5 + (i / (INPUTS.length - 1)) * spreadY;
+    const startX = 0;
+
+    // Elbow point: go horizontal, then 45° diagonal into station
+    const diagLen = Math.abs(startY - cy) + 40;
+    const elbowX = cx - diagLen;
+    const elbowY = startY;
+    // Station entry slightly outside circle
+    const angle = Math.atan2(cy - startY, cx - elbowX);
+    const entryX = cx - Math.cos(angle) * (STATION_R + 2);
+    const entryY = cy - Math.sin(angle) * (STATION_R + 2);
+
+    return [
+      { x: startX, y: startY },
+      { x: elbowX, y: elbowY },
+      { x: entryX, y: entryY },
+    ];
+  }
+
+  // Output line paths: depart station, 45° diagonal, then horizontal to right
+  function getOutputPath(i: number): LinePath {
+    const cx = stX();
+    const cy = stY();
+    const spreadY = H * 0.62;
+    const endY = cy - spreadY * 0.5 + (i / (OUTPUTS.length - 1)) * spreadY;
+    const endX = W;
+
+    const diagLen = Math.abs(endY - cy) + 40;
+    const elbowX = cx + diagLen;
+    const elbowY = endY;
+    const angle = Math.atan2(endY - cy, elbowX - cx);
+    const exitX = cx + Math.cos(angle) * (STATION_R + 2);
+    const exitY = cy + Math.sin(angle) * (STATION_R + 2);
+
+    return [
+      { x: exitX, y: exitY },
+      { x: elbowX, y: elbowY },
+      { x: endX, y: endY },
+    ];
+  }
+
+  // Total length of a polyline
+  function pathLength(path: LinePath): number {
+    let len = 0;
+    for (let i = 1; i < path.length; i++) {
+      const dx = path[i].x - path[i-1].x;
+      const dy = path[i].y - path[i-1].y;
+      len += Math.sqrt(dx*dx + dy*dy);
+    }
+    return len;
+  }
+
+  // Point on polyline at fraction t (0..1)
+  function polylinePoint(path: LinePath, t: number): LinePoint {
+    const total = pathLength(path);
+    let target = t * total;
+    for (let i = 1; i < path.length; i++) {
+      const dx = path[i].x - path[i-1].x;
+      const dy = path[i].y - path[i-1].y;
+      const seg = Math.sqrt(dx*dx + dy*dy);
+      if (target <= seg) {
+        const ft = target / seg;
+        return {
+          x: path[i-1].x + dx * ft,
+          y: path[i-1].y + dy * ft,
+        };
+      }
+      target -= seg;
+    }
+    return path[path.length - 1];
+  }
+
+  function hexToRgba(hex: string, alpha: number): string {
+    // Handle some non-standard hex
+    const clean = hex.replace('#', '');
+    const r = parseInt(clean.slice(0, 2), 16);
+    const g = parseInt(clean.slice(2, 4), 16);
+    const b = parseInt(clean.slice(4, 6), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  // Draw subtle grid background
+  function drawGrid(): void {
+    const gridSpacing = 32;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += gridSpacing) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, H);
+      ctx.stroke();
+    }
+    for (let y = 0; y < H; y += gridSpacing) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(W, y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // Draw a transit line (polyline)
+  function drawLine(
+    path: LinePath,
+    color: string,
+    dashed: boolean,
+    highlighted: boolean,
+    lineWidth: number = 3
+  ): void {
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    if (dashed) {
+      ctx.setLineDash([10, 8]);
+    }
+
+    // Outer glow
+    ctx.beginPath();
+    for (let i = 0; i < path.length; i++) {
+      if (i === 0) ctx.moveTo(path[i].x, path[i].y);
+      else ctx.lineTo(path[i].x, path[i].y);
+    }
+    ctx.strokeStyle = hexToRgba(color, highlighted ? 0.2 : 0.06);
+    ctx.lineWidth = lineWidth + 10;
+    ctx.stroke();
+
+    // Core line
+    ctx.beginPath();
+    for (let i = 0; i < path.length; i++) {
+      if (i === 0) ctx.moveTo(path[i].x, path[i].y);
+      else ctx.lineTo(path[i].x, path[i].y);
+    }
+    ctx.strokeStyle = hexToRgba(color, highlighted ? 1.0 : 0.7);
+    ctx.lineWidth = highlighted ? lineWidth + 1.5 : lineWidth;
+    ctx.stroke();
+
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  // Draw endpoint station circle (input or output terminus)
+  function drawTerminus(
+    x: number, y: number,
+    color: string,
+    label: string,
+    side: 'left' | 'right',
+    highlighted: boolean
+  ): void {
+    const r = highlighted ? 9 : 7;
+
+    // Outer glow ring
+    ctx.beginPath();
+    ctx.arc(x, y, r + 6, 0, Math.PI * 2);
+    ctx.fillStyle = hexToRgba(color, highlighted ? 0.18 : 0.06);
+    ctx.fill();
+
+    // Main circle
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = '#060712';
+    ctx.fill();
+    ctx.strokeStyle = highlighted ? color : hexToRgba(color, 0.85);
+    ctx.lineWidth = highlighted ? 3 : 2.5;
+    ctx.stroke();
+
+    // Inner dot
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.35, 0, Math.PI * 2);
+    ctx.fillStyle = highlighted ? color : hexToRgba(color, 0.7);
+    ctx.fill();
+
+    // Label
+    ctx.save();
+    ctx.font = `${highlighted ? 600 : 500} 10.5px -apple-system, sans-serif`;
+    ctx.fillStyle = highlighted ? '#fff' : 'rgba(255,255,255,0.72)';
+    ctx.textBaseline = 'middle';
+    if (side === 'left') {
+      ctx.textAlign = 'right';
+      ctx.fillText(label, x - r - 8, y);
+    } else {
+      ctx.textAlign = 'left';
+      ctx.fillText(label, x + r + 8, y);
+    }
+    ctx.restore();
+  }
+
+  // Draw the AutoPilot Station — octagonal hub
+  function drawStation(t: number): void {
+    const cx = stX();
+    const cy = stY();
+    const R = STATION_R;
+    const flash = stationFlash > 0;
+    const flashAlpha = flash ? (stationFlash / 20) * 0.6 : 0;
+
+    // Outer glow
+    const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 2.5);
+    const baseAlpha = 0.12 + 0.08 * Math.sin(t * 1.5);
+    glow.addColorStop(0, `rgba(249,115,22,${baseAlpha + flashAlpha})`);
+    glow.addColorStop(0.5, `rgba(249,115,22,${baseAlpha * 0.4})`);
+    glow.addColorStop(1, `rgba(249,115,22,0)`);
+    ctx.beginPath();
+    ctx.arc(cx, cy, R * 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = glow;
+    ctx.fill();
+
+    // Octagon shape
+    ctx.beginPath();
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2 - Math.PI / 8;
+      const px = cx + R * Math.cos(angle);
+      const py = cy + R * Math.sin(angle);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+
+    // Fill
+    const fillGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+    fillGrad.addColorStop(0, flash ? `rgba(255,160,60,${0.22 + flashAlpha})` : 'rgba(20,16,40,0.97)');
+    fillGrad.addColorStop(1, 'rgba(12,10,28,0.97)');
+    ctx.fillStyle = fillGrad;
+    ctx.fill();
+
+    // Border
+    ctx.strokeStyle = flash
+      ? `rgba(255,180,80,${0.9 + flashAlpha})`
+      : `rgba(249,115,22,${0.75 + 0.2 * Math.sin(t * 2)})`;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Inner ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, R * 0.72, 0, Math.PI * 2);
+    ctx.strokeStyle = flash
+      ? `rgba(255,200,100,0.35)`
+      : `rgba(249,115,22,0.15)`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Station name
+    ctx.save();
+    ctx.font = `bold 10px -apple-system, sans-serif`;
+    ctx.fillStyle = `rgba(255,255,255,${flash ? 1 : 0.9})`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('AutoPilot', cx, cy - 7);
+    ctx.font = `500 8.5px -apple-system, sans-serif`;
+    ctx.fillStyle = `rgba(249,115,22,${flash ? 1 : 0.75})`;
+    ctx.fillText('STATION', cx, cy + 5);
+
+    // Processing indicator dots
+    for (let d = 0; d < 3; d++) {
+      const dotPhase = (t * 2 + d * 0.8) % (Math.PI * 2);
+      const dotAlpha = 0.3 + 0.7 * Math.max(0, Math.sin(dotPhase));
+      ctx.beginPath();
+      ctx.arc(cx - 8 + d * 8, cy + 16, 2, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(249,115,22,${dotAlpha})`;
+      ctx.fill();
+    }
+
+    ctx.restore();
+
+    if (stationFlash > 0) stationFlash--;
+  }
+
+  // Draw train (small rectangle along a path)
+  function drawTrain(train: Train): void {
+    const path = train.lineType === 'input'
+      ? getInputPath(train.lineIndex)
+      : getOutputPath(train.lineIndex);
+
+    const headPt = polylinePoint(path, Math.min(train.t, 1));
+    const tailT = Math.max(0, train.t - train.length);
+    const tailPt = polylinePoint(path, tailT);
+
+    // Angle of travel
+    const dx = headPt.x - tailPt.x;
+    const dy = headPt.y - tailPt.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 1) return;
+
+    const angle = Math.atan2(dy, dx);
+    const trainW = 6;
+    const trainLen = dist;
+
+    ctx.save();
+    ctx.translate(tailPt.x, tailPt.y);
+    ctx.rotate(angle);
+
+    // Train body glow
+    const trainGlow = ctx.createLinearGradient(0, 0, trainLen, 0);
+    trainGlow.addColorStop(0, hexToRgba(train.color, 0));
+    trainGlow.addColorStop(0.3, hexToRgba(train.color, 0.3));
+    trainGlow.addColorStop(1, hexToRgba(train.color, 0.7));
+    ctx.fillStyle = trainGlow;
+    ctx.fillRect(0, -trainW * 1.5, trainLen, trainW * 3);
+
+    // Train body core
+    const core = ctx.createLinearGradient(0, 0, trainLen, 0);
+    core.addColorStop(0, hexToRgba(train.color, 0.1));
+    core.addColorStop(0.6, hexToRgba(train.color, 0.85));
+    core.addColorStop(1, hexToRgba(train.color, 1));
+    ctx.fillStyle = core;
+    ctx.fillRect(trainLen * 0.4, -trainW * 0.5, trainLen * 0.6, trainW);
+
+    // Bright head
+    ctx.beginPath();
+    ctx.arc(trainLen, 0, trainW * 0.7, 0, Math.PI * 2);
+    ctx.fillStyle = hexToRgba(train.color, 0.95);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  // Spawn a new input train
+  function spawnInputTrain(i: number): void {
+    trains.push({
+      lineType: 'input',
+      lineIndex: i,
+      t: 0,
+      speed: 0.0045 + Math.random() * 0.002,
+      length: 0.12 + Math.random() * 0.06,
+      phase: 'approach',
+      loadTimer: 0,
+      color: INPUTS[i].color,
+    });
+  }
+
+  function spawnOutputTrain(i: number): void {
+    trains.push({
+      lineType: 'output',
+      lineIndex: i,
+      t: 0,
+      speed: 0.004 + Math.random() * 0.002,
+      length: 0.1 + Math.random() * 0.06,
+      phase: 'depart',
+      loadTimer: 0,
+      color: OUTPUTS[i].color,
+    });
+  }
+
+  // Interchange dot where lines visually cross
+  function drawInterchangeDot(x: number, y: number, c1: string, c2: string): void {
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#060712';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  // Check if mouse is near a line segment
+  function distToSegment(
+    px: number, py: number,
+    ax: number, ay: number,
+    bx: number, by: number
+  ): number {
+    const dx = bx - ax, dy = by - ay;
+    const lenSq = dx * dx + dy * dy;
+    if (lenSq === 0) return Math.sqrt((px - ax) ** 2 + (py - ay) ** 2);
+    let t = ((px - ax) * dx + (py - ay) * dy) / lenSq;
+    t = Math.max(0, Math.min(1, t));
+    return Math.sqrt((px - ax - t * dx) ** 2 + (py - ay - t * dy) ** 2);
+  }
+
+  function distToPolyline(px: number, py: number, path: LinePath): number {
+    let minD = Infinity;
+    for (let i = 1; i < path.length; i++) {
+      const d = distToSegment(px, py, path[i-1].x, path[i-1].y, path[i].x, path[i].y);
+      if (d < minD) minD = d;
+    }
+    return minD;
+  }
+
+  function checkHover(mx: number, my: number): void {
+    hoveredLine = -1;
+    hoveredLineType = null;
+
+    for (let i = 0; i < OUTPUTS.length; i++) {
+      const path = getOutputPath(i);
+      if (distToPolyline(mx, my, path) < 14) {
+        hoveredLine = i;
+        hoveredLineType = 'output';
+        return;
+      }
+    }
+    for (let i = 0; i < INPUTS.length; i++) {
+      const path = getInputPath(i);
+      if (distToPolyline(mx, my, path) < 14) {
+        hoveredLine = i;
+        hoveredLineType = 'input';
+        return;
+      }
+    }
+  }
+
+  function draw(): void {
+    ctx.clearRect(0, 0, W, H);
+    const t = time * 0.016;
+
+    drawGrid();
+
+    // Draw input lines
+    for (let i = 0; i < INPUTS.length; i++) {
+      const path = getInputPath(i);
+      const highlighted = hoveredLineType === 'input' && hoveredLine === i;
+      // X Feed (index 2) is dashed
+      drawLine(path, INPUTS[i].color, i === 2, highlighted);
+      const start = path[0];
+      drawTerminus(start.x, start.y, INPUTS[i].color, INPUTS[i].label, 'left', highlighted);
+    }
+
+    // Draw output lines
+    for (let i = 0; i < OUTPUTS.length; i++) {
+      const path = getOutputPath(i);
+      const highlighted = hoveredLineType === 'output' && hoveredLine === i;
+      drawLine(path, OUTPUTS[i].color, false, highlighted);
+      const end = path[path.length - 1];
+      drawTerminus(end.x, end.y, OUTPUTS[i].color, OUTPUTS[i].label, 'right', highlighted);
+    }
+
+    // Draw trains
+    for (let i = trains.length - 1; i >= 0; i--) {
+      const train = trains[i];
+      train.t += train.speed;
+      if (train.t > 1 + train.length) {
+        trains.splice(i, 1);
+        // When output train finishes, maybe spawn a new input train
+        if (train.lineType === 'output' && Math.random() < 0.4) {
+          const ri = Math.floor(Math.random() * INPUTS.length);
+          if (!trains.find(tr => tr.lineType === 'input' && tr.lineIndex === ri)) {
+            spawnInputTrain(ri);
+          }
+        }
+        continue;
+      }
+
+      // When input train reaches near end (station), trigger station flash + spawn output
+      if (train.lineType === 'input' && train.t > 0.9 && train.phase === 'approach') {
+        train.phase = 'loading';
+        stationFlash = 20;
+        // Spawn an output train
+        const oi = Math.floor(Math.random() * OUTPUTS.length);
+        setTimeout(() => {
+          spawnOutputTrain(oi);
+        }, 300);
+      }
+
+      drawTrain(train);
+    }
+
+    // Draw station on top
+    drawStation(t);
+
+    // Periodically spawn input trains
+    if (time % 90 === 0) {
+      const ri = Math.floor(Math.random() * INPUTS.length);
+      spawnInputTrain(ri);
+    }
+    if (time % 120 === 40) {
+      const ri = Math.floor(Math.random() * INPUTS.length);
+      spawnInputTrain(ri);
+    }
+
+    time++;
+    requestAnimationFrame(draw);
+  }
+
+  // Mouse events
+  canvas.addEventListener('mousemove', (e: MouseEvent) => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+    checkHover(mouseX, mouseY);
+
+    if (hoveredLine >= 0 && hoveredLineType) {
+      const label = hoveredLineType === 'input'
+        ? INPUTS[hoveredLine].label
+        : OUTPUTS[hoveredLine].label;
+      const color = hoveredLineType === 'input'
+        ? INPUTS[hoveredLine].color
+        : OUTPUTS[hoveredLine].color;
+      tooltip.textContent = `${label} Line`;
+      tooltip.style.left = (e.clientX + 14) + 'px';
+      tooltip.style.top = (e.clientY - 10) + 'px';
+      tooltip.style.borderColor = `${color}66`;
+      tooltip.classList.add('visible');
+      canvas.style.cursor = 'pointer';
+    } else {
+      tooltip.classList.remove('visible');
+      canvas.style.cursor = 'default';
+    }
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    mouseX = -9999;
+    mouseY = -9999;
+    hoveredLine = -1;
+    hoveredLineType = null;
+    tooltip.classList.remove('visible');
+  });
+
+  // Init
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Stagger initial train spawns
+  for (let i = 0; i < INPUTS.length; i++) {
+    const delay = i * 600;
+    setTimeout(() => spawnInputTrain(i), delay);
+  }
+  // Pre-spawn some output trains
+  for (let i = 0; i < 3; i++) {
+    setTimeout(() => spawnOutputTrain(i * 2), i * 400 + 800);
+  }
+
+  draw();
+</script>

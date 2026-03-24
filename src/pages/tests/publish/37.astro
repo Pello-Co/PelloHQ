@@ -1,0 +1,632 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Every Content Front, Perfectly Forecast | Pello" description="AutoPilot reads four atmospheric signals — your website data, breaking news, social wind patterns, and keyword precipitation — synthesising them into accurate content forecasts for every platform.">
+  <Header />
+  <main id="main-content">
+    <section class="pub-section" aria-labelledby="pub-headline">
+      <div class="pub-layout">
+        <div class="pub-text">
+          <span class="pub-badge">PelloPublish</span>
+          <h1 id="pub-headline">Every Content Front, Perfectly Forecast.</h1>
+          <p>AutoPilot reads four atmospheric signals — your website data, breaking news, social wind patterns, and keyword precipitation — synthesising them into accurate content forecasts for every platform.</p>
+          <ul class="pub-pills" role="list">
+            <li>Front Analysis</li>
+            <li>Pressure Processing</li>
+            <li>Content Forecasting</li>
+            <li>24/7 Station</li>
+          </ul>
+        </div>
+        <div class="pub-canvas-col">
+          <canvas id="pub-canvas" aria-hidden="true"></canvas>
+          <div id="pub-tooltip"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .pub-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .pub-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .pub-layout { grid-template-columns: 1fr; } }
+  .pub-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .pub-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #f97316; width: fit-content; }
+  .pub-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .pub-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .pub-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pub-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .pub-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #pub-canvas { width: 100%; height: 100%; position: absolute; inset: 0; }
+  #pub-tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: rgba(6,7,18,0.92);
+    border: 1px solid rgba(249,115,22,0.4);
+    border-radius: 8px;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8125rem;
+    color: #fff;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+  }
+  #pub-tooltip.visible { opacity: 1; }
+</style>
+
+<script>
+  const INPUTS = [
+    { label: 'Website Scrape', color: '#6366f1', symbol: 'storm' },
+    { label: 'News Feed',      color: '#22d3ee', symbol: 'pressure' },
+    { label: 'X Feed',         color: '#1d9bf0', symbol: 'wind' },
+    { label: 'Keywords',       color: '#4ade80', symbol: 'rain' },
+  ];
+  const OUTPUTS = [
+    { label: 'Newsletter', color: '#f97316', icon: '☁→☀' },
+    { label: 'Instagram',  color: '#e1306c', icon: '🌈' },
+    { label: 'TikTok',     color: '#00f2ea', icon: '⚡' },
+    { label: 'Twitter',    color: '#1d9bf0', icon: '🌪' },
+    { label: 'LinkedIn',   color: '#0a66c2', icon: '☀' },
+    { label: 'Blog',       color: '#a855f7', icon: '🌧' },
+  ];
+
+  const canvas = document.getElementById('pub-canvas') as HTMLCanvasElement;
+  const tooltip = document.getElementById('pub-tooltip') as HTMLDivElement;
+  const ctx = canvas.getContext('2d')!;
+
+  let W = 0, H = 0, dpr = 1;
+
+  function resize() {
+    const rect = canvas.parentElement!.getBoundingClientRect();
+    dpr = window.devicePixelRatio || 1;
+    W = rect.width;
+    H = rect.height || 560;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Particle system for weather effects
+  interface Particle {
+    x: number; y: number;
+    vx: number; vy: number;
+    life: number; maxLife: number;
+    color: string;
+    size: number;
+    type: 'rain' | 'wind' | 'spark' | 'flow';
+    targetX?: number; targetY?: number;
+  }
+
+  const particles: Particle[] = [];
+  let t = 0;
+  let hoveredInput = -1;
+  let hoveredOutput = -1;
+
+  // Isobar parameters — concentric oval curves
+  function drawIsobars() {
+    ctx.save();
+    const cx = W * 0.5;
+    const cy = H * 0.5;
+    for (let i = 1; i <= 8; i++) {
+      const rx = (W * 0.38) * (i / 8);
+      const ry = (H * 0.42) * (i / 8);
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(255,255,255,${0.018 - i * 0.001})`;
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // Temperature gradient strip at the bottom
+  function drawTemperatureGradient() {
+    const y = H - 28;
+    const grad = ctx.createLinearGradient(W * 0.05, 0, W * 0.95, 0);
+    grad.addColorStop(0, 'rgba(34,211,238,0.35)');
+    grad.addColorStop(0.35, 'rgba(99,102,241,0.35)');
+    grad.addColorStop(0.5, 'rgba(249,115,22,0.55)');
+    grad.addColorStop(0.7, 'rgba(168,85,247,0.35)');
+    grad.addColorStop(1, 'rgba(225,48,108,0.35)');
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(W * 0.05, y, W * 0.9, 6, 3);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    // Labels
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(34,211,238,0.7)';
+    ctx.fillText('COLD', W * 0.05, y + 18);
+    ctx.fillStyle = 'rgba(249,115,22,0.7)';
+    ctx.textAlign = 'center';
+    ctx.fillText('WARM', W * 0.5, y + 18);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(168,85,247,0.7)';
+    ctx.fillText('VARIED', W * 0.95, y + 18);
+    ctx.textAlign = 'left';
+    ctx.restore();
+  }
+
+  function getInputPos(i: number) {
+    const x = W * 0.12;
+    const spacing = H / (INPUTS.length + 1);
+    const y = spacing * (i + 1);
+    return { x, y };
+  }
+
+  function getOutputPos(i: number) {
+    const x = W * 0.88;
+    const spacing = H / (OUTPUTS.length + 1);
+    const y = spacing * (i + 1);
+    return { x, y };
+  }
+
+  function getCenterPos() {
+    return { x: W * 0.5, y: H * 0.5 };
+  }
+
+  // Draw weather system cloud/icon
+  function drawWeatherSystem(x: number, y: number, symbol: string, color: string, idx: number, hovered: boolean) {
+    const pulse = Math.sin(t * 1.5 + idx * 1.3) * 0.1 + 0.9;
+    const r = (hovered ? 34 : 28) * pulse;
+
+    ctx.save();
+
+    // Glow
+    const glow = ctx.createRadialGradient(x, y, 0, x, y, r * 2.2);
+    glow.addColorStop(0, color + '44');
+    glow.addColorStop(1, 'transparent');
+    ctx.beginPath();
+    ctx.arc(x, y, r * 2.2, 0, Math.PI * 2);
+    ctx.fillStyle = glow;
+    ctx.fill();
+
+    if (symbol === 'storm') {
+      // Cloud shape
+      drawCloud(x, y, r, color, hovered);
+      // Lightning bolts
+      drawLightning(x, y, r, color, t + idx);
+    } else if (symbol === 'pressure') {
+      // Spiral isobars
+      drawPressureSystem(x, y, r, color, t + idx * 0.5);
+    } else if (symbol === 'wind') {
+      // Wind arrows
+      drawWindPattern(x, y, r, color, t + idx * 0.4);
+    } else if (symbol === 'rain') {
+      // Precipitation dots
+      drawPrecipitation(x, y, r, color, t + idx * 0.6);
+    }
+
+    // Label
+    ctx.font = `${hovered ? 600 : 500} 11px -apple-system, sans-serif`;
+    ctx.fillStyle = hovered ? '#fff' : 'rgba(255,255,255,0.8)';
+    ctx.textAlign = 'center';
+    ctx.fillText(INPUTS[idx].label, x, y + r + 18);
+    ctx.restore();
+  }
+
+  function drawCloud(x: number, y: number, r: number, color: string, hovered: boolean) {
+    ctx.save();
+    ctx.fillStyle = hovered ? color + 'cc' : color + '88';
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    // Main body
+    ctx.beginPath();
+    ctx.arc(x, y + r * 0.1, r * 0.65, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x - r * 0.45, y + r * 0.25, r * 0.45, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x + r * 0.45, y + r * 0.25, r * 0.45, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawLightning(x: number, y: number, r: number, color: string, time: number) {
+    const flash = Math.sin(time * 3.7) > 0.6;
+    if (!flash) return;
+    ctx.save();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.5;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.moveTo(x - r * 0.1, y + r * 0.4);
+    ctx.lineTo(x + r * 0.15, y + r * 0.65);
+    ctx.lineTo(x, y + r * 0.65);
+    ctx.lineTo(x + r * 0.2, y + r * 0.9);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawPressureSystem(x: number, y: number, r: number, color: string, time: number) {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.2;
+    for (let i = 0; i < 4; i++) {
+      const fr = r * (0.25 + i * 0.2);
+      const startAngle = time * (i % 2 === 0 ? 1 : -1) * 0.5;
+      ctx.beginPath();
+      ctx.arc(x, y, fr, startAngle, startAngle + Math.PI * 1.6);
+      ctx.globalAlpha = 0.5 - i * 0.08;
+      ctx.stroke();
+    }
+    // Center dot
+    ctx.globalAlpha = 1;
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawWindPattern(x: number, y: number, r: number, color: string, time: number) {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    for (let i = 0; i < 5; i++) {
+      const dy = (i - 2) * r * 0.38;
+      const wave = Math.sin(time * 2 + i * 0.8) * r * 0.12;
+      ctx.beginPath();
+      ctx.globalAlpha = 0.4 + (i === 2 ? 0.4 : 0);
+      ctx.moveTo(x - r * 0.8, y + dy);
+      ctx.bezierCurveTo(
+        x - r * 0.3, y + dy + wave,
+        x + r * 0.3, y + dy - wave,
+        x + r * 0.8, y + dy
+      );
+      ctx.stroke();
+      // Arrowhead
+      ctx.beginPath();
+      ctx.moveTo(x + r * 0.8, y + dy);
+      ctx.lineTo(x + r * 0.65, y + dy - 4);
+      ctx.lineTo(x + r * 0.65, y + dy + 4);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawPrecipitation(x: number, y: number, r: number, color: string, time: number) {
+    ctx.save();
+    const cols = 4, rows = 5;
+    for (let c = 0; c < cols; c++) {
+      for (let rr = 0; rr < rows; rr++) {
+        const px = x - r * 0.6 + c * r * 0.4;
+        const baseY = y - r * 0.7 + rr * r * 0.35;
+        const offset = Math.sin(time * 2.5 + c * 1.2 + rr * 0.8) * r * 0.1;
+        const py = baseY + offset;
+        ctx.beginPath();
+        ctx.arc(px, py, 2, 0, Math.PI * 2);
+        ctx.fillStyle = color + 'cc';
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+
+  // Draw AutoPilot weather station
+  function drawStation(x: number, y: number) {
+    const pulse = Math.sin(t * 2) * 0.05 + 1;
+    const r = 52 * pulse;
+    ctx.save();
+
+    // Outer ring glow
+    const outerGlow = ctx.createRadialGradient(x, y, r * 0.5, x, y, r * 1.8);
+    outerGlow.addColorStop(0, 'rgba(249,115,22,0.22)');
+    outerGlow.addColorStop(1, 'transparent');
+    ctx.beginPath();
+    ctx.arc(x, y, r * 1.8, 0, Math.PI * 2);
+    ctx.fillStyle = outerGlow;
+    ctx.fill();
+
+    // Station body
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(6,7,18,0.95)';
+    ctx.fill();
+    ctx.strokeStyle = '#f97316';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Rotating radar sweep
+    const sweep = (t * 0.8) % (Math.PI * 2);
+    const sweepGrad = ctx.createConicalGradient ? null : null;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.arc(x, y, r - 4, sweep - 0.6, sweep);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(249,115,22,0.25)';
+    ctx.fill();
+    ctx.restore();
+
+    // Radar rings
+    for (let i = 1; i <= 3; i++) {
+      ctx.beginPath();
+      ctx.arc(x, y, (r - 4) * (i / 3), 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(249,115,22,${0.12 - i * 0.02})`;
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+    }
+
+    // Radar line
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + Math.cos(sweep) * (r - 4), y + Math.sin(sweep) * (r - 4));
+    ctx.strokeStyle = 'rgba(249,115,22,0.8)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
+
+    // Center dot
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#f97316';
+    ctx.fill();
+
+    // Station label
+    ctx.font = '700 10px -apple-system, sans-serif';
+    ctx.fillStyle = '#f97316';
+    ctx.textAlign = 'center';
+    ctx.fillText('AUTOPILOT', x, y - r - 14);
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.fillText('WEATHER STATION', x, y - r - 4);
+
+    ctx.restore();
+  }
+
+  // Draw output forecast card
+  function drawForecastCard(x: number, y: number, output: typeof OUTPUTS[0], idx: number, hovered: boolean) {
+    const w = 90, h = 54;
+    const pulse = Math.sin(t * 1.2 + idx * 0.9) * 0.03 + 1;
+    const cw = w * pulse, ch = h * pulse;
+    ctx.save();
+
+    // Card background
+    ctx.beginPath();
+    ctx.roundRect(x - cw / 2, y - ch / 2, cw, ch, 8);
+    ctx.fillStyle = hovered ? 'rgba(15,16,35,0.98)' : 'rgba(10,11,28,0.92)';
+    ctx.fill();
+    ctx.strokeStyle = hovered ? output.color : output.color + '66';
+    ctx.lineWidth = hovered ? 1.5 : 1;
+    ctx.stroke();
+
+    // Top color bar
+    ctx.beginPath();
+    ctx.roundRect(x - cw / 2, y - ch / 2, cw, 3, [8, 8, 0, 0]);
+    ctx.fillStyle = output.color;
+    ctx.fill();
+
+    // Platform label
+    ctx.font = '700 10px -apple-system, sans-serif';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.fillText(output.label, x, y - 2);
+
+    // Icon
+    ctx.font = '13px sans-serif';
+    ctx.fillText(output.icon, x, y + 16);
+
+    // Glow on hover
+    if (hovered) {
+      const g = ctx.createRadialGradient(x, y, 0, x, y, cw);
+      g.addColorStop(0, output.color + '22');
+      g.addColorStop(1, 'transparent');
+      ctx.beginPath();
+      ctx.arc(x, y, cw, 0, Math.PI * 2);
+      ctx.fillStyle = g;
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  // Flow particle along a bezier path
+  interface FlowParticle {
+    t: number; speed: number;
+    fromX: number; fromY: number;
+    toX: number; toY: number;
+    cp1x: number; cp1y: number;
+    cp2x: number; cp2y: number;
+    color: string; size: number;
+    direction: 'in' | 'out';
+  }
+
+  const flowParticles: FlowParticle[] = [];
+
+  function spawnFlowParticle(fromX: number, fromY: number, toX: number, toY: number, color: string, dir: 'in' | 'out') {
+    const mid = (fromX + toX) / 2;
+    const offset = (Math.random() - 0.5) * H * 0.25;
+    flowParticles.push({
+      t: 0,
+      speed: 0.004 + Math.random() * 0.003,
+      fromX, fromY, toX, toY,
+      cp1x: mid, cp1y: fromY + offset,
+      cp2x: mid, cp2y: toY + offset,
+      color, size: 2.5 + Math.random() * 2,
+      direction: dir,
+    });
+  }
+
+  function updateFlowParticles() {
+    const c = getCenterPos();
+    // Spawn from inputs
+    if (Math.random() < 0.08) {
+      const i = Math.floor(Math.random() * INPUTS.length);
+      const p = getInputPos(i);
+      spawnFlowParticle(p.x + 30, p.y, c.x - 52, c.y + (Math.random() - 0.5) * 20, INPUTS[i].color, 'in');
+    }
+    // Spawn to outputs
+    if (Math.random() < 0.08) {
+      const i = Math.floor(Math.random() * OUTPUTS.length);
+      const p = getOutputPos(i);
+      spawnFlowParticle(c.x + 52, c.y + (Math.random() - 0.5) * 20, p.x - 46, p.y, OUTPUTS[i].color, 'out');
+    }
+
+    for (let i = flowParticles.length - 1; i >= 0; i--) {
+      flowParticles[i].t += flowParticles[i].speed;
+      if (flowParticles[i].t >= 1) {
+        flowParticles.splice(i, 1);
+      }
+    }
+  }
+
+  function cubicBezier(t: number, p0: number, p1: number, p2: number, p3: number) {
+    const mt = 1 - t;
+    return mt * mt * mt * p0 + 3 * mt * mt * t * p1 + 3 * mt * t * t * p2 + t * t * t * p3;
+  }
+
+  function drawFlowParticles() {
+    for (const fp of flowParticles) {
+      const px = cubicBezier(fp.t, fp.fromX, fp.cp1x, fp.cp2x, fp.toX);
+      const py = cubicBezier(fp.t, fp.fromY, fp.cp1y, fp.cp2y, fp.toY);
+      ctx.save();
+      const alpha = fp.t < 0.1 ? fp.t / 0.1 : fp.t > 0.9 ? (1 - fp.t) / 0.1 : 1;
+      ctx.globalAlpha = alpha * 0.85;
+      ctx.beginPath();
+      ctx.arc(px, py, fp.size, 0, Math.PI * 2);
+      ctx.fillStyle = fp.color;
+      ctx.shadowColor = fp.color;
+      ctx.shadowBlur = 6;
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // Draw connection lines (flow paths)
+  function drawConnections() {
+    const c = getCenterPos();
+    ctx.save();
+
+    // Input connections
+    for (let i = 0; i < INPUTS.length; i++) {
+      const p = getInputPos(i);
+      const hov = hoveredInput === i;
+      const mid = (p.x + c.x) / 2;
+      ctx.beginPath();
+      ctx.moveTo(p.x + 30, p.y);
+      ctx.bezierCurveTo(mid, p.y, mid, c.y, c.x - 52, c.y);
+      ctx.strokeStyle = hov ? INPUTS[i].color : INPUTS[i].color + '33';
+      ctx.lineWidth = hov ? 1.5 : 0.8;
+      ctx.stroke();
+    }
+
+    // Output connections
+    for (let i = 0; i < OUTPUTS.length; i++) {
+      const p = getOutputPos(i);
+      const hov = hoveredOutput === i;
+      const mid = (c.x + p.x) / 2;
+      ctx.beginPath();
+      ctx.moveTo(c.x + 52, c.y);
+      ctx.bezierCurveTo(mid, c.y, mid, p.y, p.x - 46, p.y);
+      ctx.strokeStyle = hov ? OUTPUTS[i].color : OUTPUTS[i].color + '33';
+      ctx.lineWidth = hov ? 1.5 : 0.8;
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Background
+    ctx.fillStyle = '#060712';
+    ctx.fillRect(0, 0, W, H);
+
+    drawIsobars();
+    drawTemperatureGradient();
+    drawConnections();
+
+    const c = getCenterPos();
+
+    // Input weather systems
+    for (let i = 0; i < INPUTS.length; i++) {
+      const p = getInputPos(i);
+      drawWeatherSystem(p.x, p.y, INPUTS[i].symbol, INPUTS[i].color, i, hoveredInput === i);
+    }
+
+    // Output forecast cards
+    for (let i = 0; i < OUTPUTS.length; i++) {
+      const p = getOutputPos(i);
+      drawForecastCard(p.x, p.y, OUTPUTS[i], i, hoveredOutput === i);
+    }
+
+    updateFlowParticles();
+    drawFlowParticles();
+    drawStation(c.x, c.y);
+
+    t += 0.016;
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+
+  // Mouse interactivity
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    let newHovIn = -1;
+    let newHovOut = -1;
+    let tipText = '';
+
+    for (let i = 0; i < INPUTS.length; i++) {
+      const p = getInputPos(i);
+      const dx = mx - p.x, dy = my - p.y;
+      if (Math.sqrt(dx * dx + dy * dy) < 38) {
+        newHovIn = i;
+        tipText = INPUTS[i].label;
+        break;
+      }
+    }
+
+    if (newHovIn === -1) {
+      for (let i = 0; i < OUTPUTS.length; i++) {
+        const p = getOutputPos(i);
+        const dx = mx - p.x, dy = my - p.y;
+        if (Math.sqrt(dx * dx + dy * dy) < 50) {
+          newHovOut = i;
+          tipText = OUTPUTS[i].label;
+          break;
+        }
+      }
+    }
+
+    hoveredInput = newHovIn;
+    hoveredOutput = newHovOut;
+
+    if (tipText) {
+      tooltip.textContent = tipText;
+      tooltip.style.left = (e.clientX + 14) + 'px';
+      tooltip.style.top = (e.clientY - 10) + 'px';
+      tooltip.classList.add('visible');
+    } else {
+      tooltip.classList.remove('visible');
+    }
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    hoveredInput = -1;
+    hoveredOutput = -1;
+    tooltip.classList.remove('visible');
+  });
+</script>

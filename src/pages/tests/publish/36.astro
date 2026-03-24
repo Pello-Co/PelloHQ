@@ -1,0 +1,667 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Prism Refraction | Pello" description="Four input beams pass through the AutoPilot prism and refract into six perfectly tuned content wavelengths, one for each platform.">
+  <Header />
+  <main id="main-content">
+    <section class="pub-section" aria-labelledby="pub-headline">
+      <div class="pub-layout">
+        <div class="pub-text">
+          <span class="pub-badge">PelloPublish</span>
+          <h1 id="pub-headline">One Source of Truth, Six Frequencies.</h1>
+          <p>Four input beams — your website, industry news, social signals, and target keywords — pass through the AutoPilot prism and refract into six perfectly tuned content wavelengths, one for each platform.</p>
+          <ul class="pub-pills" role="list">
+            <li>Combined Intelligence</li>
+            <li>AutoPilot Prism</li>
+            <li>Spectral Distribution</li>
+            <li>Pure Refraction</li>
+          </ul>
+        </div>
+        <div class="pub-canvas-col">
+          <canvas id="pub-canvas" aria-hidden="true"></canvas>
+          <div id="pub-tooltip" role="tooltip" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .pub-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .pub-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .pub-layout { grid-template-columns: 1fr; } }
+  .pub-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .pub-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #f97316; width: fit-content; }
+  .pub-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .pub-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .pub-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pub-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .pub-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #pub-canvas { width: 100%; height: 100%; position: absolute; inset: 0; display: block; }
+  #pub-tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: rgba(6,7,18,0.92);
+    border: 1px solid rgba(249,115,22,0.4);
+    border-radius: 8px;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8125rem;
+    color: #fff;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+  }
+  #pub-tooltip.visible { opacity: 1; }
+</style>
+
+<script>
+  type InputDef = { label: string; color: string };
+  type OutputDef = { label: string; color: string };
+  type Particle = {
+    progress: number;
+    speed: number;
+    isInput: boolean;
+    nodeIndex: number;
+    size: number;
+    opacity: number;
+    x: number;
+    y: number;
+  };
+  type CausticGlint = {
+    x: number;
+    y: number;
+    r: number;
+    life: number;
+    maxLife: number;
+    color: string;
+    vx: number;
+    vy: number;
+  };
+
+  const INPUTS: InputDef[] = [
+    { label: 'Website Scrape', color: '#6366f1' },
+    { label: 'News Feed',      color: '#22d3ee' },
+    { label: 'X Feed',         color: '#1d9bf0' },
+    { label: 'Keywords',       color: '#4ade80' },
+  ];
+  const OUTPUTS: OutputDef[] = [
+    { label: 'Newsletter', color: '#f97316' },
+    { label: 'Instagram',  color: '#e1306c' },
+    { label: 'TikTok',     color: '#00f2ea' },
+    { label: 'Twitter',    color: '#1d9bf0' },
+    { label: 'LinkedIn',   color: '#0a66c2' },
+    { label: 'Blog',       color: '#a855f7' },
+  ];
+
+  const canvas = document.getElementById('pub-canvas') as HTMLCanvasElement;
+  const tooltip = document.getElementById('pub-tooltip') as HTMLDivElement;
+  const ctx = canvas.getContext('2d')!;
+
+  let W = 0, H = 0, dpr = 1;
+  let t = 0;
+  let prismTilt = 0;
+  let hoveredOutput = -1;
+  let hoveredInput = -1;
+
+  const particles: Particle[] = [];
+  const causticGlints: CausticGlint[] = [];
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = canvas.parentElement!.getBoundingClientRect();
+    W = rect.width;
+    H = Math.max(rect.height, 560);
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+    initParticles();
+  }
+
+  function initParticles() {
+    particles.length = 0;
+    for (let i = 0; i < INPUTS.length; i++) {
+      for (let k = 0; k < 4; k++) {
+        particles.push({
+          progress: k / 4,
+          speed: 0.005 + Math.random() * 0.003,
+          isInput: true,
+          nodeIndex: i,
+          size: 2 + Math.random() * 2,
+          opacity: 0.6 + Math.random() * 0.4,
+          x: 0, y: 0,
+        });
+      }
+    }
+    for (let i = 0; i < OUTPUTS.length; i++) {
+      for (let k = 0; k < 4; k++) {
+        particles.push({
+          progress: k / 4,
+          speed: 0.004 + Math.random() * 0.003,
+          isInput: false,
+          nodeIndex: i,
+          size: 2 + Math.random() * 2,
+          opacity: 0.6 + Math.random() * 0.4,
+          x: 0, y: 0,
+        });
+      }
+    }
+  }
+
+  // Prism geometry
+  function getPrism() {
+    const cx = W / 2;
+    const cy = H / 2;
+    const size = Math.min(W, H) * 0.22;
+    const tiltAmt = Math.sin(t * 0.4) * 0.08; // subtle tilt oscillation
+    prismTilt = tiltAmt;
+
+    // Equilateral triangle, slightly rotated
+    const baseAngle = Math.PI / 2 + tiltAmt; // apex pointing up + tilt
+    const pts = [
+      { // apex (top)
+        x: cx + Math.cos(baseAngle) * size,
+        y: cy - Math.sin(baseAngle) * size,
+      },
+      { // bottom-left
+        x: cx + Math.cos(baseAngle + (Math.PI * 2) / 3) * size,
+        y: cy - Math.sin(baseAngle + (Math.PI * 2) / 3) * size,
+      },
+      { // bottom-right
+        x: cx + Math.cos(baseAngle + (Math.PI * 4) / 3) * size,
+        y: cy - Math.sin(baseAngle + (Math.PI * 4) / 3) * size,
+      },
+    ];
+    // left face = pts[0] → pts[1], right face = pts[0] → pts[2], bottom = pts[1] → pts[2]
+    return { pts, cx, cy };
+  }
+
+  function getInputBeamPositions() {
+    const spacing = H / (INPUTS.length + 1);
+    return INPUTS.map((_, i) => ({ x: 0, y: spacing * (i + 1) }));
+  }
+
+  function getOutputBeamPositions() {
+    const spacing = H / (OUTPUTS.length + 1);
+    return OUTPUTS.map((_, i) => ({ x: W, y: spacing * (i + 1) }));
+  }
+
+  // Find intersection of line segment with prism left or right face
+  function lineIntersect(
+    p1: {x:number,y:number}, p2: {x:number,y:number},
+    p3: {x:number,y:number}, p4: {x:number,y:number}
+  ): {x:number,y:number} | null {
+    const d1x = p2.x - p1.x, d1y = p2.y - p1.y;
+    const d2x = p4.x - p3.x, d2y = p4.y - p3.y;
+    const denom = d1x * d2y - d1y * d2x;
+    if (Math.abs(denom) < 1e-10) return null;
+    const t2 = ((p3.x - p1.x) * d1y - (p3.y - p1.y) * d1x) / denom;
+    const t1 = ((p3.x - p1.x) * d2y - (p3.y - p1.y) * d2x) / denom;
+    if (t1 < 0 || t1 > 1 || t2 < 0 || t2 > 1) return null;
+    return { x: p1.x + t1 * d1x, y: p1.y + t1 * d1y };
+  }
+
+  function getLeftFaceEntry(beamStart: {x:number,y:number}, pts: {x:number,y:number}[]) {
+    // Left face: pts[2] → pts[1]  (left side facing the inputs)
+    return lineIntersect(beamStart, { x: W / 2, y: H / 2 }, pts[2], pts[1])
+        || lineIntersect(beamStart, { x: W / 2, y: H / 2 }, pts[0], pts[1])
+        || lineIntersect(beamStart, { x: W / 2, y: H / 2 }, pts[0], pts[2]);
+  }
+
+  function getRightFaceExit(beamEnd: {x:number,y:number}, pts: {x:number,y:number}[]) {
+    // Right face: pts[0] → pts[2]
+    return lineIntersect({ x: W / 2, y: H / 2 }, beamEnd, pts[0], pts[2])
+        || lineIntersect({ x: W / 2, y: H / 2 }, beamEnd, pts[0], pts[1])
+        || lineIntersect({ x: W / 2, y: H / 2 }, beamEnd, pts[1], pts[2]);
+  }
+
+  function drawPrism(pts: {x:number,y:number}[]) {
+    // Glass body gradient
+    const innerGrad = ctx.createLinearGradient(pts[2].x, pts[0].y, pts[0].x, pts[2].y);
+    innerGrad.addColorStop(0, 'rgba(99,102,241,0.10)');
+    innerGrad.addColorStop(0.3, 'rgba(249,115,22,0.07)');
+    innerGrad.addColorStop(0.6, 'rgba(168,85,247,0.10)');
+    innerGrad.addColorStop(1, 'rgba(34,211,238,0.08)');
+
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    ctx.lineTo(pts[1].x, pts[1].y);
+    ctx.lineTo(pts[2].x, pts[2].y);
+    ctx.closePath();
+    ctx.fillStyle = innerGrad;
+    ctx.fill();
+
+    // Internal rainbow spectrum
+    const specGrad = ctx.createLinearGradient(pts[2].x, H / 2, pts[0].x, H / 2);
+    specGrad.addColorStop(0, 'rgba(99,102,241,0.18)');
+    specGrad.addColorStop(0.2, 'rgba(34,211,238,0.15)');
+    specGrad.addColorStop(0.4, 'rgba(74,222,128,0.15)');
+    specGrad.addColorStop(0.6, 'rgba(249,115,22,0.15)');
+    specGrad.addColorStop(0.8, 'rgba(225,48,108,0.15)');
+    specGrad.addColorStop(1, 'rgba(168,85,247,0.18)');
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    ctx.lineTo(pts[1].x, pts[1].y);
+    ctx.lineTo(pts[2].x, pts[2].y);
+    ctx.closePath();
+    ctx.fillStyle = specGrad;
+    ctx.fill();
+
+    // Edges with glow
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    ctx.lineTo(pts[1].x, pts[1].y);
+    ctx.lineTo(pts[2].x, pts[2].y);
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Edge highlight (brighter top-left edge)
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    ctx.lineTo(pts[1].x, pts[1].y);
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  function drawInputBeam(
+    start: {x:number,y:number},
+    entry: {x:number,y:number} | null,
+    color: string,
+    highlight: boolean
+  ) {
+    const end = entry || { x: W / 2, y: H / 2 };
+    const alpha = highlight ? 0.9 : 0.55;
+    const width = highlight ? 3 : 2;
+
+    // Beam with gradient fade from edge
+    const grad = ctx.createLinearGradient(start.x, start.y, end.x, end.y);
+    grad.addColorStop(0, color + '00');
+    grad.addColorStop(0.3, color + Math.round(alpha * 255).toString(16).padStart(2, '0'));
+    grad.addColorStop(1, color + Math.round(alpha * 0.9 * 255).toString(16).padStart(2, '0'));
+
+    ctx.beginPath();
+    ctx.moveTo(start.x, start.y);
+    ctx.lineTo(end.x, end.y);
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = width;
+    ctx.stroke();
+
+    // Glow pass
+    ctx.beginPath();
+    ctx.moveTo(start.x, start.y);
+    ctx.lineTo(end.x, end.y);
+    ctx.strokeStyle = color + '22';
+    ctx.lineWidth = width * 5;
+    ctx.stroke();
+  }
+
+  function drawOutputBeam(
+    exit: {x:number,y:number} | null,
+    end: {x:number,y:number},
+    color: string,
+    highlight: boolean
+  ) {
+    const start = exit || { x: W / 2, y: H / 2 };
+    const alpha = highlight ? 0.95 : 0.65;
+    const width = highlight ? 3.5 : 2.2;
+
+    const grad = ctx.createLinearGradient(start.x, start.y, end.x, end.y);
+    grad.addColorStop(0, color + Math.round(alpha * 255).toString(16).padStart(2, '0'));
+    grad.addColorStop(0.7, color + Math.round(alpha * 0.8 * 255).toString(16).padStart(2, '0'));
+    grad.addColorStop(1, color + '00');
+
+    ctx.beginPath();
+    ctx.moveTo(start.x, start.y);
+    ctx.lineTo(end.x, end.y);
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = width;
+    ctx.stroke();
+
+    // Glow
+    ctx.beginPath();
+    ctx.moveTo(start.x, start.y);
+    ctx.lineTo(end.x, end.y);
+    ctx.strokeStyle = color + '28';
+    ctx.lineWidth = width * 6;
+    ctx.stroke();
+
+    // Wide ambient glow for highlighted beam
+    if (highlight) {
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.strokeStyle = color + '12';
+      ctx.lineWidth = width * 16;
+      ctx.stroke();
+    }
+  }
+
+  function spawnCaustic(cx: number, cy: number) {
+    if (causticGlints.length < 30 && Math.random() < 0.04) {
+      const allColors = [...INPUTS.map(i => i.color), ...OUTPUTS.map(o => o.color)];
+      causticGlints.push({
+        x: cx + (Math.random() - 0.5) * W * 0.6,
+        y: cy + (Math.random() - 0.5) * H * 0.5,
+        r: 1 + Math.random() * 3,
+        life: 0,
+        maxLife: 60 + Math.random() * 80,
+        color: allColors[Math.floor(Math.random() * allColors.length)],
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+      });
+    }
+  }
+
+  function drawCaustics() {
+    for (let i = causticGlints.length - 1; i >= 0; i--) {
+      const g = causticGlints[i];
+      g.life++;
+      g.x += g.vx;
+      g.y += g.vy;
+      const prog = g.life / g.maxLife;
+      const alpha = Math.sin(prog * Math.PI) * 0.7;
+      const glowGrad = ctx.createRadialGradient(g.x, g.y, 0, g.x, g.y, g.r * 4);
+      glowGrad.addColorStop(0, g.color + Math.round(alpha * 255).toString(16).padStart(2, '0'));
+      glowGrad.addColorStop(1, 'transparent');
+      ctx.beginPath();
+      ctx.arc(g.x, g.y, g.r * 4, 0, Math.PI * 2);
+      ctx.fillStyle = glowGrad;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(g.x, g.y, g.r, 0, Math.PI * 2);
+      ctx.fillStyle = g.color + Math.round(alpha * 255).toString(16).padStart(2, '0');
+      ctx.fill();
+      if (g.life >= g.maxLife) causticGlints.splice(i, 1);
+    }
+  }
+
+  function pointOnSegment(
+    start: {x:number,y:number},
+    end: {x:number,y:number},
+    progress: number
+  ) {
+    return {
+      x: start.x + (end.x - start.x) * progress,
+      y: start.y + (end.y - start.y) * progress,
+    };
+  }
+
+  function updateParticles(
+    inputPositions: {x:number,y:number}[],
+    outputPositions: {x:number,y:number}[],
+    pts: {x:number,y:number}[],
+    cx: number, cy: number
+  ) {
+    for (const p of particles) {
+      p.progress += p.speed;
+      if (p.progress > 1) p.progress -= 1;
+      if (p.isInput) {
+        const start = inputPositions[p.nodeIndex];
+        const entry = getLeftFaceEntry(start, pts) || { x: cx, y: cy };
+        const pos = pointOnSegment(start, entry, p.progress);
+        p.x = pos.x;
+        p.y = pos.y;
+      } else {
+        const end = outputPositions[p.nodeIndex];
+        const exit = getRightFaceExit(end, pts) || { x: cx, y: cy };
+        const pos = pointOnSegment(exit, end, p.progress);
+        p.x = pos.x;
+        p.y = pos.y;
+      }
+    }
+  }
+
+  function drawParticles() {
+    for (const p of particles) {
+      let color: string;
+      if (p.isInput) {
+        color = INPUTS[p.nodeIndex].color;
+      } else {
+        color = OUTPUTS[p.nodeIndex].color;
+      }
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = color + Math.round(p.opacity * 255).toString(16).padStart(2, '0');
+      ctx.fill();
+      // tiny glow
+      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 3);
+      g.addColorStop(0, color + '55');
+      g.addColorStop(1, 'transparent');
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
+      ctx.fillStyle = g;
+      ctx.fill();
+    }
+  }
+
+  function drawEndpointLabel(
+    text: string,
+    x: number, y: number,
+    color: string,
+    align: CanvasTextAlign,
+    highlight: boolean
+  ) {
+    ctx.save();
+    ctx.font = `${highlight ? '700' : '600'} 11px -apple-system, BlinkMacSystemFont, sans-serif`;
+    ctx.textAlign = align;
+    ctx.fillStyle = highlight ? '#fff' : 'rgba(255,255,255,0.8)';
+    ctx.fillText(text, x, y);
+    const metrics = ctx.measureText(text);
+    const tw = metrics.width;
+    const lx = align === 'right' ? x - tw : x;
+    ctx.beginPath();
+    ctx.moveTo(lx, y + 3);
+    ctx.lineTo(lx + tw, y + 3);
+    ctx.strokeStyle = color + (highlight ? 'ee' : '88');
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawInputDot(pos: {x:number,y:number}, color: string, highlight: boolean) {
+    const r = highlight ? 6 : 4;
+    const glow = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, r * 3);
+    glow.addColorStop(0, color + 'cc');
+    glow.addColorStop(1, 'transparent');
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, r * 3, 0, Math.PI * 2);
+    ctx.fillStyle = glow;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+
+  function drawOutputDot(pos: {x:number,y:number}, color: string, highlight: boolean) {
+    const r = highlight ? 7 : 5;
+    const glow = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, r * 3);
+    glow.addColorStop(0, color + 'dd');
+    glow.addColorStop(1, 'transparent');
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, r * 3, 0, Math.PI * 2);
+    ctx.fillStyle = glow;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+
+  function hitTestBeam(
+    mx: number, my: number,
+    beamStart: {x:number,y:number},
+    beamEnd: {x:number,y:number},
+    threshold: number = 14
+  ): boolean {
+    const dx = beamEnd.x - beamStart.x;
+    const dy = beamEnd.y - beamStart.y;
+    const len2 = dx * dx + dy * dy;
+    if (len2 === 0) return false;
+    const t = Math.max(0, Math.min(1, ((mx - beamStart.x) * dx + (my - beamStart.y) * dy) / len2));
+    const projX = beamStart.x + t * dx;
+    const projY = beamStart.y + t * dy;
+    const dist = Math.sqrt((mx - projX) ** 2 + (my - projY) ** 2);
+    return dist < threshold;
+  }
+
+  function showTooltip(text: string, cx: number, cy: number) {
+    tooltip.textContent = text;
+    tooltip.style.left = (cx + 12) + 'px';
+    tooltip.style.top = (cy - 10) + 'px';
+    tooltip.classList.add('visible');
+  }
+
+  function hideTooltip() {
+    tooltip.classList.remove('visible');
+  }
+
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    const { pts, cx, cy } = getPrism();
+    const inputPositions = getInputBeamPositions();
+    const outputPositions = getOutputBeamPositions();
+
+    let found = false;
+
+    // Check output beams
+    for (let i = 0; i < OUTPUTS.length; i++) {
+      const exit = getRightFaceExit(outputPositions[i], pts) || { x: cx, y: cy };
+      if (hitTestBeam(mx, my, exit, outputPositions[i])) {
+        hoveredOutput = i;
+        hoveredInput = -1;
+        showTooltip(`Platform: ${OUTPUTS[i].label}`, e.clientX, e.clientY);
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      // Check input beams
+      for (let i = 0; i < INPUTS.length; i++) {
+        const entry = getLeftFaceEntry(inputPositions[i], pts) || { x: cx, y: cy };
+        if (hitTestBeam(mx, my, inputPositions[i], entry)) {
+          hoveredInput = i;
+          hoveredOutput = -1;
+          showTooltip(`Source: ${INPUTS[i].label}`, e.clientX, e.clientY);
+          found = true;
+          break;
+        }
+      }
+    }
+
+    if (!found) {
+      hoveredInput = -1;
+      hoveredOutput = -1;
+      hideTooltip();
+    }
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    hoveredInput = -1;
+    hoveredOutput = -1;
+    hideTooltip();
+  });
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    const { pts, cx, cy } = getPrism();
+    const inputPositions = getInputBeamPositions();
+    const outputPositions = getOutputBeamPositions();
+
+    // Subtle background grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.022)';
+    ctx.lineWidth = 1;
+    const gs = 44;
+    for (let gx = 0; gx < W; gx += gs) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke(); }
+    for (let gy = 0; gy < H; gy += gs) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); }
+
+    // Caustic background glints
+    spawnCaustic(cx, cy);
+    drawCaustics();
+
+    // Draw input beams BEHIND prism
+    for (let i = 0; i < INPUTS.length; i++) {
+      const entry = getLeftFaceEntry(inputPositions[i], pts);
+      drawInputBeam(inputPositions[i], entry, INPUTS[i].color, hoveredInput === i);
+    }
+
+    // Draw output beams BEHIND prism
+    for (let i = 0; i < OUTPUTS.length; i++) {
+      const exit = getRightFaceExit(outputPositions[i], pts);
+      drawOutputBeam(exit, outputPositions[i], OUTPUTS[i].color, hoveredOutput === i);
+    }
+
+    // Draw prism on top of beams
+    drawPrism(pts);
+
+    // Update and draw particles
+    updateParticles(inputPositions, outputPositions, pts, cx, cy);
+    drawParticles();
+
+    // Input dots and labels
+    for (let i = 0; i < INPUTS.length; i++) {
+      const pos = inputPositions[i];
+      drawInputDot(pos, INPUTS[i].color, hoveredInput === i);
+      drawEndpointLabel(INPUTS[i].label, pos.x + 10, pos.y - 10, INPUTS[i].color, 'left', hoveredInput === i);
+    }
+
+    // Output dots and labels
+    for (let i = 0; i < OUTPUTS.length; i++) {
+      const pos = outputPositions[i];
+      drawOutputDot(pos, OUTPUTS[i].color, hoveredOutput === i);
+      drawEndpointLabel(OUTPUTS[i].label, pos.x - 10, pos.y - 10, OUTPUTS[i].color, 'right', hoveredOutput === i);
+    }
+
+    // Section labels top
+    ctx.font = '600 10px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.fillText('4 SOURCES', 8, 22);
+    ctx.textAlign = 'right';
+    ctx.fillText('6 PLATFORMS', W - 8, 22);
+
+    // AutoPilot label on prism
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(prismTilt);
+    ctx.font = 'bold 9px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillText('AUTO', 0, -6);
+    ctx.fillText('PILOT', 0, 6);
+    ctx.restore();
+
+    t += 0.016;
+  }
+
+  let rafId: number;
+  function loop() {
+    draw();
+    rafId = requestAnimationFrame(loop);
+  }
+
+  resize();
+  window.addEventListener('resize', () => {
+    cancelAnimationFrame(rafId);
+    resize();
+    loop();
+  });
+  loop();
+</script>
