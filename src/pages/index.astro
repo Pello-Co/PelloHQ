@@ -3288,9 +3288,72 @@ Zero effort.</h2>
         ctx.fillText('I N P U T S', 70, 26);
         ctx.fillText('O U T P U T S', W - 70, 26);
 
+        // ── Auto-spotlight: input dot → engine → output dot → platform ────
+        spotTooltip = null;
+        if (!userHovering && hoveredInput < 0 && hoveredOutput < 0) {
+          spotTimer += 1/60;
+
+          if (spotPhase === 'cooldown') {
+            if (spotTimer > 0.6) {
+              const ic = particles.filter(p => p.fromInput >= 0 && p.progress > 0.05 && p.progress < 0.3);
+              if (ic.length > 0) {
+                spotIdx = particles.indexOf(ic[Math.floor(Math.random() * ic.length)]);
+                spotPhase = 'input'; spotTimer = 0;
+              }
+            }
+          }
+
+          if (spotPhase === 'input') {
+            const trk = spotIdx >= 0 && spotIdx < particles.length ? particles[spotIdx] : null;
+            if (!trk || trk.progress >= 0.95) {
+              spotPhase = 'waiting'; spotTimer = 0; spotIdx = -1;
+            } else {
+              const ip = getInputPos(trk.fromInput);
+              const eng = getEnginePos();
+              const tp = followConnection(ip.x + 24, ip.y, eng.x - 44, eng.y, trk.progress);
+              ctx.globalAlpha = 0.9;
+              ctx.beginPath(); ctx.arc(tp.x, tp.y, 5, 0, Math.PI*2); ctx.fillStyle = trk.color; ctx.fill();
+              ctx.beginPath(); ctx.arc(tp.x, tp.y, 14, 0, Math.PI*2); ctx.fillStyle = trk.color+'15'; ctx.fill();
+              ctx.globalAlpha = 1;
+              spotTooltip = { x:tp.x, y:tp.y, snippet:trk.snippet, color:trk.color, richData:trk.richData };
+            }
+          }
+
+          if (spotPhase === 'waiting') {
+            if (spotTimer > 0.3) {
+              const oc = particles.filter(p => p.toOutput >= 0 && p.fromInput < 0 && p.progress > 0.05 && p.progress < 0.3);
+              if (oc.length > 0) {
+                spotIdx = particles.indexOf(oc[Math.floor(Math.random() * oc.length)]);
+                spotPhase = 'output'; spotTimer = 0;
+              } else if (spotTimer > 1.5) {
+                spotPhase = 'cooldown'; spotTimer = 0;
+              }
+            }
+          }
+
+          if (spotPhase === 'output') {
+            const trk = spotIdx >= 0 && spotIdx < particles.length ? particles[spotIdx] : null;
+            if (!trk || trk.progress >= 0.95) {
+              spotPhase = 'cooldown'; spotTimer = 0; spotIdx = -1;
+            } else {
+              const eng = getEnginePos();
+              const op = getOutputPos(trk.toOutput);
+              const tp = followConnection(eng.x + 44, eng.y, op.x - 24, op.y, trk.progress);
+              ctx.globalAlpha = 0.9;
+              ctx.beginPath(); ctx.arc(tp.x, tp.y, 5, 0, Math.PI*2); ctx.fillStyle = trk.color; ctx.fill();
+              ctx.beginPath(); ctx.arc(tp.x, tp.y, 14, 0, Math.PI*2); ctx.fillStyle = trk.color+'15'; ctx.fill();
+              ctx.globalAlpha = 1;
+              spotTooltip = { x:tp.x, y:tp.y, snippet:trk.snippet, color:trk.color, richData:trk.richData };
+            }
+          }
+        } else {
+          spotPhase = 'cooldown'; spotTimer = 0; spotIdx = -1;
+        }
+
         // ── Particle tooltip ──────────────────────────────────────────────
-        if (hoveredParticle && hoveredInput < 0 && hoveredOutput < 0) {
-          const hp = hoveredParticle;
+        const activeTooltip = (hoveredParticle && hoveredInput < 0 && hoveredOutput < 0) ? hoveredParticle : spotTooltip;
+        if (activeTooltip && hoveredInput < 0 && hoveredOutput < 0) {
+          const hp = activeTooltip;
 
           if (hp.richData) {
             // Rich mini post card for output particles
