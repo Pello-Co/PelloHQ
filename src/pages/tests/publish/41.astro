@@ -1,0 +1,468 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — AutoPilot Content Engine | Pello" description="4 input sources feed AutoPilot, which transforms them into tailored content for 6 platforms — automatically.">
+  <Header />
+  <main id="main-content">
+    <section style="min-height:100vh;display:flex;align-items:center;background:#060712;padding:6rem 0 4rem;">
+      <div style="max-width:1280px;margin:0 auto;padding:0 2rem;width:100%;">
+
+        <!-- Header -->
+        <div style="text-align:center;margin-bottom:3.5rem;">
+          <span style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.375rem 0.875rem;background:rgba(249,115,22,0.12);border:1px solid rgba(249,115,22,0.3);border-radius:100px;font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#f97316;margin-bottom:1.25rem;">PelloPublish</span>
+          <h1 style="font-size:clamp(2rem,4vw,3rem);font-weight:700;line-height:1.15;letter-spacing:-0.02em;color:#fff;margin-bottom:1rem;">4 Sources. 6 Platforms.<br/>Zero Effort.</h1>
+          <p style="font-size:1.0625rem;line-height:1.7;color:rgba(255,255,255,0.55);max-width:52ch;margin:0 auto;">AutoPilot continuously scrapes, analyses, and repurposes everything relevant to your business into tailored content — published everywhere, automatically.</p>
+        </div>
+
+        <!-- Canvas -->
+        <div id="flow-wrap" style="position:relative;width:100%;height:480px;border-radius:1.25rem;border:1px solid rgba(255,255,255,0.06);background:rgba(6,7,18,0.6);overflow:hidden;">
+          <canvas id="flow-canvas"></canvas>
+        </div>
+
+        <!-- Feature pills -->
+        <div style="display:flex;flex-wrap:wrap;gap:0.5rem;justify-content:center;margin-top:2rem;">
+          <span style="padding:0.375rem 0.875rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:100px;font-size:0.8125rem;color:rgba(255,255,255,0.75);">24/7 AutoPilot</span>
+          <span style="padding:0.375rem 0.875rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:100px;font-size:0.8125rem;color:rgba(255,255,255,0.75);">Memory Base Intelligence</span>
+          <span style="padding:0.375rem 0.875rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:100px;font-size:0.8125rem;color:rgba(255,255,255,0.75);">Multi-Platform Publishing</span>
+          <span style="padding:0.375rem 0.875rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:100px;font-size:0.8125rem;color:rgba(255,255,255,0.75);">SEO Optimised</span>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  body { background: #060712; }
+  @media (max-width: 768px) {
+    #flow-wrap { height: 600px !important; }
+  }
+</style>
+
+<script>
+(function() {
+  const canvas = document.getElementById('flow-canvas') as HTMLCanvasElement;
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d')!;
+  const wrap = document.getElementById('flow-wrap')!;
+
+  let W = 0, H = 0, dpr = 1;
+
+  function resize() {
+    const r = wrap.getBoundingClientRect();
+    dpr = window.devicePixelRatio || 1;
+    W = r.width; H = r.height || 480;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // ── Input sources ──────────────────────────────────────────────────────
+  const INPUTS = [
+    { label: 'Website\nScrape', color: '#6366f1', icon: 'globe' },
+    { label: 'News\nFeed',     color: '#22d3ee', icon: 'news' },
+    { label: 'X Feed',         color: '#ffffff', icon: 'x' },
+    { label: 'Keywords',       color: '#4ade80', icon: 'key' },
+  ];
+
+  // ── Output platforms ───────────────────────────────────────────────────
+  const OUTPUTS = [
+    { label: 'Newsletter', color: '#f97316', icon: 'mail' },
+    { label: 'Instagram',  color: '#E1306C', icon: 'instagram' },
+    { label: 'TikTok',     color: '#00f2ea', icon: 'tiktok' },
+    { label: 'Twitter',    color: '#1d9bf0', icon: 'twitter' },
+    { label: 'LinkedIn',   color: '#0A66C2', icon: 'linkedin' },
+    { label: 'Blog',       color: '#a855f7', icon: 'blog' },
+  ];
+
+  // ── Draw SVG icons ─────────────────────────────────────────────────────
+  function drawIcon(x: number, y: number, type: string, size: number, color: string) {
+    ctx.save();
+    ctx.translate(x, y);
+    const s = size / 24;
+    ctx.scale(s, s);
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = 1.5 / s;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    switch(type) {
+      case 'globe':
+        ctx.beginPath(); ctx.arc(12, 12, 10, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(12, 12, 4, 10, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(2, 12); ctx.lineTo(22, 12); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(12, 2); ctx.lineTo(12, 22); ctx.stroke();
+        break;
+      case 'news':
+        ctx.beginPath();
+        ctx.roundRect(3, 4, 18, 16, 2); ctx.stroke();
+        ctx.fillRect(6, 7, 5, 5);
+        ctx.globalAlpha = 0.6;
+        ctx.fillRect(13, 7, 5, 1.5);
+        ctx.fillRect(13, 10, 5, 1.5);
+        ctx.fillRect(6, 14, 12, 1.5);
+        ctx.fillRect(6, 17, 8, 1.5);
+        ctx.globalAlpha = 1;
+        break;
+      case 'x':
+        ctx.lineWidth = 2.5 / s;
+        ctx.beginPath(); ctx.moveTo(4, 4); ctx.lineTo(20, 20); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(20, 4); ctx.lineTo(4, 20); ctx.stroke();
+        break;
+      case 'key':
+        ctx.beginPath();
+        ctx.moveTo(6, 4); ctx.lineTo(18, 4); ctx.lineTo(18, 8); ctx.lineTo(14, 8);
+        ctx.lineTo(14, 12); ctx.lineTo(18, 12); ctx.lineTo(18, 16); ctx.lineTo(14, 16);
+        ctx.lineTo(14, 20); ctx.lineTo(10, 20); ctx.lineTo(10, 16);
+        ctx.lineTo(6, 16); ctx.lineTo(6, 12); ctx.lineTo(10, 12);
+        ctx.lineTo(10, 8); ctx.lineTo(6, 8); ctx.closePath(); ctx.stroke();
+        break;
+      case 'mail':
+        ctx.beginPath(); ctx.roundRect(2, 5, 20, 14, 2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(2, 5); ctx.lineTo(12, 13); ctx.lineTo(22, 5); ctx.stroke();
+        break;
+      case 'instagram':
+        ctx.beginPath(); ctx.roundRect(3, 3, 18, 18, 5); ctx.stroke();
+        ctx.beginPath(); ctx.arc(12, 12, 5, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(17.5, 6.5, 1.2, 0, Math.PI * 2); ctx.fill();
+        break;
+      case 'tiktok':
+        ctx.beginPath();
+        ctx.moveTo(10, 4); ctx.lineTo(10, 16);
+        ctx.quadraticCurveTo(10, 20, 14, 20);
+        ctx.quadraticCurveTo(18, 20, 18, 16);
+        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(10, 8); ctx.quadraticCurveTo(16, 8, 18, 4); ctx.stroke();
+        break;
+      case 'twitter':
+        ctx.lineWidth = 2.5 / s;
+        ctx.beginPath(); ctx.moveTo(4, 4); ctx.lineTo(20, 20); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(20, 4); ctx.lineTo(4, 20); ctx.stroke();
+        break;
+      case 'linkedin':
+        ctx.beginPath(); ctx.roundRect(3, 3, 18, 18, 2); ctx.stroke();
+        ctx.font = 'bold 12px -apple-system, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('in', 12, 13);
+        break;
+      case 'blog':
+        ctx.beginPath(); ctx.roundRect(4, 3, 16, 18, 2); ctx.stroke();
+        ctx.globalAlpha = 0.6;
+        ctx.fillRect(7, 6, 10, 1.5);
+        ctx.fillRect(7, 9, 10, 1.5);
+        ctx.fillRect(7, 12, 8, 1.5);
+        ctx.fillRect(7, 15, 6, 1.5);
+        ctx.globalAlpha = 1;
+        break;
+    }
+    ctx.restore();
+  }
+
+  // ── Particle system ────────────────────────────────────────────────────
+  interface Particle {
+    x: number; y: number;
+    tx: number; ty: number;
+    progress: number;
+    speed: number;
+    color: string;
+    fromInput: number;  // -1 if from engine
+    toOutput: number;   // -1 if to engine
+    size: number;
+    alive: boolean;
+  }
+
+  const particles: Particle[] = [];
+  let lastSpawn = 0;
+  let mx = -999, my = -999;
+  let hoveredInput = -1, hoveredOutput = -1;
+
+  canvas.addEventListener('mousemove', e => {
+    const r = canvas.getBoundingClientRect();
+    mx = e.clientX - r.left; my = e.clientY - r.top;
+  });
+  canvas.addEventListener('mouseleave', () => { mx = -999; my = -999; hoveredInput = -1; hoveredOutput = -1; });
+
+  // ── Layout positions ───────────────────────────────────────────────────
+  function getInputPos(i: number) {
+    const gap = H / (INPUTS.length + 1);
+    return { x: 70, y: gap * (i + 1) };
+  }
+
+  function getOutputPos(i: number) {
+    const gap = H / (OUTPUTS.length + 1);
+    return { x: W - 70, y: gap * (i + 1) };
+  }
+
+  function getEnginePos() {
+    return { x: W / 2, y: H / 2 };
+  }
+
+  // ── Spawn particles ────────────────────────────────────────────────────
+  function spawnParticle(t: number) {
+    const engine = getEnginePos();
+
+    // Input → Engine
+    const ii = Math.floor(Math.random() * INPUTS.length);
+    const ip = getInputPos(ii);
+    particles.push({
+      x: ip.x, y: ip.y,
+      tx: engine.x + (Math.random() - 0.5) * 30,
+      ty: engine.y + (Math.random() - 0.5) * 30,
+      progress: 0,
+      speed: 0.008 + Math.random() * 0.006,
+      color: INPUTS[ii].color,
+      fromInput: ii, toOutput: -1,
+      size: 2 + Math.random() * 2,
+      alive: true,
+    });
+
+    // Engine → Output
+    const oi = Math.floor(Math.random() * OUTPUTS.length);
+    const op = getOutputPos(oi);
+    particles.push({
+      x: engine.x + (Math.random() - 0.5) * 30,
+      y: engine.y + (Math.random() - 0.5) * 30,
+      tx: op.x, ty: op.y,
+      progress: 0,
+      speed: 0.008 + Math.random() * 0.006,
+      color: OUTPUTS[oi].color,
+      fromInput: -1, toOutput: oi,
+      size: 2 + Math.random() * 2,
+      alive: true,
+    });
+  }
+
+  // ── Curved path for particles ──────────────────────────────────────────
+  function curveLerp(sx: number, sy: number, ex: number, ey: number, t: number, curveDir: number) {
+    const midX = (sx + ex) / 2;
+    const midY = (sy + ey) / 2 + curveDir * 40 * Math.sin(t * Math.PI);
+    const t2 = t;
+    const a = (1 - t2) * (1 - t2);
+    const b = 2 * (1 - t2) * t2;
+    const c = t2 * t2;
+    return {
+      x: a * sx + b * midX + c * ex,
+      y: a * sy + b * midY + c * ey,
+    };
+  }
+
+  // ── Draw node (circle + icon + label) ──────────────────────────────────
+  function drawNode(x: number, y: number, label: string, color: string, icon: string, hovered: boolean, radius: number) {
+    const r = hovered ? radius + 4 : radius;
+
+    // Glow
+    if (hovered) {
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r * 2.5);
+      g.addColorStop(0, color + '30');
+      g.addColorStop(1, 'transparent');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(x, y, r * 2.5, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Background circle
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = hovered ? color + '25' : 'rgba(6,7,18,0.85)';
+    ctx.fill();
+    ctx.strokeStyle = hovered ? color : color + '50';
+    ctx.lineWidth = hovered ? 2 : 1;
+    ctx.stroke();
+
+    // Icon
+    drawIcon(x, y, icon, r * 0.9, hovered ? color : color + 'cc');
+
+    // Label
+    ctx.font = '600 11px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = hovered ? '#fff' : 'rgba(255,255,255,0.7)';
+    const lines = label.split('\n');
+    lines.forEach((line, li) => {
+      ctx.fillText(line, x, y + r + 16 + li * 14);
+    });
+  }
+
+  // ── Draw connection lines ──────────────────────────────────────────────
+  function drawConnection(sx: number, sy: number, ex: number, ey: number, color: string, highlighted: boolean) {
+    ctx.save();
+    ctx.beginPath();
+    const cpx = (sx + ex) / 2;
+    ctx.moveTo(sx, sy);
+    ctx.quadraticCurveTo(cpx, sy, ex, ey);
+    ctx.strokeStyle = highlighted ? color + '40' : color + '12';
+    ctx.lineWidth = highlighted ? 2 : 1;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // ── Engine (centre) ────────────────────────────────────────────────────
+  function drawEngine(t: number, hoverAny: boolean) {
+    const { x, y } = getEnginePos();
+    const r = 44;
+
+    // Outer glow
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r * 3);
+    g.addColorStop(0, 'rgba(249,115,22,0.12)');
+    g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(x, y, r * 3, 0, Math.PI * 2); ctx.fill();
+
+    // Spinning ring
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(t * 0.5);
+    ctx.beginPath();
+    ctx.arc(0, 0, r + 8, 0, Math.PI * 1.2);
+    ctx.strokeStyle = 'rgba(249,115,22,0.3)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, 0, r + 8, Math.PI, Math.PI * 2.2);
+    ctx.strokeStyle = 'rgba(249,115,22,0.15)';
+    ctx.stroke();
+    ctx.restore();
+
+    // Main circle
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(6,7,18,0.9)';
+    ctx.fill();
+    ctx.strokeStyle = '#f97316';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Text
+    ctx.font = 'bold 13px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#f97316';
+    ctx.fillText('AutoPilot', x, y - 6);
+    ctx.font = '10px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.fillText('ENGINE', x, y + 10);
+  }
+
+  // ── Main render ────────────────────────────────────────────────────────
+  function render(time: number) {
+    requestAnimationFrame(render);
+    const t = time * 0.001;
+    ctx.clearRect(0, 0, W, H);
+
+    // Subtle grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.02)';
+    ctx.lineWidth = 0.5;
+    for (let gx = 0; gx < W; gx += 40) {
+      ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke();
+    }
+    for (let gy = 0; gy < H; gy += 40) {
+      ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+    }
+
+    const engine = getEnginePos();
+
+    // Hit testing
+    hoveredInput = -1;
+    hoveredOutput = -1;
+    for (let i = 0; i < INPUTS.length; i++) {
+      const p = getInputPos(i);
+      if (Math.hypot(mx - p.x, my - p.y) < 34) hoveredInput = i;
+    }
+    for (let i = 0; i < OUTPUTS.length; i++) {
+      const p = getOutputPos(i);
+      if (Math.hypot(mx - p.x, my - p.y) < 34) hoveredOutput = i;
+    }
+
+    // Draw connections (input → engine)
+    for (let i = 0; i < INPUTS.length; i++) {
+      const p = getInputPos(i);
+      const hl = hoveredInput === i;
+      drawConnection(p.x + 24, p.y, engine.x - 44, engine.y, INPUTS[i].color, hl);
+    }
+
+    // Draw connections (engine → output)
+    for (let i = 0; i < OUTPUTS.length; i++) {
+      const p = getOutputPos(i);
+      const hl = hoveredOutput === i;
+      drawConnection(engine.x + 44, engine.y, p.x - 24, p.y, OUTPUTS[i].color, hl);
+    }
+
+    // Spawn particles
+    if (t - lastSpawn > 0.15) {
+      spawnParticle(t);
+      lastSpawn = t;
+    }
+
+    // Update & draw particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.progress += p.speed;
+      if (p.progress >= 1) { particles.splice(i, 1); continue; }
+
+      let pos;
+      if (p.fromInput >= 0) {
+        const ip = getInputPos(p.fromInput);
+        pos = curveLerp(ip.x, ip.y, p.tx, p.ty, p.progress, (p.fromInput % 2 === 0 ? -1 : 1));
+      } else {
+        const op = getOutputPos(p.toOutput);
+        pos = curveLerp(p.x, p.y, op.x, op.y, p.progress, (p.toOutput % 2 === 0 ? 1 : -1));
+      }
+
+      const alpha = p.progress < 0.1 ? p.progress / 0.1
+                   : p.progress > 0.85 ? (1 - p.progress) / 0.15
+                   : 1;
+
+      // Highlight if hovered
+      let isHighlighted = false;
+      if (hoveredInput >= 0 && p.fromInput === hoveredInput) isHighlighted = true;
+      if (hoveredOutput >= 0 && p.toOutput === hoveredOutput) isHighlighted = true;
+
+      ctx.globalAlpha = alpha * (isHighlighted ? 1 : 0.6);
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, p.size * (isHighlighted ? 1.5 : 1), 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+
+      // Trail
+      if (isHighlighted) {
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, p.size * 3, 0, Math.PI * 2);
+        ctx.fillStyle = p.color + '15';
+        ctx.fill();
+      }
+
+      ctx.globalAlpha = 1;
+    }
+
+    // Engine
+    drawEngine(t, hoveredInput >= 0 || hoveredOutput >= 0);
+
+    // Input nodes
+    for (let i = 0; i < INPUTS.length; i++) {
+      const p = getInputPos(i);
+      drawNode(p.x, p.y, INPUTS[i].label, INPUTS[i].color, INPUTS[i].icon, hoveredInput === i, 26);
+    }
+
+    // Output nodes
+    for (let i = 0; i < OUTPUTS.length; i++) {
+      const p = getOutputPos(i);
+      drawNode(p.x, p.y, OUTPUTS[i].label, OUTPUTS[i].color, OUTPUTS[i].icon, hoveredOutput === i, 26);
+    }
+
+    // "INPUTS" and "OUTPUTS" labels
+    ctx.font = '600 10px -apple-system, sans-serif';
+    ctx.letterSpacing = '0.1em';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.fillText('I N P U T S', 70, 26);
+    ctx.fillText('O U T P U T S', W - 70, 26);
+
+    // Keep particle count manageable
+    while (particles.length > 200) particles.shift();
+  }
+
+  requestAnimationFrame(render);
+})();
+</script>
