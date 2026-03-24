@@ -32,44 +32,36 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
           <ProductSection productIndex={0} flip={false} />
         </div>
       </div>
-      <div class="product-card" data-product="1">
-        <canvas class="product-bg" aria-hidden="true"></canvas>
-        <div class="product-card-content">
-          <section class="section ps-section relative overflow-hidden" style="--product-color: #8b5cf6;">
-            <div class="absolute inset-0 pointer-events-none" style="background: radial-gradient(ellipse 60% 50% at 20% 50%, #8b5cf60d 0%, transparent 70%);" aria-hidden="true"></div>
-            <div class="section-divider absolute top-0 left-0 right-0" aria-hidden="true"></div>
-            <div class="container relative z-10">
-              <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 xl:gap-20 items-center">
-                <div class="ps-info flex flex-col order-1 lg:order-2 lg:col-start-2">
-                  <div class="flex items-center gap-3 mb-6">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: #8b5cf618; border: 1px solid #8b5cf628; color: #8b5cf6;" aria-hidden="true">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M2 6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1l-8 5.5L2 6Z" fill="currentColor" opacity="0.25"/>
-                        <path d="M2 6.5V16a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V6.5L9 12 2 6.5Z" fill="currentColor" opacity="0.1"/>
-                      </svg>
-                    </div>
-                    <div>
-                      <p class="text-xs font-semibold uppercase tracking-widest" style="color: #8b5cf6;">PelloReach</p>
-                      <p class="text-xs text-zinc-500">Email outreach at massive scale</p>
-                    </div>
-                  </div>
-                  <h2 class="text-headline text-white mb-5" style="white-space: pre-line;">Land in the inbox.&#10;Not spam.</h2>
-                  <p class="text-body-lg text-zinc-400 mb-8 leading-relaxed">Cold outreach fails because of deliverability. PelloReach solves that with 500+ warmed domains, intelligent lead finding, and AI-personalised sequences that actually get replies. No blacklists. No spam folders. Just conversations with the right people.</p>
-                  <ul class="flex flex-wrap gap-2 mb-10 list-none m-0 p-0" role="list">
-                    <li class="feature-pill" style="background: #8b5cf60d; color: #8b5cf6; border-color: #8b5cf625;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>500+ pre-warmed domains</li>
-                    <li class="feature-pill" style="background: #8b5cf60d; color: #8b5cf6; border-color: #8b5cf625;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>AI-personalised sequences</li>
-                    <li class="feature-pill" style="background: #8b5cf60d; color: #8b5cf6; border-color: #8b5cf625;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Inbox placement technology</li>
-                    <li class="feature-pill" style="background: #8b5cf60d; color: #8b5cf6; border-color: #8b5cf625;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Automated lead discovery</li>
-                  </ul>
-                  <a href="https://pelloreach.com" target="_blank" rel="noopener noreferrer" class="btn-primary self-start" style="background: linear-gradient(135deg, #8b5cf6 0%, #8b5cf6cc 100%);">
-                    Explore PelloReach
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  </a>
-                </div>
-                <!-- No ps-visual — reach canvas IS the visual -->
+      <div class="product-card reach-card" data-product="1">
+        <div class="reach-layout">
+          <!-- Left: canvas -->
+          <div class="reach-canvas-col">
+            <canvas class="product-bg" aria-hidden="true"></canvas>
+          </div>
+          <!-- Right: text -->
+          <div class="reach-text ps-info flex flex-col" style="--product-color:#8b5cf6;">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:#8b5cf618;border:1px solid #8b5cf628;color:#8b5cf6;" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M2 6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1l-8 5.5L2 6Z" fill="currentColor" opacity="0.25"/><path d="M2 6.5V16a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V6.5L9 12 2 6.5Z" fill="currentColor" opacity="0.1"/></svg>
+              </div>
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-widest" style="color:#8b5cf6;">PelloReach</p>
+                <p class="text-xs text-zinc-500">Email outreach at massive scale</p>
               </div>
             </div>
-          </section>
+            <h2 class="text-headline text-white mb-5" style="white-space:pre-line;">Land in the inbox.&#10;Not spam.</h2>
+            <p class="text-body-lg text-zinc-400 mb-8 leading-relaxed">Cold outreach fails because of deliverability. PelloReach solves that with 500+ warmed domains, intelligent lead finding, and AI-personalised sequences that actually get replies. No blacklists. No spam folders. Just conversations with the right people.</p>
+            <ul class="flex flex-wrap gap-2 mb-10 list-none m-0 p-0" role="list">
+              <li class="feature-pill" style="background:#8b5cf60d;color:#8b5cf6;border-color:#8b5cf625;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>500+ pre-warmed domains</li>
+              <li class="feature-pill" style="background:#8b5cf60d;color:#8b5cf6;border-color:#8b5cf625;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>AI-personalised sequences</li>
+              <li class="feature-pill" style="background:#8b5cf60d;color:#8b5cf6;border-color:#8b5cf625;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Inbox placement technology</li>
+              <li class="feature-pill" style="background:#8b5cf60d;color:#8b5cf6;border-color:#8b5cf625;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Automated lead discovery</li>
+            </ul>
+            <a href="https://pelloreach.com" target="_blank" rel="noopener noreferrer" class="btn-primary self-start" style="background:linear-gradient(135deg,#8b5cf6 0%,#8b5cf6cc 100%);">
+              Explore PelloReach
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+          </div>
         </div>
       </div>
       <div class="product-card" data-product="2">
@@ -459,16 +451,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     -webkit-backdrop-filter: blur(8px) saturate(1.1);
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
   }
-  /* PelloReach desktop: hide the browser panel (canvas is the visual) */
-  @media (min-width: 1024px) {
-    .product-card[data-product="1"] .product-visual-panel {
-      display: none !important;
-    }
-    .product-card[data-product="1"] .ps-visual {
-      display: none !important;
-    }
-    /* PelloSocial desktop: handled by soc-layout grid */
-  }
+  /* PelloReach + PelloSocial desktop: handled by reach-layout / soc-layout grids */
   /* Tinted glass box around description text for ALL product cards */
   .product-card .ps-info .text-body-lg {
     backdrop-filter: blur(12px) saturate(1.2);
@@ -610,6 +593,44 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     -webkit-backdrop-filter: blur(6px);
   }
 
+  /* ── PelloReach two-column layout ──────────────────────────────────────── */
+  .reach-card { overflow: hidden; }
+  .reach-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 480px;
+    align-items: stretch;
+  }
+  .reach-canvas-col {
+    position: relative;
+    overflow: hidden;
+  }
+  .reach-canvas-col .product-bg {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    opacity: 1 !important;
+  }
+  .reach-text {
+    padding: 3rem 3rem 3rem 2.5rem;
+    position: relative;
+    z-index: 2;
+  }
+  @media (max-width: 1023px) {
+    .reach-layout {
+      grid-template-columns: 1fr;
+    }
+    .reach-text {
+      padding: 2rem 1.5rem 1.5rem;
+      order: 1;
+    }
+    .reach-canvas-col {
+      height: 340px;
+      order: 2;
+    }
+  }
+
   /* ── PelloSocial two-column layout ─────────────────────────────────────── */
   .soc-card { overflow: hidden; }
   .soc-layout {
@@ -653,42 +674,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     #soc-hud-glass { display: none !important; }
   }
 
-  /* Mobile: PelloReach + PelloSocial — canvas below text, standard panel stays hidden */
-  @media (max-width: 1023px) {
-    #soc-hud-glass { display: none !important; }
-
-    /* Stack card as column */
-    .product-card[data-product="1"],
-    .product-card[data-product="3"] {
-      display: flex;
-      flex-direction: column;
-    }
-    /* Text content on top */
-    .product-card[data-product="1"] .product-card-content,
-    .product-card[data-product="3"] .product-card-content {
-      order: 1;
-      position: relative;
-      z-index: 2;
-    }
-    /* Canvas pulled below text */
-    .product-card[data-product="1"] .product-bg,
-    .product-card[data-product="3"] .product-bg {
-      order: 2;
-      position: relative !important;
-      inset: auto !important;
-      width: 100% !important;
-      height: 380px !important;
-      opacity: 1 !important;
-      flex-shrink: 0;
-      border-radius: 0 0 1.1rem 1.1rem;
-      display: block !important;
-    }
-    /* Keep standard ps-visual panels hidden — globe/reach canvas IS the visual */
-    .product-card[data-product="1"] .ps-visual,
-    .product-card[data-product="3"] .ps-visual {
-      display: none !important;
-    }
-  }
+  /* Mobile layout for Reach+Social handled by reach-layout / soc-layout CSS above */
 </style>
 
 <script>
@@ -1401,7 +1387,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
   function initReach(w: number, h: number): Record<string, unknown> {
     const NC = 15, NR = 12;
     const VP_Y = h * 0.12, BOT_Y = h * 0.96, HALF_W = w * 0.32;
-    const GRID_CX = w < 600 ? w * 0.50 : w * 0.72; // center of grid — right half on desktop, centred on mobile
+    const GRID_CX = w * 0.50; // canvas is its own column — always centred
     const total = (NC - 1) * (NR - 1);
     const cells: ReachCell[] = Array.from({ length: total }, reachGenCell);
     const particles: ReachParticle[] = Array.from({ length: 22 }, () => ({
@@ -2343,7 +2329,9 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     const bgCanvas = card.querySelector<HTMLCanvasElement>('.product-bg')!;
     const bgCtx = bgCanvas.getContext('2d')!;
     const halfDpr = Math.max(1.0, (window.devicePixelRatio||1) * 1.0);
-    const sizeEl = i === 3 ? (card.querySelector('.soc-canvas-col') as HTMLElement || card) : card;
+    const sizeEl = i === 3 ? (card.querySelector('.soc-canvas-col') as HTMLElement || card)
+                 : i === 1 ? (card.querySelector('.reach-canvas-col') as HTMLElement || card)
+                 : card;
     const rect = sizeEl.getBoundingClientRect();
     const cw = Math.round(rect.width) || 800;
     const ch = Math.round(rect.height) || 400;
@@ -2363,11 +2351,11 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
 
     // Resize observer — watch soc-canvas-col for product 3, canvas for product 1, card otherwise
     const roTarget = i === 3 ? (card.querySelector('.soc-canvas-col') as HTMLElement || card)
-                   : i === 1 ? bgCanvas
+                   : i === 1 ? (card.querySelector('.reach-canvas-col') as HTMLElement || card)
                    : card;
     new ResizeObserver(() => {
       const targetEl = i === 3 ? (card.querySelector('.soc-canvas-col') as HTMLElement || card)
-                     : i === 1 ? bgCanvas
+                     : i === 1 ? (card.querySelector('.reach-canvas-col') as HTMLElement || card)
                      : card;
       const nRect = targetEl.getBoundingClientRect();
       const nw = Math.round(nRect.width) || cw;
