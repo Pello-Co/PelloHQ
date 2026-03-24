@@ -1,0 +1,693 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Memory Base Neural Map | Pello" description="PelloPublish builds a comprehensive Memory Base from your website — storing 37 types of business intelligence across 10 categories. Every piece of content draws from this knowledge graph, making everything uniquely yours.">
+  <Header />
+  <main id="main-content">
+    <section class="pub-section" aria-labelledby="pub-headline">
+      <div class="pub-layout">
+        <div class="pub-text">
+          <span class="pub-badge">PelloPublish</span>
+          <h1 id="pub-headline">37 Intelligence Types. One Living Brain.</h1>
+          <p>PelloPublish builds a comprehensive Memory Base from your website — storing 37 types of business intelligence across 10 categories. Every piece of content draws from this knowledge graph, making everything uniquely yours.</p>
+          <ul class="pub-pills" role="list">
+            <li>37 Intelligence Types</li>
+            <li>10 Categories</li>
+            <li>Brand Voice</li>
+            <li>Competitor Analysis</li>
+          </ul>
+        </div>
+        <div class="pub-canvas-col">
+          <canvas id="pub-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .pub-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .pub-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .pub-layout { grid-template-columns: 1fr; } }
+  .pub-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .pub-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #f97316; width: fit-content; }
+  .pub-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .pub-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .pub-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pub-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .pub-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #pub-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: crosshair; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface NodeDef {
+  label: string;
+  category: number;
+  importance: number; // 0–1, affects radius
+}
+
+interface NeuralNode {
+  id: number;
+  label: string;
+  category: number;
+  importance: number;
+  // Logical position (0–1 space, mapped to canvas)
+  lx: number;
+  ly: number;
+  // Canvas position (computed)
+  x: number;
+  y: number;
+  // Oscillation
+  oscPhase: number;
+  oscAmpX: number;
+  oscAmpY: number;
+  oscSpeed: number;
+  // Radius
+  baseRadius: number;
+  radius: number;
+  radiusTarget: number;
+  // Glow / alpha
+  glow: number;
+  glowTarget: number;
+  // Label visibility
+  labelAlpha: number;
+  labelAlphaTarget: number;
+  // "Data received" pulse ring
+  pulseRadius: number;
+  pulseAlpha: number;
+  pulsing: boolean;
+}
+
+interface Connection {
+  a: number;
+  b: number;
+}
+
+interface TravelPulse {
+  connIndex: number;
+  t: number;        // 0–1 along the connection
+  speed: number;
+  alpha: number;
+  direction: 1 | -1;
+  color: string;
+}
+
+// ─── Intelligence Data ────────────────────────────────────────────────────────
+
+// 10 categories, 37 nodes total
+// Each entry: [label, category (0-indexed), importance]
+const NODE_DEFS: NodeDef[] = [
+  // 0 Brand Identity (5)
+  { label: 'Brand Voice',    category: 0, importance: 0.9 },
+  { label: 'Visual Style',   category: 0, importance: 0.7 },
+  { label: 'Tone',           category: 0, importance: 0.75 },
+  { label: 'Brand Values',   category: 0, importance: 0.8 },
+  { label: 'Tagline',        category: 0, importance: 0.65 },
+
+  // 1 Audience (5)
+  { label: 'Pain Points',    category: 1, importance: 0.95 },
+  { label: 'Demographics',   category: 1, importance: 0.8 },
+  { label: 'Job Titles',     category: 1, importance: 0.7 },
+  { label: 'Buying Triggers',category: 1, importance: 0.85 },
+  { label: 'Objections',     category: 1, importance: 0.75 },
+
+  // 2 Products (5)
+  { label: 'Core Features',  category: 2, importance: 0.9 },
+  { label: 'Pricing',        category: 2, importance: 0.8 },
+  { label: 'USPs',           category: 2, importance: 0.95 },
+  { label: 'Use Cases',      category: 2, importance: 0.85 },
+  { label: 'Competitors',    category: 2, importance: 0.75 },
+
+  // 3 Content (4)
+  { label: 'Cornerstone Pages', category: 3, importance: 0.8 },
+  { label: 'Keywords',       category: 3, importance: 0.85 },
+  { label: 'Content Gaps',   category: 3, importance: 0.9 },
+  { label: 'Top Posts',      category: 3, importance: 0.75 },
+
+  // 4 SEO (4)
+  { label: 'Domain Authority',category: 4, importance: 0.85 },
+  { label: 'Backlinks',      category: 4, importance: 0.8 },
+  { label: 'Ranking Keywords',category: 4, importance: 0.9 },
+  { label: 'Search Intent',  category: 4, importance: 0.75 },
+
+  // 5 Social (4)
+  { label: 'Platforms',      category: 5, importance: 0.7 },
+  { label: 'Post Frequency', category: 5, importance: 0.65 },
+  { label: 'Best Performers',category: 5, importance: 0.8 },
+  { label: 'Hashtags',       category: 5, importance: 0.6 },
+
+  // 6 Competitors (4)
+  { label: 'Comp Names',     category: 6, importance: 0.8 },
+  { label: 'Positioning',    category: 6, importance: 0.85 },
+  { label: 'Comp Content',   category: 6, importance: 0.75 },
+  { label: 'Gaps',           category: 6, importance: 0.9 },
+
+  // 7 News (3)
+  { label: 'Industry Topics',category: 7, importance: 0.7 },
+  { label: 'Trending Themes',category: 7, importance: 0.75 },
+  { label: 'News Sources',   category: 7, importance: 0.6 },
+
+  // 8 Customers (3)
+  { label: 'Testimonials',   category: 8, importance: 0.85 },
+  { label: 'Case Studies',   category: 8, importance: 0.9 },
+  { label: 'Industries Served',category: 8, importance: 0.75 },
+
+  // 9 Goals (3) — total: 5+5+5+4+4+4+4+3+3+3 = 40... trim to 37
+  { label: 'Growth Targets', category: 9, importance: 0.9 },
+  { label: 'Campaign KPIs',  category: 9, importance: 0.85 },
+  { label: 'Content Calendar',category: 9, importance: 0.8 },
+];
+
+// Cluster center positions in 0–1 space (rough brain-like layout)
+const CLUSTER_CENTERS: [number, number][] = [
+  [0.38, 0.28],  // 0 Brand Identity — top-left
+  [0.62, 0.22],  // 1 Audience — top-right
+  [0.78, 0.42],  // 2 Products — right
+  [0.70, 0.65],  // 3 Content — bottom-right
+  [0.52, 0.78],  // 4 SEO — bottom-center
+  [0.30, 0.72],  // 5 Social — bottom-left
+  [0.18, 0.52],  // 6 Competitors — left
+  [0.25, 0.35],  // 7 News — upper-left
+  [0.50, 0.50],  // 8 Customers — center
+  [0.72, 0.35],  // 9 Goals — upper-right
+];
+
+// Warm orange/amber palette per category
+const CATEGORY_COLORS: string[] = [
+  '#f97316', // orange — Brand Identity
+  '#fb923c', // orange-400 — Audience
+  '#fbbf24', // amber — Products
+  '#f59e0b', // amber-500 — Content
+  '#e8750a', // deeper orange — SEO
+  '#fd8a3c', // light orange — Social
+  '#ff6b35', // red-orange — Competitors
+  '#fca843', // golden — News
+  '#ef8c2d', // warm amber — Customers
+  '#f6a623', // gold — Goals
+];
+
+// ─── Connection Map ───────────────────────────────────────────────────────────
+// Connect nodes within same category + a few cross-category bridges
+
+function buildConnections(nodes: NeuralNode[]): Connection[] {
+  const conns: Connection[] = [];
+  const connected = new Set<string>();
+
+  const key = (a: number, b: number) => `${Math.min(a,b)}-${Math.max(a,b)}`;
+
+  // Within-category
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      if (nodes[i]!.category === nodes[j]!.category) {
+        const k = key(i, j);
+        if (!connected.has(k)) {
+          connected.add(k);
+          conns.push({ a: i, b: j });
+        }
+      }
+    }
+  }
+
+  // Cross-category bridges (hand-picked logical links)
+  const bridges: [number, number][] = [
+    [0, 5],   // Brand Voice → Pain Points
+    [5, 10],  // Pain Points → Core Features
+    [10, 12], // Core Features → USPs
+    [12, 17], // USPs → Content Gaps
+    [17, 21], // Content Gaps → Ranking Keywords
+    [21, 15], // Ranking Keywords → Cornerstone Pages
+    [1, 6],   // Visual Style → Demographics
+    [6, 11],  // Demographics → Pricing
+    [13, 28], // Use Cases → Comp Names
+    [28, 30], // Comp Names → Gaps
+    [30, 16], // Gaps → Keywords
+    [16, 19], // Keywords → Domain Authority
+    [33, 34], // Testimonials → Case Studies
+    [34, 8],  // Case Studies → Buying Triggers
+    [8, 36],  // Buying Triggers → Growth Targets
+    [36, 21], // Growth Targets → Ranking Keywords
+    [22, 23], // Platforms → Post Frequency
+    [23, 24], // Post Frequency → Best Performers
+    [24, 17], // Best Performers → Content Gaps
+    [31, 32], // Industry Topics → Trending Themes
+    [32, 17], // Trending Themes → Content Gaps
+    [2, 3],   // Tone → Brand Values
+    [3, 36],  // Brand Values → Growth Targets
+    [37, 36], // Campaign KPIs → Growth Targets
+    [38, 37], // Content Calendar → Campaign KPIs
+  ];
+
+  for (const [a, b] of bridges) {
+    if (a < nodes.length && b < nodes.length) {
+      const k = key(a, b);
+      if (!connected.has(k)) {
+        connected.add(k);
+        conns.push({ a, b });
+      }
+    }
+  }
+
+  return conns;
+}
+
+// ─── Canvas Setup ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('pub-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const colEl = canvas.parentElement as HTMLElement;
+
+let W = 0;
+let H = 0;
+let dpr = 1;
+let mouse = { x: -9999, y: -9999 };
+let frame = 0;
+
+const nodes: NeuralNode[] = [];
+const connections: Connection[] = [];
+const pulses: TravelPulse[] = [];
+
+// ─── Build Nodes ──────────────────────────────────────────────────────────────
+
+function buildNodes(): void {
+  nodes.length = 0;
+
+  for (let i = 0; i < NODE_DEFS.length; i++) {
+    const def = NODE_DEFS[i]!;
+    const [cx, cy] = CLUSTER_CENTERS[def.category]!;
+
+    // Distribute nodes within cluster in a small circle
+    const nodeInCat = NODE_DEFS.slice(0, i).filter(n => n.category === def.category).length;
+    const totalInCat = NODE_DEFS.filter(n => n.category === def.category).length;
+    const angle = (nodeInCat / totalInCat) * Math.PI * 2 - Math.PI / 2;
+    const spread = 0.06 + (1 - def.importance) * 0.02;
+
+    const lx = cx + Math.cos(angle) * spread;
+    const ly = cy + Math.sin(angle) * spread;
+
+    const node: NeuralNode = {
+      id: i,
+      label: def.label,
+      category: def.category,
+      importance: def.importance,
+      lx: Math.max(0.05, Math.min(0.95, lx)),
+      ly: Math.max(0.05, Math.min(0.95, ly)),
+      x: 0,
+      y: 0,
+      oscPhase: Math.random() * Math.PI * 2,
+      oscAmpX: 1.5 + Math.random() * 1.5,
+      oscAmpY: 1.5 + Math.random() * 1.5,
+      oscSpeed: 0.003 + Math.random() * 0.003,
+      baseRadius: 4 + def.importance * 5,
+      radius: 4 + def.importance * 5,
+      radiusTarget: 4 + def.importance * 5,
+      glow: 0.4,
+      glowTarget: 0.4,
+      labelAlpha: 0,
+      labelAlphaTarget: 0,
+      pulseRadius: 0,
+      pulseAlpha: 0,
+      pulsing: false,
+    };
+    nodes.push(node);
+  }
+
+  // Recompute connections
+  connections.length = 0;
+  const built = buildConnections(nodes);
+  for (const c of built) connections.push(c);
+}
+
+function layoutNodes(): void {
+  const PAD = 40;
+  const usableW = W - PAD * 2;
+  const usableH = H - PAD * 2;
+  for (const node of nodes) {
+    node.x = PAD + node.lx * usableW;
+    node.y = PAD + node.ly * usableH;
+  }
+}
+
+// ─── Resize ───────────────────────────────────────────────────────────────────
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = colEl.getBoundingClientRect();
+  W = rect.width;
+  H = rect.height;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+  if (nodes.length === 0) buildNodes();
+  layoutNodes();
+}
+
+// ─── Spawn Pulse ──────────────────────────────────────────────────────────────
+
+function spawnPulse(nodeIndex: number): void {
+  // Find connections involving this node
+  for (let i = 0; i < connections.length; i++) {
+    const c = connections[i]!;
+    if (c.a === nodeIndex || c.b === nodeIndex) {
+      if (Math.random() < 0.5) {
+        const node = nodes[nodeIndex]!;
+        const colorBase = CATEGORY_COLORS[node.category]!;
+        pulses.push({
+          connIndex: i,
+          t: c.a === nodeIndex ? 0 : 1,
+          speed: 0.004 + Math.random() * 0.006,
+          alpha: 0.9,
+          direction: c.a === nodeIndex ? 1 : -1,
+          color: colorBase,
+        });
+      }
+    }
+  }
+
+  // Trigger ring pulse on node
+  const node = nodes[nodeIndex]!;
+  if (!node.pulsing) {
+    node.pulsing = true;
+    node.pulseRadius = node.baseRadius;
+    node.pulseAlpha = 0.8;
+  }
+}
+
+// ─── Draw Connection ──────────────────────────────────────────────────────────
+
+function drawConnection(conn: Connection, alphaMult: number): void {
+  const na = nodes[conn.a]!;
+  const nb = nodes[conn.b]!;
+
+  ctx.beginPath();
+  ctx.moveTo(na.x, na.y);
+
+  // Slight curve for organic feel
+  const mx = (na.x + nb.x) / 2 + (Math.random() - 0.5) * 0;
+  const my = (na.y + nb.y) / 2 + (Math.random() - 0.5) * 0;
+  ctx.lineTo(nb.x, nb.y);
+
+  const catA = na.category;
+  const [rA, gA, bA] = hexToRgb(CATEGORY_COLORS[catA]!);
+  ctx.strokeStyle = `rgba(${rA},${gA},${bA},${0.1 * alphaMult})`;
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+
+  void mx; void my;
+}
+
+function hexToRgb(hex: string): [number, number, number] {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return [r, g, b];
+}
+
+// ─── Draw Node ────────────────────────────────────────────────────────────────
+
+function drawNode(node: NeuralNode): void {
+  const color = CATEGORY_COLORS[node.category]!;
+  const [r, g, b] = hexToRgb(color);
+  const g2 = node.glow;
+
+  // Outer glow
+  if (g2 > 0.05) {
+    const glowR = node.radius * (2.5 + g2 * 3);
+    const grad = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, glowR);
+    grad.addColorStop(0, `rgba(${r},${g},${b},${g2 * 0.35})`);
+    grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, glowR, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+  }
+
+  // Pulse ring
+  if (node.pulsing && node.pulseAlpha > 0.01) {
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, node.pulseRadius, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(${r},${g},${b},${node.pulseAlpha})`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  // Core circle
+  ctx.beginPath();
+  ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+  const coreGrad = ctx.createRadialGradient(node.x - node.radius * 0.3, node.y - node.radius * 0.3, 0, node.x, node.y, node.radius);
+  coreGrad.addColorStop(0, `rgba(${r},${g},${b},${0.55 + g2 * 0.45})`);
+  coreGrad.addColorStop(1, `rgba(${r},${g},${b},${0.25 + g2 * 0.3})`);
+  ctx.fillStyle = coreGrad;
+  ctx.fill();
+
+  // Bright center dot
+  ctx.beginPath();
+  ctx.arc(node.x, node.y, node.radius * 0.35, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(${r},${g},${b},${0.8 + g2 * 0.2})`;
+  ctx.fill();
+
+  // Label
+  if (node.labelAlpha > 0.02) {
+    const labelX = node.x + node.radius + 5;
+    const labelY = node.y;
+
+    ctx.font = `500 9.5px 'Courier New', monospace`;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+
+    // Label background pill
+    const tw = ctx.measureText(node.label).width;
+    const ph = 14;
+    const pw = tw + 10;
+    const px = labelX - 1;
+    const py = labelY - ph / 2;
+
+    ctx.beginPath();
+    ctx.roundRect(px, py, pw, ph, 3);
+    ctx.fillStyle = `rgba(6,7,18,${0.85 * node.labelAlpha})`;
+    ctx.fill();
+    ctx.strokeStyle = `rgba(${r},${g},${b},${0.3 * node.labelAlpha})`;
+    ctx.lineWidth = 0.75;
+    ctx.stroke();
+
+    ctx.fillStyle = `rgba(${r},${g},${b},${node.labelAlpha})`;
+    ctx.fillText(node.label, labelX + 4, labelY);
+  }
+}
+
+// ─── Draw Pulse ───────────────────────────────────────────────────────────────
+
+function drawPulse(pulse: TravelPulse): void {
+  const conn = connections[pulse.connIndex]!;
+  const na = nodes[conn.a]!;
+  const nb = nodes[conn.b]!;
+
+  const px = na.x + (nb.x - na.x) * pulse.t;
+  const py = na.y + (nb.y - na.y) * pulse.t;
+
+  const [r, g, b] = hexToRgb(pulse.color);
+
+  // Trail
+  const trailLen = 0.06;
+  const tBack = Math.max(0, pulse.t - trailLen * pulse.direction);
+  const bx = na.x + (nb.x - na.x) * tBack;
+  const by = na.y + (nb.y - na.y) * tBack;
+
+  const trailGrad = ctx.createLinearGradient(bx, by, px, py);
+  trailGrad.addColorStop(0, `rgba(${r},${g},${b},0)`);
+  trailGrad.addColorStop(1, `rgba(${r},${g},${b},${pulse.alpha * 0.6})`);
+  ctx.beginPath();
+  ctx.moveTo(bx, by);
+  ctx.lineTo(px, py);
+  ctx.strokeStyle = trailGrad;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Head dot
+  const headGrad = ctx.createRadialGradient(px, py, 0, px, py, 6);
+  headGrad.addColorStop(0, `rgba(${r},${g},${b},${pulse.alpha})`);
+  headGrad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+  ctx.beginPath();
+  ctx.arc(px, py, 6, 0, Math.PI * 2);
+  ctx.fillStyle = headGrad;
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(255,255,255,${pulse.alpha * 0.9})`;
+  ctx.fill();
+}
+
+// ─── Background ───────────────────────────────────────────────────────────────
+
+function drawBackground(): void {
+  // Deep center radial glow
+  const cxG = W * 0.5;
+  const cyG = H * 0.5;
+  const grd = ctx.createRadialGradient(cxG, cyG, 0, cxG, cyG, Math.max(W, H) * 0.6);
+  grd.addColorStop(0, 'rgba(249,115,22,0.04)');
+  grd.addColorStop(1, 'rgba(249,115,22,0)');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, W, H);
+}
+
+// ─── Category Labels ──────────────────────────────────────────────────────────
+
+const CATEGORY_NAMES = [
+  'Brand Identity', 'Audience', 'Products', 'Content', 'SEO',
+  'Social', 'Competitors', 'News', 'Customers', 'Goals',
+];
+
+function drawCategoryLabel(catIndex: number, alpha: number): void {
+  if (alpha < 0.02) return;
+  const [cx, cy] = CLUSTER_CENTERS[catIndex]!;
+  const PAD = 40;
+  const sx = PAD + cx * (W - PAD * 2);
+  const sy = PAD + cy * (H - PAD * 2) - 28;
+
+  const color = CATEGORY_COLORS[catIndex]!;
+  const [r, g, b] = hexToRgb(color);
+
+  ctx.font = `600 8px -apple-system, sans-serif`;
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = `rgba(${r},${g},${b},${alpha * 0.5})`;
+  ctx.fillText(CATEGORY_NAMES[catIndex]!.toUpperCase(), sx, sy);
+}
+
+// ─── Main Loop ────────────────────────────────────────────────────────────────
+
+const MOUSE_RADIUS = 100;
+let nextPulseFrame = 80;
+
+function tick(): void {
+  frame++;
+  ctx.clearRect(0, 0, W, H);
+  drawBackground();
+
+  // Mouse in canvas-local coords
+  const rect = canvas.getBoundingClientRect();
+  const mx = mouse.x - rect.left;
+  const my = mouse.y - rect.top;
+
+  // Update nodes
+  for (const node of nodes) {
+    // Oscillation
+    node.x = (40 + node.lx * (W - 80)) + Math.sin(node.oscPhase + frame * node.oscSpeed) * node.oscAmpX;
+    node.y = (40 + node.ly * (H - 80)) + Math.cos(node.oscPhase + frame * node.oscSpeed * 0.7) * node.oscAmpY;
+
+    // Proximity to mouse
+    const dist = Math.hypot(mx - node.x, my - node.y);
+    const near = dist < MOUSE_RADIUS;
+    const proximity = near ? 1 - dist / MOUSE_RADIUS : 0;
+
+    node.glowTarget = 0.3 + proximity * 0.7;
+    node.radiusTarget = node.baseRadius * (1 + proximity * 0.3);
+    node.labelAlphaTarget = near ? Math.min(1, proximity * 2) : 0;
+
+    node.glow += (node.glowTarget - node.glow) * 0.08;
+    node.radius += (node.radiusTarget - node.radius) * 0.1;
+    node.labelAlpha += (node.labelAlphaTarget - node.labelAlpha) * 0.1;
+
+    // Pulse ring decay
+    if (node.pulsing) {
+      node.pulseRadius += 1.2;
+      node.pulseAlpha *= 0.96;
+      if (node.pulseAlpha < 0.02) {
+        node.pulsing = false;
+        node.pulseRadius = 0;
+        node.pulseAlpha = 0;
+      }
+    }
+  }
+
+  // Random data pulse
+  if (frame >= nextPulseFrame) {
+    const rndNode = Math.floor(Math.random() * nodes.length);
+    spawnPulse(rndNode);
+    nextPulseFrame = frame + 80 + Math.floor(Math.random() * 80);
+  }
+
+  // Draw connections
+  for (const conn of connections) {
+    const na = nodes[conn.a]!;
+    const nb = nodes[conn.b]!;
+    const avgGlow = (na.glow + nb.glow) / 2;
+    drawConnection(conn, 0.6 + avgGlow * 2);
+  }
+
+  // Draw pulses
+  for (let i = pulses.length - 1; i >= 0; i--) {
+    const pulse = pulses[i]!;
+    drawPulse(pulse);
+    pulse.t += pulse.speed * pulse.direction;
+    pulse.alpha *= 0.993;
+
+    if (pulse.t <= 0 || pulse.t >= 1 || pulse.alpha < 0.05) {
+      pulses.splice(i, 1);
+    }
+  }
+
+  // Category labels (faint, always visible)
+  for (let c = 0; c < 10; c++) {
+    drawCategoryLabel(c, 0.7);
+  }
+
+  // Draw nodes
+  for (const node of nodes) {
+    drawNode(node);
+  }
+
+  requestAnimationFrame(tick);
+}
+
+// ─── Events ───────────────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+});
+
+canvas.addEventListener('mouseleave', () => {
+  mouse.x = -9999;
+  mouse.y = -9999;
+});
+
+// On click — trigger burst of pulses from nearest node
+canvas.addEventListener('click', (e: MouseEvent) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  let closest = 0;
+  let closestDist = Infinity;
+  for (let i = 0; i < nodes.length; i++) {
+    const d = Math.hypot(mx - nodes[i]!.x, my - nodes[i]!.y);
+    if (d < closestDist) {
+      closestDist = d;
+      closest = i;
+    }
+  }
+  // Burst: spawn multiple pulses
+  for (let b = 0; b < 4; b++) {
+    spawnPulse(closest);
+  }
+  nodes[closest]!.glowTarget = 1;
+});
+
+const ro = new ResizeObserver(() => { resize(); });
+ro.observe(colEl);
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+resize();
+tick();
+</script>

@@ -1,0 +1,604 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — AutoPilot Dashboard | Pello" description="AutoPilot mode scours the web for trending news relevant to your business, then generates and publishes content automatically — no human intervention needed.">
+  <Header />
+  <main id="main-content">
+    <section class="pub-section" aria-labelledby="pub-headline">
+      <div class="pub-layout">
+        <div class="pub-text">
+          <span class="pub-badge">PelloPublish</span>
+          <h1 id="pub-headline">Set It Once. Publish Forever.</h1>
+          <p>AutoPilot mode scours the web for trending news relevant to your business, then generates and publishes content automatically — no human intervention needed. Watch the pipeline process real-time news into polished, SEO-optimised articles.</p>
+          <ul class="pub-pills" role="list">
+            <li>Web Search AI</li>
+            <li>Auto-Schedule</li>
+            <li>3x/Week Default</li>
+            <li>SEO Optimised</li>
+          </ul>
+        </div>
+        <div class="pub-canvas-col">
+          <canvas id="pub-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .pub-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .pub-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .pub-layout { grid-template-columns: 1fr; } }
+  .pub-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .pub-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #f97316; width: fit-content; }
+  .pub-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .pub-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .pub-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pub-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .pub-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #pub-canvas { width: 100%; height: 100%; position: absolute; inset: 0; }
+
+  /* Pipeline tooltip */
+  .pipe-tooltip {
+    position: fixed;
+    background: rgba(10,10,20,0.95);
+    border: 1px solid rgba(249,115,22,0.35);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.85);
+    pointer-events: none;
+    z-index: 1000;
+    max-width: 180px;
+    line-height: 1.5;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .pipe-tooltip.visible { opacity: 1; }
+</style>
+
+<script>
+  interface NewsItem {
+    id: number;
+    headline: string;
+    x: number;
+    y: number;
+    alpha: number;
+    selected: boolean;
+    launched: boolean;
+    age: number;
+  }
+
+  interface PipelineDot {
+    id: number;
+    stageIndex: number;
+    progress: number; // 0–1 within current segment
+    speed: number;
+    alpha: number;
+  }
+
+  interface OutputCard {
+    id: number;
+    platform: string;
+    type: string;
+    title: string;
+    alpha: number;
+    age: number;
+  }
+
+  interface PipelineNode {
+    label: string;
+    x: number;
+    y: number;
+    glow: number; // 0–1
+    tooltip: string;
+  }
+
+  const HEADLINES = [
+    'OpenAI releases new model for enterprise use',
+    'SaaS churn rates hit 5-year high in Q3',
+    'Email marketing sees 40% uplift in B2B sectors',
+    'AI content tools reshape marketing teams',
+    'Venture funding for fintech startups rebounds',
+    'Remote work productivity reaches record high',
+    'Google updates core algorithm for helpful content',
+    'B2B buyers now prefer self-serve over sales calls',
+    'LinkedIn engagement surges for thought leaders',
+    'Automation cuts content costs by 60% for SMBs',
+    'Short-form video dominates social media spend',
+    'Search intent shifts as AI answers grow',
+    'Newsletter open rates up 28% year on year',
+    'Enterprise AI adoption triples since 2023',
+    'Content personalization drives 3x conversion lift',
+    'Social proof becomes #1 buying factor for SaaS',
+    'Organic search still drives 51% of web traffic',
+    'Marketing budgets shift toward owned channels',
+    'Programmatic SEO scales faster than link building',
+    'AI writing tools move from experiment to standard',
+    'TikTok overtakes YouTube for discovery in 18-34s',
+    'Zero-click searches reshape SEO strategy',
+    'Product-led growth outperforms sales-led in SMB',
+    'Data privacy rules reshape email list building',
+  ];
+
+  const PLATFORMS = ['Blog', 'LinkedIn', 'Twitter', 'Newsletter'];
+  const POST_TYPES = ['Article', 'Thread', 'Summary', 'Analysis', 'Opinion'];
+
+  const STAGE_TOOLTIPS: Record<string, string> = {
+    CRAWL: 'Discovers trending news and content signals across 500+ sources in real time.',
+    ANALYSE: 'Scores relevance to your business, audience, and SEO keywords.',
+    DRAFT: 'Generates a full draft using your brand voice and content guidelines.',
+    OPTIMISE: 'Applies SEO, readability, and engagement scoring before approval.',
+    PUBLISH: 'Schedules and posts to your connected platforms at the optimal time.',
+  };
+
+  const canvas = document.getElementById('pub-canvas') as HTMLCanvasElement;
+  const ctx = canvas.getContext('2d')!;
+
+  const tooltip = document.createElement('div');
+  tooltip.className = 'pipe-tooltip';
+  document.body.appendChild(tooltip);
+
+  let W = 0, H = 0;
+  let newsItems: NewsItem[] = [];
+  let dots: PipelineDot[] = [];
+  let outputCards: OutputCard[] = [];
+  let nodes: PipelineNode[] = [];
+  let nextId = 0;
+  let publishedCount = 0;
+  let lastSpawn = 0;
+  let hoveredNodeIndex = -1;
+  let animFrame = 0;
+
+  function resize() {
+    const rect = canvas.parentElement!.getBoundingClientRect();
+    W = rect.width;
+    H = Math.max(rect.height, 560);
+    canvas.width = W;
+    canvas.height = H;
+    buildNodes();
+  }
+
+  function buildNodes() {
+    const pipeY = H * 0.52;
+    const pipeLeft = W * 0.32;
+    const pipeRight = W * 0.72;
+    const gap = (pipeRight - pipeLeft) / 4;
+    const labels = ['CRAWL', 'ANALYSE', 'DRAFT', 'OPTIMISE', 'PUBLISH'];
+    nodes = labels.map((label, i) => ({
+      label,
+      x: pipeLeft + i * gap,
+      y: pipeY,
+      glow: 0,
+      tooltip: STAGE_TOOLTIPS[label],
+    }));
+  }
+
+  function spawnNewsItem() {
+    const feedRight = W * 0.28;
+    const slotH = 48;
+    const maxItems = 7;
+    const startY = H * 0.25;
+    const idx = newsItems.length % maxItems;
+    newsItems.push({
+      id: nextId++,
+      headline: HEADLINES[Math.floor(Math.random() * HEADLINES.length)],
+      x: feedRight,
+      y: startY + idx * (slotH + 6),
+      alpha: 0,
+      selected: false,
+      launched: false,
+      age: 0,
+    });
+    if (newsItems.length > maxItems) newsItems.shift();
+  }
+
+  function launchDot() {
+    // Select the oldest unselected, unlaunched item
+    const candidate = newsItems.find(n => !n.launched && !n.selected);
+    if (!candidate) return;
+    candidate.selected = true;
+    candidate.launched = true;
+    dots.push({
+      id: nextId++,
+      stageIndex: 0,
+      progress: 0,
+      speed: 0.008 + Math.random() * 0.004,
+      alpha: 1,
+    });
+  }
+
+  function spawnOutputCard() {
+    const platform = PLATFORMS[Math.floor(Math.random() * PLATFORMS.length)];
+    const type = POST_TYPES[Math.floor(Math.random() * POST_TYPES.length)];
+    const headline = HEADLINES[Math.floor(Math.random() * HEADLINES.length)];
+    outputCards.push({
+      id: nextId++,
+      platform,
+      type,
+      title: headline.length > 38 ? headline.slice(0, 38) + '…' : headline,
+      alpha: 0,
+      age: 0,
+    });
+    if (outputCards.length > 6) outputCards.shift();
+    publishedCount++;
+  }
+
+  function lerp(a: number, b: number, t: number) { return a + (b - a) * t; }
+
+  function drawNewsCard(item: NewsItem) {
+    const w = 130, h = 38;
+    const x = item.x - w;
+    const y = item.y;
+
+    ctx.save();
+    ctx.globalAlpha = item.alpha;
+
+    // Card background
+    ctx.fillStyle = item.selected ? 'rgba(249,115,22,0.18)' : 'rgba(255,255,255,0.05)';
+    ctx.strokeStyle = item.selected ? 'rgba(249,115,22,0.7)' : 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 1;
+    roundRect(ctx, x, y, w, h, 5);
+    ctx.fill();
+    ctx.stroke();
+
+    // Left accent border
+    ctx.fillStyle = item.selected ? '#f97316' : 'rgba(249,115,22,0.4)';
+    roundRect(ctx, x, y, 3, h, 2);
+    ctx.fill();
+
+    // Headline text
+    ctx.fillStyle = item.selected ? '#fff' : 'rgba(255,255,255,0.6)';
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    wrapText(ctx, item.headline, x + 8, y + 13, w - 12, 12);
+
+    if (item.selected) {
+      // Glow pulse
+      ctx.shadowColor = '#f97316';
+      ctx.shadowBlur = 8;
+      ctx.strokeStyle = 'rgba(249,115,22,0.8)';
+      ctx.lineWidth = 1.5;
+      roundRect(ctx, x, y, w, h, 5);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    ctx.restore();
+  }
+
+  function wrapText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxW: number, lineH: number) {
+    const words = text.split(' ');
+    let line = '';
+    let lineCount = 0;
+    for (const word of words) {
+      const testLine = line + word + ' ';
+      if (ctx.measureText(testLine).width > maxW && line.length > 0) {
+        ctx.fillText(line.trim(), x, y + lineCount * lineH);
+        line = word + ' ';
+        lineCount++;
+        if (lineCount >= 2) break;
+      } else {
+        line = testLine;
+      }
+    }
+    if (lineCount < 2) ctx.fillText(line.trim(), x, y + lineCount * lineH);
+  }
+
+  function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  function drawPipelineNode(node: PipelineNode, index: number) {
+    const w = 64, h = 32;
+    const x = node.x - w / 2;
+    const y = node.y - h / 2;
+    const isHovered = index === hoveredNodeIndex;
+    const glowAlpha = Math.max(node.glow, isHovered ? 0.9 : 0);
+
+    ctx.save();
+
+    // Glow halo
+    if (glowAlpha > 0.05) {
+      const grad = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, 48);
+      grad.addColorStop(0, `rgba(249,115,22,${0.35 * glowAlpha})`);
+      grad.addColorStop(1, 'rgba(249,115,22,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(node.x - 48, node.y - 48, 96, 96);
+    }
+
+    // Box bg
+    ctx.fillStyle = `rgba(249,115,22,${0.06 + 0.14 * glowAlpha})`;
+    ctx.strokeStyle = `rgba(249,115,22,${0.35 + 0.65 * glowAlpha})`;
+    ctx.lineWidth = glowAlpha > 0.5 ? 1.5 : 1;
+    roundRect(ctx, x, y, w, h, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    // Label
+    ctx.fillStyle = `rgba(255,255,255,${0.5 + 0.5 * glowAlpha})`;
+    ctx.font = `${600} 9px -apple-system, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(node.label, node.x, node.y);
+
+    ctx.restore();
+  }
+
+  function drawConnectors() {
+    if (nodes.length < 2) return;
+    ctx.save();
+    ctx.setLineDash([4, 5]);
+    ctx.strokeStyle = 'rgba(249,115,22,0.2)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < nodes.length - 1; i++) {
+      ctx.beginPath();
+      ctx.moveTo(nodes[i].x + 32, nodes[i].y);
+      ctx.lineTo(nodes[i + 1].x - 32, nodes[i + 1].y);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  function getDotPosition(dot: PipelineDot): { x: number; y: number } {
+    const totalSegments = nodes.length; // 0 = before first node, 1-4 = between nodes
+    if (dot.stageIndex === 0) {
+      // Traveling from news feed to first node
+      const startX = W * 0.28;
+      const startY = H * 0.35;
+      return {
+        x: lerp(startX, nodes[0].x, dot.progress),
+        y: lerp(startY, nodes[0].y, dot.progress),
+      };
+    } else if (dot.stageIndex < nodes.length) {
+      const from = nodes[dot.stageIndex - 1];
+      const to = nodes[dot.stageIndex];
+      return {
+        x: lerp(from.x, to.x, dot.progress),
+        y: lerp(from.y, to.y, dot.progress),
+      };
+    } else {
+      // After last node — traveling to output zone
+      const lastNode = nodes[nodes.length - 1];
+      return {
+        x: lerp(lastNode.x, W * 0.88, dot.progress),
+        y: lerp(lastNode.y, H * 0.4, dot.progress),
+      };
+    }
+  }
+
+  function drawDot(dot: PipelineDot) {
+    const pos = getDotPosition(dot);
+    ctx.save();
+    ctx.globalAlpha = dot.alpha;
+
+    // Glow
+    const grd = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, 8);
+    grd.addColorStop(0, 'rgba(249,115,22,0.9)');
+    grd.addColorStop(1, 'rgba(249,115,22,0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, 8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Core
+    ctx.fillStyle = '#f97316';
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawOutputCard(card: OutputCard, index: number) {
+    const cardW = W * 0.22;
+    const cardH = 50;
+    const startX = W * 0.78;
+    const startY = H * 0.22;
+    const x = startX;
+    const y = startY + index * (cardH + 8);
+
+    ctx.save();
+    ctx.globalAlpha = card.alpha;
+
+    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+    ctx.strokeStyle = 'rgba(249,115,22,0.25)';
+    ctx.lineWidth = 1;
+    roundRect(ctx, x, y, cardW, cardH, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    // Platform badge
+    ctx.fillStyle = 'rgba(249,115,22,0.2)';
+    roundRect(ctx, x + 8, y + 10, 48, 14, 3);
+    ctx.fill();
+    ctx.fillStyle = '#f97316';
+    ctx.font = '8px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(card.platform.toUpperCase(), x + 12, y + 13);
+
+    // Type
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '8px -apple-system, sans-serif';
+    ctx.fillText(card.type, x + 62, y + 13);
+
+    // Title
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.fillText(card.title, x + 8, y + 31);
+
+    ctx.restore();
+  }
+
+  function drawCounter() {
+    const label = `${publishedCount} articles published this week`;
+    const pad = 12;
+    ctx.save();
+    ctx.font = '600 11px -apple-system, sans-serif';
+    const tw = ctx.measureText(label).width;
+    const bx = W - tw - pad * 2 - 16;
+    const by = 16;
+    const bw = tw + pad * 2;
+    const bh = 26;
+
+    ctx.fillStyle = 'rgba(249,115,22,0.1)';
+    ctx.strokeStyle = 'rgba(249,115,22,0.35)';
+    ctx.lineWidth = 1;
+    roundRect(ctx, bx, by, bw, bh, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#f97316';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, bx + pad, by + bh / 2);
+    ctx.restore();
+  }
+
+  function drawSectionLabel(text: string, x: number, y: number) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(text, x, y);
+    ctx.restore();
+  }
+
+  let lastTime = 0;
+
+  function tick(ts: number) {
+    const dt = Math.min(ts - lastTime, 50) / 1000;
+    lastTime = ts;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Spawn news every 3s
+    if (ts - lastSpawn > 3000 || newsItems.length === 0) {
+      spawnNewsItem();
+      lastSpawn = ts;
+      setTimeout(launchDot, 400);
+    }
+
+    // Update and draw news items
+    for (const item of newsItems) {
+      item.age += dt;
+      if (!item.launched) item.alpha = Math.min(item.alpha + dt * 2, 1);
+      else item.alpha = Math.max(item.alpha - dt * 0.5, item.selected ? 0.4 : 0);
+      drawNewsCard(item);
+    }
+
+    // Section labels
+    drawSectionLabel('NEWS FEED', W * 0.14, H * 0.2);
+    drawSectionLabel('PIPELINE', W * 0.52, H * 0.2);
+    drawSectionLabel('PUBLISHED', W * 0.88, H * 0.2);
+
+    // Connectors
+    drawConnectors();
+
+    // Nodes — decay glow
+    for (const node of nodes) {
+      node.glow = Math.max(0, node.glow - dt * 1.2);
+      drawPipelineNode(node, nodes.indexOf(node));
+    }
+
+    // Dots
+    dots = dots.filter(d => d.alpha > 0.01);
+    for (const dot of dots) {
+      dot.progress += dot.speed * (1 + dt * 0.5);
+
+      if (dot.progress >= 1) {
+        dot.progress = 0;
+        dot.stageIndex++;
+
+        // Trigger node glow when dot arrives at a node
+        if (dot.stageIndex > 0 && dot.stageIndex <= nodes.length) {
+          const nodeIdx = Math.min(dot.stageIndex - 1, nodes.length - 1);
+          nodes[nodeIdx].glow = 1;
+        }
+
+        // If past last stage, spawn output card and fade out
+        if (dot.stageIndex > nodes.length) {
+          spawnOutputCard();
+          dot.alpha = 0;
+        }
+      }
+
+      if (dot.alpha > 0.01) drawDot(dot);
+    }
+
+    // Output cards
+    outputCards = outputCards.filter(c => c.alpha > 0.01);
+    for (let i = 0; i < outputCards.length; i++) {
+      const card = outputCards[i];
+      card.age += dt;
+      card.alpha = Math.min(card.alpha + dt * 1.5, 1);
+      if (card.age > 12) card.alpha = Math.max(card.alpha - dt * 0.4, 0);
+      drawOutputCard(card, i);
+    }
+
+    // Counter
+    drawCounter();
+
+    animFrame = requestAnimationFrame(tick);
+  }
+
+  // Tooltip on hover over pipeline nodes
+  canvas.addEventListener('mousemove', (e: MouseEvent) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (W / rect.width);
+    const my = (e.clientY - rect.top) * (H / rect.height);
+    let found = -1;
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i];
+      if (Math.abs(mx - n.x) < 36 && Math.abs(my - n.y) < 20) {
+        found = i;
+        break;
+      }
+    }
+    hoveredNodeIndex = found;
+    if (found >= 0) {
+      const n = nodes[found];
+      tooltip.textContent = `${n.label}: ${n.tooltip}`;
+      tooltip.style.left = `${e.clientX + 12}px`;
+      tooltip.style.top = `${e.clientY - 10}px`;
+      tooltip.classList.add('visible');
+    } else {
+      tooltip.classList.remove('visible');
+    }
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    hoveredNodeIndex = -1;
+    tooltip.classList.remove('visible');
+  });
+
+  // Boot
+  resize();
+  const ro = new ResizeObserver(resize);
+  ro.observe(canvas.parentElement!);
+
+  requestAnimationFrame((ts) => {
+    lastTime = ts;
+    lastSpawn = ts - 3100;
+    tick(ts);
+  });
+</script>

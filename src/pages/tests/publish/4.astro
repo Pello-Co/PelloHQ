@@ -1,0 +1,522 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Platform Orbit | Pello" description="PelloPublish manages your presence across every major platform from a single intelligence layer. Content is automatically adapted for each platform's format, tone, and audience.">
+  <Header />
+  <main id="main-content">
+    <section class="pub-section" aria-labelledby="pub-headline">
+      <div class="pub-layout">
+        <div class="pub-text">
+          <span class="pub-badge">PelloPublish</span>
+          <h1 id="pub-headline">One Brain. Six Platforms. Infinite Content.</h1>
+          <p>PelloPublish manages your presence across every major platform from a single intelligence layer. Content is automatically adapted for each platform's format, tone, and audience — one business story told six different ways.</p>
+          <ul class="pub-pills" role="list">
+            <li>6 Platforms</li>
+            <li>Format Adaptation</li>
+            <li>Cross-Post Intelligence</li>
+            <li>AutoSchedule</li>
+          </ul>
+        </div>
+        <div class="pub-canvas-col">
+          <canvas id="pub-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .pub-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .pub-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .pub-layout { grid-template-columns: 1fr; } }
+  .pub-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .pub-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #f97316; width: fit-content; }
+  .pub-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .pub-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .pub-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pub-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .pub-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #pub-canvas { width: 100%; height: 100%; position: absolute; inset: 0; }
+
+  /* Content queue popup */
+  .orbit-popup {
+    position: fixed;
+    background: rgba(8,8,20,0.97);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.15s;
+    min-width: 200px;
+    max-width: 240px;
+  }
+  .orbit-popup.visible { opacity: 1; }
+  .orbit-popup-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+  .orbit-popup-item {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.65);
+    line-height: 1.5;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .orbit-popup-item:last-child { border-bottom: none; }
+</style>
+
+<script>
+  interface Planet {
+    name: string;
+    color: string;
+    orbitRadius: number;
+    speed: number; // radians per second
+    angle: number; // current angle in radians
+    radius: number; // planet visual radius
+    paused: boolean;
+    miniDots: MiniDot[];
+    queue: string[];
+  }
+
+  interface MiniDot {
+    angle: number;
+    speed: number; // radians per second
+    radius: number; // orbit radius around planet
+    size: number;
+    color: string;
+  }
+
+  interface ContentParticle {
+    id: number;
+    t: number; // 0–1 progress
+    speed: number;
+    targetPlanetIndex: number;
+    startX: number;
+    startY: number;
+    ctrlX: number;
+    ctrlY: number;
+    alpha: number;
+  }
+
+  interface BurstParticle {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    life: number; // 0–1
+    color: string;
+  }
+
+  const PLANET_CONFIGS: Omit<Planet, 'angle' | 'paused' | 'miniDots' | 'queue'>[] = [
+    { name: 'Instagram', color: '#E1306C', orbitRadius: 90,  speed: 0.4,  radius: 20 },
+    { name: 'LinkedIn',  color: '#0A66C2', orbitRadius: 120, speed: 0.28, radius: 19 },
+    { name: 'Twitter/X', color: '#1DA1F2', orbitRadius: 150, speed: 0.22, radius: 18 },
+    { name: 'YouTube',   color: '#FF0000', orbitRadius: 180, speed: 0.18, radius: 21 },
+    { name: 'Blog',      color: '#f97316', orbitRadius: 210, speed: 0.14, radius: 19 },
+    { name: 'TikTok',    color: '#00F2EA', orbitRadius: 240, speed: 0.10, radius: 18 },
+  ];
+
+  const QUEUE_TEMPLATES: Record<string, string[]> = {
+    Instagram: [
+      'Reel: 3 ways AI is changing marketing',
+      'Carousel: SaaS growth secrets revealed',
+      'Story: Behind the scenes — our process',
+      'Post: Why your competitors are already automating',
+    ],
+    LinkedIn: [
+      'Article: How we 3x\'d organic traffic in 60 days',
+      'Post: The myth of the "content team" in 2026',
+      'Poll: Do you review every AI-generated post?',
+      'Thread: 7 lessons from scaling content ops',
+    ],
+    'Twitter/X': [
+      'Thread: The problem with most content strategies',
+      'Tweet: Our autopilot published 3 posts while I slept',
+      'Thread: 5 things AI can\'t replace in content yet',
+      'Tweet: Hot take: curation beats creation in 2026',
+    ],
+    YouTube: [
+      'Short: What is programmatic content? (60s)',
+      'Video: Full walkthrough — PelloPublish setup',
+      'Short: 3 metrics that predict content ROI',
+      'Video: From zero to 10k visits with AI content',
+    ],
+    Blog: [
+      'Article: How AI Is Changing SEO in 2026',
+      'Post: 5 Tips for Scaling Your Content Operations',
+      'Guide: The Complete AutoPilot Content Guide',
+      'Case Study: 90-day content experiment results',
+    ],
+    TikTok: [
+      'Video: POV: Your content publishes itself',
+      'Duet: Reacting to viral marketing takes',
+      'Video: The 3-step content engine explained',
+      'Trend: Day in the life of an AI content stack',
+    ],
+  };
+
+  const canvas = document.getElementById('pub-canvas') as HTMLCanvasElement;
+  const ctx = canvas.getContext('2d')!;
+
+  const popup = document.createElement('div');
+  popup.className = 'orbit-popup';
+  document.body.appendChild(popup);
+
+  let W = 0, H = 0;
+  let cx = 0, cy = 0; // center of solar system
+  let planets: Planet[] = [];
+  let particles: ContentParticle[] = [];
+  let bursts: BurstParticle[] = [];
+  let nextId = 0;
+  let lastLaunch = 0;
+  let hoveredPlanetIndex = -1;
+  let lastTime = 0;
+
+  function buildPlanets() {
+    planets = PLANET_CONFIGS.map((cfg, i) => ({
+      ...cfg,
+      angle: (i / PLANET_CONFIGS.length) * Math.PI * 2,
+      paused: false,
+      miniDots: Array.from({ length: 3 + (i % 3) }, (_, j) => ({
+        angle: (j / (3 + (i % 3))) * Math.PI * 2,
+        speed: 1.2 + Math.random() * 0.8,
+        radius: cfg.radius + 10 + j * 7,
+        size: 2.5,
+        color: cfg.color,
+      })),
+      queue: (QUEUE_TEMPLATES[cfg.name] || []).slice(0, 3),
+    }));
+  }
+
+  function resize() {
+    const rect = canvas.parentElement!.getBoundingClientRect();
+    W = rect.width;
+    H = Math.max(rect.height, 560);
+    canvas.width = W;
+    canvas.height = H;
+    const size = Math.min(W, H);
+    cx = W / 2;
+    cy = H / 2;
+    // Scale orbit radii to fit canvas
+    const scale = (size * 0.44) / 240;
+    planets.forEach((p, i) => {
+      p.orbitRadius = PLANET_CONFIGS[i].orbitRadius * scale;
+      p.radius = PLANET_CONFIGS[i].radius * Math.max(0.7, scale);
+      p.miniDots.forEach((md, j) => {
+        md.radius = (PLANET_CONFIGS[i].radius + 10 + j * 7) * Math.max(0.7, scale);
+      });
+    });
+  }
+
+  function launchParticle() {
+    const targetIdx = Math.floor(Math.random() * planets.length);
+    const planet = planets[targetIdx];
+    const destX = cx + Math.cos(planet.angle) * planet.orbitRadius;
+    const destY = cy + Math.sin(planet.angle) * planet.orbitRadius;
+
+    // Bezier control point — offset perpendicular to line from center to planet
+    const dx = destX - cx;
+    const dy = destY - cy;
+    const perpX = -dy * 0.4;
+    const perpY = dx * 0.4;
+
+    particles.push({
+      id: nextId++,
+      t: 0,
+      speed: 0.006 + Math.random() * 0.004,
+      targetPlanetIndex: targetIdx,
+      startX: cx,
+      startY: cy,
+      ctrlX: cx + dx * 0.5 + perpX,
+      ctrlY: cy + dy * 0.5 + perpY,
+      alpha: 1,
+    });
+  }
+
+  function spawnBurst(x: number, y: number, color: string) {
+    for (let i = 0; i < 10; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 0.5 + Math.random() * 1.5;
+      bursts.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        life: 1,
+        color,
+      });
+    }
+  }
+
+  function quadBezier(t: number, p0: number, p1: number, p2: number): number {
+    return (1 - t) * (1 - t) * p0 + 2 * (1 - t) * t * p1 + t * t * p2;
+  }
+
+  function drawOrbitRings() {
+    ctx.save();
+    ctx.setLineDash([3, 6]);
+    for (const p of planets) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(cx, cy, p.orbitRadius, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  function drawCenter() {
+    // Outer glow
+    const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, 50);
+    grd.addColorStop(0, 'rgba(249,115,22,0.25)');
+    grd.addColorStop(0.5, 'rgba(249,115,22,0.08)');
+    grd.addColorStop(1, 'rgba(249,115,22,0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 50, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Core circle
+    ctx.fillStyle = 'rgba(249,115,22,0.18)';
+    ctx.strokeStyle = 'rgba(249,115,22,0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 28, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Label
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.font = '600 8px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('YOUR', cx, cy - 5);
+    ctx.fillText('BRAND', cx, cy + 6);
+  }
+
+  function drawPlanet(planet: Planet, index: number) {
+    const px = cx + Math.cos(planet.angle) * planet.orbitRadius;
+    const py = cy + Math.sin(planet.angle) * planet.orbitRadius;
+    const isHovered = index === hoveredPlanetIndex;
+
+    ctx.save();
+
+    // Halo
+    if (isHovered) {
+      const hrd = ctx.createRadialGradient(px, py, 0, px, py, planet.radius + 16);
+      hrd.addColorStop(0, planet.color + '55');
+      hrd.addColorStop(1, planet.color + '00');
+      ctx.fillStyle = hrd;
+      ctx.beginPath();
+      ctx.arc(px, py, planet.radius + 16, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Planet body
+    const pgrd = ctx.createRadialGradient(px - planet.radius * 0.3, py - planet.radius * 0.3, 0, px, py, planet.radius);
+    pgrd.addColorStop(0, planet.color + 'dd');
+    pgrd.addColorStop(1, planet.color + '77');
+    ctx.fillStyle = pgrd;
+    ctx.strokeStyle = planet.color + (isHovered ? 'ff' : '99');
+    ctx.lineWidth = isHovered ? 2 : 1;
+    ctx.beginPath();
+    ctx.arc(px, py, planet.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Name label
+    ctx.fillStyle = '#fff';
+    ctx.font = `${isHovered ? 700 : 600} ${Math.max(8, planet.radius * 0.42)}px -apple-system, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(planet.name, px, py);
+
+    // Mini dots orbiting planet
+    for (const md of planet.miniDots) {
+      const mdx = px + Math.cos(md.angle) * md.radius;
+      const mdy = py + Math.sin(md.angle) * md.radius;
+      ctx.fillStyle = md.color + 'cc';
+      ctx.beginPath();
+      ctx.arc(mdx, mdy, md.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  function drawParticle(p: ContentParticle) {
+    const bx = quadBezier(p.t, p.startX, p.ctrlX, planets[p.targetPlanetIndex] ? cx + Math.cos(planets[p.targetPlanetIndex].angle) * planets[p.targetPlanetIndex].orbitRadius : p.startX);
+    const by = quadBezier(p.t, p.startY, p.ctrlY, planets[p.targetPlanetIndex] ? cy + Math.sin(planets[p.targetPlanetIndex].angle) * planets[p.targetPlanetIndex].orbitRadius : p.startY);
+
+    ctx.save();
+    ctx.globalAlpha = p.alpha;
+
+    const grd = ctx.createRadialGradient(bx, by, 0, bx, by, 6);
+    grd.addColorStop(0, 'rgba(249,115,22,1)');
+    grd.addColorStop(1, 'rgba(249,115,22,0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(bx, by, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(bx, by, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawBursts(dt: number) {
+    for (const b of bursts) {
+      ctx.save();
+      ctx.globalAlpha = b.life * 0.8;
+      ctx.fillStyle = b.color;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, 2 + (1 - b.life) * 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      b.x += b.vx;
+      b.y += b.vy;
+      b.life -= dt * 1.8;
+    }
+    bursts = bursts.filter(b => b.life > 0);
+  }
+
+  function showPopup(planet: Planet, screenX: number, screenY: number) {
+    popup.innerHTML = `
+      <div class="orbit-popup-title" style="color:${planet.color}">${planet.name} — Scheduled Posts</div>
+      ${planet.queue.map(q => `<div class="orbit-popup-item">${q}</div>`).join('')}
+    `;
+    popup.style.left = `${screenX + 14}px`;
+    popup.style.top = `${screenY - 10}px`;
+    popup.classList.add('visible');
+  }
+
+  function hidePopup() {
+    popup.classList.remove('visible');
+  }
+
+  function getPlanetScreenPos(planet: Planet): { x: number; y: number } {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = rect.width / W;
+    const scaleY = rect.height / H;
+    return {
+      x: rect.left + (cx + Math.cos(planet.angle) * planet.orbitRadius) * scaleX,
+      y: rect.top + (cy + Math.sin(planet.angle) * planet.orbitRadius) * scaleY,
+    };
+  }
+
+  function tick(ts: number) {
+    const dt = Math.min(ts - lastTime, 50) / 1000;
+    lastTime = ts;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Launch content particles every ~2s
+    if (ts - lastLaunch > 2000) {
+      launchParticle();
+      lastLaunch = ts;
+    }
+
+    drawOrbitRings();
+    drawCenter();
+
+    // Update planets
+    for (let i = 0; i < planets.length; i++) {
+      const p = planets[i];
+      if (!p.paused && i !== hoveredPlanetIndex) {
+        p.angle += p.speed * dt;
+        for (const md of p.miniDots) {
+          md.angle += md.speed * dt;
+        }
+      }
+      drawPlanet(p, i);
+    }
+
+    // Update and draw particles
+    particles = particles.filter(p => p.alpha > 0.01);
+    for (const p of particles) {
+      p.t += p.speed;
+      if (p.t >= 1) {
+        // Arrived — burst
+        const planet = planets[p.targetPlanetIndex];
+        if (planet) {
+          const ax = cx + Math.cos(planet.angle) * planet.orbitRadius;
+          const ay = cy + Math.sin(planet.angle) * planet.orbitRadius;
+          spawnBurst(ax, ay, planet.color);
+        }
+        p.alpha = 0;
+        continue;
+      }
+      // Fade out near end
+      if (p.t > 0.85) p.alpha = (1 - p.t) / 0.15;
+      drawParticle(p);
+    }
+
+    // Burst particles
+    drawBursts(dt);
+
+    requestAnimationFrame(tick);
+  }
+
+  // Hover detection
+  canvas.addEventListener('mousemove', (e: MouseEvent) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (W / rect.width);
+    const my = (e.clientY - rect.top) * (H / rect.height);
+
+    let found = -1;
+    for (let i = 0; i < planets.length; i++) {
+      const p = planets[i];
+      const px = cx + Math.cos(p.angle) * p.orbitRadius;
+      const py = cy + Math.sin(p.angle) * p.orbitRadius;
+      const dist = Math.sqrt((mx - px) ** 2 + (my - py) ** 2);
+      if (dist < p.radius + 6) {
+        found = i;
+        break;
+      }
+    }
+
+    if (found !== hoveredPlanetIndex) {
+      hoveredPlanetIndex = found;
+      if (found >= 0) {
+        showPopup(planets[found], e.clientX, e.clientY);
+      } else {
+        hidePopup();
+      }
+    } else if (found >= 0) {
+      // Update popup position as mouse moves
+      popup.style.left = `${e.clientX + 14}px`;
+      popup.style.top = `${e.clientY - 10}px`;
+    }
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    hoveredPlanetIndex = -1;
+    hidePopup();
+  });
+
+  // Boot
+  buildPlanets();
+  resize();
+  const ro = new ResizeObserver(() => { buildPlanets(); resize(); });
+  ro.observe(canvas.parentElement!);
+
+  requestAnimationFrame((ts) => {
+    lastTime = ts;
+    lastLaunch = ts - 2100;
+    tick(ts);
+  });
+</script>

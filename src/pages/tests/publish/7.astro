@@ -1,0 +1,378 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Content Spectrum | Pello" description="Different content formats reach different audiences at different times. PelloPublish manages the perfect content mix automatically calibrated to your strategy.">
+  <Header />
+  <main id="main-content">
+    <section class="pub-section" aria-labelledby="pub-headline">
+      <div class="pub-layout">
+        <div class="pub-text">
+          <span class="pub-badge">PelloPublish</span>
+          <h1 id="pub-headline">Tuned to Every Frequency of Your Audience.</h1>
+          <p>Different content formats reach different audiences at different times. PelloPublish manages the perfect content mix — long-form blogs for depth, snappy tweets for reach, videos for engagement — automatically calibrated to your strategy.</p>
+          <ul class="pub-pills" role="list">
+            <li>Content Mix Optimisation</li>
+            <li>Platform Algorithms</li>
+            <li>Engagement Scoring</li>
+            <li>AutoBalance</li>
+          </ul>
+        </div>
+        <div class="pub-canvas-col">
+          <canvas id="pub-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+.pub-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+.pub-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+@media (max-width: 768px) { .pub-layout { grid-template-columns: 1fr; } }
+.pub-text { display: flex; flex-direction: column; gap: 1.5rem; }
+.pub-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #f97316; width: fit-content; }
+.pub-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+.pub-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+.pub-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.pub-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+.pub-canvas-col { position: relative; width: 100%; min-height: 560px; }
+#pub-canvas { width: 100%; height: 100%; position: absolute; inset: 0; }
+</style>
+
+<script>
+(function () {
+  const canvas = document.getElementById('pub-canvas') as HTMLCanvasElement;
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d')!;
+
+  // Platform data
+  const platforms = [
+    { name: 'Blog',       color: '#f97316', postsPerWeek: 4,  avgEng: '3.2%',  bestTime: '9am Tue' },
+    { name: 'LinkedIn',   color: '#0077B5', postsPerWeek: 5,  avgEng: '4.8%',  bestTime: '8am Wed' },
+    { name: 'Twitter',    color: '#1DA1F2', postsPerWeek: 14, avgEng: '2.1%',  bestTime: '12pm Mon' },
+    { name: 'Instagram',  color: '#E1306C', postsPerWeek: 7,  avgEng: '6.3%',  bestTime: '11am Fri' },
+    { name: 'YouTube',    color: '#FF0000', postsPerWeek: 2,  avgEng: '8.7%',  bestTime: '3pm Sat' },
+    { name: 'TikTok',     color: '#00F2EA', postsPerWeek: 10, avgEng: '11.2%', bestTime: '7pm Thu' },
+    { name: 'Newsletter', color: '#6366f1', postsPerWeek: 1,  avgEng: '22.5%', bestTime: '9am Thu' },
+    { name: 'Podcast',    color: '#22c55e', postsPerWeek: 1,  avgEng: '18.4%', bestTime: '6am Mon' },
+  ];
+
+  // Per-bar oscillation parameters
+  const barParams = platforms.map((_, i) => ({
+    phase:     Math.random() * Math.PI * 2,
+    freq:      0.4 + Math.random() * 0.8,
+    baseAmp:   0.35 + Math.random() * 0.4,
+    secondary: { phase: Math.random() * Math.PI * 2, freq: 1.1 + Math.random() * 0.9, amp: 0.08 + Math.random() * 0.12 },
+  }));
+
+  // Particles
+  interface Particle {
+    x: number; y: number;
+    vx: number; vy: number;
+    alpha: number;
+    color: string;
+    size: number;
+  }
+  let particles: Particle[] = [];
+
+  // Hover / tooltip state
+  let hoveredBar = -1;
+  let mouseX = -1;
+  let mouseY = -1;
+  let totalGenerated = 1847;
+
+  // Sine wave history for the top waveform
+  const WAVE_POINTS = 200;
+  let waveHistory: number[] = new Array(WAVE_POINTS).fill(0.5);
+
+  function resize() {
+    const rect = canvas.parentElement!.getBoundingClientRect();
+    canvas.width  = rect.width  || 560;
+    canvas.height = rect.height || 560;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+  });
+  canvas.addEventListener('mouseleave', () => {
+    mouseX = -1;
+    mouseY = -1;
+    hoveredBar = -1;
+  });
+
+  let startTime = performance.now();
+
+  function spawnParticles(x: number, y: number, color: string) {
+    const count = 3 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x, y,
+        vx: (Math.random() - 0.5) * 2.5,
+        vy: -(1.5 + Math.random() * 2.5),
+        alpha: 1,
+        color,
+        size: 2 + Math.random() * 2,
+      });
+    }
+  }
+
+  // Track when each bar last peaked to avoid spamming particles
+  const lastPeak: boolean[] = new Array(platforms.length).fill(false);
+
+  function draw(now: number) {
+    const W = canvas.width;
+    const H = canvas.height;
+    const t = (now - startTime) / 1000;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Scanlines
+    for (let y = 0; y < H; y += 4) {
+      ctx.fillStyle = 'rgba(0,0,0,0.13)';
+      ctx.fillRect(0, y, W, 1);
+    }
+
+    // Layout
+    const waveHeight   = 60;
+    const waveY        = 20;
+    const barAreaTop   = waveY + waveHeight + 24;
+    const labelHeight  = 22;
+    const pctHeight    = 18;
+    const barAreaBot   = H - labelHeight - pctHeight - 12;
+    const barAreaH     = barAreaBot - barAreaTop;
+    const n            = platforms.length;
+    const barW         = Math.min(44, (W - 80) / n - 8);
+    const totalBarW    = n * (barW + 10) - 10;
+    const startX       = (W - totalBarW) / 2;
+
+    // ─── Horizontal grid lines ───────────────────────────────────────────────
+    [0.25, 0.5, 0.75, 1.0].forEach(frac => {
+      const gy = barAreaBot - frac * barAreaH;
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 6]);
+      ctx.moveTo(startX - 12, gy);
+      ctx.lineTo(startX + totalBarW + 12, gy);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.2)';
+      ctx.font = '9px -apple-system, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(`${Math.round(frac * 100)}%`, startX - 16, gy + 3);
+    });
+
+    // ─── Top waveform ─────────────────────────────────────────────────────────
+    // Compute average normalised bar height this frame → drives wave
+    let avgH = 0;
+    for (let i = 0; i < n; i++) {
+      const p  = barParams[i];
+      const v  = p.baseAmp + Math.sin(t * p.freq + p.phase) * 0.28
+               + Math.sin(t * p.secondary.freq + p.secondary.phase) * p.secondary.amp;
+      avgH += Math.max(0.05, Math.min(0.98, v));
+    }
+    avgH /= n;
+
+    // Shift history and add new point
+    waveHistory.shift();
+    waveHistory.push(avgH);
+
+    const waveBot = waveY + waveHeight;
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(249,115,22,0.6)';
+    ctx.lineWidth = 1.5;
+    for (let i = 0; i < WAVE_POINTS; i++) {
+      const wx = (i / (WAVE_POINTS - 1)) * (W - 60) + 30;
+      const wy = waveBot - waveHistory[i] * waveHeight * 0.85;
+      i === 0 ? ctx.moveTo(wx, wy) : ctx.lineTo(wx, wy);
+    }
+    ctx.stroke();
+
+    // Wave fill
+    ctx.beginPath();
+    for (let i = 0; i < WAVE_POINTS; i++) {
+      const wx = (i / (WAVE_POINTS - 1)) * (W - 60) + 30;
+      const wy = waveBot - waveHistory[i] * waveHeight * 0.85;
+      i === 0 ? ctx.moveTo(wx, wy) : ctx.lineTo(wx, wy);
+    }
+    ctx.lineTo((W - 60) + 30, waveBot);
+    ctx.lineTo(30, waveBot);
+    ctx.closePath();
+    const waveGrad = ctx.createLinearGradient(0, waveY, 0, waveBot);
+    waveGrad.addColorStop(0, 'rgba(249,115,22,0.18)');
+    waveGrad.addColorStop(1, 'rgba(249,115,22,0)');
+    ctx.fillStyle = waveGrad;
+    ctx.fill();
+
+    // Wave label
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('CONTENT FREQUENCY', 30, waveY + 10);
+
+    // ─── Counter ──────────────────────────────────────────────────────────────
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(249,115,22,0.7)';
+    ctx.font = 'bold 11px -apple-system, sans-serif';
+    ctx.fillText(`${(totalGenerated + Math.floor(t * 0.3)).toLocaleString()} pieces generated this month`, W - 16, waveY + 10);
+
+    // ─── Detect hovered bar ───────────────────────────────────────────────────
+    hoveredBar = -1;
+    if (mouseX >= 0) {
+      for (let i = 0; i < n; i++) {
+        const bx = startX + i * (barW + 10);
+        if (mouseX >= bx - 4 && mouseX <= bx + barW + 4) {
+          hoveredBar = i;
+          break;
+        }
+      }
+    }
+
+    // Mouse-X proximity boost
+    const mouseInfluenceX = mouseX >= 0 ? mouseX : W / 2;
+
+    // ─── Bars ─────────────────────────────────────────────────────────────────
+    for (let i = 0; i < n; i++) {
+      const p   = barParams[i];
+      const bx  = startX + i * (barW + 10);
+      const bcx = bx + barW / 2;
+
+      // Proximity boost from mouse
+      const dist = Math.abs(bcx - mouseInfluenceX);
+      const prox = mouseX >= 0 ? Math.max(0, 1 - dist / 180) : 0;
+
+      let raw = p.baseAmp
+        + Math.sin(t * p.freq + p.phase) * (0.28 + prox * 0.18)
+        + Math.sin(t * p.secondary.freq + p.secondary.phase) * p.secondary.amp
+        + prox * 0.1;
+      raw = Math.max(0.05, Math.min(0.98, raw));
+
+      const barH = raw * barAreaH;
+      const by   = barAreaBot - barH;
+
+      // Solo / dim
+      const isHovered = hoveredBar === i;
+      const isDimmed  = hoveredBar >= 0 && !isHovered;
+      const alpha     = isDimmed ? 0.25 : 1;
+
+      // Detect peak → spawn particles
+      if (raw > 0.88 && !lastPeak[i]) {
+        lastPeak[i] = true;
+        spawnParticles(bcx, by, platforms[i].color);
+      } else if (raw < 0.82) {
+        lastPeak[i] = false;
+      }
+
+      // Bar gradient
+      const grad = ctx.createLinearGradient(bx, by, bx, barAreaBot);
+      grad.addColorStop(0, platforms[i].color);
+      grad.addColorStop(1, platforms[i].color + '33');
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle   = grad;
+      ctx.beginPath();
+      ctx.roundRect(bx, by, barW, barH, [4, 4, 0, 0]);
+      ctx.fill();
+
+      // Glow on hovered or near-peak
+      if (isHovered || raw > 0.8) {
+        ctx.shadowColor = platforms[i].color;
+        ctx.shadowBlur  = isHovered ? 22 : 10;
+        ctx.fillStyle   = grad;
+        ctx.beginPath();
+        ctx.roundRect(bx, by, barW, barH, [4, 4, 0, 0]);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      // Reflection
+      const refGrad = ctx.createLinearGradient(bx, barAreaBot, bx, barAreaBot + barH * 0.35);
+      refGrad.addColorStop(0, platforms[i].color + '26');
+      refGrad.addColorStop(1, platforms[i].color + '00');
+      ctx.fillStyle = refGrad;
+      ctx.save();
+      ctx.scale(1, -1);
+      ctx.translate(0, -barAreaBot * 2);
+      ctx.beginPath();
+      ctx.roundRect(bx, barAreaBot - barH * 0.35, barW, barH * 0.35, [0, 0, 4, 4]);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.globalAlpha = 1;
+
+      // Percentage label above bar
+      const pctVal = Math.round(raw * 100);
+      ctx.fillStyle = isHovered ? '#fff' : `${platforms[i].color}cc`;
+      ctx.font      = `bold ${isHovered ? 11 : 9}px -apple-system, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(`${pctVal}%`, bcx, by - 6);
+
+      // Platform name label below
+      ctx.fillStyle = isDimmed ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.6)';
+      ctx.font      = '9px -apple-system, sans-serif';
+      ctx.fillText(platforms[i].name, bcx, barAreaBot + labelHeight - 4);
+    }
+
+    // ─── Particles ────────────────────────────────────────────────────────────
+    particles = particles.filter(p => p.alpha > 0.02);
+    for (const p of particles) {
+      p.x     += p.vx;
+      p.y     += p.vy;
+      p.vy    += 0.06; // gravity
+      p.alpha *= 0.93;
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle   = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // ─── Tooltip ──────────────────────────────────────────────────────────────
+    if (hoveredBar >= 0 && mouseX >= 0 && mouseY >= 0) {
+      const i   = hoveredBar;
+      const pl  = platforms[i];
+      const bx  = startX + i * (barW + 10);
+      const bcx = bx + barW / 2;
+
+      const lines   = [pl.name, `${pl.postsPerWeek} posts/week`, `Avg eng: ${pl.avgEng}`, `Best: ${pl.bestTime}`];
+      const tw      = 148;
+      const th      = lines.length * 18 + 16;
+      let   tx      = bcx - tw / 2;
+      const ty      = Math.max(barAreaTop, mouseY - th - 14);
+      tx             = Math.max(8, Math.min(W - tw - 8, tx));
+
+      ctx.fillStyle   = 'rgba(6,7,18,0.92)';
+      ctx.strokeStyle = pl.color + '88';
+      ctx.lineWidth   = 1;
+      ctx.beginPath();
+      ctx.roundRect(tx, ty, tw, th, 8);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.textAlign = 'left';
+      lines.forEach((line, li) => {
+        ctx.font      = li === 0
+          ? `bold 11px -apple-system, sans-serif`
+          : '10px -apple-system, sans-serif';
+        ctx.fillStyle = li === 0 ? pl.color : 'rgba(255,255,255,0.75)';
+        ctx.fillText(line, tx + 10, ty + 14 + li * 18);
+      });
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  requestAnimationFrame(draw);
+})();
+</script>

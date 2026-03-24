@@ -1,0 +1,672 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Publishing Pipeline | Pello" description="Watch your business intelligence transform into ready-to-publish content as it moves through PelloPublish's automated pipeline — from URL crawl to published posts.">
+  <Header />
+  <main id="main-content">
+    <section class="pub-section" aria-labelledby="pub-headline">
+      <div class="pub-layout">
+        <div class="pub-text">
+          <span class="pub-badge">PelloPublish</span>
+          <h1 id="pub-headline">Raw Data In. Published Content Out.</h1>
+          <p>Watch your business intelligence transform into ready-to-publish content as it moves through PelloPublish's automated pipeline — from URL crawl to Memory Base to content strategy to SEO-optimised, platform-formatted posts.</p>
+          <ul class="pub-pills" role="list">
+            <li>Memory Base Build</li>
+            <li>Content Strategy AI</li>
+            <li>SEO Auto-Optimise</li>
+            <li>Multi-Format Export</li>
+          </ul>
+        </div>
+        <div class="pub-canvas-col">
+          <canvas id="pub-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+.pub-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+.pub-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+@media (max-width: 768px) { .pub-layout { grid-template-columns: 1fr; } }
+.pub-text { display: flex; flex-direction: column; gap: 1.5rem; }
+.pub-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #f97316; width: fit-content; }
+.pub-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+.pub-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+.pub-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.pub-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+.pub-canvas-col { position: relative; width: 100%; min-height: 560px; }
+#pub-canvas { width: 100%; height: 100%; position: absolute; inset: 0; }
+</style>
+
+<script>
+(function () {
+  const canvas = document.getElementById('pub-canvas') as HTMLCanvasElement;
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d')!;
+
+  // ── Stage definitions ─────────────────────────────────────────────────────
+  const STAGES = [
+    { id: 'input',    label: 'INPUT',    desc: 'Receives your website URL and triggers the intelligence pipeline.' },
+    { id: 'crawl',    label: 'CRAWL',    desc: 'Spiders your site — pages, copy, products, tone, keywords.' },
+    { id: 'memory',   label: 'MEMORY',   desc: 'Builds your Memory Base: a persistent AI knowledge graph of your business.' },
+    { id: 'strategy', label: 'STRATEGY', desc: 'Plans the content calendar, topics, angles and hooks for your audience.' },
+    { id: 'draft',    label: 'DRAFT',    desc: 'Generates full-length drafts matched to your brand voice.' },
+    { id: 'seo',      label: 'SEO',      desc: 'Auto-inserts keywords, meta descriptions and structured data.' },
+    { id: 'format',   label: 'FORMAT',   desc: 'Adapts each piece to every platform\'s native format and length.' },
+    { id: 'publish',  label: 'PUBLISH',  desc: 'Schedules and publishes at optimal engagement windows.' },
+  ];
+  const N = STAGES.length;
+
+  const STAGE_W = 60;
+  const STAGE_H = 55;
+
+  // Per-stage state
+  interface StageState {
+    active: boolean;
+    errorFlash: number;  // countdown frames for red flash
+    resolveFlash: number;
+    itemCount: number;
+  }
+  const stageState: StageState[] = STAGES.map(() => ({ active: false, errorFlash: 0, resolveFlash: 0, itemCount: 0 }));
+
+  // ── Work items ────────────────────────────────────────────────────────────
+  interface WorkItem {
+    id: number;
+    // position along pipeline: 0 = left edge of stage[0], N = past stage[N-1]
+    stageIdx: number;    // which stage gap (0..N-1 = between stages, N = published)
+    progress: number;    // 0..1 within current segment
+    processing: boolean; // currently inside a stage box
+    processTimer: number;// frames remaining to process
+    errorPending: boolean;
+    color: string;
+    publishBurst: boolean;
+  }
+  let items: WorkItem[]  = [];
+  let nextId             = 0;
+  let totalPublished     = 0;
+
+  // Item counts per stage (for counter display)
+  const stageItemCount: number[] = new Array(N).fill(0);
+
+  // Launch burst particles
+  interface Burst {
+    x: number; y: number;
+    vx: number; vy: number;
+    alpha: number;
+    color: string;
+    size: number;
+  }
+  let bursts: Burst[] = [];
+
+  function spawnBurst(x: number, y: number) {
+    const colors = ['#f97316','#6366f1','#22c55e','#E1306C'];
+    for (let i = 0; i < 5; i++) {
+      const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI;
+      const speed = 2 + Math.random() * 3;
+      bursts.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        alpha: 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        size: 2.5 + Math.random() * 2,
+      });
+    }
+  }
+
+  // Spawn new items periodically
+  let spawnTimer = 0;
+  const SPAWN_INTERVAL = 90; // frames
+
+  // Error event timer
+  let errorTimer = Math.floor(900 + Math.random() * 600);
+
+  // Hover state
+  let mouseX = -1;
+  let mouseY = -1;
+  let hoveredStage = -1;
+
+  function resize() {
+    const rect = canvas.parentElement!.getBoundingClientRect();
+    canvas.width  = rect.width  || 560;
+    canvas.height = rect.height || 560;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+  });
+  canvas.addEventListener('mouseleave', () => {
+    mouseX = -1; mouseY = -1; hoveredStage = -1;
+  });
+
+  // Easing
+  function easeInOut(t: number) {
+    return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+  }
+
+  // Stage positions (computed each frame based on W)
+  function stagePositions(W: number, pipelineY: number): { cx: number; cy: number }[] {
+    const margin  = 36;
+    const spacing = (W - margin * 2 - STAGE_W) / (N - 1);
+    return STAGES.map((_, i) => ({
+      cx: margin + i * spacing + STAGE_W / 2,
+      cy: pipelineY,
+    }));
+  }
+
+  let lineDashOffset = 0;
+  let frame = 0;
+  let publishedToday = 0;
+
+  function drawStageIcon(id: string, cx: number, cy: number, active: boolean) {
+    const col = active ? '#f97316' : 'rgba(255,255,255,0.35)';
+    ctx.strokeStyle = col;
+    ctx.fillStyle   = col;
+    ctx.lineWidth   = 1.5;
+
+    const s = 10; // icon half-size
+
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    switch (id) {
+      case 'input': {
+        // URL icon: rectangle with lines
+        ctx.strokeRect(-s, -s * 0.7, s * 2, s * 1.4);
+        [0.3, 0, -0.3].forEach((fy, i) => {
+          ctx.beginPath();
+          ctx.moveTo(-s * 0.6, fy * s);
+          ctx.lineTo( s * 0.6, fy * s);
+          ctx.stroke();
+        });
+        break;
+      }
+      case 'crawl': {
+        // Rotating lines (spider)
+        const rot = (frame * 0.04) % (Math.PI * 2);
+        for (let a = 0; a < 6; a++) {
+          const angle = rot + (a / 6) * Math.PI * 2;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(Math.cos(angle) * s, Math.sin(angle) * s);
+          ctx.stroke();
+        }
+        ctx.beginPath();
+        ctx.arc(0, 0, 3, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      }
+      case 'memory': {
+        // Brain shape (simplified)
+        ctx.beginPath();
+        ctx.arc(-3, -3, 5, Math.PI, 0);
+        ctx.arc( 3, -3, 5, Math.PI, 0);
+        ctx.lineTo(8, 4);
+        ctx.lineTo(-8, 4);
+        ctx.closePath();
+        ctx.stroke();
+        // Data dots flowing in
+        const dotPhase = (frame * 0.06) % 1;
+        ctx.globalAlpha *= 0.7;
+        ctx.beginPath();
+        ctx.arc(-6, 8 - dotPhase * 14, 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = active ? 1 : 1;
+        break;
+      }
+      case 'strategy': {
+        // Chess queen (simplified)
+        ctx.beginPath();
+        ctx.moveTo(0, -s);
+        ctx.lineTo(-s * 0.6, s * 0.5);
+        ctx.lineTo( s * 0.6, s * 0.5);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, -s, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      }
+      case 'draft': {
+        // Document with lines
+        ctx.beginPath();
+        ctx.roundRect(-s * 0.7, -s, s * 1.4, s * 2, 2);
+        ctx.stroke();
+        // Text lines appearing
+        const lineCount = Math.floor(((frame % 60) / 60) * 3) + 1;
+        for (let l = 0; l < lineCount; l++) {
+          ctx.beginPath();
+          ctx.moveTo(-s * 0.4, -s * 0.4 + l * 7);
+          ctx.lineTo( s * 0.4, -s * 0.4 + l * 7);
+          ctx.stroke();
+        }
+        break;
+      }
+      case 'seo': {
+        // Magnifying glass
+        ctx.beginPath();
+        ctx.arc(-2, -2, s * 0.55, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(s * 0.35, s * 0.35);
+        ctx.lineTo(s, s);
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        ctx.lineWidth = 1.5;
+        break;
+      }
+      case 'format': {
+        // Grid of platform icons
+        const gs = 5;
+        for (let r = 0; r < 2; r++) {
+          for (let c = 0; c < 3; c++) {
+            ctx.beginPath();
+            ctx.roundRect(-s + c * (gs + 2), -4 + r * (gs + 2), gs, gs, 1);
+            ctx.stroke();
+          }
+        }
+        break;
+      }
+      case 'publish': {
+        // Rocket
+        ctx.beginPath();
+        ctx.moveTo(0, -s);
+        ctx.lineTo(s * 0.5, s * 0.2);
+        ctx.lineTo(0, s * 0.6);
+        ctx.lineTo(-s * 0.5, s * 0.2);
+        ctx.closePath();
+        ctx.stroke();
+        // Flame
+        if (active) {
+          const flamePhase = Math.sin(frame * 0.2) * 0.3 + 0.7;
+          ctx.globalAlpha *= flamePhase;
+          ctx.fillStyle = '#f97316';
+          ctx.beginPath();
+          ctx.moveTo(-4, s * 0.6);
+          ctx.lineTo(0, s * 0.6 + s * 0.5 * flamePhase);
+          ctx.lineTo(4, s * 0.6);
+          ctx.fill();
+        }
+        break;
+      }
+    }
+    ctx.restore();
+  }
+
+  function draw() {
+    frame++;
+    const W = canvas.width;
+    const H = canvas.height;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Faint grid background
+    ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+    ctx.lineWidth   = 1;
+    for (let gx = 0; gx < W; gx += 40) {
+      ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke();
+    }
+    for (let gy = 0; gy < H; gy += 40) {
+      ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+    }
+
+    // Layout
+    const pipelineY  = H * 0.40;
+    const counterY   = 28;
+    const stageInfoY = pipelineY + STAGE_H / 2 + 38;
+    const counterBotY = stageInfoY + 28;
+
+    const sPos = stagePositions(W, pipelineY);
+    const marginL = sPos[0].cx - STAGE_W / 2;
+    const marginR = sPos[N - 1].cx + STAGE_W / 2;
+
+    // ── Spawn items ────────────────────────────────────────────────────────
+    spawnTimer++;
+    if (spawnTimer >= SPAWN_INTERVAL) {
+      spawnTimer = 0;
+      items.push({
+        id: nextId++,
+        stageIdx: 0,
+        progress: 0,
+        processing: false,
+        processTimer: 0,
+        errorPending: false,
+        color: '#f97316',
+        publishBurst: false,
+      });
+    }
+
+    // ── Error event ───────────────────────────────────────────────────────
+    errorTimer--;
+    if (errorTimer <= 0) {
+      errorTimer = Math.floor(900 + Math.random() * 600);
+      // Pick a random mid-stage to flash error
+      const errStage = 1 + Math.floor(Math.random() * (N - 2));
+      stageState[errStage].errorFlash   = 40;
+      stageState[errStage].resolveFlash = 0;
+      // Find any item currently at that stage and make it back up briefly
+      for (const item of items) {
+        if (item.stageIdx === errStage && item.processing) {
+          item.processTimer += 60;
+          item.errorPending  = true;
+          break;
+        }
+      }
+    }
+
+    // Tick error/resolve flashes
+    for (let i = 0; i < N; i++) {
+      if (stageState[i].errorFlash > 0) {
+        stageState[i].errorFlash--;
+        if (stageState[i].errorFlash === 0) {
+          stageState[i].resolveFlash = 25;
+        }
+      }
+      if (stageState[i].resolveFlash > 0) {
+        stageState[i].resolveFlash--;
+      }
+    }
+
+    // ── Update items ───────────────────────────────────────────────────────
+    // Reset active flags
+    for (let i = 0; i < N; i++) stageState[i].active = false;
+    for (let i = 0; i < N; i++) stageItemCount[i]    = 0;
+
+    const TRAVEL_SPEED   = 0.012;
+    const PROCESS_FRAMES = 70;
+
+    for (let ii = items.length - 1; ii >= 0; ii--) {
+      const item = items[ii];
+
+      if (item.processing) {
+        item.processTimer--;
+        stageState[item.stageIdx].active = true;
+        stageItemCount[item.stageIdx]++;
+
+        if (item.processTimer <= 0) {
+          item.processing = false;
+          item.errorPending = false;
+          if (item.stageIdx === N - 1) {
+            // Published!
+            totalPublished++;
+            publishedToday++;
+            spawnBurst(sPos[N - 1].cx + STAGE_W / 2 + 12, pipelineY);
+            items.splice(ii, 1);
+            continue;
+          }
+          item.stageIdx++;
+          item.progress   = 0;
+        }
+      } else {
+        item.progress = Math.min(1, item.progress + TRAVEL_SPEED);
+        if (item.progress >= 1) {
+          item.processing   = true;
+          item.processTimer = PROCESS_FRAMES + Math.floor(Math.random() * 30);
+        }
+      }
+    }
+
+    // ── Detect hover ───────────────────────────────────────────────────────
+    hoveredStage = -1;
+    if (mouseX >= 0 && mouseY >= 0) {
+      for (let i = 0; i < N; i++) {
+        const { cx, cy } = sPos[i];
+        if (
+          mouseX >= cx - STAGE_W / 2 - 4 && mouseX <= cx + STAGE_W / 2 + 4 &&
+          mouseY >= cy - STAGE_H / 2 - 4 && mouseY <= cy + STAGE_H / 2 + 4
+        ) {
+          hoveredStage = i;
+          break;
+        }
+      }
+    }
+
+    // ── Conveyor belt ─────────────────────────────────────────────────────
+    lineDashOffset -= 0.5;
+    const beltY = pipelineY + STAGE_H / 2 + 6;
+
+    // Belt track
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.lineWidth   = 2;
+    ctx.setLineDash([]);
+    ctx.moveTo(marginL, beltY);
+    ctx.lineTo(marginR, beltY);
+    ctx.stroke();
+
+    // Scrolling dashes
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(249,115,22,0.35)';
+    ctx.lineWidth   = 1.5;
+    ctx.setLineDash([8, 8]);
+    ctx.lineDashOffset = lineDashOffset;
+    ctx.moveTo(marginL, beltY);
+    ctx.lineTo(marginR, beltY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Connector lines between stages
+    for (let i = 0; i < N - 1; i++) {
+      const x1 = sPos[i].cx  + STAGE_W / 2;
+      const x2 = sPos[i + 1].cx - STAGE_W / 2;
+      const cy2 = pipelineY;
+
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(249,115,22,0.15)';
+      ctx.lineWidth   = 1;
+      ctx.moveTo(x1, cy2);
+      ctx.lineTo(x2, cy2);
+      ctx.stroke();
+    }
+
+    // ── Stage boxes ────────────────────────────────────────────────────────
+    for (let i = 0; i < N; i++) {
+      const { cx, cy } = sPos[i];
+      const bx = cx - STAGE_W / 2;
+      const by = cy - STAGE_H / 2;
+      const ss = stageState[i];
+      const isActive  = ss.active;
+      const isError   = ss.errorFlash > 0;
+      const isResolve = ss.resolveFlash > 0;
+      const isHovered = hoveredStage === i;
+
+      // Box background
+      const glassAlpha = isActive ? 0.22 : 0.10;
+      ctx.fillStyle   = `rgba(249,115,22,${glassAlpha})`;
+      ctx.beginPath();
+      ctx.roundRect(bx, by, STAGE_W, STAGE_H, 8);
+      ctx.fill();
+
+      // Box border
+      let borderCol: string;
+      if (isError)        borderCol = `rgba(239,68,68,${0.5 + (ss.errorFlash / 40) * 0.5})`;
+      else if (isResolve) borderCol = `rgba(34,197,94,${0.5 + (ss.resolveFlash / 25) * 0.5})`;
+      else if (isHovered) borderCol = 'rgba(249,115,22,0.9)';
+      else if (isActive)  borderCol = 'rgba(249,115,22,0.65)';
+      else                borderCol = 'rgba(249,115,22,0.18)';
+
+      ctx.strokeStyle = borderCol;
+      ctx.lineWidth   = isHovered || isActive ? 1.5 : 1;
+
+      if (isActive && !isError) {
+        ctx.shadowColor = '#f97316';
+        ctx.shadowBlur  = 12;
+      }
+      ctx.beginPath();
+      ctx.roundRect(bx, by, STAGE_W, STAGE_H, 8);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // Icon
+      ctx.globalAlpha = isActive ? 1 : 0.5;
+      drawStageIcon(STAGES[i].id, cx, cy - 6, isActive);
+      ctx.globalAlpha = 1;
+
+      // Stage label
+      ctx.fillStyle = isActive ? '#f97316' : 'rgba(255,255,255,0.35)';
+      ctx.font      = 'bold 8px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(STAGES[i].label, cx, cy + STAGE_H / 2 - 5);
+
+      // Status dot
+      if (isError) {
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(cx + STAGE_W / 2 - 7, by + 7, 3, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (isResolve) {
+        ctx.fillStyle = '#22c55e';
+        ctx.beginPath();
+        ctx.arc(cx + STAGE_W / 2 - 7, by + 7, 3, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (isActive) {
+        const pulse = 0.5 + 0.5 * Math.sin(frame * 0.15);
+        ctx.fillStyle = `rgba(249,115,22,${pulse})`;
+        ctx.beginPath();
+        ctx.arc(cx + STAGE_W / 2 - 7, by + 7, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // ── Work items in transit ─────────────────────────────────────────────
+    for (const item of items) {
+      if (item.processing) continue;
+
+      const fromStage = item.stageIdx;
+      const toStage   = Math.min(fromStage, N - 1);
+
+      // Position: interpolate between exit of fromStage and entry of toStage
+      let x1: number, x2: number;
+      if (fromStage === 0) {
+        x1 = marginL - 24;
+        x2 = sPos[0].cx - STAGE_W / 2;
+      } else {
+        x1 = sPos[fromStage - 1].cx + STAGE_W / 2;
+        x2 = sPos[fromStage].cx    - STAGE_W / 2;
+      }
+
+      const t  = easeInOut(item.progress);
+      const ix = x1 + (x2 - x1) * t;
+      const iy = pipelineY;
+
+      const iw = 20;
+      const ih = 12;
+
+      ctx.fillStyle   = '#f97316';
+      ctx.shadowColor = '#f97316';
+      ctx.shadowBlur  = 6;
+      ctx.beginPath();
+      ctx.roundRect(ix - iw / 2, iy - ih / 2, iw, ih, 3);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    // ── Burst particles ────────────────────────────────────────────────────
+    bursts = bursts.filter(b => b.alpha > 0.04);
+    for (const b of bursts) {
+      b.x    += b.vx;
+      b.y    += b.vy;
+      b.vy   += 0.08;
+      b.alpha *= 0.94;
+      ctx.globalAlpha = b.alpha;
+      ctx.fillStyle   = b.color;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // ── Stage item counters ────────────────────────────────────────────────
+    const counterLabels = ['crawling','in memory','strategising','drafting','in SEO','formatting','publishing'];
+    ctx.font      = '9px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+
+    // Spread counters below each stage
+    for (let i = 0; i < N; i++) {
+      if (stageItemCount[i] <= 0) continue;
+      const { cx } = sPos[i];
+      const label  = i === 0 ? 'queued' : (counterLabels[i - 1] ?? 'active');
+      ctx.fillStyle = 'rgba(249,115,22,0.7)';
+      ctx.fillText(`${stageItemCount[i]} ${label}`, cx, stageInfoY);
+    }
+
+    // ── Total published counter ────────────────────────────────────────────
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(249,115,22,0.75)';
+    ctx.font      = 'bold 11px -apple-system, sans-serif';
+    ctx.fillText(`${totalPublished + 234} published today`, W - 16, counterY);
+
+    // ── Pipeline title ─────────────────────────────────────────────────────
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.font      = '9px -apple-system, sans-serif';
+    ctx.fillText('AUTOMATED PUBLISHING PIPELINE', 16, counterY);
+
+    // ── Hover tooltip ──────────────────────────────────────────────────────
+    if (hoveredStage >= 0 && mouseX >= 0 && mouseY >= 0) {
+      const i     = hoveredStage;
+      const { cx, cy } = sPos[i];
+      const stage = STAGES[i];
+
+      const maxW  = 200;
+      ctx.font    = '10px -apple-system, sans-serif';
+
+      // Wrap text roughly
+      const words = stage.desc.split(' ');
+      const lines: string[] = [];
+      let current = '';
+      for (const w of words) {
+        const test = current ? `${current} ${w}` : w;
+        if (ctx.measureText(test).width > maxW - 20) {
+          if (current) lines.push(current);
+          current = w;
+        } else {
+          current = test;
+        }
+      }
+      if (current) lines.push(current);
+
+      const tw = maxW;
+      const th = lines.length * 15 + 26;
+      let   tx = cx - tw / 2;
+      let   ty = cy - STAGE_H / 2 - th - 10;
+      tx        = Math.max(8, Math.min(W - tw - 8, tx));
+      ty        = Math.max(8, ty);
+
+      ctx.fillStyle   = 'rgba(6,7,18,0.94)';
+      ctx.strokeStyle = 'rgba(249,115,22,0.5)';
+      ctx.lineWidth   = 1;
+      ctx.beginPath();
+      ctx.roundRect(tx, ty, tw, th, 8);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#f97316';
+      ctx.font      = 'bold 10px -apple-system, sans-serif';
+      ctx.fillText(stage.label, tx + 10, ty + 14);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.font      = '10px -apple-system, sans-serif';
+      lines.forEach((line, li) => {
+        ctx.fillText(line, tx + 10, ty + 28 + li * 15);
+      });
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  requestAnimationFrame(draw);
+})();
+</script>

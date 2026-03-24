@@ -1,0 +1,323 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Voice Fingerprint | Pello" description="PelloPublish captures your brand's unique voice fingerprint from your existing content and generates new content that sounds unmistakably like you — consistently, at scale.">
+  <Header />
+  <main id="main-content">
+    <section class="pub-section" aria-labelledby="pub-headline">
+      <div class="pub-layout">
+        <div class="pub-text">
+          <span class="pub-badge">PelloPublish</span>
+          <h1 id="pub-headline">Your Brand Voice, Perfectly Replicated.</h1>
+          <p>PelloPublish captures your brand's unique voice fingerprint from your existing content and website, then uses it to generate new content that sounds unmistakably like you — consistently, at scale, across every platform.</p>
+          <ul class="pub-pills" role="list">
+            <li>Voice Capture AI</li>
+            <li>Tone Matching</li>
+            <li>Style Consistency</li>
+            <li>Multi-Platform</li>
+          </ul>
+        </div>
+        <div class="pub-canvas-col">
+          <canvas id="pub-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .pub-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .pub-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .pub-layout { grid-template-columns: 1fr; } }
+  .pub-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .pub-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #f97316; width: fit-content; }
+  .pub-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .pub-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .pub-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pub-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .pub-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #pub-canvas { width: 100%; height: 100%; position: absolute; inset: 0; }
+
+  /* Tooltip */
+  .vf-tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: rgba(10, 10, 20, 0.92);
+    border: 1px solid rgba(249,115,22,0.35);
+    border-radius: 8px;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8125rem;
+    color: rgba(255,255,255,0.9);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 9999;
+  }
+  .vf-tooltip.visible { opacity: 1; }
+</style>
+
+<script>
+  (function () {
+    const canvas = document.getElementById('pub-canvas') as HTMLCanvasElement;
+    if (!canvas) return;
+    const col = canvas.parentElement!;
+    const tooltip = document.createElement('div');
+    tooltip.className = 'vf-tooltip';
+    document.body.appendChild(tooltip);
+
+    const ctx = canvas.getContext('2d')!;
+
+    /* ── Resize ── */
+    function resize() {
+      const rect = col.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    /* ── Voice signature (computed once) ── */
+    const SAMPLES = 180;
+    const BASE_R = 60;
+    const harmonics = [
+      { A: 8,  F: 3,  ph: 0 },
+      { A: 5,  F: 7,  ph: 1.2 },
+      { A: 3,  F: 13, ph: 2.4 },
+      { A: 2,  F: 19, ph: 0.8 },
+    ];
+    const noise: number[] = Array.from({ length: SAMPLES }, () => (Math.random() - 0.5) * 3);
+
+    function sampleRadius(i: number, complexity: number): number {
+      const t = (i / SAMPLES) * Math.PI * 2;
+      let r = BASE_R;
+      harmonics.forEach((h, idx) => {
+        const blend = idx === 0 ? 1 : complexity;
+        r += h.A * blend * Math.sin(h.F * t + h.ph);
+      });
+      r += noise[i] * complexity;
+      return r;
+    }
+
+    function drawWaveform(
+      cx: number, cy: number,
+      complexity: number,
+      rotation: number,
+      scaleF: number,
+      strokeColor: string,
+      fillColor: string,
+      alpha: number
+    ) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(cx, cy);
+      ctx.rotate(rotation);
+      ctx.beginPath();
+      for (let i = 0; i <= SAMPLES; i++) {
+        const r = sampleRadius(i % SAMPLES, complexity) * scaleF;
+        const angle = (i / SAMPLES) * Math.PI * 2;
+        const x = Math.cos(angle) * r;
+        const y = Math.sin(angle) * r;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = fillColor;
+      ctx.fill();
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    /* ── Ring animation pool ── */
+    interface Ring {
+      targetR: number;
+      color: string;
+      progress: number; // 0 → 1 (expand) then > 1 (fade)
+      createdAt: number;
+    }
+    const rings: Ring[] = [];
+    const RING_COLORS = ['#f97316', '#6366f1', '#a855f7', '#14b8a6'];
+    let ringColorIdx = 0;
+    let lastRingTime = 0;
+    const RING_INTERVAL = 2000; // ms
+
+    /* ── Content dots ── */
+    const CONTENT_LABELS = [
+      'LinkedIn Article', 'Blog Post', 'Twitter Thread',
+      'Instagram Caption', 'Newsletter', 'YouTube Script',
+      'Press Release', 'Case Study',
+    ];
+    const CONTENT_TITLES: Record<string, string> = {
+      'LinkedIn Article': 'How to Scale Your SaaS Marketing in 2024',
+      'Blog Post': '10 Ways to Increase Organic Traffic Fast',
+      'Twitter Thread': 'The Secret to Building Brand Authority',
+      'Instagram Caption': 'Behind the scenes at Pello HQ 🚀',
+      'Newsletter': 'Q1 Growth Playbook: What Actually Worked',
+      'YouTube Script': 'Why Most Content Fails (And How to Fix It)',
+      'Press Release': 'Pello Reaches 10,000 Active Brands',
+      'Case Study': 'How Acme Corp 3x\'d Their Pipeline in 90 Days',
+    };
+
+    interface ContentDot {
+      label: string;
+      angle: number;
+      orbitR: number;
+      alpha: number;
+      born: number;
+    }
+    const dots: ContentDot[] = [];
+    let hoveredDot: ContentDot | null = null;
+
+    /* ── Mouse ── */
+    let mouseX = 0.5;
+    let mouseY = 0.5;
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      mouseX = (e.clientX - rect.left) / rect.width;
+      mouseY = (e.clientY - rect.top) / rect.height;
+      // Check dot hover
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      hoveredDot = null;
+      for (const d of dots) {
+        const dx = cx + Math.cos(d.angle) * d.orbitR - e.clientX + rect.left;
+        const dy = cy + Math.sin(d.angle) * d.orbitR - e.clientY + rect.top;
+        if (Math.sqrt(dx * dx + dy * dy) < 18) {
+          hoveredDot = d;
+          break;
+        }
+      }
+      if (hoveredDot) {
+        tooltip.textContent = CONTENT_TITLES[hoveredDot.label] ?? hoveredDot.label;
+        tooltip.classList.add('visible');
+        tooltip.style.left = e.clientX + 14 + 'px';
+        tooltip.style.top = e.clientY - 8 + 'px';
+      } else {
+        tooltip.classList.remove('visible');
+      }
+    });
+    canvas.addEventListener('mouseleave', () => {
+      tooltip.classList.remove('visible');
+      mouseX = 0.5; mouseY = 0.5;
+    });
+
+    /* ── Main loop ── */
+    let rotation = 0;
+    let lastTime = 0;
+
+    function frame(ts: number) {
+      const dt = Math.min((ts - lastTime) / 1000, 0.05);
+      lastTime = ts;
+      rotation += 0.3 * dt;
+
+      const W = canvas.width;
+      const H = canvas.height;
+      const cx = W / 2;
+      const cy = H / 2;
+
+      // Complexity from mouse distance from center
+      const distX = mouseX - 0.5;
+      const distY = mouseY - 0.5;
+      const dist = Math.sqrt(distX * distX + distY * distY) * 2; // 0-1
+      const complexity = 0.3 + dist * 0.7;
+
+      ctx.clearRect(0, 0, W, H);
+
+      /* Background faint concentric circles */
+      [100, 200, 300].forEach((r) => {
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(249,115,22,0.03)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+
+      /* Ambient center glow */
+      const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, 120);
+      grd.addColorStop(0, 'rgba(249,115,22,0.12)');
+      grd.addColorStop(1, 'rgba(249,115,22,0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 120, 0, Math.PI * 2);
+      ctx.fill();
+
+      /* Expanding rings */
+      if (ts - lastRingTime > RING_INTERVAL) {
+        rings.push({
+          targetR: 160 + Math.random() * 80,
+          color: RING_COLORS[ringColorIdx % RING_COLORS.length],
+          progress: 0,
+          createdAt: ts,
+        });
+        // Spawn content dot
+        const labelIdx = dots.length % CONTENT_LABELS.length;
+        dots.push({
+          label: CONTENT_LABELS[labelIdx],
+          angle: Math.random() * Math.PI * 2,
+          orbitR: 200 + Math.random() * 60,
+          alpha: 0,
+          born: ts,
+        });
+        ringColorIdx++;
+        lastRingTime = ts;
+      }
+
+      for (let i = rings.length - 1; i >= 0; i--) {
+        const ring = rings[i];
+        ring.progress += dt / 1.8;
+        if (ring.progress > 2) { rings.splice(i, 1); continue; }
+
+        const expandP = Math.min(ring.progress, 1);
+        const ease = 1 - Math.pow(1 - expandP, 3);
+        const r = ring.targetR * ease;
+        const fadeP = ring.progress > 1 ? (ring.progress - 1) : 0;
+        const alpha = expandP < 1 ? 0.5 : 0.5 * (1 - fadeP);
+
+        const hex = ring.color;
+        drawWaveform(cx, cy, complexity * 0.7, rotation * 0.5, r / BASE_R, hex, 'transparent', alpha);
+      }
+
+      /* Center voice waveform */
+      drawWaveform(cx, cy, complexity, rotation, 1, 'rgba(249,115,22,0.9)', 'rgba(249,115,22,0.08)', 1);
+
+      /* Content dots */
+      for (const d of dots) {
+        const age = (ts - d.born) / 1000;
+        d.angle += 0.08 * dt;
+        d.alpha = Math.min(age / 0.5, 1);
+        const dx = cx + Math.cos(d.angle) * d.orbitR;
+        const dy = cy + Math.sin(d.angle) * d.orbitR;
+        const isHovered = d === hoveredDot;
+
+        ctx.save();
+        ctx.globalAlpha = d.alpha;
+        ctx.beginPath();
+        ctx.arc(dx, dy, isHovered ? 6 : 4, 0, Math.PI * 2);
+        ctx.fillStyle = isHovered ? '#f97316' : 'rgba(249,115,22,0.8)';
+        ctx.fill();
+        if (isHovered) {
+          ctx.strokeStyle = 'rgba(249,115,22,0.4)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(dx, dy, 10, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        // Label
+        ctx.font = '11px -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.fillText(d.label, dx + 8, dy + 4);
+        ctx.restore();
+      }
+
+      requestAnimationFrame(frame);
+    }
+
+    requestAnimationFrame((ts) => { lastTime = ts; lastRingTime = ts; frame(ts); });
+  })();
+</script>

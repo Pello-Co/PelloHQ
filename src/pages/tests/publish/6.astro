@@ -1,0 +1,643 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Editorial Newsroom | Pello" description="AutoPilot scans the web for breaking news in your industry, then transforms trending stories into business-relevant content automatically — 24/7.">
+  <Header />
+  <main id="main-content">
+    <section class="pub-section" aria-labelledby="pub-headline">
+      <div class="pub-layout">
+        <div class="pub-text">
+          <span class="pub-badge">PelloPublish</span>
+          <h1 id="pub-headline">The Internet Is Your Editorial Team.</h1>
+          <p>AutoPilot scans the web for breaking news in your industry, then transforms trending stories into business-relevant content — automatically. Watch your newsroom operate 24/7, turning today's headlines into tomorrow's leads.</p>
+          <ul class="pub-pills" role="list">
+            <li>Live Web Search</li>
+            <li>24/7 AutoPilot</li>
+            <li>Trend Detection</li>
+            <li>Lead Generation</li>
+          </ul>
+        </div>
+        <div class="pub-canvas-col">
+          <canvas id="pub-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .pub-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .pub-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .pub-layout { grid-template-columns: 1fr; } }
+  .pub-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .pub-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #f97316; width: fit-content; }
+  .pub-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .pub-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .pub-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pub-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .pub-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #pub-canvas { width: 100%; height: 100%; position: absolute; inset: 0; }
+
+  /* Hover card overlay */
+  #news-card-hover {
+    position: fixed;
+    pointer-events: none;
+    padding: 0.5rem 0.75rem;
+    background: rgba(10,10,20,0.95);
+    border: 1px solid rgba(249,115,22,0.4);
+    border-radius: 10px;
+    font-size: 0.75rem;
+    color: #fff;
+    max-width: 200px;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 1000;
+    line-height: 1.5;
+  }
+</style>
+
+<div id="news-card-hover"></div>
+
+<script>
+  const canvas   = document.getElementById('pub-canvas') as HTMLCanvasElement;
+  const hoverDiv = document.getElementById('news-card-hover') as HTMLDivElement;
+  const ctx      = canvas.getContext('2d')!;
+
+  // ── Constants ────────────────────────────────────────────────────────────────
+  const CAT_COLORS: Record<string, string> = {
+    TECH:      '#6366f1',
+    SAAS:      '#f97316',
+    AI:        '#a855f7',
+    MARKETING: '#22d3ee',
+    FINANCE:   '#4ade80',
+  };
+  const CATS = Object.keys(CAT_COLORS);
+
+  const PLATFORMS: { name: string; color: string }[] = [
+    { name: 'Blog',     color: '#f97316' },
+    { name: 'LinkedIn', color: '#0ea5e9' },
+    { name: 'Twitter',  color: '#1d9bf0' },
+  ];
+
+  const FAKE_HEADLINES = [
+    'OpenAI announces GPT-5 with 10× reasoning',
+    'SaaS valuations rebound as AI adoption surges',
+    'Google rolls out AI Overviews globally',
+    'Series B funding hits 3-year high for B2B tools',
+    'LinkedIn tests AI-written post suggestions',
+    'HubSpot acquires AI outreach startup',
+    'Shopify adds agentic commerce features',
+    'Marketing budgets shift to performance AI',
+    'Stripe launches embedded AI billing insights',
+    'Notion releases autonomous research agent',
+    'Gartner: 80% of enterprises run AI agents by 2026',
+    'TikTok for Business expands to 15 new markets',
+    'ChatGPT plugins spark SEO disruption wave',
+    'B2B content leads outperform paid ads by 3×',
+    'Anthropic raises $3B for enterprise AI push',
+    'Email open rates rise with AI personalisation',
+    'Figma adds generative UI to main editor',
+    'AWS launches inference cost reduction tools',
+    'Revenue intelligence market hits $12B valuation',
+    'Zapier automates 50M tasks/day with AI routing',
+  ];
+
+  const REPURPOSED_TITLES = [
+    'How GPT-5 Changes Your SEO Strategy',
+    '5 Ways SaaS Rebounds Affect Your Pricing',
+    'AI Search: What It Means for Your Blog',
+    'Fund Raising Trends & Your Growth Roadmap',
+    'Writing LinkedIn Posts That Actually Convert',
+    'What HubSpot's Acquisition Means for You',
+    'Commerce AI: Your 90-Day Action Plan',
+    'Performance Marketing in the AI Era',
+    'Billing Transparency as a Growth Lever',
+    'Automate Research Without Losing Your Voice',
+    'Why Enterprises Are Betting on AI Agents Now',
+    'Repurpose TikTok Trends for B2B Growth',
+    'Plugin Economy: 7 Content Gaps to Fill',
+    'Content That Outperforms Paid — Here's Why',
+    'Enterprise AI: Positioning Your Brand Early',
+    'Email Personalisation Playbook for 2025',
+    'Design-Led Growth in the Generative UI Age',
+    'Slash Inference Costs, Scale Content Output',
+    'Revenue Intelligence: A Practical Guide',
+    'Automation at Scale: Lessons from Zapier',
+  ];
+
+  // ── Sizes & layout ───────────────────────────────────────────────────────────
+  const CARD_W   = 148;
+  const CARD_H   = 58;
+  const TICKER_H = 32;
+  const AI_R     = 28;
+
+  let W = 0, H = 0;
+
+  function resize() {
+    const col = canvas.parentElement!;
+    W = col.clientWidth;
+    H = col.clientHeight || 560;
+    canvas.width  = W * devicePixelRatio;
+    canvas.height = H * devicePixelRatio;
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.resetTransform();
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ── Ticker state ─────────────────────────────────────────────────────────────
+  let tickerX = 0;
+  const TICKER_ITEMS = FAKE_HEADLINES.map((h, i) => ({
+    text: `● ${CATS[i % CATS.length]}  ${h}`,
+    color: CAT_COLORS[CATS[i % CATS.length]],
+  }));
+
+  // ── Cards state ──────────────────────────────────────────────────────────────
+  interface NewsCard {
+    id: number;
+    cat: string;
+    headline: string;
+    source: string;
+    y: number;         // current y (animates in from above)
+    targetY: number;
+    glowing: boolean;
+    glowAge: number;
+    active: boolean;   // being processed
+    activeProg: number; // 0→1 connection line progress
+  }
+
+  interface OutCard {
+    id: number;
+    platform: { name: string; color: string };
+    title: string;
+    readTime: string;
+    y: number;
+    targetY: number;
+    newGlow: number;   // countdown for glow on arrival
+  }
+
+  let newsCards: NewsCard[] = [];
+  let outCards:  OutCard[]  = [];
+  let cardIdSeq  = 0;
+  let cycleTimer = 0;
+  const CYCLE_FRAMES = 150; // ~2.5s at 60fps
+  let postsToday = 0;
+
+  // ── AI spinner ───────────────────────────────────────────────────────────────
+  let aiAngle = 0;
+  let aiPulse = 0;
+
+  // ── Mouse ────────────────────────────────────────────────────────────────────
+  let mouseX = -9999, mouseY = -9999;
+
+  type HitCard = { type: 'out'; cx: number; cy: number; cw: number; ch: number; title: string; platform: string };
+  let hitCards: HitCard[] = [];
+
+  // ── Layout helpers ───────────────────────────────────────────────────────────
+  function leftColX()   { return W / 2 - AI_R - 20 - CARD_W; }
+  function rightColX()  { return W / 2 + AI_R + 20; }
+  function aiCenterX()  { return W / 2; }
+  function aiCenterY()  { return TICKER_H + (H - TICKER_H) / 2; }
+
+  // ── Spawn a news card ─────────────────────────────────────────────────────────
+  function spawnNewsCard() {
+    const idx = cardIdSeq % FAKE_HEADLINES.length;
+    const card: NewsCard = {
+      id: cardIdSeq++,
+      cat: CATS[idx % CATS.length],
+      headline: FAKE_HEADLINES[idx].substring(0, 28) + (FAKE_HEADLINES[idx].length > 28 ? '…' : ''),
+      source: ['TechCrunch','Reuters','Bloomberg','The Verge','Wired'][idx % 5],
+      y: TICKER_H - CARD_H - 4,
+      targetY: TICKER_H + 8,
+      glowing: false,
+      glowAge: 0,
+      active: false,
+      activeProg: 0,
+    };
+    // Shift existing cards down
+    newsCards.forEach(c => { c.targetY += CARD_H + 6; });
+    // Keep max 3
+    if (newsCards.length >= 3) newsCards.shift();
+    newsCards.push(card);
+  }
+
+  // ── Spawn output card ─────────────────────────────────────────────────────────
+  function spawnOutCard(sourceIdx: number) {
+    const idx = sourceIdx % REPURPOSED_TITLES.length;
+    const plat = PLATFORMS[idx % PLATFORMS.length];
+    const card: OutCard = {
+      id: cardIdSeq++,
+      platform: plat,
+      title: REPURPOSED_TITLES[idx].substring(0, 28) + (REPURPOSED_TITLES[idx].length > 28 ? '…' : ''),
+      readTime: (3 + (idx % 5)) + ' min read',
+      y: aiCenterY() + AI_R + 20,
+      targetY: TICKER_H + 8,
+      newGlow: 60,
+    };
+    // Shift existing cards down
+    outCards.forEach(c => { c.targetY += CARD_H + 6; });
+    if (outCards.length >= 3) outCards.shift();
+    outCards.push(card);
+    postsToday++;
+  }
+
+  // ── Draw background grid ──────────────────────────────────────────────────────
+  function drawGrid() {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.022)';
+    ctx.lineWidth = 0.5;
+    const step = 36;
+    for (let x = 0; x < W; x += step) {
+      ctx.beginPath(); ctx.moveTo(x, TICKER_H); ctx.lineTo(x, H); ctx.stroke();
+    }
+    for (let y = TICKER_H; y < H; y += step) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // ── Draw ticker ───────────────────────────────────────────────────────────────
+  let tickerTotalW = 0;
+  function buildTickerString(): { segments: { text: string; color: string }[] } {
+    return { segments: TICKER_ITEMS.concat(TICKER_ITEMS) };
+  }
+
+  function drawTicker() {
+    ctx.save();
+    ctx.fillStyle = 'rgba(6,7,18,0.9)';
+    ctx.fillRect(0, 0, W, TICKER_H);
+    ctx.strokeStyle = 'rgba(249,115,22,0.25)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, TICKER_H); ctx.lineTo(W, TICKER_H); ctx.stroke();
+
+    // Label
+    ctx.fillStyle = 'rgba(249,115,22,0.9)';
+    ctx.font = 'bold 9px -apple-system, sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('LIVE', 10, TICKER_H / 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.fillRect(32, 8, 1, TICKER_H - 16);
+
+    // Clip ticker to right of label
+    ctx.beginPath();
+    ctx.rect(40, 0, W - 40, TICKER_H);
+    ctx.clip();
+
+    ctx.font = '10px -apple-system, sans-serif';
+    ctx.textBaseline = 'middle';
+    let x = tickerX + 40;
+    for (const item of TICKER_ITEMS) {
+      const dotEnd = item.text.indexOf('  ');
+      const dot = item.text.slice(0, dotEnd);
+      const rest = item.text.slice(dotEnd + 2);
+      ctx.fillStyle = item.color;
+      ctx.fillText(dot, x, TICKER_H / 2);
+      const dotW = ctx.measureText(dot).width;
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.fillText('  ' + rest, x + dotW, TICKER_H / 2);
+      x += ctx.measureText(item.text).width + 40;
+    }
+    // Loop: measure total width and wrap
+    const totalW = TICKER_ITEMS.reduce((s, it) => s + ctx.measureText(it.text).width + 40, 0);
+    if (tickerX + 40 < -totalW + 40) tickerX += totalW;
+
+    ctx.restore();
+  }
+
+  // ── Draw a news card ──────────────────────────────────────────────────────────
+  function drawNewsCard(card: NewsCard) {
+    const x = leftColX();
+    const y = card.y;
+    const catColor = CAT_COLORS[card.cat];
+
+    ctx.save();
+    // Glow if active
+    if (card.active || card.glowing) {
+      ctx.shadowColor = catColor;
+      ctx.shadowBlur  = 12;
+    }
+    // Background
+    ctx.fillStyle = card.active ? 'rgba(30,20,10,0.95)' : 'rgba(15,15,30,0.85)';
+    ctx.beginPath();
+    ctx.roundRect(x, y, CARD_W, CARD_H, 8);
+    ctx.fill();
+    // Border
+    ctx.strokeStyle = card.active ? catColor : 'rgba(255,255,255,0.1)';
+    ctx.lineWidth   = card.active ? 1.5 : 0.75;
+    ctx.stroke();
+
+    // Category tag
+    ctx.fillStyle = catColor;
+    ctx.font = 'bold 8px -apple-system, sans-serif';
+    ctx.textBaseline = 'top';
+    ctx.fillText(card.cat, x + 8, y + 8);
+
+    // Headline
+    ctx.fillStyle = 'rgba(255,255,255,0.88)';
+    ctx.font = '10px -apple-system, sans-serif';
+    ctx.textBaseline = 'top';
+    ctx.fillText(card.headline, x + 8, y + 22);
+
+    // Source
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.fillText(card.source, x + 8, y + CARD_H - 14);
+
+    ctx.restore();
+  }
+
+  // ── Draw an output card ───────────────────────────────────────────────────────
+  function drawOutCard(card: OutCard) {
+    const x = rightColX();
+    const y = card.y;
+    const isNew = card.newGlow > 0;
+
+    ctx.save();
+    if (isNew) {
+      ctx.shadowColor = 'rgba(249,115,22,0.7)';
+      ctx.shadowBlur  = 10 * (card.newGlow / 60);
+    }
+    ctx.fillStyle = 'rgba(15,15,30,0.85)';
+    ctx.beginPath();
+    ctx.roundRect(x, y, CARD_W, CARD_H, 8);
+    ctx.fill();
+    ctx.strokeStyle = isNew ? 'rgba(249,115,22,0.6)' : 'rgba(255,255,255,0.1)';
+    ctx.lineWidth   = isNew ? 1.5 : 0.75;
+    ctx.stroke();
+
+    // Platform dot + name
+    ctx.beginPath();
+    ctx.arc(x + 14, y + 14, 5, 0, Math.PI * 2);
+    ctx.fillStyle = card.platform.color;
+    ctx.fill();
+    ctx.fillStyle = card.platform.color;
+    ctx.font = 'bold 9px -apple-system, sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(card.platform.name, x + 24, y + 14);
+
+    // Title
+    ctx.fillStyle = 'rgba(255,255,255,0.88)';
+    ctx.font = '10px -apple-system, sans-serif';
+    ctx.textBaseline = 'top';
+    ctx.fillText(card.title, x + 8, y + 26);
+
+    // Read time
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.fillText(card.readTime, x + 8, y + CARD_H - 14);
+
+    // Check hover
+    const hx = mouseX - canvas.getBoundingClientRect().left;
+    const hy = mouseY - canvas.getBoundingClientRect().top;
+    // We track this in hitCards instead
+
+    ctx.restore();
+
+    // Register hit area
+    hitCards.push({ type: 'out', cx: x, cy: y, cw: CARD_W, ch: CARD_H, title: REPURPOSED_TITLES[card.id % REPURPOSED_TITLES.length], platform: card.platform.name });
+  }
+
+  // ── Draw AI zone ──────────────────────────────────────────────────────────────
+  function drawAIZone() {
+    const cx = aiCenterX();
+    const cy = aiCenterY();
+    aiAngle += 0.04;
+    aiPulse  = (aiPulse + 0.06) % (Math.PI * 2);
+
+    ctx.save();
+    // Outer rotating arc
+    ctx.beginPath();
+    ctx.arc(cx, cy, AI_R, aiAngle, aiAngle + Math.PI * 1.4);
+    ctx.strokeStyle = '#f97316';
+    ctx.lineWidth   = 2.5;
+    ctx.lineCap     = 'round';
+    ctx.shadowColor = 'rgba(249,115,22,0.6)';
+    ctx.shadowBlur  = 8;
+    ctx.stroke();
+
+    // Second arc offset
+    ctx.beginPath();
+    ctx.arc(cx, cy, AI_R, aiAngle + Math.PI, aiAngle + Math.PI * 2.2);
+    ctx.strokeStyle = 'rgba(249,115,22,0.35)';
+    ctx.lineWidth   = 1.5;
+    ctx.stroke();
+
+    // Inner pulse circle
+    const pr = 6 + Math.sin(aiPulse) * 3;
+    ctx.beginPath();
+    ctx.arc(cx, cy, pr, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(249,115,22,${0.2 + Math.sin(aiPulse) * 0.15})`;
+    ctx.fill();
+
+    // "AI" label
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 10px -apple-system, sans-serif';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowBlur   = 0;
+    ctx.fillText('AI', cx, cy);
+
+    // Label below
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.font = '8px -apple-system, sans-serif';
+    ctx.fillText('TRANSFORM', cx, cy + AI_R + 12);
+
+    ctx.restore();
+  }
+
+  // ── Draw connection curves ────────────────────────────────────────────────────
+  function drawConnections() {
+    newsCards.forEach(card => {
+      if (!card.active) return;
+      const sx = leftColX() + CARD_W;
+      const sy = card.y + CARD_H / 2;
+      const ex = aiCenterX() - AI_R;
+      const ey = aiCenterY();
+      const prog = card.activeProg;
+
+      // Dotted path from news card to AI zone
+      const pts = bezierPts(sx, sy, ex, ey);
+      drawAnimatedPath(pts, prog, 'rgba(249,115,22,0.7)');
+    });
+
+    outCards.forEach((card, i) => {
+      if (card.newGlow < 55) return; // only draw briefly on arrival
+      const sx = aiCenterX() + AI_R;
+      const sy = aiCenterY();
+      const ex = rightColX();
+      const ey = card.y + CARD_H / 2;
+      const prog = 1 - card.newGlow / 60;
+
+      const pts = bezierPts(sx, sy, ex, ey);
+      drawAnimatedPath(pts, prog, 'rgba(0,210,210,0.6)');
+    });
+  }
+
+  function bezierPts(sx: number, sy: number, ex: number, ey: number): { x: number; y: number }[] {
+    const pts: { x: number; y: number }[] = [];
+    const cx1 = (sx + ex) / 2, cy1 = sy;
+    const cx2 = (sx + ex) / 2, cy2 = ey;
+    for (let t = 0; t <= 1; t += 0.02) {
+      const u = 1 - t;
+      const x = u*u*u*sx + 3*u*u*t*cx1 + 3*u*t*t*cx2 + t*t*t*ex;
+      const y = u*u*u*sy + 3*u*u*t*cy1 + 3*u*t*t*cy2 + t*t*t*ey;
+      pts.push({ x, y });
+    }
+    return pts;
+  }
+
+  function drawAnimatedPath(pts: { x: number; y: number }[], prog: number, color: string) {
+    const endIdx = Math.floor(pts.length * prog);
+    if (endIdx < 2) return;
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth   = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < endIdx; i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.stroke();
+
+    // Arrow head at end
+    const tip = pts[endIdx - 1];
+    const before = pts[Math.max(0, endIdx - 3)];
+    const angle = Math.atan2(tip.y - before.y, tip.x - before.x);
+    ctx.setLineDash([]);
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(tip.x + Math.cos(angle) * 6, tip.y + Math.sin(angle) * 6);
+    ctx.lineTo(tip.x + Math.cos(angle + 2.5) * 5, tip.y + Math.sin(angle + 2.5) * 5);
+    ctx.lineTo(tip.x + Math.cos(angle - 2.5) * 5, tip.y + Math.sin(angle - 2.5) * 5);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // ── Column headers ────────────────────────────────────────────────────────────
+  function drawHeaders() {
+    const aicx = aiCenterX();
+    const aicy = aiCenterY();
+
+    ctx.save();
+    ctx.font = 'bold 9px -apple-system, sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.letterSpacing = '0.06em';
+
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.textAlign = 'center';
+    ctx.fillText('INCOMING', leftColX() + CARD_W / 2, TICKER_H + 20);
+    ctx.fillText('PUBLISHED', rightColX() + CARD_W / 2, TICKER_H + 20);
+
+    // Counter top right
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(249,115,22,0.85)';
+    ctx.font = 'bold 10px -apple-system, sans-serif';
+    ctx.fillText(`${postsToday} posts generated today`, W - 12, TICKER_H + 18);
+    ctx.restore();
+  }
+
+  // ── Hover detection ───────────────────────────────────────────────────────────
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+
+    const hit = hitCards.find(c =>
+      mouseX >= c.cx && mouseX <= c.cx + c.cw &&
+      mouseY >= c.cy && mouseY <= c.cy + c.ch
+    );
+    if (hit) {
+      hoverDiv.innerHTML = `<strong>${hit.title}</strong><br><span style="color:rgba(255,255,255,0.5)">${hit.platform} · View post →</span>`;
+      hoverDiv.style.opacity = '1';
+      hoverDiv.style.left = (e.clientX + 14) + 'px';
+      hoverDiv.style.top  = (e.clientY - 10) + 'px';
+    } else {
+      hoverDiv.style.opacity = '0';
+    }
+  });
+  canvas.addEventListener('mouseleave', () => {
+    mouseX = -9999; mouseY = -9999;
+    hoverDiv.style.opacity = '0';
+  });
+
+  // ── Animation loop ────────────────────────────────────────────────────────────
+  // Seed initial cards
+  spawnNewsCard();
+  spawnNewsCard();
+
+  function loop() {
+    ctx.clearRect(0, 0, W, H);
+    hitCards = [];
+
+    drawGrid();
+    drawTicker();
+    drawHeaders();
+
+    // Ticker scroll
+    tickerX -= 1.2;
+    const totalW = TICKER_ITEMS.reduce((s, it) => {
+      ctx.font = '10px -apple-system, sans-serif';
+      return s + ctx.measureText(it.text).width + 40;
+    }, 0);
+    if (tickerX < -totalW) tickerX += totalW;
+
+    // Cycle timer
+    cycleTimer++;
+    if (cycleTimer >= CYCLE_FRAMES) {
+      cycleTimer = 0;
+      // Trigger processing on top news card
+      const activeCard = newsCards[newsCards.length - 1];
+      if (activeCard) {
+        activeCard.active   = true;
+        activeCard.activeProg = 0;
+      }
+      spawnNewsCard();
+    }
+
+    // Update news cards
+    newsCards.forEach(card => {
+      card.y += (card.targetY - card.y) * 0.12;
+      if (card.active) {
+        card.activeProg = Math.min(1, card.activeProg + 0.025);
+        if (card.activeProg >= 1) {
+          // Trigger output
+          card.active = false;
+          spawnOutCard(card.id);
+        }
+      }
+    });
+
+    // Update out cards
+    outCards.forEach(card => {
+      card.y += (card.targetY - card.y) * 0.12;
+      if (card.newGlow > 0) card.newGlow--;
+    });
+
+    // Draw connections first (behind cards)
+    drawConnections();
+
+    // Draw AI zone
+    drawAIZone();
+
+    // Draw cards
+    // Clip main area below ticker
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, TICKER_H, W, H - TICKER_H);
+    ctx.clip();
+    newsCards.forEach(drawNewsCard);
+    outCards.forEach(drawOutCard);
+    ctx.restore();
+
+    requestAnimationFrame(loop);
+  }
+
+  loop();
+</script>
