@@ -64,10 +64,38 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
           </div>
         </div>
       </div>
-      <div class="product-card" data-product="2">
+      <div class="product-card pub-card" data-product="2">
         <canvas class="product-bg" aria-hidden="true"></canvas>
-        <div class="product-card-content">
-          <ProductSection productIndex={2} flip={false} />
+        <div class="pub-layout">
+          <!-- Left: text -->
+          <div class="pub-text ps-info flex flex-col" style="--product-color:#a855f7;">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:#a855f718;border:1px solid #a855f728;color:#a855f7;" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="13" rx="2" fill="currentColor" opacity="0.15"/><rect x="3" y="3" width="18" height="4" rx="1" fill="currentColor" opacity="0.25"/><path d="M7 13h6M7 10h10" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>
+              </div>
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-widest" style="color:#a855f7;">PelloPublish</p>
+                <p class="text-xs text-zinc-500">Content that creates itself</p>
+              </div>
+            </div>
+            <h2 class="text-headline text-white mb-5" style="white-space:pre-line;">Every format. Your voice.
+Zero effort.</h2>
+            <p class="text-body-lg text-zinc-400 mb-8 leading-relaxed">PelloPublish learns your brand&apos;s voice, tone, and style — then produces content across every format at scale. Blog posts, social carousels, short-form video, long-form articles, UGC-style content. Scheduled, published, and optimised automatically.</p>
+            <ul class="flex flex-wrap gap-2 mb-10 list-none m-0 p-0" role="list">
+              <li class="feature-pill" style="background:#a855f70d;color:#a855f7;border-color:#a855f725;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Blog posts &amp; long-form articles</li>
+              <li class="feature-pill" style="background:#a855f70d;color:#a855f7;border-color:#a855f725;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Video, reels &amp; shorts</li>
+              <li class="feature-pill" style="background:#a855f70d;color:#a855f7;border-color:#a855f725;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Social carousels &amp; UGC</li>
+              <li class="feature-pill" style="background:#a855f70d;color:#a855f7;border-color:#a855f725;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Auto-scheduling across platforms</li>
+            </ul>
+            <a href="https://pellopublish.com" target="_blank" rel="noopener noreferrer" class="btn-primary self-start" style="background:linear-gradient(135deg,#a855f7 0%,#a855f7cc 100%);">
+              Explore PelloPublish
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+          </div>
+          <!-- Right: flow canvas -->
+          <div class="pub-canvas-col">
+            <canvas id="pub-flow-canvas" aria-hidden="true"></canvas>
+          </div>
         </div>
       </div>
       <div class="product-card soc-card" data-product="3">
@@ -591,6 +619,43 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
   .product-card .product-visual-panel span[class*="rounded-full"] {
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
+  }
+
+  /* ── PelloPublish two-column layout ─────────────────────────────────── */
+  .pub-card { overflow: hidden; }
+  .pub-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 480px;
+    align-items: stretch;
+    position: relative;
+    z-index: 1;
+  }
+  .pub-text {
+    padding: 3rem 2.5rem 3rem 3rem;
+    position: relative;
+    z-index: 2;
+  }
+  .pub-canvas-col {
+    position: relative;
+    overflow: hidden;
+  }
+  .pub-canvas-col #pub-flow-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  @media (max-width: 1023px) {
+    .pub-layout {
+      grid-template-columns: 1fr;
+    }
+    .pub-text {
+      padding: 2rem 1.5rem 1.5rem;
+    }
+    .pub-canvas-col {
+      height: 380px;
+    }
   }
 
   /* ── PelloReach two-column layout ──────────────────────────────────────── */
@@ -2330,6 +2395,192 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     }
   }
 
+  // ── PelloPublish Flow Canvas ──────────────────────────────────────────────
+  (function() {
+    const pubCanvas = document.getElementById('pub-flow-canvas') as HTMLCanvasElement;
+    if (!pubCanvas) return;
+    const pubCtx = pubCanvas.getContext('2d')!;
+    const pubWrap = pubCanvas.parentElement!;
+    let pW = 0, pH = 0, pDpr = 1;
+
+    function pubResize() {
+      const r = pubWrap.getBoundingClientRect();
+      pDpr = window.devicePixelRatio || 1;
+      pW = r.width; pH = r.height || 480;
+      pubCanvas.width = pW * pDpr; pubCanvas.height = pH * pDpr;
+      pubCanvas.style.width = pW + 'px'; pubCanvas.style.height = pH + 'px';
+      pubCtx.setTransform(pDpr, 0, 0, pDpr, 0, 0);
+    }
+    pubResize();
+    window.addEventListener('resize', pubResize);
+
+    // SVG paths for icons
+    const PUB_PATHS: Record<string, {path: string; vb: number}> = {
+      x:    {path:'M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z',vb:24},
+      ig:   {path:'M7.03.084c-1.277.06-2.149.264-2.911.563a4.1 4.1 0 0 0-2.123 1.388 4.1 4.1 0 0 0-1.38 2.127c-.296.764-.496 1.637-.552 2.914C.007 8.353-.006 8.764 0 12.001c.006 3.259.02 3.667.082 4.947.061 1.277.264 2.148.564 2.911.308.789.72 1.457 1.388 2.123a4.1 4.1 0 0 0 2.128 1.38c.764.295 1.636.496 2.914.552C8.353 23.993 8.764 24.006 12 24s3.668-.02 4.948-.082c1.28-.06 2.147-.265 2.91-.563a4.1 4.1 0 0 0 2.123-1.388 4.1 4.1 0 0 0 1.38-2.128c.295-.764.496-1.636.552-2.912.056-1.281.069-1.69.063-4.948-.006-3.258-.021-3.667-.082-4.947-.06-1.28-.264-2.149-.563-2.912a4.1 4.1 0 0 0-1.388-2.123A4.1 4.1 0 0 0 19.838.617c-.51-.198-1.092-.333-1.943-.372C16.617.009 16.208-.005 12.971.001 9.712.008 9.304.022 8.024.084M16.953 5.586a1.44 1.44 0 1 0 1.437-1.442 1.44 1.44 0 0 0-1.437 1.442M5.838 12.012a6.17 6.17 0 1 0 12.324-.024 6.17 6.17 0 0 0-12.324.024M8 12.008a4 4 0 1 1 4.008 3.992A4 4 0 0 1 8 12.008',vb:24},
+      tt:   {path:'M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z',vb:24},
+      li:   {path:'M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854zm4.943 12.248V6.169H2.542v7.225zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248S2.4 3.226 2.4 3.934c0 .694.521 1.248 1.327 1.248zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016l.016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225z',vb:16},
+      rss:  {path:'M19.199 24C19.199 13.467 10.533 4.8 0 4.8V0c13.165 0 24 10.835 24 24h-4.801zM3.291 17.415c1.814 0 3.293 1.479 3.293 3.295 0 1.813-1.485 3.29-3.301 3.29C1.47 24 0 22.526 0 20.71s1.475-3.294 3.291-3.295zM15.909 24h-4.665c0-6.169-5.075-11.245-11.244-11.245V8.09c8.727 0 15.909 7.184 15.909 15.91z',vb:24},
+      globe:{path:'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z',vb:24},
+      search:{path:'M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z',vb:24},
+      mail: {path:'M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z',vb:24},
+      blog: {path:'M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z',vb:24},
+    };
+    const pubPathCache: Record<string, Path2D> = {};
+    for (const [k, v] of Object.entries(PUB_PATHS)) pubPathCache[k] = new Path2D(v.path);
+
+    function pubIcon(x: number, y: number, type: string, sz: number, color: string) {
+      const e = PUB_PATHS[type]; if (!e) return;
+      pubCtx.save();
+      pubCtx.translate(x - sz/2, y - sz/2);
+      pubCtx.scale(sz/e.vb, sz/e.vb);
+      pubCtx.fillStyle = color;
+      pubCtx.fill(pubPathCache[type]);
+      pubCtx.restore();
+    }
+
+    const PUB_INPUTS = [
+      { label: 'Scrape', color: '#6366f1', icon: 'globe' },
+      { label: 'News',   color: '#22d3ee', icon: 'rss' },
+      { label: 'X Feed', color: '#ffffff', icon: 'x' },
+      { label: 'Keywords',color:'#4ade80', icon: 'search' },
+    ];
+    const PUB_OUTPUTS = [
+      { label: 'Newsletter', color: '#f97316', icon: 'mail' },
+      { label: 'Instagram',  color: '#E1306C', icon: 'ig' },
+      { label: 'TikTok',     color: '#00f2ea', icon: 'tt' },
+      { label: 'X',          color: '#1d9bf0', icon: 'x' },
+      { label: 'LinkedIn',   color: '#0A66C2', icon: 'li' },
+      { label: 'Blog',       color: '#a855f7', icon: 'blog' },
+    ];
+
+    function pubInputPos(i: number) { return { x: 40, y: (pH/(PUB_INPUTS.length+1))*(i+1) }; }
+    function pubOutputPos(i: number) { return { x: pW - 40, y: (pH/(PUB_OUTPUTS.length+1))*(i+1) }; }
+    function pubEnginePos() { return { x: pW/2, y: pH/2 }; }
+
+    interface PubPart { x:number; y:number; tx:number; ty:number; prog:number; spd:number; color:string; fromI:number; toO:number; sz:number; }
+    const pubParts: PubPart[] = [];
+    let pubLastSpawn = 0;
+
+    function pubBezier(sx:number,sy:number,ex:number,ey:number,t:number) {
+      const cx=(sx+ex)/2, cy=sy, u=1-t;
+      return { x: u*u*sx+2*u*t*cx+t*t*ex, y: u*u*sy+2*u*t*cy+t*t*ey };
+    }
+
+    function pubRender(time: number) {
+      requestAnimationFrame(pubRender);
+      if (pW < 10) return;
+      const t = time * 0.001;
+      pubCtx.clearRect(0, 0, pW, pH);
+
+      const eng = pubEnginePos();
+
+      // Subtle grid
+      pubCtx.strokeStyle = 'rgba(255,255,255,0.015)';
+      pubCtx.lineWidth = 0.5;
+      for (let gx = 0; gx < pW; gx += 30) { pubCtx.beginPath(); pubCtx.moveTo(gx,0); pubCtx.lineTo(gx,pH); pubCtx.stroke(); }
+      for (let gy = 0; gy < pH; gy += 30) { pubCtx.beginPath(); pubCtx.moveTo(0,gy); pubCtx.lineTo(pW,gy); pubCtx.stroke(); }
+
+      // Connections
+      for (let i = 0; i < PUB_INPUTS.length; i++) {
+        const p = pubInputPos(i);
+        pubCtx.beginPath(); pubCtx.moveTo(p.x+16, p.y);
+        pubCtx.quadraticCurveTo((p.x+16+eng.x-30)/2, p.y, eng.x-30, eng.y);
+        pubCtx.strokeStyle = PUB_INPUTS[i].color + '15'; pubCtx.lineWidth = 1; pubCtx.stroke();
+      }
+      for (let i = 0; i < PUB_OUTPUTS.length; i++) {
+        const p = pubOutputPos(i);
+        pubCtx.beginPath(); pubCtx.moveTo(eng.x+30, eng.y);
+        pubCtx.quadraticCurveTo((eng.x+30+p.x-16)/2, eng.y, p.x-16, p.y);
+        pubCtx.strokeStyle = PUB_OUTPUTS[i].color + '15'; pubCtx.lineWidth = 1; pubCtx.stroke();
+      }
+
+      // Spawn
+      if (t - pubLastSpawn > 0.2) {
+        pubLastSpawn = t;
+        const ii = Math.floor(Math.random()*PUB_INPUTS.length);
+        const ip = pubInputPos(ii);
+        pubParts.push({ x:ip.x+16,y:ip.y, tx:eng.x-30,ty:eng.y, prog:0, spd:0.004+Math.random()*0.003, color:PUB_INPUTS[ii].color, fromI:ii, toO:-1, sz:1.5+Math.random()*1.5 });
+        const oi = Math.floor(Math.random()*PUB_OUTPUTS.length);
+        const op = pubOutputPos(oi);
+        pubParts.push({ x:eng.x+30,y:eng.y, tx:op.x-16,ty:op.y, prog:0, spd:0.004+Math.random()*0.003, color:PUB_OUTPUTS[oi].color, fromI:-1, toO:oi, sz:1.5+Math.random()*1.5 });
+      }
+
+      // Particles
+      for (let i = pubParts.length-1; i >= 0; i--) {
+        const p = pubParts[i];
+        p.prog += p.spd;
+        if (p.prog >= 1) { pubParts.splice(i,1); continue; }
+        const pos = pubBezier(p.x, p.y, p.tx, p.ty, p.prog);
+        const alpha = p.prog < 0.1 ? p.prog/0.1 : p.prog > 0.85 ? (1-p.prog)/0.15 : 1;
+        pubCtx.globalAlpha = alpha * 0.7;
+        pubCtx.beginPath(); pubCtx.arc(pos.x, pos.y, p.sz, 0, Math.PI*2);
+        pubCtx.fillStyle = p.color; pubCtx.fill();
+        pubCtx.globalAlpha = 1;
+      }
+      while (pubParts.length > 120) pubParts.shift();
+
+      // Engine
+      const eg = pubCtx.createRadialGradient(eng.x,eng.y,0,eng.x,eng.y,50);
+      eg.addColorStop(0,'rgba(168,85,247,0.08)'); eg.addColorStop(1,'transparent');
+      pubCtx.fillStyle = eg; pubCtx.beginPath(); pubCtx.arc(eng.x,eng.y,50,0,Math.PI*2); pubCtx.fill();
+      // Spinning ring
+      pubCtx.save(); pubCtx.translate(eng.x,eng.y); pubCtx.rotate(t*0.5);
+      pubCtx.beginPath(); pubCtx.arc(0,0,28,0,Math.PI*1.2);
+      pubCtx.strokeStyle = 'rgba(168,85,247,0.3)'; pubCtx.lineWidth = 1.5; pubCtx.stroke();
+      pubCtx.beginPath(); pubCtx.arc(0,0,28,Math.PI,Math.PI*2.2);
+      pubCtx.strokeStyle = 'rgba(168,85,247,0.15)'; pubCtx.stroke();
+      pubCtx.restore();
+      // Circle
+      pubCtx.beginPath(); pubCtx.arc(eng.x,eng.y,22,0,Math.PI*2);
+      pubCtx.fillStyle = 'rgba(6,7,18,0.9)'; pubCtx.fill();
+      pubCtx.strokeStyle = '#a855f7'; pubCtx.lineWidth = 1.5; pubCtx.stroke();
+      pubCtx.font = 'bold 8px -apple-system,sans-serif';
+      pubCtx.textAlign = 'center'; pubCtx.textBaseline = 'middle';
+      pubCtx.fillStyle = '#a855f7'; pubCtx.fillText('AutoPilot', eng.x, eng.y - 3);
+      pubCtx.font = '6px -apple-system,sans-serif';
+      pubCtx.fillStyle = 'rgba(255,255,255,0.35)'; pubCtx.fillText('ENGINE', eng.x, eng.y + 7);
+
+      // Input nodes
+      for (let i = 0; i < PUB_INPUTS.length; i++) {
+        const p = pubInputPos(i);
+        pubCtx.beginPath(); pubCtx.arc(p.x, p.y, 16, 0, Math.PI*2);
+        pubCtx.fillStyle = 'rgba(6,7,18,0.85)'; pubCtx.fill();
+        pubCtx.strokeStyle = PUB_INPUTS[i].color + '50'; pubCtx.lineWidth = 1; pubCtx.stroke();
+        pubIcon(p.x, p.y, PUB_INPUTS[i].icon, 13, PUB_INPUTS[i].color + 'cc');
+        pubCtx.font = '600 7px -apple-system,sans-serif';
+        pubCtx.textAlign = 'center'; pubCtx.fillStyle = 'rgba(255,255,255,0.5)';
+        pubCtx.fillText(PUB_INPUTS[i].label, p.x, p.y + 24);
+      }
+
+      // Output nodes
+      for (let i = 0; i < PUB_OUTPUTS.length; i++) {
+        const p = pubOutputPos(i);
+        pubCtx.beginPath(); pubCtx.arc(p.x, p.y, 16, 0, Math.PI*2);
+        pubCtx.fillStyle = 'rgba(6,7,18,0.85)'; pubCtx.fill();
+        pubCtx.strokeStyle = PUB_OUTPUTS[i].color + '50'; pubCtx.lineWidth = 1; pubCtx.stroke();
+        pubIcon(p.x, p.y, PUB_OUTPUTS[i].icon, 13, PUB_OUTPUTS[i].color + 'cc');
+        pubCtx.font = '600 7px -apple-system,sans-serif';
+        pubCtx.textAlign = 'center'; pubCtx.fillStyle = 'rgba(255,255,255,0.5)';
+        pubCtx.fillText(PUB_OUTPUTS[i].label, p.x, p.y + 24);
+      }
+
+      // Column labels
+      pubCtx.font = '600 6px -apple-system,sans-serif';
+      pubCtx.letterSpacing = '0.08em';
+      pubCtx.textAlign = 'center';
+      pubCtx.fillStyle = 'rgba(255,255,255,0.15)';
+      pubCtx.fillText('INPUTS', 40, 16);
+      pubCtx.fillText('CONTENT CREATED', pW - 40, 16);
+    }
+
+    // Only start when visible
+    const pubObs = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) { requestAnimationFrame(pubRender); pubObs.disconnect(); }
+    }, { rootMargin: '200px' });
+    pubObs.observe(pubCanvas);
+  })();
+
   // ── Wire up card canvases ────────────────────────────────────────────────
   const pvCards: CardState[] = [];
   const pvCardElems = document.querySelectorAll<HTMLElement>('.product-card');
@@ -2341,6 +2592,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     const bgCtx = bgCanvas.getContext('2d')!;
     const halfDpr = Math.max(1.0, (window.devicePixelRatio||1) * 1.0);
     const sizeEl = i === 3 ? (card.querySelector('.soc-canvas-col') as HTMLElement || card)
+                 : i === 2 ? (card.querySelector('.pub-canvas-col') as HTMLElement || card)
                  : i === 1 ? (card.querySelector('.reach-canvas-col') as HTMLElement || card)
                  : card;
     const rect = sizeEl.getBoundingClientRect();
