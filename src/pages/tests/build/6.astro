@@ -1,0 +1,610 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloBuild — The Assembly Line | Pello" description="PelloBuild assembles your custom software like a precision factory — raw specs in, polished product out. Watch the engineering assembly line in action.">
+  <Header />
+  <main id="main-content">
+    <section class="build-section" aria-labelledby="build-headline">
+      <div class="build-layout">
+        <div class="build-text">
+          <span class="build-badge">PelloBuild</span>
+          <h1 id="build-headline">Raw Ideas. Precision Assembly. Shipped.</h1>
+          <p>PelloBuild takes your specs and turns them into production-grade software — every component assembled, tested, and integrated with engineering rigour. Watch your product roll off the line.</p>
+          <ul class="build-pills" role="list">
+            <li>Full-stack development</li>
+            <li>Data infrastructure</li>
+            <li>Internal tooling</li>
+            <li>Systems integration</li>
+          </ul>
+        </div>
+        <div class="build-canvas-col">
+          <canvas id="build-canvas" aria-hidden="true"></canvas>
+          <div class="build-counter" aria-live="polite" aria-label="Units shipped">
+            <span class="build-counter-num" id="build-counter-num">0</span>
+            <span class="build-counter-label">units shipped</span>
+          </div>
+          <div class="build-tooltip" id="build-tooltip"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .build-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .build-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .build-layout { grid-template-columns: 1fr; } }
+  .build-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .build-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6366f1; width: fit-content; }
+  .build-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .build-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .build-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .build-pills li { padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .build-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #build-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: crosshair; }
+  .build-counter { position: absolute; top: 1rem; right: 1rem; display: flex; flex-direction: column; align-items: flex-end; gap: 0.125rem; pointer-events: none; z-index: 10; }
+  .build-counter-num { font-size: 1.5rem; font-weight: 700; color: #6366f1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1; }
+  .build-counter-label { font-size: 0.6875rem; color: rgba(99,102,241,0.6); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; }
+  .build-tooltip { position: absolute; background: rgba(10,12,28,0.96); border: 1px solid rgba(99,102,241,0.4); border-radius: 8px; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #fff; pointer-events: none; z-index: 20; white-space: nowrap; opacity: 0; transition: opacity 0.15s; transform: translateX(-50%); }
+  .build-tooltip.visible { opacity: 1; }
+</style>
+
+<script>
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+interface RawMaterial {
+  x: number;
+  y: number;
+  type: string;
+  color: string;
+  label: string;
+  size: number;
+}
+
+interface RobotArm {
+  x: number;
+  baseY: number;
+  role: string;
+  segments: number;
+  angle1: number;
+  angle2: number;
+  targetAngle1: number;
+  targetAngle2: number;
+  phase: number;
+  hovered: boolean;
+  holdingMaterial: RawMaterial | null;
+  processTimer: number;
+  state: 'idle' | 'grabbing' | 'processing' | 'releasing';
+  checkFlash: number;
+  checkGreen: boolean;
+}
+
+interface FinishedProduct {
+  x: number;
+  y: number;
+  label: string;
+  color: string;
+  alpha: number;
+  exiting: boolean;
+}
+
+interface Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  alpha: number;
+  color: string;
+  size: number;
+}
+
+// ─── Data ──────────────────────────────────────────────────────────────────
+
+const ACCENT = '#6366f1';
+const ARM_ROLES = ['Frontend Compiler', 'API Assembler', 'QA Scanner', 'DB Architect', 'DevOps Engine'];
+const ARM_COLORS = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b'];
+const RAW_TYPES = [
+  { type: 'spec', label: 'API Spec', color: '#06b6d4' },
+  { type: 'design', label: 'Wireframe', color: '#8b5cf6' },
+  { type: 'code', label: 'Code Block', color: '#10b981' },
+  { type: 'data', label: 'Schema', color: '#f59e0b' },
+  { type: 'config', label: 'Config', color: '#6366f1' },
+];
+const PRODUCTS = ['Dashboard App', 'API Gateway', 'Data Pipeline', 'Internal Tool', 'Automation', 'SaaS Module'];
+
+// ─── Canvas Setup ─────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('build-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const col = canvas.parentElement as HTMLElement;
+const counterEl = document.getElementById('build-counter-num') as HTMLElement;
+const tooltip = document.getElementById('build-tooltip') as HTMLElement;
+
+let W = 0, H = 0, dpr = 1;
+let mouse = { x: -9999, y: -9999 };
+let shippedCount = 1247;
+let frame = 0;
+let conveyorSpeed = 0.8;
+let targetConveyorSpeed = 0.8;
+
+const rawMaterials: RawMaterial[] = [];
+const finishedProducts: FinishedProduct[] = [];
+const particles: Particle[] = [];
+const arms: RobotArm[] = [];
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = col.getBoundingClientRect();
+  W = rect.width; H = rect.height;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+  init();
+}
+
+// ─── Init ──────────────────────────────────────────────────────────────────
+
+function init(): void {
+  arms.length = 0;
+  rawMaterials.length = 0;
+  finishedProducts.length = 0;
+
+  const beltY = H * 0.55;
+  const armCount = Math.min(5, Math.max(3, Math.floor(W / 110)));
+
+  for (let i = 0; i < armCount; i++) {
+    const x = W * 0.15 + (i / (armCount - 1)) * W * 0.7;
+    arms.push({
+      x, baseY: beltY - 10,
+      role: ARM_ROLES[i % ARM_ROLES.length]!,
+      segments: 2,
+      angle1: -Math.PI * 0.4,
+      angle2: Math.PI * 0.5,
+      targetAngle1: -Math.PI * 0.4,
+      targetAngle2: Math.PI * 0.5,
+      phase: i * 1.3,
+      hovered: false,
+      holdingMaterial: null,
+      processTimer: 0,
+      state: 'idle',
+      checkFlash: 0,
+      checkGreen: true,
+    });
+  }
+
+  // Pre-seed materials
+  for (let i = 0; i < 6; i++) {
+    spawnMaterial(-(i * 80) - 40);
+  }
+}
+
+function spawnMaterial(startX?: number): void {
+  const t = RAW_TYPES[Math.floor(Math.random() * RAW_TYPES.length)]!;
+  rawMaterials.push({
+    x: startX ?? -30,
+    y: H * 0.55,
+    type: t.type,
+    label: t.label,
+    color: t.color,
+    size: 22 + Math.random() * 8,
+  });
+}
+
+function spawnProduct(x: number): void {
+  finishedProducts.push({
+    x, y: H * 0.55,
+    label: PRODUCTS[Math.floor(Math.random() * PRODUCTS.length)]!,
+    color: ACCENT,
+    alpha: 1,
+    exiting: false,
+  });
+}
+
+function spawnParticles(x: number, y: number, color: string, count: number): void {
+  for (let i = 0; i < count; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const s = 0.5 + Math.random() * 2;
+    particles.push({
+      x, y,
+      vx: Math.cos(a) * s,
+      vy: Math.sin(a) * s - 1,
+      alpha: 0.9,
+      color,
+      size: 1.5 + Math.random() * 2,
+    });
+  }
+}
+
+// ─── Draw ──────────────────────────────────────────────────────────────────
+
+function drawConveyorBelt(): void {
+  const beltY = H * 0.55;
+  const beltH = 18;
+
+  // Belt body
+  const beltGrad = ctx.createLinearGradient(0, beltY, 0, beltY + beltH);
+  beltGrad.addColorStop(0, 'rgba(40,40,60,0.9)');
+  beltGrad.addColorStop(1, 'rgba(20,20,35,0.9)');
+  ctx.fillStyle = beltGrad;
+  ctx.fillRect(0, beltY, W, beltH);
+
+  // Belt segments
+  ctx.strokeStyle = 'rgba(99,102,241,0.15)';
+  ctx.lineWidth = 1;
+  const segW = 40;
+  const offset = (frame * conveyorSpeed * 0.5) % segW;
+  for (let x = -segW + offset; x < W + segW; x += segW) {
+    ctx.beginPath();
+    ctx.moveTo(x, beltY);
+    ctx.lineTo(x, beltY + beltH);
+    ctx.stroke();
+  }
+
+  // Belt edge highlight
+  ctx.strokeStyle = 'rgba(99,102,241,0.4)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(0, beltY); ctx.lineTo(W, beltY); ctx.stroke();
+  ctx.strokeStyle = 'rgba(99,102,241,0.2)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, beltY + beltH); ctx.lineTo(W, beltY + beltH); ctx.stroke();
+
+  // Belt rollers at ends
+  for (const rx of [20, W - 20]) {
+    ctx.beginPath();
+    ctx.arc(rx, beltY + beltH / 2, beltH / 2, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(60,60,80,0.9)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(99,102,241,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+}
+
+function drawRawMaterial(mat: RawMaterial): void {
+  const { x, y, size, color, label, type } = mat;
+  ctx.save();
+  ctx.translate(x, y - size / 2);
+
+  if (type === 'code') {
+    // Code block shape
+    ctx.fillStyle = `rgba(${hexRgb(color)},0.15)`;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    roundRect(ctx, -size/2, -size/2, size, size, 4);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.font = `bold ${size * 0.4}px monospace`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('{}', 0, 0);
+  } else if (type === 'design') {
+    // Wireframe shape
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(-size/2, -size/2, size, size);
+    ctx.strokeRect(-size/2 + 3, -size/2 + 3, size - 6, 5);
+    ctx.strokeRect(-size/2 + 3, -size/2 + 12, size/2 - 5, size - 16);
+    ctx.strokeRect(-size/2 + size/2, -size/2 + 12, size/2 - 4, size - 16);
+  } else {
+    // Generic box
+    ctx.fillStyle = `rgba(${hexRgb(color)},0.15)`;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    roundRect(ctx, -size/2, -size/2, size, size, 5);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.font = `500 ${size * 0.3}px -apple-system, sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(label.slice(0, 3), 0, 0);
+  }
+  ctx.restore();
+}
+
+const ARM_LEN1 = 45, ARM_LEN2 = 38;
+
+function drawArm(arm: RobotArm): void {
+  const { x, baseY, angle1, angle2, hovered, role, state, checkFlash, checkGreen } = arm;
+
+  const accentColor = hovered ? '#a5b4fc' : ACCENT;
+
+  // Base mount
+  ctx.fillStyle = hovered ? 'rgba(99,102,241,0.3)' : 'rgba(99,102,241,0.15)';
+  ctx.strokeStyle = accentColor;
+  ctx.lineWidth = hovered ? 2 : 1.5;
+  ctx.beginPath();
+  ctx.rect(x - 12, baseY, 24, 14);
+  ctx.fill(); ctx.stroke();
+
+  // Joint 1
+  const j1x = x;
+  const j1y = baseY;
+  const elbow1x = j1x + Math.cos(angle1) * ARM_LEN1;
+  const elbow1y = j1y + Math.sin(angle1) * ARM_LEN1;
+
+  ctx.strokeStyle = accentColor;
+  ctx.lineWidth = hovered ? 4 : 3;
+  ctx.beginPath();
+  ctx.moveTo(j1x, j1y);
+  ctx.lineTo(elbow1x, elbow1y);
+  ctx.stroke();
+
+  // Joint 2
+  const j2x = elbow1x;
+  const j2y = elbow1y;
+  const tipX = j2x + Math.cos(angle1 + angle2) * ARM_LEN2;
+  const tipY = j2y + Math.sin(angle1 + angle2) * ARM_LEN2;
+
+  ctx.lineWidth = hovered ? 3 : 2.5;
+  ctx.beginPath();
+  ctx.moveTo(j2x, j2y);
+  ctx.lineTo(tipX, tipY);
+  ctx.stroke();
+
+  // Joints circles
+  for (const [jx, jy] of [[j1x, j1y], [j2x, j2y], [tipX, tipY]] as [number, number][]) {
+    ctx.beginPath();
+    ctx.arc(jx, jy, 4, 0, Math.PI * 2);
+    ctx.fillStyle = accentColor;
+    ctx.fill();
+  }
+
+  // Check flash at tip
+  if (checkFlash > 0) {
+    const flashColor = checkGreen ? '#10b981' : '#ef4444';
+    ctx.beginPath();
+    ctx.arc(tipX, tipY, 8 + (10 - checkFlash), 0, Math.PI * 2);
+    ctx.strokeStyle = flashColor;
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = checkFlash / 10;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  // Role label on hover
+  if (hovered) {
+    const lx = x;
+    const ly = baseY + 28;
+    const lw = ctx.measureText(role).width + 20;
+    ctx.fillStyle = 'rgba(10,12,28,0.95)';
+    ctx.strokeStyle = ACCENT;
+    ctx.lineWidth = 1;
+    roundRect(ctx, lx - lw/2, ly, lw, 20, 4);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#a5b4fc';
+    ctx.font = `600 9.5px -apple-system, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(role, lx, ly + 10);
+  }
+
+  // State indicator
+  if (state === 'processing') {
+    const angle = (frame * 0.15) % (Math.PI * 2);
+    ctx.beginPath();
+    ctx.arc(tipX, tipY - 12, 5, angle, angle + Math.PI * 1.4);
+    ctx.strokeStyle = '#6366f1';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+}
+
+function drawFinishedProduct(fp: FinishedProduct): void {
+  const { x, y, label, alpha } = fp;
+  const r = 20;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  // Glow
+  const grd = ctx.createRadialGradient(x, y - r, 0, x, y - r, r * 1.5);
+  grd.addColorStop(0, 'rgba(99,102,241,0.3)');
+  grd.addColorStop(1, 'rgba(99,102,241,0)');
+  ctx.fillStyle = grd;
+  ctx.beginPath();
+  ctx.arc(x, y - r, r * 1.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Icon background
+  roundRect(ctx, x - r, y - r * 2, r * 2, r * 2, 6);
+  ctx.fillStyle = 'rgba(99,102,241,0.2)';
+  ctx.fill();
+  ctx.strokeStyle = ACCENT;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Check mark
+  ctx.strokeStyle = '#10b981';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x - 6, y - r);
+  ctx.lineTo(x - 2, y - r + 5);
+  ctx.lineTo(x + 7, y - r - 6);
+  ctx.stroke();
+
+  // Label
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.font = `600 8px -apple-system, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText(label, x, y - r * 2 - 12);
+
+  ctx.restore();
+}
+
+// ─── Tick ──────────────────────────────────────────────────────────────────
+
+function tick(): void {
+  frame++;
+  ctx.clearRect(0, 0, W, H);
+
+  const beltY = H * 0.55;
+
+  // Background grid lines
+  ctx.strokeStyle = 'rgba(99,102,241,0.04)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 50) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (let y = 0; y < H; y += 50) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+  // Target speed
+  const rect = canvas.getBoundingClientRect();
+  const mx = mouse.x - rect.left;
+  const my = mouse.y - rect.top;
+  const onCanvas = mx >= 0 && mx <= W && my >= 0 && my <= H;
+  targetConveyorSpeed = onCanvas ? 2.2 : 0.8;
+  conveyorSpeed += (targetConveyorSpeed - conveyorSpeed) * 0.05;
+
+  drawConveyorBelt();
+
+  // Move raw materials
+  for (const mat of rawMaterials) {
+    mat.x += conveyorSpeed;
+    drawRawMaterial(mat);
+  }
+
+  // Finished products
+  for (const fp of finishedProducts) {
+    fp.x += conveyorSpeed * 1.2;
+    if (fp.x > W + 40) fp.alpha -= 0.05;
+    drawFinishedProduct(fp);
+  }
+
+  // Update arms
+  let hoveredArmRole: string | null = null;
+  for (const arm of arms) {
+    arm.phase += 0.008 * conveyorSpeed;
+    arm.hovered = false;
+
+    // Check hover
+    const dx = mx - arm.x;
+    const dy = my - (arm.baseY + 7);
+    if (Math.abs(dx) < 20 && Math.abs(dy) < 25) {
+      arm.hovered = true;
+      hoveredArmRole = arm.role;
+    }
+
+    // Arm motion
+    const t = arm.phase;
+    arm.targetAngle1 = -Math.PI * 0.5 + Math.sin(t) * 0.4;
+    arm.targetAngle2 = Math.PI * 0.5 + Math.cos(t * 0.7) * 0.3;
+    arm.angle1 += (arm.targetAngle1 - arm.angle1) * 0.08;
+    arm.angle2 += (arm.targetAngle2 - arm.angle2) * 0.08;
+
+    // Tip position
+    const tipX = arm.x + Math.cos(arm.angle1) * ARM_LEN1 + Math.cos(arm.angle1 + arm.angle2) * ARM_LEN2;
+    const tipY = arm.baseY + Math.sin(arm.angle1) * ARM_LEN1 + Math.sin(arm.angle1 + arm.angle2) * ARM_LEN2;
+
+    // Check if tip near belt — process materials
+    if (tipY > beltY - 15 && tipY < beltY + 5) {
+      // Find nearest material
+      for (const mat of rawMaterials) {
+        if (Math.abs(mat.x - tipX) < 20) {
+          arm.state = 'processing';
+          arm.processTimer++;
+          spawnParticles(tipX, tipY, ARM_COLORS[arms.indexOf(arm) % ARM_COLORS.length]!, 1);
+
+          if (arm.processTimer > 60) {
+            arm.processTimer = 0;
+            arm.state = 'idle';
+            arm.checkFlash = 10;
+            arm.checkGreen = Math.random() > 0.1;
+            if (arm.checkGreen) {
+              // Occasionally convert to finished product
+              if (Math.random() < 0.2) {
+                spawnProduct(mat.x);
+                rawMaterials.splice(rawMaterials.indexOf(mat), 1);
+                shippedCount++;
+                counterEl.textContent = shippedCount.toLocaleString();
+              }
+            }
+          }
+          break;
+        }
+      }
+      if (arm.state !== 'processing') arm.processTimer = 0;
+    } else {
+      arm.state = 'idle';
+      arm.processTimer = 0;
+    }
+
+    if (arm.checkFlash > 0) arm.checkFlash--;
+
+    drawArm(arm);
+  }
+
+  // Particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i]!;
+    p.x += p.vx; p.y += p.vy; p.vy += 0.05; p.alpha -= 0.025;
+    if (p.alpha <= 0) { particles.splice(i, 1); continue; }
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = p.alpha;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  // Spawn materials periodically
+  if (frame % Math.round(80 / conveyorSpeed) === 0) spawnMaterial();
+
+  // Clean up
+  for (let i = rawMaterials.length - 1; i >= 0; i--) {
+    if (rawMaterials[i]!.x > W + 40) rawMaterials.splice(i, 1);
+  }
+  for (let i = finishedProducts.length - 1; i >= 0; i--) {
+    if (finishedProducts[i]!.alpha <= 0) finishedProducts.splice(i, 1);
+  }
+
+  // Tooltip
+  if (hoveredArmRole) {
+    tooltip.textContent = hoveredArmRole;
+    tooltip.classList.add('visible');
+    tooltip.style.left = `${mx}px`;
+    tooltip.style.top = `${beltY + 40}px`;
+  } else {
+    tooltip.classList.remove('visible');
+  }
+
+  requestAnimationFrame(tick);
+}
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function hexRgb(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `${r},${g},${b}`;
+}
+
+function roundRect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
+  c.beginPath();
+  c.moveTo(x + r, y); c.lineTo(x + w - r, y);
+  c.quadraticCurveTo(x + w, y, x + w, y + r);
+  c.lineTo(x + w, y + h - r);
+  c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  c.lineTo(x + r, y + h);
+  c.quadraticCurveTo(x, y + h, x, y + h - r);
+  c.lineTo(x, y + r);
+  c.quadraticCurveTo(x, y, x + r, y);
+  c.closePath();
+}
+
+// ─── Events ────────────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+canvas.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+
+const ro = new ResizeObserver(() => { resize(); });
+ro.observe(col);
+
+resize();
+counterEl.textContent = shippedCount.toLocaleString();
+tick();
+</script>

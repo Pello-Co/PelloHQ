@@ -1,0 +1,360 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloBuild — DNA Strand | Pello" description="PelloBuild weaves your stack like a DNA double helix — every component paired, every dependency mapped, every feature spliced in with precision.">
+  <Header />
+  <main id="main-content">
+    <section class="build-section" aria-labelledby="build-headline">
+      <div class="build-layout">
+        <div class="build-text">
+          <span class="build-badge">PelloBuild</span>
+          <h1 id="build-headline">Every Component. Perfectly Paired.</h1>
+          <p>PelloBuild maps your architecture like a living DNA strand — each layer bonded to its counterpart, dependencies clearly expressed, new features spliced in without breaking the strand.</p>
+          <ul class="build-pills" role="list">
+            <li>Full-stack development</li>
+            <li>Data infrastructure</li>
+            <li>Internal tooling</li>
+            <li>Systems integration</li>
+          </ul>
+        </div>
+        <div class="build-canvas-col">
+          <canvas id="build-canvas" aria-hidden="true"></canvas>
+          <div class="build-tooltip" id="build-tooltip"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .build-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .build-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .build-layout { grid-template-columns: 1fr; } }
+  .build-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .build-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6366f1; width: fit-content; }
+  .build-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .build-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .build-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .build-pills li { padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .build-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #build-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: crosshair; }
+  .build-tooltip { position: absolute; background: rgba(10,12,28,0.96); border: 1px solid rgba(99,102,241,0.4); border-radius: 8px; padding: 0.5rem 0.875rem; font-size: 0.75rem; color: #fff; pointer-events: none; z-index: 20; white-space: nowrap; opacity: 0; transition: opacity 0.15s; transform: translateX(-50%); max-width: 200px; white-space: normal; text-align: center; }
+  .build-tooltip.visible { opacity: 1; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface BasePair {
+  label1: string;
+  label2: string;
+  color1: string;
+  color2: string;
+  dep: string;
+  spliceFlash: number;
+  hovered: boolean;
+}
+
+interface Messenger {
+  progress: number; // 0-1 along the helix
+  speed: number;
+  color: string;
+  side: number; // 0 = left strand, 1 = right strand
+  alpha: number;
+}
+
+// ─── Data ─────────────────────────────────────────────────────────────────────
+
+const ACCENT = '#6366f1';
+
+const BASE_PAIRS: BasePair[] = [
+  { label1: 'Auth', label2: 'Security', color1: '#6366f1', color2: '#8b5cf6', dep: 'Auth ↔ Security: JWT tokens validated by security layer on every request', spliceFlash: 0, hovered: false },
+  { label1: 'Frontend', label2: 'Backend', color1: '#06b6d4', color2: '#0ea5e9', dep: 'Frontend ↔ Backend: REST/GraphQL API contracts enforced at build time', spliceFlash: 0, hovered: false },
+  { label1: 'API', label2: 'Database', color1: '#10b981', color2: '#34d399', dep: 'API ↔ Database: ORM queries validated against live schema migrations', spliceFlash: 0, hovered: false },
+  { label1: 'Cache', label2: 'CDN', color1: '#f59e0b', color2: '#fbbf24', dep: 'Cache ↔ CDN: Invalidation events propagated globally in <50ms', spliceFlash: 0, hovered: false },
+  { label1: 'Queue', label2: 'Workers', color1: '#ec4899', color2: '#f472b6', dep: 'Queue ↔ Workers: Dead-letter handling with exponential backoff', spliceFlash: 0, hovered: false },
+  { label1: 'Logs', label2: 'Metrics', color1: '#a78bfa', color2: '#c4b5fd', dep: 'Logs ↔ Metrics: Structured traces correlated with performance counters', spliceFlash: 0, hovered: false },
+  { label1: 'Tests', label2: 'CI/CD', color1: '#34d399', color2: '#6ee7b7', dep: 'Tests ↔ CI/CD: Full test suite runs in isolated containers on every PR', spliceFlash: 0, hovered: false },
+  { label1: 'SDK', label2: 'Docs', color1: '#fb923c', color2: '#fdba74', dep: 'SDK ↔ Docs: Auto-generated from OpenAPI spec, always in sync', spliceFlash: 0, hovered: false },
+];
+
+// ─── Canvas Setup ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('build-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const col = canvas.parentElement as HTMLElement;
+const tooltip = document.getElementById('build-tooltip') as HTMLElement;
+
+let W = 0, H = 0, dpr = 1;
+let mouse = { x: -9999, y: -9999 };
+let frame = 0;
+let rotationOffset = 0;
+let mouseRotation = 0;
+let spliceTimer = 0;
+let spliceTarget = -1;
+
+const messengers: Messenger[] = [];
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = col.getBoundingClientRect();
+  W = rect.width; H = rect.height;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+}
+
+// ─── Helix Geometry ────────────────────────────────────────────────────────────
+
+function helixPoint(t: number, side: number, rotOff: number): { x: number; y: number; z: number } {
+  const cx = W / 2;
+  const amplitude = Math.min(W * 0.22, 90);
+  const angle = t * Math.PI * 2 + rotOff + (side === 0 ? 0 : Math.PI);
+  const z = Math.sin(angle);
+  const x = cx + Math.cos(angle) * amplitude;
+  const y = t * H;
+  return { x, y, z };
+}
+
+// ─── Draw ─────────────────────────────────────────────────────────────────────
+
+function drawHelix(): void {
+  const rect = canvas.getBoundingClientRect();
+  const mx = mouse.x - rect.left;
+
+  // Mouse-driven rotation: map mouse X to rotation offset
+  const targetRot = ((mx / W) - 0.5) * Math.PI * 2;
+  mouseRotation += (targetRot - mouseRotation) * 0.04;
+
+  const rotOff = rotationOffset + mouseRotation;
+
+  const N = BASE_PAIRS.length;
+  const pairT = (i: number) => (i + 0.5) / N;
+
+  // Compute all pair points
+  const pairPoints: { p1: ReturnType<typeof helixPoint>; p2: ReturnType<typeof helixPoint>; }[] = [];
+  for (let i = 0; i < N; i++) {
+    const t = pairT(i);
+    pairPoints.push({
+      p1: helixPoint(t, 0, rotOff),
+      p2: helixPoint(t, 1, rotOff),
+    });
+  }
+
+  // Draw backbone strands (segment by segment between pairs)
+  for (let side = 0; side < 2; side++) {
+    const segCount = 60;
+    ctx.beginPath();
+    for (let i = 0; i <= segCount; i++) {
+      const t = i / segCount;
+      const pt = helixPoint(t, side, rotOff);
+      const depth = (pt.z + 1) / 2;
+      if (i === 0) ctx.moveTo(pt.x, pt.y);
+      else ctx.lineTo(pt.x, pt.y);
+    }
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, `rgba(99,102,241,0.15)`);
+    grad.addColorStop(0.5, `rgba(99,102,241,0.5)`);
+    grad.addColorStop(1, `rgba(99,102,241,0.15)`);
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  // Sort pairs by z-depth for painter's algorithm
+  const sorted = pairPoints.map((pp, i) => ({ ...pp, i }))
+    .sort((a, b) => (a.p1.z + a.p2.z) - (b.p1.z + b.p2.z));
+
+  const mouseMy = mouse.y - rect.top;
+  let hoveredIndex = -1;
+  let closestDist = 30;
+
+  for (const { p1, p2, i } of sorted) {
+    const pair = BASE_PAIRS[i]!;
+    const midX = (p1.x + p2.x) / 2;
+    const midY = (p1.y + p2.y) / 2;
+    const depth1 = (p1.z + 1) / 2;
+    const depth2 = (p2.z + 1) / 2;
+
+    // Hover detection
+    const d = Math.hypot(mx - midX, mouseMy - midY);
+    if (d < closestDist) { closestDist = d; hoveredIndex = i; }
+
+    pair.hovered = hoveredIndex === i;
+
+    // Splice animation
+    if (pair.spliceFlash > 0) {
+      pair.spliceFlash--;
+      const flashProgress = pair.spliceFlash / 30;
+      // Unzip effect: push strands apart
+      const unzipAmt = Math.sin(flashProgress * Math.PI) * 20;
+      ctx.strokeStyle = `rgba(99,102,241,${flashProgress})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(p1.x - unzipAmt, p1.y);
+      ctx.lineTo(p2.x + unzipAmt, p2.y);
+      ctx.stroke();
+    }
+
+    // Rung (base pair bond)
+    const isHov = pair.hovered;
+    const rungAlpha = 0.4 + depth1 * 0.4;
+    const rungW = isHov ? 3 : 1.5 + depth1;
+
+    const rungGrad = ctx.createLinearGradient(p1.x, p1.y, p2.x, p2.y);
+    rungGrad.addColorStop(0, pair.color1 + (isHov ? 'ff' : 'aa'));
+    rungGrad.addColorStop(1, pair.color2 + (isHov ? 'ff' : 'aa'));
+    ctx.strokeStyle = rungGrad;
+    ctx.lineWidth = rungW;
+    ctx.globalAlpha = rungAlpha;
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // Node circles at each end
+    for (const [pt, color, label] of [[p1, pair.color1, pair.label1], [p2, pair.color2, pair.label2]] as [ReturnType<typeof helixPoint>, string, string][]) {
+      const nodeR = isHov ? 8 : 4 + depth1 * 3;
+
+      if (isHov) {
+        const grd = ctx.createRadialGradient(pt.x, pt.y, 0, pt.x, pt.y, nodeR * 2.5);
+        grd.addColorStop(0, `${color}44`);
+        grd.addColorStop(1, `${color}00`);
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, nodeR * 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, nodeR, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.globalAlpha = 0.5 + depth1 * 0.5;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // Labels on hovered
+      if (isHov) {
+        ctx.fillStyle = '#fff';
+        ctx.font = `700 9px -apple-system, sans-serif`;
+        ctx.textAlign = pt.x < W / 2 ? 'right' : 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, pt.x + (pt.x < W / 2 ? -nodeR - 4 : nodeR + 4), pt.y);
+      }
+    }
+  }
+
+  // Tooltip for hovered pair
+  if (hoveredIndex >= 0) {
+    const pair = BASE_PAIRS[hoveredIndex]!;
+    const pp = pairPoints[hoveredIndex]!;
+    const mx2 = (pp.p1.x + pp.p2.x) / 2;
+    const my2 = (pp.p1.y + pp.p2.y) / 2;
+    tooltip.innerHTML = pair.dep;
+    tooltip.classList.add('visible');
+    tooltip.style.left = `${mx2}px`;
+    tooltip.style.top = `${my2 - 50}px`;
+  } else {
+    tooltip.classList.remove('visible');
+  }
+
+  // Messenger particles traveling along strand
+  for (const msg of messengers) {
+    msg.progress += msg.speed;
+    if (msg.progress > 1) { msg.progress = 0; msg.side = 1 - msg.side; }
+
+    const pt = helixPoint(msg.progress, msg.side, rotOff);
+    const depth = (pt.z + 1) / 2;
+
+    ctx.beginPath();
+    ctx.arc(pt.x, pt.y, 3 + depth * 2, 0, Math.PI * 2);
+    ctx.fillStyle = msg.color;
+    ctx.globalAlpha = 0.4 + depth * 0.5;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Trail
+    const trailLen = 0.03;
+    for (let t2 = 0; t2 <= trailLen; t2 += 0.005) {
+      const tp = helixPoint(Math.max(0, msg.progress - t2), msg.side, rotOff);
+      ctx.beginPath();
+      ctx.arc(tp.x, tp.y, 1.5, 0, Math.PI * 2);
+      ctx.fillStyle = msg.color;
+      ctx.globalAlpha = (1 - t2 / trailLen) * 0.3;
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+function init(): void {
+  messengers.length = 0;
+  const COLORS = ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#ec4899'];
+  for (let i = 0; i < 5; i++) {
+    messengers.push({
+      progress: i / 5,
+      speed: 0.002 + Math.random() * 0.003,
+      color: COLORS[i % COLORS.length]!,
+      side: i % 2,
+      alpha: 1,
+    });
+  }
+}
+
+// ─── Tick ──────────────────────────────────────────────────────────────────────
+
+function tick(): void {
+  frame++;
+  ctx.clearRect(0, 0, W, H);
+
+  rotationOffset += 0.004;
+
+  // Splice new feature periodically
+  spliceTimer++;
+  if (spliceTimer > 240) {
+    spliceTimer = 0;
+    const idx = Math.floor(Math.random() * BASE_PAIRS.length);
+    BASE_PAIRS[idx]!.spliceFlash = 30;
+    spliceTarget = idx;
+  }
+
+  drawHelix();
+
+  // Labels at top and bottom
+  ctx.fillStyle = 'rgba(99,102,241,0.5)';
+  ctx.font = `600 9px -apple-system, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('ARCHITECTURE DNA', W / 2, 10);
+
+  ctx.textBaseline = 'bottom';
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.font = `400 8px -apple-system, sans-serif`;
+  ctx.fillText('Hover any base pair to inspect component dependencies', W / 2, H - 10);
+
+  requestAnimationFrame(tick);
+}
+
+// ─── Events ────────────────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+canvas.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; tooltip.classList.remove('visible'); });
+
+const ro = new ResizeObserver(() => { resize(); });
+ro.observe(col);
+
+resize();
+init();
+tick();
+</script>
