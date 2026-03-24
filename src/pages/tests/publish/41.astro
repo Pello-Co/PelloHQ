@@ -183,13 +183,14 @@ import Footer from '../../../components/layout/Footer.astro';
     size: number;
     alive: boolean;
     snippet: string;
+    richData?: OutputSnippet;
   }
 
   const particles: Particle[] = [];
   let lastSpawn = 0;
   let mx = -999, my = -999;
   let hoveredInput = -1, hoveredOutput = -1;
-  let hoveredParticle: {x: number; y: number; snippet: string; color: string} | null = null;
+  let hoveredParticle: {x: number; y: number; snippet: string; color: string; richData?: OutputSnippet} | null = null;
 
   canvas.addEventListener('mousemove', e => {
     const r = canvas.getBoundingClientRect();
@@ -224,19 +225,46 @@ import Footer from '../../../components/layout/Footer.astro';
     // Keywords
     ['"b2b content marketing" 2.4k/mo', '"ai content tools" 1.8k/mo', '"content repurposing" 720/mo', '"scale content production" 3.1k/mo', '"automated posting" 890/mo'],
   ];
-  const OUTPUT_SNIPPETS = [
+  interface OutputSnippet {
+    platform: string;
+    icon: string;
+    color: string;
+    title: string;
+    body: string;
+    meta: string;
+    stats: string;
+  }
+  const OUTPUT_SNIPPET_DATA: OutputSnippet[][] = [
     // Newsletter
-    ['Subject: "5 AI Trends This Week"', 'Open rate: 42.3%', 'Digest + CTA drafted', '8,400 subscribers queued'],
+    [
+      { platform: 'Newsletter', icon: 'mail', color: '#f97316', title: '5 AI Trends Reshaping B2B This Week', body: 'GPT-5 dropped and B2B is shifting fast. Here are 5 trends to act on...', meta: '8,400 subscribers  \u00b7  9am Tue', stats: '42.3% open  \u00b7  12.1% CTR' },
+      { platform: 'Newsletter', icon: 'mail', color: '#f97316', title: 'Your Weekly Growth Digest', body: 'This week: 3 content wins, 1 competitor move, and a strategy shift...', meta: '8,400 subscribers  \u00b7  9am Tue', stats: '38.7% open  \u00b7  9.8% CTR' },
+    ],
     // Instagram
-    ['Carousel: 7 content tips', 'Reel: 15s hook ready', 'Story poll: 2.1k votes', 'Caption + hashtags set'],
+    [
+      { platform: 'Instagram', icon: 'instagram', color: '#E1306C', title: '7 Signs Your Content Strategy is Broken', body: 'Swipe to see if you are making these mistakes \u2192', meta: 'Carousel  \u00b7  7 slides  \u00b7  4:30pm', stats: '\u2764 1,247  \u00b7  \ud83d\udcac 89  \u00b7  \u2197 342' },
+      { platform: 'Instagram', icon: 'instagram', color: '#E1306C', title: 'Stop writing content manually', body: '15s Reel  \u00b7  Hook + Problem + Solution', meta: 'Reel  \u00b7  9:16 vertical  \u00b7  Draft', stats: '\u25b6 24.1k  \u00b7  \u2764 3,891  \u00b7  \ud83d\udd01 847' },
+    ],
     // TikTok
-    ['Hook: "Your competitor posted 30x"', '45s explainer scripted', 'Duet format: rival react', 'Trending audio matched'],
-    // Twitter
-    ['Thread: 10k post analysis', '"Scale isn\'t spam" — drafted', 'Reply to industry convo', 'Quote tweet + insight'],
+    [
+      { platform: 'TikTok', icon: 'tiktok', color: '#00f2ea', title: 'POV: Your competitor posted 30x more', body: '0-3s Hook \u2192 3-15s Problem \u2192 15-35s Solution \u2192 CTA', meta: '45s  \u00b7  Vertical  \u00b7  \u266b Trending audio', stats: '\u25b6 89.2k  \u00b7  \u2764 12.4k  \u00b7  \ud83d\udcac 1.2k' },
+      { platform: 'TikTok', icon: 'tiktok', color: '#00f2ea', title: 'AI wrote all our content for 30 days', body: 'Part 2 of 3  \u00b7  Duet with @competitor  \u00b7  Results reveal', meta: '60s  \u00b7  Series  \u00b7  \u266b Original sound', stats: '\u25b6 142k  \u00b7  \u2764 28.3k  \u00b7  Saves 4.1k' },
+    ],
+    // Twitter/X
+    [
+      { platform: 'X', icon: 'x', color: '#1d9bf0', title: '@acmegrowth', body: 'We analysed 10,000 B2B posts. The #1 predictor of engagement? Publishing velocity. \ud83e\uddf5 (1/8)', meta: 'Thread  \u00b7  8 posts  \u00b7  Scheduled', stats: '\ud83d\udcac 247  \u00b7  \ud83d\udd01 1.8k  \u00b7  \u2764 4.3k  \u00b7  89k views' },
+      { platform: 'X', icon: 'x', color: '#1d9bf0', title: '@acmegrowth', body: 'Content at scale is not spam. It is strategy. Here is why the best B2B brands publish 5x/day \u2193', meta: 'Tweet  \u00b7  With image  \u00b7  Peak hours', stats: '\ud83d\udcac 89  \u00b7  \ud83d\udd01 412  \u00b7  \u2764 847  \u00b7  22k views' },
+    ],
     // LinkedIn
-    ['Article: Content Automation', '"3-layer content stack" post', '2.4k impressions projected', 'Thought leadership draft'],
+    [
+      { platform: 'LinkedIn', icon: 'linkedin', color: '#0A66C2', title: 'Acme Growth Co.', body: 'We used to spend 40 hours/week on content. Now we spend 2. Here is the 3-layer stack...', meta: '12,400 followers  \u00b7  Just now', stats: '\ud83d\udc4d 2.8k  \u00b7  89 comments  \u00b7  148k views' },
+      { platform: 'LinkedIn', icon: 'linkedin', color: '#0A66C2', title: 'Acme Growth Co.', body: 'Hot take: Most B2B brands are writing for Google, not humans. The algorithm rewards both...', meta: '12,400 followers  \u00b7  Article', stats: '\ud83d\udc4d 1.4k  \u00b7  156 comments  \u00b7  92k views' },
+    ],
     // Blog
-    ['2,400w guide: AI Content 2026', '3 keywords, 8 internal links', 'H2 structure optimised', 'Meta desc + schema ready'],
+    [
+      { platform: 'Blog', icon: 'blog', color: '#a855f7', title: 'The Complete Guide to AI Content in 2026', body: '2,400 words  \u00b7  8 min read  \u00b7  SEO score: 94/100', meta: '3 keywords  \u00b7  8 internal links  \u00b7  Schema', stats: '4.2k views  \u00b7  2:47 avg  \u00b7  Rank #4 \u2192 #1' },
+      { platform: 'Blog', icon: 'blog', color: '#a855f7', title: 'Why Publishing Velocity Beats Quality (With Data)', body: '1,800 words  \u00b7  6 min read  \u00b7  SEO score: 91/100', meta: '5 keywords  \u00b7  12 internal links  \u00b7  FAQ schema', stats: '6.8k views  \u00b7  3:12 avg  \u00b7  12 backlinks' },
+    ],
   ];
 
   function spawnParticle(t: number) {
@@ -262,7 +290,8 @@ import Footer from '../../../components/layout/Footer.astro';
     // Engine → Output
     const oi = Math.floor(Math.random() * OUTPUTS.length);
     const op = getOutputPos(oi);
-    const oSnips = OUTPUT_SNIPPETS[oi];
+    const oData = OUTPUT_SNIPPET_DATA[oi];
+    const oSnip = oData[Math.floor(Math.random() * oData.length)];
     particles.push({
       x: engine.x + (Math.random() - 0.5) * 30,
       y: engine.y + (Math.random() - 0.5) * 30,
@@ -273,7 +302,8 @@ import Footer from '../../../components/layout/Footer.astro';
       fromInput: -1, toOutput: oi,
       size: 2 + Math.random() * 2,
       alive: true,
-      snippet: oSnips[Math.floor(Math.random() * oSnips.length)],
+      snippet: oSnip.title,
+      richData: oSnip,
     });
   }
 
@@ -841,7 +871,7 @@ import Footer from '../../../components/layout/Footer.astro';
       const distToMouse = Math.hypot(mx - pos.x, my - pos.y);
       if (distToMouse < 18 && hoveredInput < 0 && hoveredOutput < 0) {
         isHighlighted = true;
-        hoveredParticle = { x: pos.x, y: pos.y, snippet: p.snippet, color: p.color };
+        hoveredParticle = { x: pos.x, y: pos.y, snippet: p.snippet, color: p.color, richData: p.richData };
       }
 
       ctx.globalAlpha = alpha * (isHighlighted ? 1 : 0.6);
@@ -899,44 +929,110 @@ import Footer from '../../../components/layout/Footer.astro';
     // ── Particle tooltip ──────────────────────────────────────────────
     if (hoveredParticle && hoveredInput < 0 && hoveredOutput < 0) {
       const hp = hoveredParticle;
-      const tw = ctx.measureText(hp.snippet).width + 24;
-      let ptx = hp.x - tw / 2;
-      let pty = hp.y - 36;
-      ptx = Math.max(8, Math.min(W - tw - 8, ptx));
-      if (pty < 8) pty = hp.y + 16;
 
-      ctx.save();
-      ctx.shadowColor = hp.color + '30';
-      ctx.shadowBlur = 12;
-      ctx.beginPath();
-      ctx.roundRect(ptx, pty, tw, 26, 6);
-      ctx.fillStyle = 'rgba(6,7,18,0.92)';
-      ctx.fill();
-      ctx.shadowBlur = 0;
+      if (hp.richData) {
+        // Rich mini post card for output particles
+        const rd = hp.richData;
+        const tw = 220;
+        const th = 110;
+        let ptx = hp.x - tw / 2;
+        let pty = hp.y - th - 14;
+        ptx = Math.max(8, Math.min(W - tw - 8, ptx));
+        if (pty < 8) pty = hp.y + 14;
 
-      // Tint + border
-      ctx.beginPath();
-      ctx.roundRect(ptx, pty, tw, 26, 6);
-      ctx.fillStyle = hp.color + '0c';
-      ctx.fill();
-      ctx.strokeStyle = hp.color + '40';
-      ctx.lineWidth = 1;
-      ctx.stroke();
+        ctx.save();
+        // Glass card
+        ctx.shadowColor = rd.color + '30'; ctx.shadowBlur = 16;
+        ctx.beginPath(); ctx.roundRect(ptx, pty, tw, th, 8);
+        ctx.fillStyle = 'rgba(6,7,18,0.93)'; ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.beginPath(); ctx.roundRect(ptx, pty, tw, th, 8);
+        ctx.fillStyle = rd.color + '08'; ctx.fill();
+        ctx.strokeStyle = rd.color + '35'; ctx.lineWidth = 1; ctx.stroke();
 
-      // Top accent line
-      ctx.beginPath();
-      ctx.roundRect(ptx, pty, tw, 2.5, [6, 6, 0, 0]);
-      ctx.fillStyle = hp.color;
-      ctx.globalAlpha = 0.6;
-      ctx.fill();
-      ctx.globalAlpha = 1;
+        // Top accent
+        ctx.beginPath(); ctx.roundRect(ptx, pty, tw, 2.5, [8,8,0,0]);
+        ctx.fillStyle = rd.color; ctx.globalAlpha = 0.7; ctx.fill(); ctx.globalAlpha = 1;
 
-      // Text
-      ctx.font = '10px "SF Mono", "Fira Code", monospace, sans-serif';
-      ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      ctx.textAlign = 'center';
-      ctx.fillText(hp.snippet, ptx + tw / 2, pty + 18);
-      ctx.restore();
+        // Platform icon + name
+        drawIcon(ptx + 16, pty + 16, rd.icon, 12, rd.color);
+        ctx.font = 'bold 9px -apple-system, sans-serif';
+        ctx.fillStyle = rd.color; ctx.textAlign = 'left';
+        ctx.fillText(rd.platform.toUpperCase(), ptx + 28, pty + 20);
+
+        // Meta (right-aligned)
+        ctx.font = '8px -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.textAlign = 'right';
+        ctx.fillText(rd.meta, ptx + tw - 10, pty + 20);
+
+        // Title
+        ctx.textAlign = 'left';
+        ctx.font = 'bold 11px -apple-system, sans-serif';
+        ctx.fillStyle = '#fff';
+        // Truncate if needed
+        let titleText = rd.title;
+        while (ctx.measureText(titleText).width > tw - 20 && titleText.length > 10) {
+          titleText = titleText.slice(0, -4) + '...';
+        }
+        ctx.fillText(titleText, ptx + 10, pty + 40);
+
+        // Body
+        ctx.font = '9px -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.55)';
+        // Simple 2-line wrap
+        const words = rd.body.split(' ');
+        let line1 = '', line2 = '';
+        for (const w of words) {
+          const test = line1 + (line1 ? ' ' : '') + w;
+          if (ctx.measureText(test).width > tw - 20 && !line2) {
+            line2 = w;
+            continue;
+          }
+          if (line2) { line2 += ' ' + w; }
+          else { line1 = test; }
+        }
+        ctx.fillText(line1, ptx + 10, pty + 56);
+        if (line2) {
+          if (ctx.measureText(line2).width > tw - 20) line2 = line2.slice(0, 35) + '...';
+          ctx.fillText(line2, ptx + 10, pty + 68);
+        }
+
+        // Divider
+        ctx.beginPath(); ctx.moveTo(ptx + 10, pty + 78);
+        ctx.lineTo(ptx + tw - 10, pty + 78);
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 0.5; ctx.stroke();
+
+        // Stats
+        ctx.font = '8px "SF Mono", monospace';
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.textAlign = 'left';
+        ctx.fillText(rd.stats, ptx + 10, pty + 93);
+
+        ctx.restore();
+      } else {
+        // Simple pill for input particles
+        const tw = ctx.measureText(hp.snippet).width + 24;
+        let ptx = hp.x - tw / 2;
+        let pty = hp.y - 36;
+        ptx = Math.max(8, Math.min(W - tw - 8, ptx));
+        if (pty < 8) pty = hp.y + 16;
+
+        ctx.save();
+        ctx.shadowColor = hp.color + '30'; ctx.shadowBlur = 12;
+        ctx.beginPath(); ctx.roundRect(ptx, pty, tw, 26, 6);
+        ctx.fillStyle = 'rgba(6,7,18,0.92)'; ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.beginPath(); ctx.roundRect(ptx, pty, tw, 26, 6);
+        ctx.fillStyle = hp.color + '0c'; ctx.fill();
+        ctx.strokeStyle = hp.color + '40'; ctx.lineWidth = 1; ctx.stroke();
+        ctx.beginPath(); ctx.roundRect(ptx, pty, tw, 2.5, [6,6,0,0]);
+        ctx.fillStyle = hp.color; ctx.globalAlpha = 0.6; ctx.fill(); ctx.globalAlpha = 1;
+        ctx.font = '10px "SF Mono", "Fira Code", monospace';
+        ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.textAlign = 'center';
+        ctx.fillText(hp.snippet, ptx + tw / 2, pty + 18);
+        ctx.restore();
+      }
     }
     hoveredParticle = null;
 
