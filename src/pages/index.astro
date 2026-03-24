@@ -2546,11 +2546,12 @@ Zero effort.</h2>
       let hoveredInput = -1, hoveredOutput = -1;
       let hoveredParticle: {x: number; y: number; snippet: string; color: string; richData?: OutputSnippet} | null = null;
 
-      // Auto-spotlight: pins a random particle to show its tooltip
-      let spotlightParticle: {x:number; y:number; snippet:string; color:string; richData?: OutputSnippet} | null = null;
-      let spotlightAge = 0;      // how long current spotlight has been active
-      let spotlightCooldown = 0; // delay before picking next
-      let userHovering = false;  // true when user mouse is on canvas
+      // Auto-spotlight: tracks one particle at a time, alternating input→output
+      let spotIdx = -1;           // index into particles array of the tracked particle
+      let spotPhase: 'input'|'waiting'|'output'|'cooldown' = 'cooldown';
+      let spotTimer = 0;
+      let spotTooltip: {x:number; y:number; snippet:string; color:string; richData?: OutputSnippet} | null = null;
+      let userHovering = false;
 
       canvas.addEventListener('mousemove', e => {
         const r = canvas.getBoundingClientRect();
