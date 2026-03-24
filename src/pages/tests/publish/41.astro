@@ -382,6 +382,300 @@ import Footer from '../../../components/layout/Footer.astro';
     ctx.fillText('ENGINE', x, y + 10);
   }
 
+  // ── Rich post preview per platform ──────────────────────────────────────
+  function drawRichPostPreview(idx: number, nodeX: number, nodeY: number, color: string, t: number) {
+    const TW = 280;
+    let TH = 0;
+    let tx = nodeX - TW - 40;
+    let ty = nodeY;
+
+    ctx.save();
+
+    switch(idx) {
+      case 0: // Newsletter
+        TH = 220;
+        ty = Math.max(8, Math.min(H - TH - 8, nodeY - TH/2));
+        tx = Math.max(8, Math.min(W - TW - 8, tx));
+        drawGlassCard(tx, ty, TW, TH, color);
+        // Email header
+        drawPlatformIcon(tx + 12, ty + 16, 'mail', 14, color);
+        ctx.font = 'bold 10px -apple-system, sans-serif';
+        ctx.fillStyle = color; ctx.textAlign = 'left';
+        ctx.fillText('NEWSLETTER', tx + 32, ty + 24);
+        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+        ctx.font = '9px -apple-system, sans-serif';
+        ctx.fillText('8,400 subscribers  •  Scheduled 9am Tue', tx + 32, ty + 38);
+        // Divider
+        ctx.beginPath(); ctx.moveTo(tx+12, ty+48); ctx.lineTo(tx+TW-12, ty+48);
+        ctx.strokeStyle = color+'18'; ctx.lineWidth = 0.5; ctx.stroke();
+        // Subject
+        ctx.font = 'bold 13px -apple-system, sans-serif';
+        ctx.fillStyle = '#fff';
+        ctx.fillText('5 AI Trends Reshaping B2B', tx + 14, ty + 68);
+        ctx.fillText('This Week', tx + 14, ty + 84);
+        // Preview text
+        ctx.font = '10px -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.55)';
+        wrapText(ctx, 'OpenAI just dropped GPT-5 and the B2B landscape is shifting fast. Here are the 5 trends you need to act on before your competitors do...', tx+14, ty+102, TW-28, 14);
+        // Stats bar
+        ctx.beginPath(); ctx.moveTo(tx+12, ty+165); ctx.lineTo(tx+TW-12, ty+165);
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.stroke();
+        drawStatPill(tx+14, ty+175, '42.3% open', color);
+        drawStatPill(tx+100, ty+175, '12.1% CTR', color);
+        drawStatPill(tx+180, ty+175, '847 clicks', color);
+        // CTA button
+        ctx.beginPath(); ctx.roundRect(tx+14, ty+198, TW-28, 14, 3);
+        ctx.fillStyle = color+'20'; ctx.fill();
+        ctx.font = 'bold 9px -apple-system, sans-serif';
+        ctx.fillStyle = color; ctx.textAlign = 'center';
+        ctx.fillText('Read the full breakdown →', tx+TW/2, ty+208);
+        break;
+
+      case 1: // Instagram
+        TH = 240;
+        ty = Math.max(8, Math.min(H - TH - 8, nodeY - TH/2));
+        tx = Math.max(8, Math.min(W - TW - 8, tx));
+        drawGlassCard(tx, ty, TW, TH, color);
+        // Header row
+        drawPlatformIcon(tx + 12, ty + 16, 'instagram', 14, color);
+        ctx.font = 'bold 10px -apple-system, sans-serif';
+        ctx.fillStyle = color; ctx.textAlign = 'left';
+        ctx.fillText('INSTAGRAM CAROUSEL', tx + 32, ty + 24);
+        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+        ctx.font = '9px -apple-system, sans-serif';
+        ctx.fillText('Scheduled  •  4:30pm Today', tx + 32, ty + 38);
+        // Fake image area
+        ctx.beginPath(); ctx.roundRect(tx+12, ty+50, TW-24, 90, 6);
+        const imgGrad = ctx.createLinearGradient(tx, ty+50, tx+TW, ty+140);
+        imgGrad.addColorStop(0, color+'25'); imgGrad.addColorStop(1, '#6366f120');
+        ctx.fillStyle = imgGrad; ctx.fill();
+        ctx.font = 'bold 16px -apple-system, sans-serif';
+        ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+        ctx.fillText('7 Signs Your Content', tx+TW/2, ty+90);
+        ctx.fillText('Strategy is Broken', tx+TW/2, ty+110);
+        // Slide dots
+        for (let d = 0; d < 7; d++) {
+          ctx.beginPath(); ctx.arc(tx+TW/2-24+d*8, ty+132, 2.5, 0, Math.PI*2);
+          ctx.fillStyle = d===0 ? color : 'rgba(255,255,255,0.2)'; ctx.fill();
+        }
+        // Caption
+        ctx.textAlign = 'left';
+        ctx.font = '10px -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.65)';
+        wrapText(ctx, 'Most B2B brands waste 80% of their content budget. Swipe to see if you are making these mistakes →', tx+14, ty+158, TW-28, 13);
+        // Engagement
+        ctx.font = '9px -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+        ctx.fillText('♥ 1,247   💬 89   ↗ 342   🔖 561', tx+14, ty+205);
+        // Hashtags
+        ctx.fillStyle = color+'80';
+        ctx.fillText('#ContentMarketing #B2B #AIContent #Growth', tx+14, ty+222);
+        break;
+
+      case 2: // TikTok
+        TH = 230;
+        ty = Math.max(8, Math.min(H - TH - 8, nodeY - TH/2));
+        tx = Math.max(8, Math.min(W - TW - 8, tx));
+        drawGlassCard(tx, ty, TW, TH, color);
+        drawPlatformIcon(tx + 12, ty + 16, 'tiktok', 14, color);
+        ctx.font = 'bold 10px -apple-system, sans-serif';
+        ctx.fillStyle = color; ctx.textAlign = 'left';
+        ctx.fillText('TIKTOK VIDEO', tx + 32, ty + 24);
+        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+        ctx.font = '9px -apple-system, sans-serif';
+        ctx.fillText('45s  •  Vertical 9:16  •  Draft ready', tx + 32, ty + 38);
+        // Video thumbnail area
+        ctx.beginPath(); ctx.roundRect(tx+12, ty+50, TW-24, 80, 6);
+        ctx.fillStyle = 'rgba(0,242,234,0.08)'; ctx.fill();
+        ctx.strokeStyle = color+'30'; ctx.lineWidth = 1; ctx.stroke();
+        // Play button
+        ctx.beginPath(); ctx.moveTo(tx+TW/2-8, ty+78); ctx.lineTo(tx+TW/2+10, ty+90); ctx.lineTo(tx+TW/2-8, ty+102); ctx.closePath();
+        ctx.fillStyle = color; ctx.fill();
+        // Hook text
+        ctx.font = 'bold 11px -apple-system, sans-serif';
+        ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
+        ctx.fillText('🎬 HOOK (0-3s):', tx+14, ty+148);
+        ctx.font = '11px -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        wrapText(ctx, '"POV: Your competitor just posted 30 pieces of content this week and you are still writing one blog"', tx+14, ty+164, TW-28, 14);
+        // Script breakdown
+        ctx.font = '9px "SF Mono", monospace';
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.fillText('0-3s Hook  →  3-15s Problem  →  15-35s Solution  →  35-45s CTA', tx+14, ty+208);
+        // Trending sound
+        ctx.fillStyle = color+'60';
+        ctx.fillText('♫ Trending: "Oh No" remix  •  2.1M uses', tx+14, ty+222);
+        break;
+
+      case 3: // Twitter/X
+        TH = 200;
+        ty = Math.max(8, Math.min(H - TH - 8, nodeY - TH/2));
+        tx = Math.max(8, Math.min(W - TW - 8, tx));
+        drawGlassCard(tx, ty, TW, TH, color);
+        drawPlatformIcon(tx + 12, ty + 14, 'x', 12, color);
+        ctx.font = 'bold 10px -apple-system, sans-serif';
+        ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
+        ctx.fillText('Acme Growth Co.', tx + 30, ty + 20);
+        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+        ctx.font = '9px -apple-system, sans-serif';
+        ctx.fillText('@acmegrowth  •  2m ago', tx + 30, ty + 33);
+        // Tweet body
+        ctx.font = '12px -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        wrapText(ctx, 'We analysed 10,000 B2B posts across LinkedIn, X, and blogs.\nThe #1 predictor of engagement? Not length, not format.\nIt is publishing velocity. 🧵 (1/8)', tx+14, ty+52, TW-28, 16);
+        // Engagement bar
+        ctx.beginPath(); ctx.moveTo(tx+12, ty+152); ctx.lineTo(tx+TW-12, ty+152);
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 0.5; ctx.stroke();
+        ctx.font = '9px -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.fillText('💬 247    🔁 1,832    ♥ 4,291    📊 89.2k views', tx+14, ty+170);
+        // Thread indicator
+        ctx.beginPath(); ctx.roundRect(tx+14, ty+180, 70, 14, 3);
+        ctx.fillStyle = color+'18'; ctx.fill();
+        ctx.font = 'bold 8px -apple-system, sans-serif';
+        ctx.fillStyle = color;
+        ctx.fillText('🧵 Thread 1/8', tx+22, ty+190);
+        break;
+
+      case 4: // LinkedIn
+        TH = 220;
+        ty = Math.max(8, Math.min(H - TH - 8, nodeY - TH/2));
+        tx = Math.max(8, Math.min(W - TW - 8, tx));
+        drawGlassCard(tx, ty, TW, TH, color);
+        drawPlatformIcon(tx + 12, ty + 14, 'linkedin', 14, color);
+        ctx.font = 'bold 10px -apple-system, sans-serif';
+        ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
+        ctx.fillText('Acme Growth Co.', tx + 32, ty + 20);
+        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+        ctx.font = '9px -apple-system, sans-serif';
+        ctx.fillText('12,400 followers  •  Just now', tx + 32, ty + 33);
+        // Post body
+        ctx.font = '11px -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        wrapText(ctx, 'We used to spend 40 hours/week on content.\nNow we spend 2.\nHere is the 3-layer content stack that let us 20x our output without hiring a single writer:', tx+14, ty+52, TW-28, 15);
+        // See more
+        ctx.fillStyle = color;
+        ctx.font = '10px -apple-system, sans-serif';
+        ctx.fillText('...see more', tx+14, ty+140);
+        // Reactions bar
+        ctx.beginPath(); ctx.moveTo(tx+12, ty+152); ctx.lineTo(tx+TW-12, ty+152);
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 0.5; ctx.stroke();
+        ctx.font = '9px -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.fillText('👍 💡 🔥  2,847 reactions  •  89 comments  •  342 reposts', tx+14, ty+168);
+        // Engagement stats
+        drawStatPill(tx+14, ty+185, '148k impressions', color);
+        drawStatPill(tx+130, ty+185, '3.2% engagement', color);
+        // Hashtags
+        ctx.font = '9px -apple-system, sans-serif';
+        ctx.fillStyle = color+'70';
+        ctx.fillText('#ContentStrategy #B2BMarketing #AIContent', tx+14, ty+210);
+        break;
+
+      case 5: // Blog
+        TH = 230;
+        ty = Math.max(8, Math.min(H - TH - 8, nodeY - TH/2));
+        tx = Math.max(8, Math.min(W - TW - 8, tx));
+        drawGlassCard(tx, ty, TW, TH, color);
+        drawPlatformIcon(tx + 12, ty + 16, 'blog', 14, color);
+        ctx.font = 'bold 10px -apple-system, sans-serif';
+        ctx.fillStyle = color; ctx.textAlign = 'left';
+        ctx.fillText('BLOG ARTICLE', tx + 32, ty + 24);
+        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+        ctx.font = '9px -apple-system, sans-serif';
+        ctx.fillText('2,400 words  •  8 min read  •  SEO optimised', tx + 32, ty + 38);
+        // Title
+        ctx.beginPath(); ctx.moveTo(tx+12, ty+48); ctx.lineTo(tx+TW-12, ty+48);
+        ctx.strokeStyle = color+'18'; ctx.lineWidth = 0.5; ctx.stroke();
+        ctx.font = 'bold 14px -apple-system, sans-serif';
+        ctx.fillStyle = '#fff';
+        ctx.fillText('The Complete Guide to', tx + 14, ty + 68);
+        ctx.fillText('AI Content in 2026', tx + 14, ty + 86);
+        // Meta
+        ctx.font = '9px "SF Mono", monospace';
+        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+        ctx.fillText('Published: Today 09:00  •  Author: AutoPilot', tx+14, ty+104);
+        // SEO stats
+        ctx.beginPath(); ctx.moveTo(tx+12, ty+114); ctx.lineTo(tx+TW-12, ty+114);
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.stroke();
+        ctx.font = '9px -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.fillText('SEO SCORE', tx+14, ty+130);
+        // SEO bar
+        ctx.beginPath(); ctx.roundRect(tx+14, ty+134, TW-28, 6, 3);
+        ctx.fillStyle = 'rgba(255,255,255,0.08)'; ctx.fill();
+        ctx.beginPath(); ctx.roundRect(tx+14, ty+134, (TW-28)*0.94, 6, 3);
+        ctx.fillStyle = '#4ade80'; ctx.fill();
+        ctx.fillStyle = '#4ade80';
+        ctx.fillText('94/100', tx+TW-40, ty+130);
+        // Keywords
+        ctx.font = '9px -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.fillText('Primary: "ai content generation"  •  Rank: #4 → #1', tx+14, ty+156);
+        ctx.fillText('8 internal links  •  3 external citations', tx+14, ty+170);
+        // Structure
+        ctx.font = '8px "SF Mono", monospace';
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.fillText('H1 → 6×H2 → 12×H3 → 3 images → 1 CTA → schema', tx+14, ty+188);
+        // Performance
+        drawStatPill(tx+14, ty+202, '4.2k views', color);
+        drawStatPill(tx+90, ty+202, '2:47 avg read', color);
+        drawStatPill(tx+186, ty+202, '12 backlinks', color);
+        break;
+    }
+
+    ctx.restore();
+  }
+
+  // Helper: glass card background
+  function drawGlassCard(x: number, y: number, w: number, h: number, color: string) {
+    ctx.shadowColor = color + '25'; ctx.shadowBlur = 24;
+    ctx.beginPath(); ctx.roundRect(x, y, w, h, 10);
+    ctx.fillStyle = 'rgba(6,7,18,0.92)'; ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.beginPath(); ctx.roundRect(x, y, w, h, 10);
+    ctx.fillStyle = color + '08'; ctx.fill();
+    ctx.strokeStyle = color + '30'; ctx.lineWidth = 1; ctx.stroke();
+    // Top accent
+    ctx.beginPath(); ctx.roundRect(x, y, w, 3, [10,10,0,0]);
+    ctx.fillStyle = color; ctx.globalAlpha = 0.7; ctx.fill(); ctx.globalAlpha = 1;
+  }
+
+  // Helper: platform icon in tooltip
+  function drawPlatformIcon(x: number, y: number, type: string, size: number, color: string) {
+    drawIcon(x + size/2, y + size/2, type, size, color);
+  }
+
+  // Helper: stat pill
+  function drawStatPill(x: number, y: number, text: string, color: string) {
+    ctx.font = '8px "SF Mono", monospace';
+    const tw = ctx.measureText(text).width + 10;
+    ctx.beginPath(); ctx.roundRect(x, y, tw, 16, 3);
+    ctx.fillStyle = color + '12'; ctx.fill();
+    ctx.strokeStyle = color + '25'; ctx.lineWidth = 0.5; ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.65)';
+    ctx.fillText(text, x + 5, y + 11);
+  }
+
+  // Helper: word wrap
+  function wrapText(c: CanvasRenderingContext2D, text: string, x: number, y: number, maxW: number, lineH: number) {
+    const paragraphs = text.split('\n');
+    let cy = y;
+    for (const para of paragraphs) {
+      if (para === '') { cy += lineH * 0.6; continue; }
+      const words = para.split(' ');
+      let line = '';
+      for (const word of words) {
+        const test = line + (line ? ' ' : '') + word;
+        if (c.measureText(test).width > maxW && line) {
+          c.fillText(line, x, cy);
+          line = word; cy += lineH;
+        } else { line = test; }
+      }
+      if (line) { c.fillText(line, x, cy); cy += lineH; }
+    }
+  }
+
   // ── Feed tooltip ────────────────────────────────────────────────────────
   function drawFeedTooltip(tx: number, ty: number, feed: {tag: string; text: string}[], color: string, title: string) {
     const TW = 240;
@@ -591,7 +885,7 @@ import Footer from '../../../components/layout/Footer.astro';
     if (hoveredOutput >= 0) {
       const out = OUTPUTS[hoveredOutput];
       const p = getOutputPos(hoveredOutput);
-      drawFeedTooltip(p.x - 260, p.y - 20, out.feed, out.color, out.label);
+      drawRichPostPreview(hoveredOutput, p.x, p.y, out.color, t);
     }
 
     // "INPUTS" and "OUTPUTS" labels
