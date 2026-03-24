@@ -182,12 +182,14 @@ import Footer from '../../../components/layout/Footer.astro';
     toOutput: number;   // -1 if to engine
     size: number;
     alive: boolean;
+    snippet: string;
   }
 
   const particles: Particle[] = [];
   let lastSpawn = 0;
   let mx = -999, my = -999;
   let hoveredInput = -1, hoveredOutput = -1;
+  let hoveredParticle: {x: number; y: number; snippet: string; color: string} | null = null;
 
   canvas.addEventListener('mousemove', e => {
     const r = canvas.getBoundingClientRect();
@@ -211,12 +213,39 @@ import Footer from '../../../components/layout/Footer.astro';
   }
 
   // ── Spawn particles ────────────────────────────────────────────────────
+  // Content snippets that flow along particles
+  const INPUT_SNIPPETS = [
+    // Website Scrape
+    ['Crawling /about...', 'Found 47 pages', 'Brand tone: professional', 'Products: 4 detected', 'Extracting meta tags', 'Parsing testimonials'],
+    // News Feed
+    ['GPT-5 reasoning announced', 'Google AI Overviews live', 'B2B content beats paid 3x', 'Series B funding surges', 'Agentic commerce rises', 'HubSpot AI acquisition'],
+    // X Feed
+    ['@rival: "4x reply rates"', '#SaaS trending: PLG is dead', '"$0 content strategy" 12k likes', 'AI tools thread: 28 replies', '#ContentMarketing trending'],
+    // Keywords
+    ['"b2b content marketing" 2.4k/mo', '"ai content tools" 1.8k/mo', '"content repurposing" 720/mo', '"scale content production" 3.1k/mo', '"automated posting" 890/mo'],
+  ];
+  const OUTPUT_SNIPPETS = [
+    // Newsletter
+    ['Subject: "5 AI Trends This Week"', 'Open rate: 42.3%', 'Digest + CTA drafted', '8,400 subscribers queued'],
+    // Instagram
+    ['Carousel: 7 content tips', 'Reel: 15s hook ready', 'Story poll: 2.1k votes', 'Caption + hashtags set'],
+    // TikTok
+    ['Hook: "Your competitor posted 30x"', '45s explainer scripted', 'Duet format: rival react', 'Trending audio matched'],
+    // Twitter
+    ['Thread: 10k post analysis', '"Scale isn\'t spam" — drafted', 'Reply to industry convo', 'Quote tweet + insight'],
+    // LinkedIn
+    ['Article: Content Automation', '"3-layer content stack" post', '2.4k impressions projected', 'Thought leadership draft'],
+    // Blog
+    ['2,400w guide: AI Content 2026', '3 keywords, 8 internal links', 'H2 structure optimised', 'Meta desc + schema ready'],
+  ];
+
   function spawnParticle(t: number) {
     const engine = getEnginePos();
 
     // Input → Engine
     const ii = Math.floor(Math.random() * INPUTS.length);
     const ip = getInputPos(ii);
+    const iSnips = INPUT_SNIPPETS[ii];
     particles.push({
       x: ip.x, y: ip.y,
       tx: engine.x + (Math.random() - 0.5) * 30,
@@ -227,11 +256,13 @@ import Footer from '../../../components/layout/Footer.astro';
       fromInput: ii, toOutput: -1,
       size: 2 + Math.random() * 2,
       alive: true,
+      snippet: iSnips[Math.floor(Math.random() * iSnips.length)],
     });
 
     // Engine → Output
     const oi = Math.floor(Math.random() * OUTPUTS.length);
     const op = getOutputPos(oi);
+    const oSnips = OUTPUT_SNIPPETS[oi];
     particles.push({
       x: engine.x + (Math.random() - 0.5) * 30,
       y: engine.y + (Math.random() - 0.5) * 30,
@@ -242,6 +273,7 @@ import Footer from '../../../components/layout/Footer.astro';
       fromInput: -1, toOutput: oi,
       size: 2 + Math.random() * 2,
       alive: true,
+      snippet: oSnips[Math.floor(Math.random() * oSnips.length)],
     });
   }
 
@@ -509,17 +541,24 @@ import Footer from '../../../components/layout/Footer.astro';
       if (hoveredInput >= 0 && p.fromInput === hoveredInput) isHighlighted = true;
       if (hoveredOutput >= 0 && p.toOutput === hoveredOutput) isHighlighted = true;
 
+      // Check if mouse is near this particle
+      const distToMouse = Math.hypot(mx - pos.x, my - pos.y);
+      if (distToMouse < 18 && hoveredInput < 0 && hoveredOutput < 0) {
+        isHighlighted = true;
+        hoveredParticle = { x: pos.x, y: pos.y, snippet: p.snippet, color: p.color };
+      }
+
       ctx.globalAlpha = alpha * (isHighlighted ? 1 : 0.6);
       ctx.beginPath();
-      ctx.arc(pos.x, pos.y, p.size * (isHighlighted ? 1.5 : 1), 0, Math.PI * 2);
+      ctx.arc(pos.x, pos.y, p.size * (isHighlighted ? 1.8 : 1), 0, Math.PI * 2);
       ctx.fillStyle = p.color;
       ctx.fill();
 
-      // Trail
+      // Trail glow
       if (isHighlighted) {
         ctx.beginPath();
-        ctx.arc(pos.x, pos.y, p.size * 3, 0, Math.PI * 2);
-        ctx.fillStyle = p.color + '15';
+        ctx.arc(pos.x, pos.y, p.size * 4, 0, Math.PI * 2);
+        ctx.fillStyle = p.color + '20';
         ctx.fill();
       }
 
@@ -560,6 +599,50 @@ import Footer from '../../../components/layout/Footer.astro';
     ctx.fillStyle = 'rgba(255,255,255,0.2)';
     ctx.fillText('I N P U T S', 70, 26);
     ctx.fillText('O U T P U T S', W - 70, 26);
+
+    // ── Particle tooltip ──────────────────────────────────────────────
+    if (hoveredParticle && hoveredInput < 0 && hoveredOutput < 0) {
+      const hp = hoveredParticle;
+      const tw = ctx.measureText(hp.snippet).width + 24;
+      let ptx = hp.x - tw / 2;
+      let pty = hp.y - 36;
+      ptx = Math.max(8, Math.min(W - tw - 8, ptx));
+      if (pty < 8) pty = hp.y + 16;
+
+      ctx.save();
+      ctx.shadowColor = hp.color + '30';
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.roundRect(ptx, pty, tw, 26, 6);
+      ctx.fillStyle = 'rgba(6,7,18,0.92)';
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Tint + border
+      ctx.beginPath();
+      ctx.roundRect(ptx, pty, tw, 26, 6);
+      ctx.fillStyle = hp.color + '0c';
+      ctx.fill();
+      ctx.strokeStyle = hp.color + '40';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Top accent line
+      ctx.beginPath();
+      ctx.roundRect(ptx, pty, tw, 2.5, [6, 6, 0, 0]);
+      ctx.fillStyle = hp.color;
+      ctx.globalAlpha = 0.6;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // Text
+      ctx.font = '10px "SF Mono", "Fira Code", monospace, sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.textAlign = 'center';
+      ctx.fillText(hp.snippet, ptx + tw / 2, pty + 18);
+      ctx.restore();
+    }
+    hoveredParticle = null;
 
     // Keep particle count manageable
     while (particles.length > 200) particles.shift();
