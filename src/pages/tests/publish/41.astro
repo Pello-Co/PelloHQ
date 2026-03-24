@@ -94,6 +94,83 @@ import Footer from '../../../components/layout/Footer.astro';
     ]},
   ];
 
+  // ── Company Info (Memory Base) ───────────────────────────────────────
+  const COMPANY = [
+    { label: 'Brand\nVoice', color: '#fbbf24', icon: 'globe', feed: [
+      { tag: 'TONE', text: 'Professional, data-driven, authoritative' },
+      { tag: 'STYLE', text: 'Short sentences. Active voice. No jargon.' },
+      { tag: 'PERSONA', text: 'Trusted advisor, not salesperson' },
+      { tag: 'VOCAB', text: '142 preferred terms, 28 banned phrases' },
+    ]},
+    { label: 'Products', color: '#fb923c', icon: 'blog', feed: [
+      { tag: 'CORE', text: 'PelloPublish — AI content automation platform' },
+      { tag: 'FEATURE', text: 'AutoPilot, Memory Base, Multi-platform' },
+      { tag: 'PRICING', text: '3 tiers: Starter $49, Pro $149, Enterprise' },
+      { tag: 'USP', text: '37 intelligence types, 10 content categories' },
+    ]},
+    { label: 'Audience', color: '#f97316', icon: 'search', feed: [
+      { tag: 'ICP', text: 'B2B SaaS marketing teams, 50-500 employees' },
+      { tag: 'PAIN', text: 'Content bottleneck — 40hrs/week, 3 posts' },
+      { tag: 'GOAL', text: 'Scale content 10x without hiring writers' },
+      { tag: 'BUYER', text: 'VP Marketing, Head of Content, CMO' },
+    ]},
+    { label: 'Competitors', color: '#ef4444', icon: 'x', feed: [
+      { tag: 'RIVAL 1', text: 'Jasper — AI writing, no distribution' },
+      { tag: 'RIVAL 2', text: 'Copy.ai — single format, no Memory Base' },
+      { tag: 'GAP', text: 'No competitor does input→autopilot→publish' },
+      { tag: 'MOAT', text: 'Memory Base + multi-platform + AutoPilot' },
+    ]},
+    { label: 'SEO\nKeywords', color: '#a3e635', icon: 'search', feed: [
+      { tag: 'PRIMARY', text: '"ai content generation" — 2.4k/mo, DR 45' },
+      { tag: 'SECONDARY', text: '"automated content marketing" — 1.1k/mo' },
+      { tag: 'LONGTAIL', text: '"how to automate blog posts with ai"' },
+      { tag: 'RANKING', text: '14 page-1 keywords, 89 top-20 keywords' },
+    ]},
+    { label: 'Industry', color: '#818cf8', icon: 'news', feed: [
+      { tag: 'VERTICAL', text: 'B2B SaaS / MarTech / Content Marketing' },
+      { tag: 'TRENDS', text: 'AI-first content, zero-click SEO, video' },
+      { tag: 'REGS', text: 'GDPR compliant, AI disclosure best practice' },
+      { tag: 'EVENTS', text: 'SaaStr, Content Marketing World, HubSpot' },
+    ]},
+  ];
+
+  // Company Info rich popup data
+  interface CompanySnippet {
+    platform: string;
+    icon: string;
+    color: string;
+    title: string;
+    body: string;
+    meta: string;
+    stats: string;
+  }
+  const COMPANY_SNIPPET_DATA: CompanySnippet[][] = [
+    // Brand Voice
+    [
+      { platform: 'Brand Voice', icon: 'globe', color: '#fbbf24', title: 'Voice Profile: Acme Growth Co.', body: 'Professional but approachable. Data-driven claims. Short paragraphs. Active voice. Never "synergy" or "leverage".', meta: 'Memory Base  \u00b7  142 terms', stats: 'Consistency: 94%  \u00b7  Last updated: 2h ago' },
+    ],
+    // Products
+    [
+      { platform: 'Products', icon: 'blog', color: '#fb923c', title: 'Product: PelloPublish Pro', body: 'AutoPilot + Memory Base + 6 platforms. $149/mo. "Scale content without scaling headcount."', meta: '4 products  \u00b7  12 features', stats: 'Mentioned in 78% of content  \u00b7  14 CTAs' },
+    ],
+    // Audience
+    [
+      { platform: 'Audience', icon: 'search', color: '#f97316', title: 'ICP: VP Marketing at B2B SaaS', body: 'Pain: spending 40hrs/week on content, producing 3 posts. Goal: 10x output, same team size.', meta: '50-500 employees  \u00b7  Series A-C', stats: 'TAM: 84k companies  \u00b7  Engagement: 4.2%' },
+    ],
+    // Competitors
+    [
+      { platform: 'Competitors', icon: 'x', color: '#ef4444', title: 'Competitive Intel: Jasper vs Pello', body: 'Jasper: AI writing only. No distribution, no Memory Base, no AutoPilot. Single-format output.', meta: '4 tracked rivals  \u00b7  Weekly scan', stats: 'Win rate: 72%  \u00b7  Key diff: AutoPilot' },
+    ],
+    // SEO Keywords
+    [
+      { platform: 'SEO Keywords', icon: 'search', color: '#a3e635', title: 'Keyword: "ai content generation"', body: 'Volume: 2,400/mo  \u00b7  DR: 45  \u00b7  Current rank: #4. Targeting in 3 blog posts + 2 LinkedIn articles.', meta: '14 page-1 rankings', stats: 'Organic traffic: +340% in 6 months' },
+    ],
+    // Industry
+    [
+      { platform: 'Industry', icon: 'rss', color: '#818cf8', title: 'Industry: B2B SaaS MarTech', body: 'Trending: AI-first content, zero-click SEO, short-form video for B2B. Regulatory: AI disclosure.', meta: 'Vertical analysis  \u00b7  Updated daily', stats: '12 trends tracked  \u00b7  3 alerts/week' },
+    ],
+  ];
+
   // ── Output platforms ───────────────────────────────────────────────────
   const OUTPUTS = [
     { label: 'Newsletter', color: '#f97316', icon: 'mail', feed: [
@@ -180,33 +257,42 @@ import Footer from '../../../components/layout/Footer.astro';
     color: string;
     fromInput: number;  // -1 if from engine
     toOutput: number;   // -1 if to engine
+    fromCompany: number; // -1 if not from company
     size: number;
     alive: boolean;
     snippet: string;
     richData?: OutputSnippet;
+    companyData?: CompanySnippet;
   }
 
   const particles: Particle[] = [];
   let lastSpawn = 0;
   let mx = -999, my = -999;
   let hoveredInput = -1, hoveredOutput = -1;
-  let hoveredParticle: {x: number; y: number; snippet: string; color: string; richData?: OutputSnippet} | null = null;
+  let hoveredCompany = -1;
+  let hoveredParticle: {x: number; y: number; snippet: string; color: string; richData?: OutputSnippet; companyData?: CompanySnippet} | null = null;
 
   canvas.addEventListener('mousemove', e => {
     const r = canvas.getBoundingClientRect();
     mx = e.clientX - r.left; my = e.clientY - r.top;
   });
-  canvas.addEventListener('mouseleave', () => { mx = -999; my = -999; hoveredInput = -1; hoveredOutput = -1; });
+  canvas.addEventListener('mouseleave', () => { mx = -999; my = -999; hoveredInput = -1; hoveredOutput = -1; hoveredCompany = -1; });
 
   // ── Layout positions ───────────────────────────────────────────────────
   function getInputPos(i: number) {
     const gap = H / (INPUTS.length + 1);
-    return { x: 70, y: gap * (i + 1) };
+    return { x: 56, y: gap * (i + 1) };
+  }
+
+  function getCompanyPos(i: number) {
+    const startY = 50;
+    const gap = (H - 100) / (COMPANY.length + 1);
+    return { x: W * 0.32, y: startY + gap * (i + 1) };
   }
 
   function getOutputPos(i: number) {
     const gap = H / (OUTPUTS.length + 1);
-    return { x: W - 70, y: gap * (i + 1) };
+    return { x: W - 56, y: gap * (i + 1) };
   }
 
   function getEnginePos() {
@@ -281,10 +367,29 @@ import Footer from '../../../components/layout/Footer.astro';
       progress: 0,
       speed: 0.004 + Math.random() * 0.003,
       color: INPUTS[ii].color,
-      fromInput: ii, toOutput: -1,
+      fromInput: ii, toOutput: -1, fromCompany: -1,
       size: 2 + Math.random() * 2,
       alive: true,
       snippet: iSnips[Math.floor(Math.random() * iSnips.length)],
+    });
+
+    // Company → Engine
+    const ci = Math.floor(Math.random() * COMPANY.length);
+    const cp = getCompanyPos(ci);
+    const cSnipData = COMPANY_SNIPPET_DATA[ci];
+    const cSnip = cSnipData[Math.floor(Math.random() * cSnipData.length)];
+    particles.push({
+      x: cp.x, y: cp.y,
+      tx: engine.x + (Math.random() - 0.5) * 20,
+      ty: engine.y + (Math.random() - 0.5) * 20,
+      progress: 0,
+      speed: 0.003 + Math.random() * 0.003,
+      color: COMPANY[ci].color,
+      fromInput: -1, toOutput: -1, fromCompany: ci,
+      size: 2.5 + Math.random() * 1.5,
+      alive: true,
+      snippet: cSnip.title,
+      companyData: cSnip,
     });
 
     // Engine → Output
@@ -299,7 +404,7 @@ import Footer from '../../../components/layout/Footer.astro';
       progress: 0,
       speed: 0.004 + Math.random() * 0.003,
       color: OUTPUTS[oi].color,
-      fromInput: -1, toOutput: oi,
+      fromInput: -1, toOutput: oi, fromCompany: -1,
       size: 2 + Math.random() * 2,
       alive: true,
       snippet: oSnip.title,
@@ -810,6 +915,7 @@ import Footer from '../../../components/layout/Footer.astro';
     // Hit testing
     hoveredInput = -1;
     hoveredOutput = -1;
+    hoveredCompany = -1;
     for (let i = 0; i < INPUTS.length; i++) {
       const p = getInputPos(i);
       if (Math.hypot(mx - p.x, my - p.y) < 34) hoveredInput = i;
@@ -817,6 +923,17 @@ import Footer from '../../../components/layout/Footer.astro';
     for (let i = 0; i < OUTPUTS.length; i++) {
       const p = getOutputPos(i);
       if (Math.hypot(mx - p.x, my - p.y) < 34) hoveredOutput = i;
+    }
+    for (let i = 0; i < COMPANY.length; i++) {
+      const p = getCompanyPos(i);
+      if (Math.hypot(mx - p.x, my - p.y) < 30) hoveredCompany = i;
+    }
+
+    // Draw connections (company → engine)
+    for (let i = 0; i < COMPANY.length; i++) {
+      const p = getCompanyPos(i);
+      const hl = hoveredCompany === i;
+      drawConnection(p.x + 20, p.y, engine.x - 20, engine.y + (i - 2.5) * 8, COMPANY[i].color, hl);
     }
 
     // Draw connections (input → engine)
@@ -849,12 +966,14 @@ import Footer from '../../../components/layout/Footer.astro';
       if (p.fromInput >= 0) {
         const ip = getInputPos(p.fromInput);
         const engine = getEnginePos();
-        // Follow the exact connection line: from (ip.x+24, ip.y) to (engine.x-44, engine.y)
         pos = followConnection(ip.x + 24, ip.y, engine.x - 44, engine.y, p.progress);
+      } else if (p.fromCompany >= 0) {
+        const cp = getCompanyPos(p.fromCompany);
+        const engine = getEnginePos();
+        pos = followConnection(cp.x + 24, cp.y, engine.x - 20, engine.y + (p.fromCompany - 2.5) * 8, p.progress);
       } else {
         const engine = getEnginePos();
         const op = getOutputPos(p.toOutput);
-        // Follow the exact connection line: from (engine.x+44, engine.y) to (op.x-24, op.y)
         pos = followConnection(engine.x + 44, engine.y, op.x - 24, op.y, p.progress);
       }
 
@@ -866,12 +985,13 @@ import Footer from '../../../components/layout/Footer.astro';
       let isHighlighted = false;
       if (hoveredInput >= 0 && p.fromInput === hoveredInput) isHighlighted = true;
       if (hoveredOutput >= 0 && p.toOutput === hoveredOutput) isHighlighted = true;
+      if (hoveredCompany >= 0 && p.fromCompany === hoveredCompany) isHighlighted = true;
 
       // Check if mouse is near this particle
       const distToMouse = Math.hypot(mx - pos.x, my - pos.y);
       if (distToMouse < 18 && hoveredInput < 0 && hoveredOutput < 0) {
         isHighlighted = true;
-        hoveredParticle = { x: pos.x, y: pos.y, snippet: p.snippet, color: p.color, richData: p.richData };
+        hoveredParticle = { x: pos.x, y: pos.y, snippet: p.snippet, color: p.color, richData: p.richData, companyData: p.companyData };
       }
 
       ctx.globalAlpha = alpha * (isHighlighted ? 1 : 0.6);
@@ -892,7 +1012,7 @@ import Footer from '../../../components/layout/Footer.astro';
     }
 
     // Engine
-    drawEngine(t, hoveredInput >= 0 || hoveredOutput >= 0);
+    drawEngine(t, hoveredInput >= 0 || hoveredOutput >= 0 || hoveredCompany >= 0);
 
     // Input nodes
     for (let i = 0; i < INPUTS.length; i++) {
@@ -906,11 +1026,22 @@ import Footer from '../../../components/layout/Footer.astro';
       drawNode(p.x, p.y, OUTPUTS[i].label, OUTPUTS[i].color, OUTPUTS[i].icon, hoveredOutput === i, 26);
     }
 
+    // Company info nodes
+    for (let i = 0; i < COMPANY.length; i++) {
+      const p = getCompanyPos(i);
+      drawNode(p.x, p.y, COMPANY[i].label, COMPANY[i].color, COMPANY[i].icon, hoveredCompany === i, 22);
+    }
+
     // ── Tooltip popup ──────────────────────────────────────────────────
     if (hoveredInput >= 0) {
       const inp = INPUTS[hoveredInput];
       const p = getInputPos(hoveredInput);
       drawFeedTooltip(p.x + 40, p.y - 20, inp.feed, inp.color, inp.label.replace('\n', ' '));
+    }
+    if (hoveredCompany >= 0) {
+      const comp = COMPANY[hoveredCompany];
+      const p = getCompanyPos(hoveredCompany);
+      drawFeedTooltip(p.x + 36, p.y - 40, comp.feed, comp.color, comp.label.replace('\n', ' '));
     }
     if (hoveredOutput >= 0) {
       const out = OUTPUTS[hoveredOutput];
@@ -923,14 +1054,64 @@ import Footer from '../../../components/layout/Footer.astro';
     ctx.letterSpacing = '0.1em';
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(255,255,255,0.2)';
-    ctx.fillText('I N P U T S', 70, 26);
-    ctx.fillText('O U T P U T S', W - 70, 26);
+    ctx.fillText('I N P U T S', 56, 26);
+    ctx.fillText('C O M P A N Y   I N F O', W * 0.32, 26);
+    ctx.fillText('C O N T E N T   C R E A T E D', W - 56, 26);
 
     // ── Particle tooltip ──────────────────────────────────────────────
     if (hoveredParticle && hoveredInput < 0 && hoveredOutput < 0) {
       const hp = hoveredParticle;
 
-      if (hp.richData) {
+      if (hp.companyData) {
+        // Rich mini card for company particles
+        const rd = hp.companyData;
+        const tw = 220;
+        const th = 110;
+        let ptx = hp.x - tw / 2;
+        let pty = hp.y - th - 14;
+        ptx = Math.max(8, Math.min(W - tw - 8, ptx));
+        if (pty < 8) pty = hp.y + 14;
+        ctx.save();
+        ctx.shadowColor = rd.color + '30'; ctx.shadowBlur = 16;
+        ctx.beginPath(); ctx.roundRect(ptx, pty, tw, th, 8);
+        ctx.fillStyle = 'rgba(6,7,18,0.93)'; ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.beginPath(); ctx.roundRect(ptx, pty, tw, th, 8);
+        ctx.fillStyle = rd.color + '08'; ctx.fill();
+        ctx.strokeStyle = rd.color + '35'; ctx.lineWidth = 1; ctx.stroke();
+        ctx.beginPath(); ctx.roundRect(ptx, pty, tw, 2.5, [8,8,0,0]);
+        ctx.fillStyle = rd.color; ctx.globalAlpha = 0.7; ctx.fill(); ctx.globalAlpha = 1;
+        drawIcon(ptx + 16, pty + 16, rd.icon, 12, rd.color);
+        ctx.font = 'bold 9px -apple-system, sans-serif';
+        ctx.fillStyle = rd.color; ctx.textAlign = 'left';
+        ctx.fillText('MEMORY BASE', ptx + 28, pty + 20);
+        ctx.font = '8px -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.textAlign = 'right';
+        ctx.fillText(rd.meta, ptx + tw - 10, pty + 20);
+        ctx.textAlign = 'left';
+        ctx.font = 'bold 11px -apple-system, sans-serif';
+        ctx.fillStyle = '#fff';
+        let cTitle = rd.title;
+        while (ctx.measureText(cTitle).width > tw - 20 && cTitle.length > 10) cTitle = cTitle.slice(0,-4)+'...';
+        ctx.fillText(cTitle, ptx + 10, pty + 40);
+        ctx.font = '9px -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.55)';
+        const cwords = rd.body.split(' ');
+        let cl1 = '', cl2 = '';
+        for (const w of cwords) {
+          const test = cl1 + (cl1 ? ' ' : '') + w;
+          if (ctx.measureText(test).width > tw - 20 && !cl2) { cl2 = w; continue; }
+          if (cl2) cl2 += ' ' + w; else cl1 = test;
+        }
+        ctx.fillText(cl1, ptx + 10, pty + 56);
+        if (cl2) { if (ctx.measureText(cl2).width > tw - 20) cl2 = cl2.slice(0,35)+'...'; ctx.fillText(cl2, ptx + 10, pty + 68); }
+        ctx.beginPath(); ctx.moveTo(ptx+10, pty+78); ctx.lineTo(ptx+tw-10, pty+78);
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 0.5; ctx.stroke();
+        ctx.font = '8px "SF Mono", monospace';
+        ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.textAlign = 'left';
+        ctx.fillText(rd.stats, ptx + 10, pty + 93);
+        ctx.restore();
+      } else if (hp.richData) {
         // Rich mini post card for output particles
         const rd = hp.richData;
         const tw = 220;
