@@ -1,0 +1,320 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Ink Diffusion | Pello" description="Content starts as a single drop of orange ink and diffuses into platform-specific content across blogs, tweets, reels, and LinkedIn posts.">
+  <Header />
+  <main id="main-content">
+    <section style="min-height:100vh;background:#060712;display:flex;align-items:center;padding-top:5rem;">
+      <div class="pub-grid" style="max-width:1200px;margin:0 auto;padding:4rem 2rem;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;">
+        <div>
+          <span style="display:inline-block;padding:0.35rem 1rem;border:1px solid #f97316;color:#f97316;font-size:0.75rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;border-radius:2rem;margin-bottom:1.5rem;">PelloPublish</span>
+          <h1 style="font-size:clamp(2rem,4vw,3.5rem);font-weight:800;color:white;line-height:1.1;margin-bottom:1.5rem;white-space:pre-line;">One Source.
+Every Platform.</h1>
+          <p style="font-size:1.05rem;color:#a1a1aa;line-height:1.7;margin-bottom:2rem;">PelloPublish takes your brand's DNA and diffuses it across every content channel — automatically. One idea becomes a blog post, a tweet thread, an Instagram reel, and a LinkedIn article.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:0.75rem;">
+            <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.35);color:#fdba74;font-size:0.78rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">AutoPilot Scheduling</span>
+            <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.35);color:#fdba74;font-size:0.78rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">Memory Base Intelligence</span>
+            <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.35);color:#fdba74;font-size:0.78rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">37-Signal Brand Analysis</span>
+            <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.35);color:#fdba74;font-size:0.78rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">Multi-Platform Publishing</span>
+          </div>
+        </div>
+        <div class="pub-canvas-wrap" style="position:relative;">
+          <canvas id="pub-canvas-11" style="width:100%;height:560px;border-radius:1rem;background:#060712;display:block;border:1px solid rgba(249,115,22,0.15);"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style>
+  body { background:#060712; margin:0; }
+  @media (max-width: 768px) {
+    .pub-grid { grid-template-columns: 1fr !important; }
+    .pub-canvas-wrap canvas { height: 380px !important; }
+  }
+</style>
+
+<script>
+const canvas = document.getElementById('pub-canvas-11') as HTMLCanvasElement;
+canvas.id = 'pub-canvas-11';
+const ctx = canvas.getContext('2d')!;
+
+function resize() {
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * devicePixelRatio;
+  canvas.height = rect.height * devicePixelRatio;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+resize();
+window.addEventListener('resize', resize);
+
+const W = () => canvas.getBoundingClientRect().width;
+const H = () => canvas.getBoundingClientRect().height;
+
+let mouseX = W() / 2;
+let mouseY = H() / 2;
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = e.clientX - r.left;
+  mouseY = e.clientY - r.top;
+});
+
+interface Trail { x: number; y: number; }
+
+class Particle {
+  x: number; y: number;
+  vx: number; vy: number;
+  life: number; decay: number;
+  size: number;
+  trail: Trail[];
+  snapped: boolean;
+  snapZone: number;
+  snapProgress: number;
+
+  constructor(cx: number, cy: number) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = Math.random() * 1.5 + 0.5;
+    this.x = cx + (Math.random() - 0.5) * 10;
+    this.y = cy + (Math.random() - 0.5) * 10;
+    this.vx = Math.cos(angle) * speed;
+    this.vy = Math.sin(angle) * speed;
+    this.life = 1;
+    this.decay = 0.004 + Math.random() * 0.004;
+    this.size = Math.random() * 3 + 1.5;
+    this.trail = [];
+    this.snapped = false;
+    this.snapZone = -1;
+    this.snapProgress = 0;
+  }
+}
+
+let particles: Particle[] = [];
+let t = 0;
+let lastWave = 0;
+
+function getZones(w: number, h: number) {
+  const cx = w / 2; const cy = h / 2;
+  const pad = 55;
+  return [
+    { x: cx, y: pad, label: 'Blog' },
+    { x: w - pad, y: cy * 0.45, label: 'Tweet' },
+    { x: w - pad, y: cy * 1.55, label: 'Instagram' },
+    { x: cx + 60, y: h - pad, label: 'Reel' },
+    { x: cx - 60, y: h - pad, label: 'LinkedIn' },
+    { x: pad, y: cy, label: 'Video' },
+  ];
+}
+
+function spawnWave(cx: number, cy: number, count: number) {
+  for (let i = 0; i < count; i++) {
+    particles.push(new Particle(cx, cy));
+  }
+}
+
+// Snapped cards
+interface Card { x: number; y: number; label: string; alpha: number; scale: number; }
+const cards: Card[] = [];
+
+function draw() {
+  const w = W(); const h = H();
+  const cx = w / 2; const cy = h / 2;
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Background
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, w, h);
+
+  // Subtle radial glow at center
+  const radGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 200);
+  radGrad.addColorStop(0, 'rgba(249,115,22,0.06)');
+  radGrad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = radGrad;
+  ctx.fillRect(0, 0, w, h);
+
+  const zones = getZones(w, h);
+
+  // Draw zones
+  zones.forEach(z => {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(z.x, z.y, 22, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(249,115,22,0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(249,115,22,0.08)';
+    ctx.fill();
+
+    // Connector line from center
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(z.x, z.y);
+    ctx.strokeStyle = 'rgba(249,115,22,0.06)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(249,115,22,0.9)';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(z.label, z.x, z.y);
+    ctx.restore();
+  });
+
+  // Spawn wave
+  if (t - lastWave > 180) {
+    spawnWave(cx, cy, 30);
+    lastWave = t;
+  }
+
+  // Update and draw particles
+  particles = particles.filter(p => p.life > 0);
+
+  particles.forEach(p => {
+    if (p.snapped) {
+      p.snapProgress = Math.min(1, p.snapProgress + 0.05);
+      return;
+    }
+
+    // Store trail
+    p.trail.push({ x: p.x, y: p.y });
+    if (p.trail.length > 8) p.trail.shift();
+
+    // Flow field influence
+    p.vx += Math.sin(t * 0.3 + p.y * 0.008) * 0.15;
+    p.vy += Math.cos(t * 0.3 + p.x * 0.008) * 0.15;
+
+    // Weak radial outward push
+    const dx = p.x - cx; const dy = p.y - cy;
+    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+    p.vx += (dx / dist) * 0.05;
+    p.vy += (dy / dist) * 0.05;
+
+    // Mouse attraction
+    const mdx = mouseX - p.x; const mdy = mouseY - p.y;
+    const md = Math.sqrt(mdx * mdx + mdy * mdy);
+    if (md < 100) {
+      p.vx += (mdx / md) * 0.3;
+      p.vy += (mdy / md) * 0.3;
+    }
+
+    // Damping
+    p.vx *= 0.96; p.vy *= 0.96;
+
+    p.x += p.vx; p.y += p.vy;
+    p.life -= p.decay;
+
+    // Check zone snap
+    zones.forEach((z, i) => {
+      if (p.snapped) return;
+      const zd = Math.sqrt((p.x - z.x) ** 2 + (p.y - z.y) ** 2);
+      if (zd < 40) {
+        p.snapped = true;
+        p.snapZone = i;
+        p.snapProgress = 0;
+        cards.push({ x: z.x, y: z.y + 30, label: z.label, alpha: 1, scale: 0 });
+      }
+    });
+
+    // Keep in bounds softly
+    if (p.x < 0 || p.x > w || p.y < 0 || p.y > h) p.life = 0;
+
+    // Draw trail
+    if (p.trail.length > 1) {
+      ctx.save();
+      for (let i = 1; i < p.trail.length; i++) {
+        const alpha = (i / p.trail.length) * p.life * 0.6;
+        ctx.beginPath();
+        ctx.moveTo(p.trail[i - 1].x, p.trail[i - 1].y);
+        ctx.lineTo(p.trail[i].x, p.trail[i].y);
+        ctx.strokeStyle = `rgba(249,115,22,${alpha})`;
+        ctx.lineWidth = p.size * 0.4;
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // Draw particle
+    ctx.save();
+    ctx.shadowColor = '#f97316';
+    ctx.shadowBlur = 6;
+    const alpha = p.life * 0.9;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(249,115,22,${alpha})`;
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // Draw cards
+  for (let i = cards.length - 1; i >= 0; i--) {
+    const card = cards[i];
+    card.scale = Math.min(1, card.scale + 0.08);
+    card.alpha -= 0.004;
+    if (card.alpha <= 0) { cards.splice(i, 1); continue; }
+
+    ctx.save();
+    ctx.translate(card.x, card.y);
+    ctx.scale(card.scale, card.scale);
+    ctx.globalAlpha = card.alpha;
+
+    // Card rect
+    const cw = 64; const ch = 22;
+    ctx.beginPath();
+    ctx.roundRect(-cw / 2, -ch / 2, cw, ch, 4);
+    ctx.fillStyle = 'rgba(249,115,22,0.2)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(249,115,22,0.7)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = '#f97316';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(card.label, 0, 0);
+
+    ctx.restore();
+  }
+
+  // Center ink drop
+  const pulse = 1 + Math.sin(t * 0.05) * 0.12;
+  ctx.save();
+  ctx.shadowColor = '#f97316';
+  ctx.shadowBlur = 30 + Math.sin(t * 0.04) * 10;
+
+  const dropGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 18 * pulse);
+  dropGrad.addColorStop(0, 'rgba(253,186,116,1)');
+  dropGrad.addColorStop(0.4, 'rgba(249,115,22,0.9)');
+  dropGrad.addColorStop(1, 'rgba(249,115,22,0)');
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, 18 * pulse, 0, Math.PI * 2);
+  ctx.fillStyle = dropGrad;
+  ctx.fill();
+
+  // Outer ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, 26 * pulse, 0, Math.PI * 2);
+  ctx.strokeStyle = `rgba(249,115,22,${0.3 + Math.sin(t * 0.06) * 0.15})`;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.restore();
+
+  t++;
+  requestAnimationFrame(draw);
+}
+
+// Initial wave
+setTimeout(() => {
+  const w = W(); const h = H();
+  spawnWave(w / 2, h / 2, 40);
+}, 100);
+
+draw();
+</script>

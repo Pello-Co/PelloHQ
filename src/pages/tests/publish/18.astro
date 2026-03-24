@@ -1,0 +1,370 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — The Loom | Pello" description="Watch your content strategy woven into existence — brand pillars as vertical threads, each piece of content as a weft thread creating the fabric of your presence.">
+  <Header />
+  <main>
+    <style>
+      body { background:#060712; margin:0; }
+      @media (max-width: 768px) {
+        .pub-grid { grid-template-columns: 1fr !important; }
+        .pub-canvas-wrap canvas { height: 380px !important; }
+      }
+    </style>
+
+    <section style="min-height:100vh;background:#060712;display:flex;align-items:center;">
+      <div class="pub-grid" style="max-width:1200px;margin:0 auto;padding:4rem 2rem;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;">
+        <!-- Text column -->
+        <div>
+          <span style="display:inline-block;padding:0.35rem 1rem;border:1px solid #f97316;color:#f97316;font-size:0.75rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;border-radius:2rem;margin-bottom:1.5rem;">PelloPublish</span>
+          <h1 style="font-size:clamp(2rem,4vw,3.5rem);font-weight:800;color:white;line-height:1.1;margin-bottom:1.5rem;white-space:pre-line;">Content{"\n"}Woven from Strategy.</h1>
+          <p style="font-size:1.05rem;color:#a1a1aa;line-height:1.7;margin-bottom:2rem;">PelloPublish weaves your brand pillars and content themes into a rich tapestry of publishing. Every thread is intentional, every pattern a product of your brand's DNA.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:0.75rem;">
+            <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.4);color:#f97316;font-size:0.8rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">Content Pillars</span>
+            <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.4);color:#f97316;font-size:0.8rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">Thematic Consistency</span>
+            <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.4);color:#f97316;font-size:0.8rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">Brand DNA Weaving</span>
+            <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.4);color:#f97316;font-size:0.8rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">Pattern Publishing</span>
+          </div>
+        </div>
+        <!-- Canvas column -->
+        <div class="pub-canvas-wrap" style="position:relative;">
+          <canvas id="pub-canvas-18" style="width:100%;height:560px;border-radius:1rem;background:#060712;display:block;border:1px solid rgba(249,115,22,0.15);"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<script>
+(function() {
+  const canvas = document.getElementById('pub-canvas-18') as HTMLCanvasElement;
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d')!;
+  const dpr = window.devicePixelRatio || 1;
+
+  let W = 0, H = 0, t = 0;
+  let hoveredWarp = -1;
+  let mouseX = -1, mouseY = -1;
+
+  const PILLAR_LABELS = ['SEO','Brand','Industry','Product','Community','Trends','How-To','Cases','News','Tips','Story','Data'];
+  const CONTENT_TYPES = [
+    { name:'blog',   color:'#f97316', thickness:3.5,  shimmer:false },
+    { name:'tweet',  color:'#e2d8c8', thickness:1.5,  shimmer:false },
+    { name:'reel',   color:'#f97316', thickness:2.5,  shimmer:true  },
+    { name:'linkedin',color:'#c25a0a',thickness:4.5,  shimmer:false },
+  ];
+
+  interface WarpThread {
+    x: number; label: string; phase: number; color: string; waveAmp: number;
+  }
+  interface Shuttle {
+    x: number; dir: number; speed: number;
+    contentType: number; weftColor: string; weftThickness: number; weftShimmer: boolean;
+    pauseTimer: number; paused: boolean; changeTimer: number;
+    trailX: number[];
+  }
+  interface FabricRow {
+    y: number; contentType: number; color: string; thickness: number;
+    overUnder: boolean[]; shimmer: boolean; alpha: number;
+  }
+
+  let warps: WarpThread[] = [];
+  let shuttle: Shuttle;
+  let fabricRows: FabricRow[] = [];
+  const FABRIC_TOP_Y = 60;
+  let fabricCurrentY = FABRIC_TOP_Y;
+  const ROW_HEIGHT = 6;
+  const MAX_ROWS = 60;
+
+  function initWarps() {
+    warps = [];
+    const n = 12;
+    const margin = 28;
+    const spacing = (W - margin*2) / (n - 1);
+    const warpColors = ['#c24a06','#e07020','#b8a090','#d06010','#f0a060','#e8c8a0','#c06008','#e09050','#b0a898','#d05008','#f0b070','#c8d0c0'];
+    for (let i = 0; i < n; i++) {
+      warps.push({
+        x: margin + i * spacing,
+        label: PILLAR_LABELS[i],
+        phase: Math.random() * Math.PI * 2,
+        color: warpColors[i % warpColors.length],
+        waveAmp: 1.2 + Math.random() * 1.2,
+      });
+    }
+  }
+
+  function initShuttle() {
+    shuttle = {
+      x: 0, dir: 1, speed: 2.2,
+      contentType: 0, weftColor: CONTENT_TYPES[0].color, weftThickness: CONTENT_TYPES[0].thickness,
+      weftShimmer: CONTENT_TYPES[0].shimmer,
+      pauseTimer: 0, paused: false, changeTimer: 0,
+      trailX: [],
+    };
+  }
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+    W = rect.width;
+    H = rect.height;
+    fabricRows = [];
+    fabricCurrentY = FABRIC_TOP_Y;
+    initWarps();
+    initShuttle();
+  }
+
+  function getWarpX(i: number) {
+    return warps[i].x + Math.sin(t * 0.018 + warps[i].phase) * warps[i].waveAmp;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    t++;
+
+    // Background
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+    bgGrad.addColorStop(0, '#040308');
+    bgGrad.addColorStop(1, '#060712');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Fabric area background
+    const fabricH = Math.min(fabricCurrentY - FABRIC_TOP_Y + ROW_HEIGHT * 2, H - FABRIC_TOP_Y - 20);
+    if (fabricH > 0) {
+      ctx.fillStyle = 'rgba(12,6,2,0.55)';
+      ctx.fillRect(0, FABRIC_TOP_Y, W, fabricH);
+    }
+
+    // Draw existing fabric rows
+    for (const row of fabricRows) {
+      drawFabricRow(row);
+    }
+
+    // Draw warp threads (behind shuttle area)
+    for (let i = 0; i < warps.length; i++) {
+      const wx = getWarpX(i);
+      const isHovered = hoveredWarp === i;
+      ctx.save();
+      ctx.strokeStyle = isHovered ? '#f97316' : warps[i].color;
+      ctx.globalAlpha = isHovered ? 0.9 : 0.38;
+      ctx.lineWidth = isHovered ? 2.5 : 1.5;
+      if (isHovered) { ctx.shadowColor = '#f97316'; ctx.shadowBlur = 8; }
+      ctx.beginPath();
+      ctx.moveTo(wx, 0);
+      ctx.lineTo(wx, H);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Warp thread labels at top
+    for (let i = 0; i < warps.length; i++) {
+      const wx = getWarpX(i);
+      ctx.save();
+      ctx.font = `${hoveredWarp === i ? 'bold' : ''} 9px system-ui,sans-serif`;
+      ctx.fillStyle = hoveredWarp === i ? '#f97316' : 'rgba(249,115,22,0.55)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      if (hoveredWarp === i) { ctx.shadowColor = '#f97316'; ctx.shadowBlur = 6; }
+      ctx.fillText(warps[i].label, wx, 16);
+      ctx.restore();
+    }
+
+    // Shuttle update
+    if (!shuttle.paused) {
+      shuttle.x += shuttle.dir * shuttle.speed;
+      shuttle.trailX.push(shuttle.x);
+      if (shuttle.trailX.length > 80) shuttle.trailX.shift();
+
+      // Reached edge — complete a row
+      if (shuttle.x >= W + 20 || shuttle.x <= -20) {
+        completeFabricRow();
+        shuttle.dir *= -1;
+        shuttle.changeTimer++;
+        if (shuttle.changeTimer % 3 === 0) {
+          // change content type
+          shuttle.paused = true;
+          shuttle.pauseTimer = 0;
+          const next = (shuttle.contentType + 1) % CONTENT_TYPES.length;
+          shuttle.contentType = next;
+          shuttle.weftColor = CONTENT_TYPES[next].color;
+          shuttle.weftThickness = CONTENT_TYPES[next].thickness;
+          shuttle.weftShimmer = CONTENT_TYPES[next].shimmer;
+        }
+      }
+    } else {
+      shuttle.pauseTimer++;
+      if (shuttle.pauseTimer > 40) { shuttle.paused = false; }
+    }
+
+    // Draw in-progress weft thread (trail)
+    drawWeftTrail();
+
+    // Draw shuttle capsule
+    drawShuttle();
+
+    // Hovered warp label
+    if (hoveredWarp >= 0) {
+      const wx = getWarpX(hoveredWarp);
+      ctx.save();
+      ctx.fillStyle = 'rgba(8,4,1,0.92)';
+      ctx.strokeStyle = 'rgba(249,115,22,0.7)';
+      ctx.lineWidth = 1;
+      roundRect(ctx, wx - 55, H - 60, 110, 26, 6);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#f97316';
+      ctx.font = 'bold 11px system-ui,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(warps[hoveredWarp].label, wx, H - 47);
+      ctx.restore();
+    }
+
+    // Content type label near shuttle
+    const ct = CONTENT_TYPES[shuttle.contentType];
+    ctx.save();
+    ctx.fillStyle = 'rgba(249,115,22,0.9)';
+    ctx.font = 'bold 10px system-ui,sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = shuttle.dir > 0 ? 'left' : 'right';
+    ctx.fillText(ct.name.toUpperCase(), shuttle.x + shuttle.dir * 18, shuttle.y ?? H * 0.55 - 14);
+    ctx.restore();
+  }
+
+  function drawFabricRow(row: FabricRow) {
+    const y = row.y;
+    let prevX = 0;
+    ctx.save();
+    ctx.globalAlpha = Math.min(row.alpha, 0.85);
+
+    for (let i = 0; i <= warps.length; i++) {
+      const wx = i < warps.length ? getWarpX(i) : W;
+      const segColor = row.shimmer
+        ? hsvToHex((t * 0.3 + i * 15) % 360, 0.7, 0.9)
+        : row.color;
+
+      ctx.strokeStyle = segColor;
+      ctx.lineWidth = row.thickness;
+      ctx.lineCap = 'round';
+
+      if (i > 0) {
+        const isOver = row.overUnder[i-1];
+        if (!isOver) {
+          ctx.beginPath();
+          ctx.moveTo(prevX, y);
+          ctx.lineTo(wx - 2, y);
+          ctx.stroke();
+        }
+      }
+      prevX = wx + 2;
+    }
+    ctx.restore();
+  }
+
+  function drawWeftTrail() {
+    if (shuttle.trailX.length < 2) return;
+    const y = getShuttleY();
+    ctx.save();
+    for (let i = 1; i < shuttle.trailX.length; i++) {
+      const alpha = (i / shuttle.trailX.length) * 0.7;
+      ctx.strokeStyle = shuttle.weftColor;
+      ctx.globalAlpha = alpha;
+      ctx.lineWidth = shuttle.weftThickness;
+      ctx.lineCap = 'butt';
+      ctx.beginPath();
+      ctx.moveTo(shuttle.trailX[i-1], y);
+      ctx.lineTo(shuttle.trailX[i], y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawShuttle() {
+    const x = shuttle.x;
+    const y = getShuttleY();
+    const sw = 32, sh = 12;
+    ctx.save();
+    ctx.shadowColor = shuttle.weftColor;
+    ctx.shadowBlur = 16;
+    const grad = ctx.createLinearGradient(x - sw/2, 0, x + sw/2, 0);
+    grad.addColorStop(0, 'rgba(249,115,22,0.1)');
+    grad.addColorStop(0.5, shuttle.weftColor);
+    grad.addColorStop(1, 'rgba(249,115,22,0.1)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(x - sw/2 + sh/2, y - sh/2);
+    ctx.lineTo(x + sw/2 - sh/2, y - sh/2);
+    ctx.arcTo(x + sw/2, y - sh/2, x + sw/2, y, sh/2);
+    ctx.arcTo(x + sw/2, y + sh/2, x + sw/2 - sh/2, y + sh/2, sh/2);
+    ctx.lineTo(x - sw/2 + sh/2, y + sh/2);
+    ctx.arcTo(x - sw/2, y + sh/2, x - sw/2, y, sh/2);
+    ctx.arcTo(x - sw/2, y - sh/2, x - sw/2 + sh/2, y - sh/2, sh/2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function getShuttleY() {
+    return fabricCurrentY;
+  }
+
+  function completeFabricRow() {
+    if (fabricRows.length >= MAX_ROWS) fabricRows.shift();
+    const overUnder: boolean[] = warps.map((_, i) => (i + fabricRows.length) % 2 === 0);
+    fabricRows.push({
+      y: fabricCurrentY,
+      contentType: shuttle.contentType,
+      color: shuttle.weftColor,
+      thickness: shuttle.weftThickness,
+      overUnder,
+      shimmer: shuttle.weftShimmer,
+      alpha: 0.85,
+    });
+    shuttle.trailX = [];
+    // don't advance row — keep weaving at same y position, layering creates fabric illusion
+    // but nudge y down slightly each pass
+    if (fabricCurrentY < H - 50) fabricCurrentY += ROW_HEIGHT * 0.85;
+  }
+
+  function hsvToHex(h: number, s: number, v: number): string {
+    const f = (n: number) => {
+      const k = (n + h/60) % 6;
+      const val = v - v*s*Math.max(0, Math.min(k, 4-k, 1));
+      return Math.round(val*255).toString(16).padStart(2,'0');
+    };
+    return `#${f(5)}${f(3)}${f(1)}`;
+  }
+
+  function roundRect(c: CanvasRenderingContext2D,x:number,y:number,w:number,h:number,r:number) {
+    c.beginPath();
+    c.moveTo(x+r,y); c.lineTo(x+w-r,y);
+    c.arcTo(x+w,y,x+w,y+r,r); c.lineTo(x+w,y+h-r);
+    c.arcTo(x+w,y+h,x+w-r,y+h,r); c.lineTo(x+r,y+h);
+    c.arcTo(x,y+h,x,y+h-r,r); c.lineTo(x,y+r);
+    c.arcTo(x,y,x+r,y,r); c.closePath();
+  }
+
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+    hoveredWarp = -1;
+    for (let i = 0; i < warps.length; i++) {
+      const wx = getWarpX(i);
+      if (Math.abs(mouseX - wx) < 10) { hoveredWarp = i; break; }
+    }
+  });
+  canvas.addEventListener('mouseleave', () => { hoveredWarp = -1; mouseX = -1; mouseY = -1; });
+
+  window.addEventListener('resize', resize);
+  resize();
+  function loop() { draw(); requestAnimationFrame(loop); }
+  loop();
+})();
+</script>

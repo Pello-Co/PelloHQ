@@ -1,0 +1,555 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Content Ecosystem | Pello" description="Your content strategy is a living ecosystem — Memory Base as soil, keywords as roots, content as flowers and trees, all growing from your brand's intelligence.">
+  <Header />
+
+  <style>
+    body { background: #060712; margin: 0; }
+    @media (max-width: 768px) {
+      .pub-grid { grid-template-columns: 1fr !important; }
+      .pub-canvas-wrap canvas { height: 380px !important; }
+    }
+  </style>
+
+  <section style="min-height:100vh;background:#060712;display:flex;align-items:center;">
+    <div class="pub-grid" style="max-width:1200px;margin:0 auto;padding:4rem 2rem;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;">
+      <!-- Text column -->
+      <div>
+        <span style="display:inline-block;padding:0.35rem 1rem;border:1px solid #f97316;color:#f97316;font-size:0.75rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;border-radius:2rem;margin-bottom:1.5rem;">PelloPublish</span>
+        <h1 style="font-size:clamp(2rem,4vw,3.5rem);font-weight:800;color:white;line-height:1.1;margin-bottom:1.5rem;white-space:pre-line;">A Living Content{'\n'}Ecosystem.</h1>
+        <p style="font-size:1.05rem;color:#a1a1aa;line-height:1.7;margin-bottom:2rem;">PelloPublish doesn't just schedule posts — it grows a thriving content ecosystem. Every piece of content feeds the next, creating a self-sustaining garden of brand presence.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:0.75rem;">
+          <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.4);color:#f97316;font-size:0.8rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">Memory Base Intelligence</span>
+          <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.4);color:#f97316;font-size:0.8rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">Content Compounding</span>
+          <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.4);color:#f97316;font-size:0.8rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">Evergreen Strategy</span>
+          <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.4);color:#f97316;font-size:0.8rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">AutoPilot Growth</span>
+        </div>
+      </div>
+      <!-- Canvas column -->
+      <div class="pub-canvas-wrap" style="position:relative;">
+        <canvas id="pub-canvas-15" style="width:100%;height:560px;border-radius:1rem;background:#060712;display:block;border:1px solid rgba(249,115,22,0.15);"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</Layout>
+
+<script>
+(function() {
+  const canvas = document.getElementById('pub-canvas-15') as HTMLCanvasElement;
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d')!;
+
+  const dpr = window.devicePixelRatio || 1;
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+  }
+  resize();
+  window.addEventListener('resize', () => { resize(); initState(); });
+
+  const W = () => canvas.getBoundingClientRect().width;
+  const H = () => canvas.getBoundingClientRect().height;
+
+  let mouse = { x: -9999, y: -9999 };
+  canvas.addEventListener('mousemove', e => {
+    const r = canvas.getBoundingClientRect();
+    mouse.x = e.clientX - r.left;
+    mouse.y = e.clientY - r.top;
+  });
+  canvas.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+
+  type NodeType = 'blog' | 'tweet' | 'reel' | 'linkedin';
+  interface ContentNode {
+    x: number; y: number; baseX: number; baseY: number;
+    type: NodeType; size: number; swayPhase: number; swayAmp: number;
+    label: string; growthPulse: number; age: number; maxAge: number; born: boolean;
+  }
+  interface Branch { x1: number; y1: number; x2: number; y2: number; thickness: number; progress: number; }
+  interface Root { points: {x:number,y:number}[]; progress: number; thickness: number; }
+  interface Bee { x: number; y: number; targetIdx: number; progress: number; cp1x: number; cp1y: number; cp2x: number; cp2y: number; pollenOpacity: number; }
+  interface RainDrop { x: number; y: number; vy: number; hit: boolean; hitX: number; hitY: number; ripple: number; }
+  interface GrassBlade { x: number; baseY: number; height: number; phase: number; }
+
+  let nodes: ContentNode[] = [];
+  let branches: Branch[] = [];
+  let roots: Root[] = [];
+  let bees: Bee[] = [];
+  let rainDrops: RainDrop[] = [];
+  let grassBlades: GrassBlade[] = [];
+  let rainTimer = 0;
+  let rainActive = false;
+  let globalBreath = 0;
+  let lastTime = 0;
+  let nodeSpawnTimer = 0;
+
+  const NODE_LABELS: Record<NodeType, string> = {
+    blog: 'Blog Post', tweet: 'Tweet', reel: 'Reel', linkedin: 'LinkedIn'
+  };
+  const NODE_COLORS: Record<NodeType, string> = {
+    blog: '#f97316', tweet: '#fb923c', reel: '#fde68a', linkedin: '#fdba74'
+  };
+
+  function initState() {
+    const w = W(), h = H();
+    const soilY = h * 0.78;
+    const trunkX = w * 0.5;
+    const trunkBase = soilY;
+    const trunkTop = h * 0.22;
+
+    // Branches — predefined positions
+    branches = [
+      { x1: trunkX, y1: trunkBase * 0.7 + trunkTop * 0.3, x2: trunkX - w * 0.2, y2: trunkTop + (trunkBase - trunkTop) * 0.15, thickness: 5, progress: 0 },
+      { x1: trunkX, y1: trunkBase * 0.6 + trunkTop * 0.4, x2: trunkX + w * 0.22, y2: trunkTop + (trunkBase - trunkTop) * 0.12, thickness: 5, progress: 0 },
+      { x1: trunkX, y1: trunkBase * 0.5 + trunkTop * 0.5, x2: trunkX - w * 0.15, y2: trunkTop + (trunkBase - trunkTop) * 0.35, thickness: 4, progress: 0 },
+      { x1: trunkX, y1: trunkBase * 0.45 + trunkTop * 0.55, x2: trunkX + w * 0.17, y2: trunkTop + (trunkBase - trunkTop) * 0.32, thickness: 4, progress: 0 },
+      { x1: trunkX, y1: trunkBase * 0.35 + trunkTop * 0.65, x2: trunkX - w * 0.08, y2: trunkTop + (trunkBase - trunkTop) * 0.55, thickness: 3, progress: 0 },
+    ];
+
+    // Roots — branching downward
+    roots = [];
+    const rootAngles = [-0.7, -0.3, 0, 0.3, 0.7, 1.1];
+    for (const ang of rootAngles) {
+      const len = 4 + Math.floor(Math.random() * 4);
+      const pts: {x:number,y:number}[] = [{x: trunkX, y: soilY}];
+      let cx = trunkX, cy = soilY;
+      for (let s = 0; s < len; s++) {
+        const step = 18 + Math.random() * 14;
+        cx += Math.sin(ang + s * 0.2 + Math.random() * 0.3) * step;
+        cy += Math.cos(ang) * step * 0.6 + Math.random() * 8;
+        pts.push({x: cx, y: cy});
+      }
+      roots.push({ points: pts, progress: 0, thickness: 1 + Math.random() * 1.5 });
+    }
+
+    // Initial content nodes on branches
+    nodes = [];
+    const types: NodeType[] = ['blog', 'tweet', 'reel', 'linkedin'];
+    for (let bi = 0; bi < branches.length; bi++) {
+      const b = branches[bi];
+      const nodeCount = 2 + bi % 2;
+      for (let ni = 0; ni < nodeCount; ni++) {
+        const t2 = 0.35 + ni * 0.28 + Math.random() * 0.15;
+        const nx = b.x1 + (b.x2 - b.x1) * t2;
+        const ny = b.y1 + (b.y2 - b.y1) * t2;
+        const type = types[(bi * 3 + ni) % 4];
+        nodes.push({
+          x: nx, y: ny, baseX: nx, baseY: ny,
+          type, size: type === 'blog' ? 12 : type === 'linkedin' ? 10 : 7,
+          swayPhase: Math.random() * Math.PI * 2,
+          swayAmp: 3 + Math.random() * 4,
+          label: NODE_LABELS[type],
+          growthPulse: 0, age: 1, maxAge: 1, born: true
+        });
+      }
+    }
+
+    // Bees
+    bees = [];
+    for (let i = 0; i < 4; i++) {
+      const srcIdx = Math.floor(Math.random() * nodes.length);
+      const tgtIdx = (srcIdx + 1 + Math.floor(Math.random() * (nodes.length - 1))) % nodes.length;
+      spawnBee(srcIdx, tgtIdx);
+    }
+
+    // Grass blades
+    grassBlades = [];
+    for (let gx = 10; gx < w; gx += 10 + Math.random() * 8) {
+      grassBlades.push({ x: gx, baseY: soilY, height: 8 + Math.random() * 14, phase: Math.random() * Math.PI * 2 });
+    }
+
+    rainTimer = 6;
+    rainActive = false;
+    rainDrops = [];
+    globalBreath = 0;
+    nodeSpawnTimer = 0;
+  }
+
+  function spawnBee(fromIdx: number, toIdx: number) {
+    if (nodes.length < 2) return;
+    const src = nodes[fromIdx];
+    const tgt = nodes[toIdx];
+    const mx = (src.x + tgt.x) / 2 + (Math.random() - 0.5) * 80;
+    const my = (src.y + tgt.y) / 2 - 40 - Math.random() * 40;
+    bees.push({
+      x: src.x, y: src.y,
+      targetIdx: toIdx,
+      progress: 0,
+      cp1x: src.x + (Math.random() - 0.5) * 60, cp1y: src.y - 30 - Math.random() * 40,
+      cp2x: tgt.x + (Math.random() - 0.5) * 60, cp2y: tgt.y - 30 - Math.random() * 40,
+      pollenOpacity: 1,
+    });
+  }
+
+  function bezierPoint(t: number, p0x: number, p0y: number, p1x: number, p1y: number, p2x: number, p2y: number, p3x: number, p3y: number) {
+    const mt = 1 - t;
+    return {
+      x: mt*mt*mt*p0x + 3*mt*mt*t*p1x + 3*mt*t*t*p2x + t*t*t*p3x,
+      y: mt*mt*mt*p0y + 3*mt*mt*t*p1y + 3*mt*t*t*p2y + t*t*t*p3y,
+    };
+  }
+
+  function triggerRain() {
+    const w = W(), h = H();
+    rainActive = true;
+    rainDrops = [];
+    for (let i = 0; i < 28; i++) {
+      rainDrops.push({
+        x: Math.random() * w,
+        y: -10 - Math.random() * 60,
+        vy: 3 + Math.random() * 3,
+        hit: false, hitX: 0, hitY: 0, ripple: 0,
+      });
+    }
+  }
+
+  function draw(timestamp: number) {
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+    lastTime = timestamp;
+    const t = timestamp / 1000;
+    const w = W(), h = H();
+    const soilY = h * 0.78;
+    const trunkX = w * 0.5;
+    const trunkBase = soilY;
+    const trunkTop = h * 0.22;
+
+    ctx.clearRect(0, 0, w, h);
+
+    // Sky bg
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, soilY);
+    skyGrad.addColorStop(0, '#060712');
+    skyGrad.addColorStop(1, '#0d0a1a');
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, w, soilY);
+
+    // Soil layer
+    const soilGrad = ctx.createLinearGradient(0, soilY, 0, h);
+    soilGrad.addColorStop(0, '#2a1200');
+    soilGrad.addColorStop(0.4, '#1a0a00');
+    soilGrad.addColorStop(1, '#060712');
+    ctx.fillStyle = soilGrad;
+    ctx.fillRect(0, soilY, w, h - soilY);
+
+    // Soil texture particles
+    for (let si = 0; si < 60; si++) {
+      const px = (si * 137.5) % w;
+      const py = soilY + 5 + (si * 43.7) % (h - soilY - 10);
+      ctx.beginPath();
+      ctx.arc(px, py, 1.2, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(139,69,19,0.25)';
+      ctx.fill();
+    }
+
+    // Animate branch progress
+    for (const b of branches) {
+      if (b.progress < 1) b.progress = Math.min(1, b.progress + dt * 0.5);
+    }
+
+    // Animate root progress
+    for (const r of roots) {
+      if (r.progress < 1) r.progress = Math.min(1, r.progress + dt * 0.4);
+    }
+
+    globalBreath = Math.sin(t * 0.8) * 0.02;
+    const breathScale = 1 + globalBreath;
+
+    ctx.save();
+    ctx.translate(trunkX, trunkBase);
+    ctx.scale(breathScale, breathScale);
+    ctx.translate(-trunkX, -trunkBase);
+
+    // Draw roots
+    for (const r of roots) {
+      if (r.progress <= 0) continue;
+      ctx.beginPath();
+      ctx.moveTo(r.points[0].x, r.points[0].y);
+      const drawCount = Math.floor(r.progress * (r.points.length - 1));
+      for (let pi = 1; pi <= drawCount; pi++) {
+        ctx.lineTo(r.points[pi].x, r.points[pi].y);
+      }
+      ctx.strokeStyle = `rgba(139,69,19,0.5)`;
+      ctx.lineWidth = r.thickness;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+
+    // Draw trunk
+    const trunkGrad = ctx.createLinearGradient(trunkX - 8, 0, trunkX + 8, 0);
+    trunkGrad.addColorStop(0, '#8b4513');
+    trunkGrad.addColorStop(0.5, '#a0522d');
+    trunkGrad.addColorStop(1, '#6b3410');
+    ctx.beginPath();
+    ctx.moveTo(trunkX - 8, trunkBase);
+    ctx.bezierCurveTo(trunkX - 6, trunkBase - (trunkBase - trunkTop) * 0.5, trunkX - 4, trunkTop + 40, trunkX - 3, trunkTop);
+    ctx.lineTo(trunkX + 3, trunkTop);
+    ctx.bezierCurveTo(trunkX + 4, trunkTop + 40, trunkX + 6, trunkBase - (trunkBase - trunkTop) * 0.5, trunkX + 8, trunkBase);
+    ctx.closePath();
+    ctx.fillStyle = trunkGrad;
+    ctx.fill();
+
+    // Draw branches
+    for (const b of branches) {
+      const endX = b.x1 + (b.x2 - b.x1) * b.progress;
+      const endY = b.y1 + (b.y2 - b.y1) * b.progress;
+      const cpX = (b.x1 + endX) / 2 + (b.x2 - b.x1) * 0.1;
+      const cpY = b.y1 - 20;
+      ctx.beginPath();
+      ctx.moveTo(b.x1, b.y1);
+      ctx.quadraticCurveTo(cpX, cpY, endX, endY);
+      ctx.strokeStyle = '#8b4513cc';
+      ctx.lineWidth = b.thickness;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+
+    // Rain timer
+    rainTimer -= dt;
+    if (rainTimer <= 0 && !rainActive) {
+      triggerRain();
+      rainTimer = 8 + Math.random() * 4;
+    }
+
+    // Update rain
+    if (rainActive) {
+      let allHit = true;
+      for (const rd of rainDrops) {
+        if (!rd.hit) {
+          allHit = false;
+          rd.y += rd.vy;
+          // Check if hitting a node
+          for (let ni = 0; ni < nodes.length; ni++) {
+            const n = nodes[ni];
+            if (Math.abs(rd.x - n.x) < n.size * 2 && Math.abs(rd.y - n.y) < n.size * 2) {
+              rd.hit = true;
+              rd.hitX = n.x;
+              rd.hitY = n.y;
+              n.growthPulse = 1.5;
+              // Occasionally spawn new node
+              if (Math.random() < 0.3 && nodes.length < 30) {
+                const b = branches[Math.floor(Math.random() * branches.length)];
+                const tt = 0.2 + Math.random() * 0.7;
+                const nx = b.x1 + (b.x2 - b.x1) * tt;
+                const ny = b.y1 + (b.y2 - b.y1) * tt;
+                const types: NodeType[] = ['blog', 'tweet', 'reel', 'linkedin'];
+                const type = types[Math.floor(Math.random() * 4)];
+                nodes.push({
+                  x: nx, y: ny, baseX: nx, baseY: ny,
+                  type, size: type === 'blog' ? 10 : 7,
+                  swayPhase: Math.random() * Math.PI * 2,
+                  swayAmp: 2 + Math.random() * 4,
+                  label: NODE_LABELS[type],
+                  growthPulse: 1, age: 0, maxAge: 1, born: false
+                });
+              }
+              break;
+            }
+          }
+          if (rd.y > h) rd.hit = true;
+        }
+      }
+      if (allHit) { rainActive = false; rainDrops = []; }
+    }
+
+    // Draw rain
+    for (const rd of rainDrops) {
+      if (rd.hit) continue;
+      ctx.beginPath();
+      ctx.moveTo(rd.x, rd.y);
+      ctx.lineTo(rd.x - 1, rd.y + 8);
+      ctx.strokeStyle = 'rgba(180,200,255,0.4)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Update nodes sway and growth
+    for (const n of nodes) {
+      n.x = n.baseX + Math.sin(t * 0.8 + n.swayPhase) * n.swayAmp;
+      n.y = n.baseY + Math.sin(t * 0.6 + n.swayPhase * 1.3) * (n.swayAmp * 0.5);
+      if (n.growthPulse > 0) n.growthPulse = Math.max(0, n.growthPulse - dt * 2);
+      if (!n.born) { n.age = Math.min(1, n.age + dt * 1.5); if (n.age >= 1) n.born = true; }
+    }
+
+    // Detect hover node
+    let hoveredNodeIdx = -1;
+    let minDist = 30;
+    for (let ni = 0; ni < nodes.length; ni++) {
+      const n = nodes[ni];
+      const d = Math.hypot(mouse.x - n.x, mouse.y - n.y);
+      if (d < minDist) { minDist = d; hoveredNodeIdx = ni; }
+    }
+
+    // Draw nodes
+    for (let ni = 0; ni < nodes.length; ni++) {
+      const n = nodes[ni];
+      const color = NODE_COLORS[n.type];
+      const hovered = ni === hoveredNodeIdx;
+      const growthExtra = n.growthPulse * 5;
+      const sizeNow = n.size * (hovered ? 1.4 : 1) + growthExtra;
+      const ageScale = n.born ? 1 : n.age;
+
+      ctx.save();
+      ctx.translate(n.x, n.y);
+      ctx.scale(ageScale, ageScale);
+
+      if (n.type === 'blog') {
+        // Tree crown shape — arc cluster
+        ctx.beginPath();
+        ctx.arc(0, -sizeNow * 0.5, sizeNow, 0, Math.PI * 2);
+        ctx.fillStyle = color + (hovered ? 'cc' : '88');
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(-sizeNow * 0.6, -sizeNow * 0.2, sizeNow * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(sizeNow * 0.6, -sizeNow * 0.2, sizeNow * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+        // Glow
+        const glowGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, sizeNow * 2);
+        glowGrad.addColorStop(0, color + '44');
+        glowGrad.addColorStop(1, 'transparent');
+        ctx.beginPath();
+        ctx.arc(0, 0, sizeNow * 2, 0, Math.PI * 2);
+        ctx.fillStyle = glowGrad;
+        ctx.fill();
+      } else if (n.type === 'tweet') {
+        // Small wildflower dots
+        for (let pi = 0; pi < 5; pi++) {
+          const pang = (pi / 5) * Math.PI * 2;
+          ctx.beginPath();
+          ctx.arc(Math.cos(pang) * sizeNow * 0.8, Math.sin(pang) * sizeNow * 0.8, sizeNow * 0.4, 0, Math.PI * 2);
+          ctx.fillStyle = color + 'bb';
+          ctx.fill();
+        }
+        ctx.beginPath();
+        ctx.arc(0, 0, sizeNow * 0.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff8';
+        ctx.fill();
+      } else if (n.type === 'reel') {
+        // Vine curl
+        ctx.beginPath();
+        for (let vi = 0; vi <= 20; vi++) {
+          const vt = vi / 20;
+          const vang = vt * Math.PI * 3 + t * 0.5;
+          const vr = sizeNow * 0.4 + vt * sizeNow * 0.8;
+          if (vi === 0) ctx.moveTo(Math.cos(vang) * vr, Math.sin(vang) * vr);
+          else ctx.lineTo(Math.cos(vang) * vr, Math.sin(vang) * vr);
+        }
+        ctx.strokeStyle = color + 'aa';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, 0, sizeNow * 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = color + '66';
+        ctx.fill();
+      } else {
+        // LinkedIn — rounded square
+        const sq = sizeNow * 0.85;
+        ctx.beginPath();
+        ctx.roundRect(-sq, -sq, sq * 2, sq * 2, sq * 0.4);
+        ctx.fillStyle = color + (hovered ? 'cc' : '88');
+        ctx.fill();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // Hover tooltip
+      if (hovered) {
+        const tw2 = 90, th2 = 22;
+        ctx.beginPath();
+        ctx.roundRect(-tw2 / 2, -sizeNow - 30, tw2, th2, 5);
+        ctx.fillStyle = 'rgba(6,7,18,0.9)';
+        ctx.fill();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.fillStyle = color;
+        ctx.font = '700 10px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(n.label, 0, -sizeNow - 14);
+      }
+
+      ctx.restore();
+    }
+
+    // Update and draw bees
+    for (let bi = bees.length - 1; bi >= 0; bi--) {
+      const bee = bees[bi];
+      bee.progress += dt * 0.35;
+      if (bee.progress >= 1) {
+        // Arrived — go to next node
+        const newTarget = (bee.targetIdx + 1 + Math.floor(Math.random() * (nodes.length - 1))) % nodes.length;
+        const srcNode = nodes[bee.targetIdx];
+        const tgtNode = nodes[newTarget];
+        bees[bi] = {
+          x: srcNode.x, y: srcNode.y, targetIdx: newTarget, progress: 0,
+          cp1x: srcNode.x + (Math.random() - 0.5) * 80, cp1y: srcNode.y - 30 - Math.random() * 50,
+          cp2x: tgtNode.x + (Math.random() - 0.5) * 80, cp2y: tgtNode.y - 30 - Math.random() * 50,
+          pollenOpacity: 1,
+        };
+        continue;
+      }
+      if (!nodes[bee.targetIdx]) continue;
+      const tgt = nodes[bee.targetIdx];
+      const src = { x: bee.x, y: bee.y };
+      const startX = bee.x, startY = bee.y;
+
+      // Evaluate bezier position
+      const pos = bezierPoint(bee.progress, startX, startY, bee.cp1x, bee.cp1y, bee.cp2x, bee.cp2y, tgt.x, tgt.y);
+      bee.x = pos.x;
+      bee.y = pos.y;
+
+      // Draw bee — diamond shape
+      ctx.save();
+      ctx.translate(bee.x, bee.y);
+      const wobble = Math.sin(t * 12) * 3;
+      ctx.translate(0, wobble);
+      ctx.beginPath();
+      ctx.moveTo(0, -5); ctx.lineTo(4, 0); ctx.lineTo(0, 5); ctx.lineTo(-4, 0);
+      ctx.closePath();
+      ctx.fillStyle = '#fde68a';
+      ctx.fill();
+      ctx.strokeStyle = '#f97316';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+      // Pollen dot
+      ctx.beginPath();
+      ctx.arc(3, -3, 2, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(249,115,22,${bee.pollenOpacity})`;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.restore(); // end breathScale
+
+    // Draw grass
+    for (const g of grassBlades) {
+      const sway = Math.sin(t * 1.5 + g.phase) * 4;
+      ctx.beginPath();
+      ctx.moveTo(g.x, g.baseY);
+      ctx.quadraticCurveTo(g.x + sway, g.baseY - g.height * 0.6, g.x + sway * 1.5, g.baseY - g.height);
+      ctx.strokeStyle = `rgba(34,80,20,0.6)`;
+      ctx.lineWidth = 1;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+
+    // Label
+    ctx.fillStyle = 'rgba(249,115,22,0.4)';
+    ctx.font = '700 10px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('CONTENT ECOSYSTEM — GROWING', w / 2, h - 14);
+
+    requestAnimationFrame(draw);
+  }
+
+  requestAnimationFrame(draw);
+})();
+</script>

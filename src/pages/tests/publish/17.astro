@@ -1,0 +1,405 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Content Archaeology | Pello" description="Layers of content sediment form your brand's history — a rich stratigraphy of blogs, posts, and articles that tells the story of your evolving strategy.">
+  <Header />
+  <main>
+    <style>
+      body { background:#060712; margin:0; }
+      @media (max-width: 768px) {
+        .pub-grid { grid-template-columns: 1fr !important; }
+        .pub-canvas-wrap canvas { height: 380px !important; }
+      }
+    </style>
+
+    <section style="min-height:100vh;background:#060712;display:flex;align-items:center;">
+      <div class="pub-grid" style="max-width:1200px;margin:0 auto;padding:4rem 2rem;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;">
+        <!-- Text column -->
+        <div>
+          <span style="display:inline-block;padding:0.35rem 1rem;border:1px solid #f97316;color:#f97316;font-size:0.75rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;border-radius:2rem;margin-bottom:1.5rem;">PelloPublish</span>
+          <h1 style="font-size:clamp(2rem,4vw,3.5rem);font-weight:800;color:white;line-height:1.1;margin-bottom:1.5rem;white-space:pre-line;">Deep Content{"\n"}History.</h1>
+          <p style="font-size:1.05rem;color:#a1a1aa;line-height:1.7;margin-bottom:2rem;">PelloPublish builds a stratified archive of everything your brand has published. Drill down through layers of content history to discover what resonates, what compounds, and what drives growth.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:0.75rem;">
+            <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.4);color:#f97316;font-size:0.8rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">Content Archive</span>
+            <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.4);color:#f97316;font-size:0.8rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">Performance Analytics</span>
+            <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.4);color:#f97316;font-size:0.8rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">Trend Evolution</span>
+            <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.4);color:#f97316;font-size:0.8rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">Memory Base Depth</span>
+          </div>
+        </div>
+        <!-- Canvas column -->
+        <div class="pub-canvas-wrap" style="position:relative;">
+          <canvas id="pub-canvas-17" style="width:100%;height:560px;border-radius:1rem;background:#060712;display:block;border:1px solid rgba(249,115,22,0.15);"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<script>
+(function() {
+  const canvas = document.getElementById('pub-canvas-17') as HTMLCanvasElement;
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d')!;
+  const dpr = window.devicePixelRatio || 1;
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+    W = rect.width;
+    H = rect.height;
+    buildLayers();
+  }
+
+  let W = 0, H = 0;
+  let mouseX = 0.5;
+  let hoveredLayer = -1;
+
+  interface ContentItem {
+    x: number; w: number; h: number;
+    type: 'blog'|'tweet'|'reel'|'post';
+    opacity: number; glowPhase: number;
+  }
+  interface Layer {
+    label: string; color: string; glowColor: string;
+    yFrac: number; hFrac: number;
+    parallaxFactor: number;
+    items: ContentItem[];
+    count: number;
+  }
+
+  let layers: Layer[] = [];
+  let dust: {x:number;y:number;vy:number;vx:number;opacity:number;size:number}[] = [];
+  let drill = {active:false, y:0, phase:'idle' as 'idle'|'descending'|'showing'|'ascending', timer:0, speed:2.5};
+  let deposits: {x:number;y:number;targetY:number;w:number;h:number;type:string;opacity:number}[] = [];
+  let depositTimer = 0;
+  let t = 0;
+
+  function buildLayers() {
+    const labelW = 115;
+    layers = [
+      { label:'Today', color:'#1a0a00', glowColor:'#f97316', yFrac:0.0, hFrac:0.13, parallaxFactor:1.0, count:6, items:[] },
+      { label:'This Week', color:'#120800', glowColor:'#e86a0a', yFrac:0.13, hFrac:0.14, parallaxFactor:0.78, count:12, items:[] },
+      { label:'Last Month', color:'#0e0610', glowColor:'#c45d08', yFrac:0.27, hFrac:0.15, parallaxFactor:0.58, count:18, items:[] },
+      { label:'3 Months Ago', color:'#080412', glowColor:'#a04d06', yFrac:0.42, hFrac:0.16, parallaxFactor:0.4, count:23, items:[] },
+      { label:'6 Months Ago', color:'#050310', glowColor:'#7a3a04', yFrac:0.58, hFrac:0.17, parallaxFactor:0.25, count:31, items:[] },
+      { label:'Foundation', color:'#03020e', glowColor:'#552b02', yFrac:0.75, hFrac:0.25, parallaxFactor:0.1, count:47, items:[] },
+    ];
+    for (const layer of layers) {
+      layer.items = [];
+      const ly = layer.yFrac * H;
+      const lh = layer.hFrac * H;
+      const types: ContentItem['type'][] = ['blog','tweet','reel','post'];
+      for (let i = 0; i < layer.count; i++) {
+        const type = types[Math.floor(Math.random() * types.length)];
+        let iw = 18, ih = 8;
+        if (type === 'blog') { iw = 32 + Math.random()*20; ih = 7 + Math.random()*4; }
+        if (type === 'tweet') { iw = 14 + Math.random()*10; ih = 5 + Math.random()*3; }
+        if (type === 'reel') { iw = 8 + Math.random()*6; ih = 18 + Math.random()*10; }
+        if (type === 'post') { iw = 20 + Math.random()*14; ih = 10 + Math.random()*6; }
+        layer.items.push({
+          x: labelW + 10 + Math.random() * (W - labelW - 60),
+          w: iw, h: ih,
+          type,
+          opacity: 0.15 + Math.random()*0.35,
+          glowPhase: Math.random() * Math.PI * 2,
+        });
+      }
+    }
+
+    dust = [];
+    for (let i = 0; i < 80; i++) {
+      dust.push({
+        x: Math.random()*W, y: Math.random()*H,
+        vy: -(0.08 + Math.random()*0.25),
+        vx: (Math.random()-0.5)*0.12,
+        opacity: 0.04 + Math.random()*0.1,
+        size: 0.5 + Math.random()*1.5,
+      });
+    }
+  }
+
+  function getLayerY(i: number) {
+    const layer = layers[i];
+    const px = (mouseX - 0.5) * layer.parallaxFactor * 0.045 * H;
+    return layer.yFrac * H + px;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    t++;
+
+    // Background
+    ctx.fillStyle = '#060712';
+    ctx.fillRect(0, 0, W, H);
+
+    // Layer separator lines glow
+    for (let i = 0; i < layers.length; i++) {
+      const layer = layers[i];
+      const ly = getLayerY(i);
+      const lh = layer.hFrac * H;
+
+      // Layer fill
+      ctx.fillStyle = layer.color;
+      ctx.fillRect(0, ly, W, lh);
+
+      // Hovered layer highlight
+      if (hoveredLayer === i) {
+        ctx.fillStyle = 'rgba(249,115,22,0.06)';
+        ctx.fillRect(0, ly, W, lh);
+      }
+
+      // Layer top edge glow
+      const grad = ctx.createLinearGradient(0, ly, 0, ly + Math.min(lh, 20));
+      grad.addColorStop(0, i === 0 ? 'rgba(249,115,22,0.25)' : 'rgba(249,115,22,0.08)');
+      grad.addColorStop(1, 'rgba(249,115,22,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, ly, W, Math.min(lh, 20));
+
+      // Label column background
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.fillRect(0, ly, 108, lh);
+
+      // Label text
+      ctx.save();
+      ctx.font = `bold ${i === 0 ? 11 : 10}px system-ui,sans-serif`;
+      ctx.fillStyle = i === 0 ? '#f97316' : `rgba(249,115,22,${0.65 - i*0.08})`;
+      ctx.textBaseline = 'middle';
+      ctx.fillText(layer.label, 10, ly + lh/2);
+      ctx.restore();
+
+      // Divider line
+      ctx.strokeStyle = `rgba(249,115,22,${0.12 - i*0.015})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, ly);
+      ctx.lineTo(W, ly);
+      ctx.stroke();
+
+      // Content fossils
+      const cxOff = (mouseX - 0.5) * layer.parallaxFactor * W * 0.04;
+      for (const item of layer.items) {
+        const pulse = Math.sin(t*0.02 + item.glowPhase) * 0.5 + 0.5;
+        const iy = ly + (lh - item.h) * 0.5 + (Math.sin(item.glowPhase)*0.3) * (lh * 0.15);
+        const ix = item.x + cxOff;
+        if (ix < 115 || ix > W - 8) continue;
+
+        // Glow pass
+        ctx.save();
+        ctx.shadowColor = layer.glowColor;
+        ctx.shadowBlur = 4 + pulse * 6;
+        let fc = '#f97316';
+        if (item.type === 'tweet') fc = '#fbbf24';
+        if (item.type === 'reel') fc = '#fb923c';
+        if (item.type === 'post') fc = '#fdba74';
+        ctx.fillStyle = fc;
+        ctx.globalAlpha = item.opacity * (0.7 + pulse * 0.3);
+        ctx.fillRect(ix, iy, item.w, item.h);
+        ctx.restore();
+      }
+
+      // Hover tooltip
+      if (hoveredLayer === i) {
+        const tipX = 130;
+        const tipY = ly + lh/2;
+        ctx.save();
+        ctx.fillStyle = 'rgba(10,6,2,0.92)';
+        ctx.strokeStyle = 'rgba(249,115,22,0.6)';
+        ctx.lineWidth = 1;
+        roundRect(ctx, tipX, tipY - 15, 170, 30, 6);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#f97316';
+        ctx.font = 'bold 11px system-ui,sans-serif';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${layer.count} pieces published`, tipX + 12, tipY);
+        ctx.restore();
+      }
+    }
+
+    // Dust particles
+    for (const p of dust) {
+      p.y += p.vy;
+      p.x += p.vx;
+      if (p.y < 0) { p.y = H; p.x = Math.random()*W; }
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(249,115,22,${p.opacity})`;
+      ctx.fill();
+    }
+
+    // Deposits (new items falling into top layer)
+    depositTimer++;
+    if (depositTimer > 120 && layers.length > 0) {
+      depositTimer = 0;
+      const types = ['blog','tweet','reel','post'];
+      const type = types[Math.floor(Math.random()*types.length)];
+      let dw = 20, dh = 8;
+      if (type === 'blog') { dw = 36; dh = 8; }
+      if (type === 'tweet') { dw = 16; dh = 6; }
+      if (type === 'reel') { dw = 9; dh = 22; }
+      if (type === 'post') { dw = 24; dh = 12; }
+      const tly = layers[0].yFrac * H + layers[0].hFrac * H * 0.5;
+      deposits.push({
+        x: 120 + Math.random()*(W - 150),
+        y: -30,
+        targetY: tly,
+        w: dw, h: dh,
+        type,
+        opacity: 0.9,
+      });
+    }
+    for (let i = deposits.length - 1; i >= 0; i--) {
+      const d = deposits[i];
+      if (d.y < d.targetY) { d.y += 3.5; }
+      else { d.opacity -= 0.012; }
+      if (d.opacity <= 0) { deposits.splice(i, 1); continue; }
+      ctx.save();
+      ctx.shadowColor = '#f97316';
+      ctx.shadowBlur = 12;
+      ctx.fillStyle = '#f97316';
+      ctx.globalAlpha = d.opacity;
+      ctx.fillRect(d.x, d.y, d.w, d.h);
+      ctx.restore();
+      // landing sparkle
+      if (d.y >= d.targetY - 2 && d.y <= d.targetY + 3) {
+        for (let s = 0; s < 4; s++) {
+          const ang = (s/4)*Math.PI*2;
+          ctx.save();
+          ctx.strokeStyle = 'rgba(249,115,22,0.7)';
+          ctx.lineWidth = 1;
+          ctx.globalAlpha = d.opacity * 0.8;
+          ctx.beginPath();
+          ctx.moveTo(d.x + d.w/2, d.y);
+          ctx.lineTo(d.x + d.w/2 + Math.cos(ang)*8, d.y + Math.sin(ang)*5);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+    }
+
+    // Drill animation
+    drill.timer++;
+    if (drill.phase === 'idle' && drill.timer > 360) {
+      drill.phase = 'descending';
+      drill.y = -10;
+      drill.timer = 0;
+    }
+    if (drill.phase === 'descending') {
+      drill.y += drill.speed;
+      drawDrill(drill.y, false);
+      if (drill.y > H + 20) {
+        drill.phase = 'showing';
+        drill.y = H + 20;
+        drill.timer = 0;
+      }
+    }
+    if (drill.phase === 'showing') {
+      drill.y -= drill.speed * 0.7;
+      drawDrill(drill.y, true);
+      drill.timer++;
+      if (drill.timer > 80) {
+        drill.phase = 'ascending';
+      }
+    }
+    if (drill.phase === 'ascending') {
+      drill.y -= drill.speed * 1.5;
+      drawDrill(drill.y, true);
+      if (drill.y < -60) {
+        drill.phase = 'idle';
+        drill.timer = 0;
+      }
+    }
+  }
+
+  function drawDrill(tipY: number, showCore: boolean) {
+    const cx = W * 0.72;
+    const drillW = 14;
+    const len = H + 60;
+
+    // Drill shaft
+    ctx.save();
+    ctx.strokeStyle = 'rgba(249,115,22,0.55)';
+    ctx.lineWidth = drillW;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cx, tipY - len);
+    ctx.lineTo(cx, tipY);
+    ctx.stroke();
+
+    // Drill center highlight
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(cx, tipY - len);
+    ctx.lineTo(cx, tipY);
+    ctx.stroke();
+
+    // Core sample inside drill (when showing)
+    if (showCore) {
+      for (let i = 0; i < layers.length; i++) {
+        const layer = layers[i];
+        const ly = layer.yFrac * H;
+        const lh = layer.hFrac * H;
+        const segY = tipY - len + ly;
+        const segH = lh;
+        ctx.fillStyle = layer.glowColor;
+        ctx.globalAlpha = 0.55;
+        ctx.fillRect(cx - drillW/2 + 2, segY, drillW - 4, segH);
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // Drill tip glow
+    ctx.shadowColor = '#f97316';
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = '#f97316';
+    ctx.globalAlpha = 0.9;
+    ctx.beginPath();
+    ctx.moveTo(cx - drillW/2, tipY - 4);
+    ctx.lineTo(cx + drillW/2, tipY - 4);
+    ctx.lineTo(cx, tipY + 8);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function roundRect(c: CanvasRenderingContext2D, x:number,y:number,w:number,h:number,r:number) {
+    c.beginPath();
+    c.moveTo(x+r,y);
+    c.lineTo(x+w-r,y);
+    c.arcTo(x+w,y,x+w,y+r,r);
+    c.lineTo(x+w,y+h-r);
+    c.arcTo(x+w,y+h,x+w-r,y+h,r);
+    c.lineTo(x+r,y+h);
+    c.arcTo(x,y+h,x,y+h-r,r);
+    c.lineTo(x,y+r);
+    c.arcTo(x,y,x+r,y,r);
+    c.closePath();
+  }
+
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = (e.clientX - rect.left) / rect.width;
+    const my = e.clientY - rect.top;
+    hoveredLayer = -1;
+    for (let i = 0; i < layers.length; i++) {
+      const ly = getLayerY(i);
+      const lh = layers[i].hFrac * H;
+      if (my >= ly && my < ly + lh) { hoveredLayer = i; break; }
+    }
+  });
+  canvas.addEventListener('mouseleave', () => { mouseX = 0.5; hoveredLayer = -1; });
+
+  window.addEventListener('resize', resize);
+  resize();
+
+  function loop() { draw(); requestAnimationFrame(loop); }
+  loop();
+})();
+</script>

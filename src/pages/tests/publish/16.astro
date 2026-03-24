@@ -1,0 +1,542 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Signal Broadcast | Pello" description="Your content radiates outward like a broadcast signal — reaching every platform simultaneously with perfectly tuned messages for each audience.">
+  <Header />
+
+  <style>
+    body { background: #060712; margin: 0; }
+    @media (max-width: 768px) {
+      .pub-grid { grid-template-columns: 1fr !important; }
+      .pub-canvas-wrap canvas { height: 380px !important; }
+    }
+  </style>
+
+  <section style="min-height:100vh;background:#060712;display:flex;align-items:center;">
+    <div class="pub-grid" style="max-width:1200px;margin:0 auto;padding:4rem 2rem;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;">
+      <!-- Text column -->
+      <div>
+        <span style="display:inline-block;padding:0.35rem 1rem;border:1px solid #f97316;color:#f97316;font-size:0.75rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;border-radius:2rem;margin-bottom:1.5rem;">PelloPublish</span>
+        <h1 style="font-size:clamp(2rem,4vw,3.5rem);font-weight:800;color:white;line-height:1.1;margin-bottom:1.5rem;white-space:pre-line;">Your Signal{'\n'}Everywhere.</h1>
+        <p style="font-size:1.05rem;color:#a1a1aa;line-height:1.7;margin-bottom:2rem;">PelloPublish broadcasts your brand story across every channel simultaneously. One publish event creates coordinated content waves across blogs, social, video, and email.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:0.75rem;">
+          <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.4);color:#f97316;font-size:0.8rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">Simultaneous Publishing</span>
+          <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.4);color:#f97316;font-size:0.8rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">Platform-Native Content</span>
+          <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.4);color:#f97316;font-size:0.8rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">Broadcast Scheduling</span>
+          <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.4);color:#f97316;font-size:0.8rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">Signal Analytics</span>
+        </div>
+      </div>
+      <!-- Canvas column -->
+      <div class="pub-canvas-wrap" style="position:relative;">
+        <canvas id="pub-canvas-16" style="width:100%;height:560px;border-radius:1rem;background:#060712;display:block;border:1px solid rgba(249,115,22,0.15);"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</Layout>
+
+<script>
+(function() {
+  const canvas = document.getElementById('pub-canvas-16') as HTMLCanvasElement;
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d')!;
+
+  const dpr = window.devicePixelRatio || 1;
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+  }
+  resize();
+  window.addEventListener('resize', () => { resize(); initState(); });
+
+  const W = () => canvas.getBoundingClientRect().width;
+  const H = () => canvas.getBoundingClientRect().height;
+
+  let mouse = { x: -9999, y: -9999 };
+  canvas.addEventListener('mousemove', e => {
+    const r = canvas.getBoundingClientRect();
+    mouse.x = e.clientX - r.left;
+    mouse.y = e.clientY - r.top;
+  });
+  canvas.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+
+  interface Ring {
+    radius: number;
+    maxRadius: number;
+    opacity: number;
+    color: string;
+    id: number;
+    speed: number;
+  }
+  interface ContentCard {
+    text: string;
+    opacity: number;
+    slideX: number;
+    targetSlideX: number;
+    age: number;
+    maxAge: number;
+  }
+  interface Receiver {
+    x: number; y: number; angle: number;
+    platform: string; letter: string; color: string;
+    card: ContentCard | null;
+    lastRingId: number;
+    pulseScale: number;
+  }
+  interface InterferencePoint {
+    x: number; y: number; opacity: number; size: number;
+  }
+
+  const RING_COLORS = ['#f97316', '#fb923c', '#fdba74', '#fde68a', '#fed7aa'];
+  const PLATFORM_DATA = [
+    { platform: 'Blog', letter: 'B', color: '#f97316', snippet: 'SEO article: 10x traffic guide published' },
+    { platform: 'Instagram', letter: 'IG', color: '#fb923c', snippet: 'Story + Reel: Brand awareness campaign' },
+    { platform: 'Twitter', letter: 'TW', color: '#fde68a', snippet: '5-tweet thread: Industry insights drop' },
+    { platform: 'LinkedIn', letter: 'LI', color: '#fdba74', snippet: 'Thought leadership post: +2.4k views' },
+    { platform: 'Reel', letter: 'RE', color: '#fed7aa', snippet: 'Video script: Hook → Value → CTA' },
+    { platform: 'Email', letter: 'EM', color: '#fb923c', snippet: 'Newsletter: 42% open rate recorded' },
+  ];
+
+  let rings: Ring[] = [];
+  let receivers: Receiver[] = [];
+  let interferencePoints: InterferencePoint[] = [];
+  let ringSpawnTimer = 0;
+  let ringIdCounter = 0;
+  let lastTime = 0;
+  let towerBlink = true;
+  let blinkTimer = 0;
+  let towerX = 0, towerY = 0;
+
+  function initState() {
+    const w = W(), h = H();
+    towerX = w * 0.5;
+    towerY = h * 0.5;
+
+    rings = [];
+    interferencePoints = [];
+    ringSpawnTimer = 0;
+    ringIdCounter = 0;
+
+    // Receivers around canvas edges
+    receivers = PLATFORM_DATA.map((pd, i) => {
+      const angle = (i / 6) * Math.PI * 2 - Math.PI / 2;
+      const edgeDist = Math.min(w, h) * 0.4;
+      const rx = towerX + Math.cos(angle) * edgeDist;
+      const ry = towerY + Math.sin(angle) * edgeDist;
+      return {
+        x: rx, y: ry, angle,
+        platform: pd.platform,
+        letter: pd.letter,
+        color: pd.color,
+        card: null,
+        lastRingId: -1,
+        pulseScale: 1,
+      };
+    });
+  }
+  initState();
+
+  function spawnRing() {
+    const w = W(), h = H();
+    const maxR = Math.sqrt(w * w + h * h) * 0.6;
+    const colorIdx = ringIdCounter % RING_COLORS.length;
+    rings.push({
+      radius: 0,
+      maxRadius: maxR,
+      opacity: 0.85,
+      color: RING_COLORS[colorIdx],
+      id: ringIdCounter++,
+      speed: 80 + Math.random() * 30,
+    });
+  }
+
+  function drawTower(t: number) {
+    const x = towerX, y = towerY;
+    const tw = 12, th = 55;
+
+    // Tower base platform
+    ctx.beginPath();
+    ctx.roundRect(x - tw * 1.8, y + th * 0.5, tw * 3.6, 8, 3);
+    ctx.fillStyle = '#1a1530';
+    ctx.fill();
+    ctx.strokeStyle = '#f9731655';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Tower legs — lattice structure
+    const legs = [
+      { x1: x - tw, y1: y + th * 0.5, x2: x - 3, y2: y - th * 0.5 },
+      { x1: x + tw, y1: y + th * 0.5, x2: x + 3, y2: y - th * 0.5 },
+    ];
+    for (const leg of legs) {
+      ctx.beginPath();
+      ctx.moveTo(leg.x1, leg.y1);
+      ctx.lineTo(leg.x2, leg.y2);
+      ctx.strokeStyle = '#f97316aa';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+    }
+
+    // Cross braces
+    const braceCount = 4;
+    for (let bi = 0; bi < braceCount; bi++) {
+      const progress = (bi + 1) / (braceCount + 1);
+      const lx1 = legs[0].x1 + (legs[0].x2 - legs[0].x1) * progress;
+      const ly1 = legs[0].y1 + (legs[0].y2 - legs[0].y1) * progress;
+      const lx2 = legs[1].x1 + (legs[1].x2 - legs[1].x1) * progress;
+      const ly2 = legs[1].y1 + (legs[1].y2 - legs[1].y1) * progress;
+      ctx.beginPath();
+      ctx.moveTo(lx1, ly1);
+      ctx.lineTo(lx2, ly2);
+      ctx.strokeStyle = '#f9731666';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // X braces between legs
+    for (let bi = 0; bi < braceCount - 1; bi++) {
+      const p1 = (bi + 1) / (braceCount + 1);
+      const p2 = (bi + 2) / (braceCount + 1);
+      const lx1_a = legs[0].x1 + (legs[0].x2 - legs[0].x1) * p1;
+      const ly1_a = legs[0].y1 + (legs[0].y2 - legs[0].y1) * p1;
+      const lx2_b = legs[1].x1 + (legs[1].x2 - legs[1].x1) * p2;
+      const ly2_b = legs[1].y1 + (legs[1].y2 - legs[1].y1) * p2;
+      const lx1_b = legs[0].x1 + (legs[0].x2 - legs[0].x1) * p2;
+      const ly1_b = legs[0].y1 + (legs[0].y2 - legs[0].y1) * p2;
+      const lx2_a = legs[1].x1 + (legs[1].x2 - legs[1].x1) * p1;
+      const ly2_a = legs[1].y1 + (legs[1].y2 - legs[1].y1) * p1;
+      ctx.beginPath();
+      ctx.moveTo(lx1_a, ly1_a);
+      ctx.lineTo(lx2_b, ly2_b);
+      ctx.moveTo(lx1_b, ly1_b);
+      ctx.lineTo(lx2_a, ly2_a);
+      ctx.strokeStyle = '#f9731633';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+    }
+
+    // Vertical mast
+    ctx.beginPath();
+    ctx.moveTo(x, y - th * 0.5);
+    ctx.lineTo(x, y - th * 0.5 - 22);
+    ctx.strokeStyle = '#fb923c';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Antenna dish
+    ctx.beginPath();
+    ctx.moveTo(x - 8, y - th * 0.5 - 22);
+    ctx.lineTo(x + 8, y - th * 0.5 - 22);
+    ctx.strokeStyle = '#fb923caa';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Blinking red light at top
+    blinkTimer -= 0.016;
+    if (blinkTimer <= 0) { towerBlink = !towerBlink; blinkTimer = 0.5; }
+    const blinkAlpha = towerBlink ? 0.9 + Math.sin(t * 8) * 0.1 : 0.2;
+    const lightGrad = ctx.createRadialGradient(x, y - th - 24, 0, x, y - th - 24, 12);
+    lightGrad.addColorStop(0, `rgba(255,50,50,${blinkAlpha})`);
+    lightGrad.addColorStop(0.4, `rgba(255,50,50,${blinkAlpha * 0.5})`);
+    lightGrad.addColorStop(1, 'transparent');
+    ctx.beginPath();
+    ctx.arc(x, y - th - 24, 12, 0, Math.PI * 2);
+    ctx.fillStyle = lightGrad;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x, y - th - 24, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,60,60,${blinkAlpha})`;
+    ctx.fill();
+
+    // Tower glow
+    const towerGlow = ctx.createRadialGradient(x, y, 0, x, y, 70);
+    towerGlow.addColorStop(0, 'rgba(249,115,22,0.12)');
+    towerGlow.addColorStop(1, 'transparent');
+    ctx.beginPath();
+    ctx.arc(x, y, 70, 0, Math.PI * 2);
+    ctx.fillStyle = towerGlow;
+    ctx.fill();
+  }
+
+  function drawReceiver(rec: Receiver, hovered: boolean) {
+    const r = 20;
+    // Signal path dashed line
+    ctx.beginPath();
+    ctx.setLineDash([4, 10]);
+    ctx.moveTo(towerX, towerY);
+    ctx.lineTo(rec.x, rec.y);
+    ctx.strokeStyle = rec.color + '22';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Receiver circle
+    const pulseExtra = (rec.pulseScale - 1) * r;
+    const glowGrad = ctx.createRadialGradient(rec.x, rec.y, 0, rec.x, rec.y, r * 2.2 + pulseExtra);
+    glowGrad.addColorStop(0, rec.color + (hovered ? '44' : '22'));
+    glowGrad.addColorStop(1, 'transparent');
+    ctx.beginPath();
+    ctx.arc(rec.x, rec.y, r * 2.2 + pulseExtra, 0, Math.PI * 2);
+    ctx.fillStyle = glowGrad;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(rec.x, rec.y, r + pulseExtra * 0.5, 0, Math.PI * 2);
+    const bodyGrad = ctx.createRadialGradient(rec.x - r * 0.3, rec.y - r * 0.3, 1, rec.x, rec.y, r);
+    bodyGrad.addColorStop(0, '#1e1a2e');
+    bodyGrad.addColorStop(1, '#0d0b1a');
+    ctx.fillStyle = bodyGrad;
+    ctx.fill();
+    ctx.strokeStyle = hovered ? rec.color : rec.color + '88';
+    ctx.lineWidth = hovered ? 2 : 1.5;
+    ctx.stroke();
+
+    // Letter inside
+    ctx.fillStyle = hovered ? rec.color : rec.color + 'cc';
+    ctx.font = `700 ${rec.letter.length > 1 ? 8 : 11}px monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(rec.letter, rec.x, rec.y);
+    ctx.textBaseline = 'alphabetic';
+
+    // Platform label
+    const labelOffset = 28 + pulseExtra * 0.5;
+    const lx = rec.x + Math.cos(rec.angle) * labelOffset;
+    const ly = rec.y + Math.sin(rec.angle) * labelOffset;
+    ctx.fillStyle = hovered ? '#fff' : '#a1a1aaaa';
+    ctx.font = `${hovered ? '700' : '500'} 9px monospace`;
+    ctx.textAlign = 'center';
+    ctx.fillText(rec.platform, lx, ly);
+
+    // Content card
+    if (rec.card) {
+      const c = rec.card;
+      c.slideX += (c.targetSlideX - c.slideX) * 0.12;
+      c.age += 0.016;
+      if (c.age < 0.5) c.opacity = Math.min(1, c.age * 2);
+      else if (c.age > c.maxAge - 0.5) c.opacity = Math.max(0, (c.maxAge - c.age) * 2);
+      if (c.age >= c.maxAge) rec.card = null;
+
+      if (c.opacity > 0) {
+        const cw = 160, ch = 38;
+        // Position card away from center
+        const cardX = rec.x + Math.cos(rec.angle) * (r + 30) + c.slideX - cw / 2;
+        const cardY = rec.y + Math.sin(rec.angle) * (r + 30) - ch / 2;
+        ctx.save();
+        ctx.globalAlpha = c.opacity;
+        ctx.beginPath();
+        ctx.roundRect(cardX, cardY, cw, ch, 6);
+        ctx.fillStyle = 'rgba(8,6,20,0.94)';
+        ctx.fill();
+        ctx.strokeStyle = rec.color + 'aa';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        // Colored top bar
+        ctx.beginPath();
+        ctx.roundRect(cardX, cardY, cw, 4, [6, 6, 0, 0]);
+        ctx.fillStyle = rec.color;
+        ctx.fill();
+        ctx.fillStyle = rec.color;
+        ctx.font = '700 8px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(rec.platform.toUpperCase(), cardX + 8, cardY + 17);
+        ctx.fillStyle = '#d4d4d8';
+        ctx.font = '500 8px sans-serif';
+        const snippet = c.text.length > 24 ? c.text.substring(0, 24) + '…' : c.text;
+        ctx.fillText(snippet, cardX + 8, cardY + 29);
+        ctx.restore();
+      }
+    }
+
+    // Hover detail card
+    if (hovered && rec.card) {
+      // Already drawn above — just enhance border
+    }
+  }
+
+  function checkRingReceiverCollision(ring: Ring, rec: Receiver) {
+    const dist = Math.hypot(rec.x - towerX, rec.y - towerY);
+    const delta = Math.abs(ring.radius - dist);
+    if (delta < 6 && ring.id !== rec.lastRingId) {
+      rec.lastRingId = ring.id;
+      rec.pulseScale = 1.4;
+      const snippet = PLATFORM_DATA.find(pd => pd.platform === rec.platform)?.snippet || '';
+      rec.card = {
+        text: snippet,
+        opacity: 0,
+        slideX: -8,
+        targetSlideX: 0,
+        age: 0,
+        maxAge: 4.5,
+      };
+    }
+  }
+
+  function findInterferencePoints(r1: Ring, r2: Ring): {x:number,y:number}[] {
+    const cx = towerX, cy = towerY;
+    const d = 0; // both centered on same point — different radii, no geometric intersection
+    // For overlapping rings from same center, interference is a visual circle at specific angle
+    // Simplified: show glow at positions where rings are close to each other
+    const delta = Math.abs(r1.radius - r2.radius);
+    if (delta < 15 && delta > 0) {
+      // Rings are close — show interference glow at 3 random angles
+      const pts: {x:number,y:number}[] = [];
+      const avgR = (r1.radius + r2.radius) / 2;
+      for (let i = 0; i < 3; i++) {
+        const ang = (i / 3) * Math.PI * 2 + towerX * 0.01;
+        pts.push({ x: cx + Math.cos(ang) * avgR, y: cy + Math.sin(ang) * avgR });
+      }
+      return pts;
+    }
+    return [];
+  }
+
+  function draw(timestamp: number) {
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+    lastTime = timestamp;
+    const t = timestamp / 1000;
+    const w = W(), h = H();
+
+    ctx.clearRect(0, 0, w, h);
+
+    // Background
+    const bgGrad = ctx.createRadialGradient(towerX, towerY, 0, towerX, towerY, Math.max(w, h) * 0.7);
+    bgGrad.addColorStop(0, '#0c0918');
+    bgGrad.addColorStop(0.5, '#080614');
+    bgGrad.addColorStop(1, '#060712');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, w, h);
+
+    // Grid dots subtly in bg
+    for (let gx = 0; gx < w; gx += 36) {
+      for (let gy = 0; gy < h; gy += 36) {
+        ctx.beginPath();
+        ctx.arc(gx, gy, 0.7, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(249,115,22,0.06)';
+        ctx.fill();
+      }
+    }
+
+    // Ring spawn
+    ringSpawnTimer -= dt;
+    if (ringSpawnTimer <= 0) {
+      spawnRing();
+      ringSpawnTimer = 1.5;
+    }
+
+    // Update rings and check collisions
+    for (let ri = rings.length - 1; ri >= 0; ri--) {
+      const ring = rings[ri];
+      ring.radius += ring.speed * dt;
+      ring.opacity = Math.max(0, 0.85 * (1 - ring.radius / ring.maxRadius));
+      if (ring.opacity <= 0 || ring.radius > ring.maxRadius) {
+        rings.splice(ri, 1);
+        continue;
+      }
+      // Check receiver collisions
+      for (const rec of receivers) {
+        checkRingReceiverCollision(ring, rec);
+      }
+    }
+
+    // Compute interference points
+    interferencePoints = [];
+    for (let i = 0; i < rings.length; i++) {
+      for (let j = i + 1; j < rings.length; j++) {
+        const pts = findInterferencePoints(rings[i], rings[j]);
+        for (const pt of pts) {
+          interferencePoints.push({ ...pt, opacity: Math.min(rings[i].opacity, rings[j].opacity) * 1.8, size: 6 });
+        }
+      }
+    }
+
+    // Draw receiver path dashes (behind rings)
+    for (let ri = 0; ri < receivers.length; ri++) {
+      const rec = receivers[ri];
+      ctx.beginPath();
+      ctx.setLineDash([3, 9]);
+      ctx.moveTo(towerX, towerY);
+      ctx.lineTo(rec.x, rec.y);
+      ctx.strokeStyle = rec.color + '18';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Draw rings
+    for (const ring of rings) {
+      if (ring.opacity <= 0) continue;
+      ctx.beginPath();
+      ctx.arc(towerX, towerY, ring.radius, 0, Math.PI * 2);
+      ctx.strokeStyle = ring.color + Math.round(ring.opacity * 255).toString(16).padStart(2,'0');
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Inner glow ring
+      ctx.beginPath();
+      ctx.arc(towerX, towerY, ring.radius, 0, Math.PI * 2);
+      ctx.strokeStyle = ring.color + Math.round(ring.opacity * 80).toString(16).padStart(2,'0');
+      ctx.lineWidth = 4;
+      ctx.stroke();
+    }
+
+    // Draw interference points
+    for (const ip of interferencePoints) {
+      const ipGrad = ctx.createRadialGradient(ip.x, ip.y, 0, ip.x, ip.y, ip.size * 2);
+      ipGrad.addColorStop(0, `rgba(253,230,138,${Math.min(1, ip.opacity)})`);
+      ipGrad.addColorStop(0.5, `rgba(249,115,22,${Math.min(0.6, ip.opacity * 0.6)})`);
+      ipGrad.addColorStop(1, 'transparent');
+      ctx.beginPath();
+      ctx.arc(ip.x, ip.y, ip.size * 2, 0, Math.PI * 2);
+      ctx.fillStyle = ipGrad;
+      ctx.fill();
+    }
+
+    // Update receiver pulse
+    for (const rec of receivers) {
+      rec.pulseScale = 1 + (rec.pulseScale - 1) * 0.92;
+    }
+
+    // Draw receivers
+    const hoveredRecIdx = (() => {
+      let best = -1, bestDist = 28;
+      for (let ri = 0; ri < receivers.length; ri++) {
+        const d = Math.hypot(mouse.x - receivers[ri].x, mouse.y - receivers[ri].y);
+        if (d < bestDist) { bestDist = d; best = ri; }
+      }
+      return best;
+    })();
+
+    for (let ri = 0; ri < receivers.length; ri++) {
+      drawReceiver(receivers[ri], ri === hoveredRecIdx);
+    }
+
+    // Draw tower on top
+    drawTower(t);
+
+    // Pulse ring from tower on first ring spawn
+    const pulseOpacity = 0.15 + Math.sin(t * 3) * 0.08;
+    ctx.beginPath();
+    ctx.arc(towerX, towerY, 30 + Math.sin(t * 3) * 5, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(249,115,22,${pulseOpacity})`;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Active ring count indicator
+    ctx.fillStyle = 'rgba(249,115,22,0.45)';
+    ctx.font = '700 10px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(`BROADCASTING — ${rings.length} ACTIVE SIGNAL${rings.length !== 1 ? 'S' : ''}`, w / 2, h - 14);
+
+    requestAnimationFrame(draw);
+  }
+
+  requestAnimationFrame(draw);
+})();
+</script>

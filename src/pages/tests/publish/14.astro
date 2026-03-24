@@ -1,0 +1,487 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — The Printing Press | Pello" description="Watch content get typeset, inked, and printed in real time — a mechanical ballet of letterpress drums producing finished content for every platform.">
+  <Header />
+
+  <style>
+    body { background: #060712; margin: 0; }
+    @media (max-width: 768px) {
+      .pub-grid { grid-template-columns: 1fr !important; }
+      .pub-canvas-wrap canvas { height: 380px !important; }
+    }
+  </style>
+
+  <section style="min-height:100vh;background:#060712;display:flex;align-items:center;">
+    <div class="pub-grid" style="max-width:1200px;margin:0 auto;padding:4rem 2rem;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;">
+      <!-- Text column -->
+      <div>
+        <span style="display:inline-block;padding:0.35rem 1rem;border:1px solid #f97316;color:#f97316;font-size:0.75rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;border-radius:2rem;margin-bottom:1.5rem;">PelloPublish</span>
+        <h1 style="font-size:clamp(2rem,4vw,3.5rem);font-weight:800;color:white;line-height:1.1;margin-bottom:1.5rem;white-space:pre-line;">Mechanical{'\n'}Precision.</h1>
+        <p style="font-size:1.05rem;color:#a1a1aa;line-height:1.7;margin-bottom:2rem;">PelloPublish produces content with the reliability of a printing press — consistent, high-quality, and unstoppable. Your brand voice, set in type, delivered on schedule.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:0.75rem;">
+          <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.4);color:#f97316;font-size:0.8rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">Consistent Brand Voice</span>
+          <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.4);color:#f97316;font-size:0.8rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">Scheduled Publishing</span>
+          <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.4);color:#f97316;font-size:0.8rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">Multi-Format Output</span>
+          <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.4);color:#f97316;font-size:0.8rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">Quality Automation</span>
+        </div>
+      </div>
+      <!-- Canvas column -->
+      <div class="pub-canvas-wrap" style="position:relative;">
+        <canvas id="pub-canvas-14" style="width:100%;height:560px;border-radius:1rem;background:#060712;display:block;border:1px solid rgba(249,115,22,0.15);"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</Layout>
+
+<script>
+(function() {
+  const canvas = document.getElementById('pub-canvas-14') as HTMLCanvasElement;
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d')!;
+
+  const dpr = window.devicePixelRatio || 1;
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+  }
+  resize();
+  window.addEventListener('resize', () => { resize(); initState(); });
+
+  const W = () => canvas.getBoundingClientRect().width;
+  const H = () => canvas.getBoundingClientRect().height;
+
+  let mouse = { x: -9999, y: -9999 };
+  canvas.addEventListener('mousemove', e => {
+    const r = canvas.getBoundingClientRect();
+    mouse.x = e.clientX - r.left;
+    mouse.y = e.clientY - r.top;
+  });
+  canvas.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+
+  const DRUM_LABELS = ['Blog Drum', 'Tweet Drum', 'Video Drum'];
+  const DRUM_COLORS = ['#f97316', '#fb923c', '#fdba74'];
+  const CONTENT_SNIPPETS = [
+    'Brand awareness article → pelloblog.co',
+    'Twitter thread: 5 growth hacks...',
+    'Reel script: Hook → Value → CTA',
+    'LinkedIn post: Industry insights...',
+  ];
+
+  interface Drum {
+    x: number; y: number; r: number; speed: number; angle: number;
+    label: string; color: string; inkPulse: number; inkPhase: number;
+  }
+  interface Particle {
+    x: number; y: number; vx: number; vy: number; life: number; maxLife: number; color: string;
+  }
+  interface PrintedCard {
+    x: number; y: number; text: string; opacity: number; vy: number; age: number;
+  }
+  interface SmokeParticle {
+    x: number; y: number; vx: number; vy: number; life: number; maxLife: number; size: number;
+  }
+
+  let drums: Drum[] = [];
+  let particles: Particle[] = [];
+  let printedCards: PrintedCard[] = [];
+  let smoke: SmokeParticle[] = [];
+  let paperX = 0;
+  let lastTime = 0;
+  let printedZones: Set<string> = new Set();
+  let snippetIdx = 0;
+  let cardCooldown = 0;
+
+  function initState() {
+    const w = W(), h = H();
+    const drumY = h * 0.42;
+    const spacing = w / 4;
+    drums = [
+      { x: spacing, y: drumY, r: 72, speed: 0.008, angle: 0, label: DRUM_LABELS[0], color: DRUM_COLORS[0], inkPulse: 0, inkPhase: 0 },
+      { x: spacing * 2, y: drumY, r: 72, speed: 0.013, angle: Math.PI / 3, label: DRUM_LABELS[1], color: DRUM_COLORS[1], inkPulse: 0, inkPhase: 1.2 },
+      { x: spacing * 3, y: drumY, r: 72, speed: 0.010, angle: Math.PI * 0.7, label: DRUM_LABELS[2], color: DRUM_COLORS[2], inkPulse: 0, inkPhase: 2.4 },
+    ];
+    paperX = -w * 0.3;
+    particles = [];
+    printedCards = [];
+    smoke = [];
+    printedZones = new Set();
+    snippetIdx = 0;
+    cardCooldown = 0;
+  }
+  initState();
+
+  function drawDrum(d: Drum, hovered: boolean, t: number) {
+    const w = W(), h = H();
+    const paperY = d.y + d.r + 12;
+    const paperH = 44;
+
+    // Shadow glow
+    const glowAlpha = hovered ? 0.35 : 0.12;
+    const grad = ctx.createRadialGradient(d.x, d.y, d.r * 0.5, d.x, d.y, d.r * 1.6);
+    grad.addColorStop(0, d.color + Math.round(glowAlpha * 255).toString(16).padStart(2,'0'));
+    grad.addColorStop(1, 'transparent');
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, d.r * 1.6, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Main drum body
+    const drumGrad = ctx.createRadialGradient(d.x - d.r * 0.3, d.y - d.r * 0.3, d.r * 0.1, d.x, d.y, d.r);
+    drumGrad.addColorStop(0, '#1e1a2e');
+    drumGrad.addColorStop(0.6, '#0d0b1a');
+    drumGrad.addColorStop(1, '#060712');
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+    ctx.fillStyle = drumGrad;
+    ctx.fill();
+    ctx.strokeStyle = hovered ? d.color : d.color + '66';
+    ctx.lineWidth = hovered ? 2.5 : 1.5;
+    ctx.stroke();
+
+    // Gear teeth
+    const toothCount = 18;
+    const toothLen = 9;
+    ctx.save();
+    ctx.translate(d.x, d.y);
+    for (let i = 0; i < toothCount; i++) {
+      const ang = d.angle + (i / toothCount) * Math.PI * 2;
+      const bx = Math.cos(ang) * d.r;
+      const by = Math.sin(ang) * d.r;
+      const tx = Math.cos(ang) * (d.r + toothLen);
+      const ty = Math.sin(ang) * (d.r + toothLen);
+      const lx = Math.cos(ang - 0.12) * (d.r + toothLen * 0.6);
+      const ly = Math.sin(ang - 0.12) * (d.r + toothLen * 0.6);
+      const rx = Math.cos(ang + 0.12) * (d.r + toothLen * 0.6);
+      const ry = Math.sin(ang + 0.12) * (d.r + toothLen * 0.6);
+      ctx.beginPath();
+      ctx.moveTo(bx, by);
+      ctx.lineTo(lx, ly);
+      ctx.lineTo(tx, ty);
+      ctx.lineTo(rx, ry);
+      ctx.closePath();
+      ctx.fillStyle = hovered ? d.color + 'cc' : d.color + '55';
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // Type blocks on drum surface
+    const blockCount = 9;
+    ctx.save();
+    ctx.translate(d.x, d.y);
+    for (let i = 0; i < blockCount; i++) {
+      const ang = d.angle + (i / blockCount) * Math.PI * 2;
+      const bx = Math.cos(ang) * (d.r * 0.72);
+      const by = Math.sin(ang) * (d.r * 0.72);
+      ctx.save();
+      ctx.translate(bx, by);
+      ctx.rotate(ang + Math.PI / 2);
+      ctx.fillStyle = i % 2 === 0 ? '#f9731655' : '#ffffff33';
+      ctx.fillRect(-6, -3, 12, 6);
+      ctx.restore();
+    }
+    ctx.restore();
+
+    // Center hub
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, 10, 0, Math.PI * 2);
+    ctx.fillStyle = d.color + 'aa';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+
+    // Ink reservoir
+    const pulse = 0.7 + 0.3 * Math.sin(t * 2 + d.inkPhase);
+    const inkY = d.y + d.r + 28;
+    const inkW = 50, inkH = 10;
+    const inkGrad = ctx.createLinearGradient(d.x - inkW / 2, inkY, d.x + inkW / 2, inkY);
+    inkGrad.addColorStop(0, d.color + '00');
+    inkGrad.addColorStop(0.5, d.color + Math.round(pulse * 200).toString(16).padStart(2,'0'));
+    inkGrad.addColorStop(1, d.color + '00');
+    ctx.beginPath();
+    ctx.roundRect(d.x - inkW / 2, inkY, inkW, inkH, 4);
+    ctx.fillStyle = inkGrad;
+    ctx.fill();
+
+    // Tooltip on hover
+    if (hovered) {
+      const tw = 120, th = 28;
+      const tx = d.x - tw / 2;
+      const ty = d.y - d.r - 50;
+      ctx.beginPath();
+      ctx.roundRect(tx, ty, tw, th, 6);
+      ctx.fillStyle = 'rgba(6,7,18,0.92)';
+      ctx.fill();
+      ctx.strokeStyle = d.color + 'cc';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = d.color;
+      ctx.font = '700 11px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(d.label, d.x, ty + 18);
+    }
+  }
+
+  function drawPaperPath(t: number) {
+    const w = W(), h = H();
+    const drumY = drums[0].y;
+    const paperY = drumY + drums[0].r + 12;
+    const paperH = 44;
+
+    // Paper path background
+    const pathGrad = ctx.createLinearGradient(0, paperY, 0, paperY + paperH);
+    pathGrad.addColorStop(0, '#1a1630');
+    pathGrad.addColorStop(1, '#0f0d1e');
+    ctx.beginPath();
+    ctx.rect(0, paperY, w, paperH);
+    ctx.fillStyle = pathGrad;
+    ctx.fill();
+
+    // Moving paper sheet
+    const sheetW = w * 0.28;
+    const sheetX = paperX;
+    if (sheetX < w + sheetW) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, paperY, w, paperH);
+      ctx.clip();
+
+      const paperGrad = ctx.createLinearGradient(sheetX, 0, sheetX + sheetW, 0);
+      paperGrad.addColorStop(0, 'rgba(240,235,255,0)');
+      paperGrad.addColorStop(0.05, 'rgba(240,235,255,0.92)');
+      paperGrad.addColorStop(0.95, 'rgba(240,235,255,0.92)');
+      paperGrad.addColorStop(1, 'rgba(240,235,255,0)');
+      ctx.fillStyle = paperGrad;
+      ctx.fillRect(sheetX, paperY + 2, sheetW, paperH - 4);
+
+      // Print zones — text appears on paper as it passes under drums
+      for (let di = 0; di < drums.length; di++) {
+        const d = drums[di];
+        const relX = d.x - sheetX;
+        if (relX > 0 && relX < sheetW) {
+          const progress = relX / sheetW;
+          const snippetText = CONTENT_SNIPPETS[di % CONTENT_SNIPPETS.length];
+          const alpha = Math.min(1, progress * 4) * Math.min(1, (1 - progress) * 4);
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = '#1a0a30';
+          ctx.font = '600 9px monospace';
+          ctx.textAlign = 'left';
+          const maxWidth = Math.min(sheetW * 0.6, 200);
+          ctx.fillText(snippetText.substring(0, 30), sheetX + relX - 60, paperY + paperH / 2 + 3, maxWidth);
+          ctx.restore();
+        }
+      }
+      ctx.restore();
+    }
+
+    // Guide lines
+    ctx.strokeStyle = 'rgba(249,115,22,0.1)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 8]);
+    ctx.beginPath();
+    ctx.moveTo(0, paperY);
+    ctx.lineTo(w, paperY);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, paperY + paperH);
+    ctx.lineTo(w, paperY + paperH);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function spawnSparks(x: number, y: number, color: string) {
+    for (let i = 0; i < 8; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const spd = 1 + Math.random() * 3;
+      particles.push({
+        x, y,
+        vx: Math.cos(ang) * spd,
+        vy: Math.sin(ang) * spd - 1,
+        life: 1,
+        maxLife: 0.5 + Math.random() * 0.5,
+        color,
+      });
+    }
+  }
+
+  function spawnSmoke(x: number, y: number) {
+    smoke.push({
+      x: x + (Math.random() - 0.5) * 20,
+      y,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: -(0.3 + Math.random() * 0.5),
+      life: 1,
+      maxLife: 2 + Math.random() * 2,
+      size: 4 + Math.random() * 8,
+    });
+  }
+
+  function spawnCard(text: string) {
+    const w = W(), h = H();
+    printedCards.push({
+      x: w * 0.75 + (Math.random() - 0.5) * 60,
+      y: drums[0].y + drums[0].r + 20,
+      text,
+      opacity: 1,
+      vy: -0.6,
+      age: 0,
+    });
+  }
+
+  function draw(timestamp: number) {
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+    lastTime = timestamp;
+    const t = timestamp / 1000;
+    const w = W(), h = H();
+
+    // Clear
+    ctx.clearRect(0, 0, w, h);
+
+    // Background gradient
+    const bgGrad = ctx.createRadialGradient(w * 0.5, h * 0.4, 0, w * 0.5, h * 0.4, w * 0.7);
+    bgGrad.addColorStop(0, '#0a0818');
+    bgGrad.addColorStop(1, '#060712');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, w, h);
+
+    // Rotating drum angles
+    for (const d of drums) {
+      d.angle += d.speed;
+    }
+
+    // Paper movement
+    paperX += 1.2;
+    if (paperX > w + w * 0.3) {
+      paperX = -w * 0.35;
+      printedZones.clear();
+    }
+
+    // Spawn sparks where paper contacts drums
+    for (const d of drums) {
+      const contactY = d.y + d.r + 2;
+      const paperMid = paperX + W() * 0.14;
+      if (Math.abs(paperMid - d.x) < d.r + 20) {
+        if (Math.random() < 0.3) spawnSparks(d.x, contactY, d.color);
+      }
+      // Smoke from drums
+      if (Math.random() < 0.04) spawnSmoke(d.x + (Math.random() - 0.5) * 30, d.y - d.r);
+    }
+
+    // Spawn printed card periodically
+    cardCooldown -= dt;
+    if (cardCooldown <= 0) {
+      spawnCard(CONTENT_SNIPPETS[snippetIdx % CONTENT_SNIPPETS.length]);
+      snippetIdx++;
+      cardCooldown = 2.5 + Math.random();
+    }
+
+    // Draw paper path (behind drums)
+    drawPaperPath(t);
+
+    // Conveyor belt lines
+    const beltY = drums[0].y + drums[0].r + 56;
+    ctx.strokeStyle = 'rgba(249,115,22,0.2)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, beltY);
+    ctx.lineTo(w, beltY);
+    ctx.stroke();
+
+    // Moving belt ticks
+    const tickSpacing = 30;
+    const tickOffset = (t * 36) % tickSpacing;
+    ctx.strokeStyle = 'rgba(249,115,22,0.35)';
+    ctx.lineWidth = 2;
+    for (let tx2 = -tickSpacing + tickOffset; tx2 < w + tickSpacing; tx2 += tickSpacing) {
+      ctx.beginPath();
+      ctx.moveTo(tx2, beltY - 4);
+      ctx.lineTo(tx2, beltY + 4);
+      ctx.stroke();
+    }
+
+    // Draw drums
+    for (let i = 0; i < drums.length; i++) {
+      const d = drums[i];
+      const dist = Math.hypot(mouse.x - d.x, mouse.y - d.y);
+      const hovered = dist < d.r + 14;
+      drawDrum(d, hovered, t);
+    }
+
+    // Update and draw smoke
+    for (let i = smoke.length - 1; i >= 0; i--) {
+      const s = smoke[i];
+      s.x += s.vx;
+      s.y += s.vy;
+      s.life -= dt / s.maxLife;
+      s.size += 0.5;
+      if (s.life <= 0) { smoke.splice(i, 1); continue; }
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(180,160,255,${s.life * 0.08})`;
+      ctx.fill();
+    }
+
+    // Update and draw particles (sparks)
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.12;
+      p.life -= dt / p.maxLife;
+      if (p.life <= 0) { particles.splice(i, 1); continue; }
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2.5 * p.life, 0, Math.PI * 2);
+      ctx.fillStyle = p.color + Math.round(p.life * 220).toString(16).padStart(2,'0');
+      ctx.fill();
+    }
+
+    // Update and draw printed cards
+    for (let i = printedCards.length - 1; i >= 0; i--) {
+      const c = printedCards[i];
+      c.y += c.vy;
+      c.vy -= 0.005;
+      c.age += dt;
+      c.opacity = Math.max(0, 1 - c.age / 3.5);
+      if (c.opacity <= 0) { printedCards.splice(i, 1); continue; }
+      const cw = 220, ch = 44;
+      ctx.save();
+      ctx.globalAlpha = c.opacity;
+      ctx.beginPath();
+      ctx.roundRect(c.x - cw / 2, c.y - ch / 2, cw, ch, 8);
+      ctx.fillStyle = 'rgba(10,8,24,0.92)';
+      ctx.fill();
+      ctx.strokeStyle = '#f9731688';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = '#f97316';
+      ctx.font = '700 9px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText('PUBLISHED', c.x - cw / 2 + 12, c.y - 6);
+      ctx.fillStyle = '#e4e4f0';
+      ctx.font = '500 10px sans-serif';
+      ctx.fillText(c.text.substring(0, 28), c.x - cw / 2 + 12, c.y + 10);
+      ctx.restore();
+    }
+
+    // Title / label
+    ctx.fillStyle = 'rgba(249,115,22,0.5)';
+    ctx.font = '700 10px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('MECHANICAL CONTENT PRESS — ACTIVE', w / 2, h - 18);
+
+    requestAnimationFrame(draw);
+  }
+
+  requestAnimationFrame(draw);
+})();
+</script>

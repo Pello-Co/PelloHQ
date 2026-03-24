@@ -1,0 +1,584 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloPublish — Bioluminescent Deep Sea | Pello" description="In the deep ocean of content, PelloPublish illuminates every format — jellyfish blog posts, schools of tweet threads, giant squid video content, all glowing with brand intelligence.">
+  <Header />
+  <main>
+    <style>
+      body { background:#060712; margin:0; }
+      @media (max-width: 768px) {
+        .pub-grid { grid-template-columns: 1fr !important; }
+        .pub-canvas-wrap canvas { height: 380px !important; }
+      }
+    </style>
+
+    <section style="min-height:100vh;background:#060712;display:flex;align-items:center;">
+      <div class="pub-grid" style="max-width:1200px;margin:0 auto;padding:4rem 2rem;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;">
+        <!-- Text column -->
+        <div>
+          <span style="display:inline-block;padding:0.35rem 1rem;border:1px solid #f97316;color:#f97316;font-size:0.75rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;border-radius:2rem;margin-bottom:1.5rem;">PelloPublish</span>
+          <h1 style="font-size:clamp(2rem,4vw,3.5rem);font-weight:800;color:white;line-height:1.1;margin-bottom:1.5rem;white-space:pre-line;">Content That{"\n"}Glows in the Dark.</h1>
+          <p style="font-size:1.05rem;color:#a1a1aa;line-height:1.7;margin-bottom:2rem;">PelloPublish creates content that stands out even in the noise — illuminated by your Memory Base coral reef, each piece of content shines with your brand's authentic intelligence.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:0.75rem;">
+            <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.4);color:#f97316;font-size:0.8rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">Memory Base Intelligence</span>
+            <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.4);color:#f97316;font-size:0.8rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">Multi-Format Content</span>
+            <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.4);color:#f97316;font-size:0.8rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">Brand Luminescence</span>
+            <span style="padding:0.4rem 1rem;border:1px solid rgba(249,115,22,0.4);color:#f97316;font-size:0.8rem;font-weight:600;border-radius:2rem;background:rgba(249,115,22,0.08);">Deep Research</span>
+          </div>
+        </div>
+        <!-- Canvas column -->
+        <div class="pub-canvas-wrap" style="position:relative;">
+          <canvas id="pub-canvas-19" style="width:100%;height:560px;border-radius:1rem;background:#060712;display:block;border:1px solid rgba(249,115,22,0.15);"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<script>
+(function() {
+  const canvas = document.getElementById('pub-canvas-19') as HTMLCanvasElement;
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d')!;
+  const dpr = window.devicePixelRatio || 1;
+
+  let W = 0, H = 0, t = 0;
+  let mouseX = -1, mouseY = -1;
+
+  // Marine snow
+  interface Mote { x:number; y:number; vy:number; vx:number; r:number; opacity:number; }
+  let motes: Mote[] = [];
+
+  // Jellyfish
+  interface Jellyfish {
+    x:number; y:number; vy:number; phase:number; pulsePhase:number;
+    r:number; tentPhases:number[]; label:string;
+  }
+  let jellies: Jellyfish[] = [];
+
+  // Fish school (boids)
+  interface Fish { x:number; y:number; vx:number; vy:number; }
+  let school: Fish[] = [];
+
+  // Anglerfish
+  interface Anglerfish {
+    x:number; y:number; vx:number; lurePhase:number; mouthOpen:number;
+    lureLabels:string[]; lureIdx:number; lureLabelTimer:number;
+  }
+  let angler: Anglerfish;
+
+  // Squid
+  interface Squid {
+    x:number; y:number; vx:number; vy:number;
+    jetTimer:number; jetActive:boolean; jetStrength:number;
+    tentPhases:number[]; bodyPhase:number;
+  }
+  let squid: Squid;
+
+  // Coral
+  interface CoralBranch { x1:number; y1:number; x2:number; y2:number; w:number; color:string; }
+  let coralBranches: CoralBranch[] = [];
+
+  function buildCoral() {
+    coralBranches = [];
+    const reefY = H * 0.8;
+    function branch(x:number, y:number, angle:number, length:number, w:number, depth:number) {
+      if (depth <= 0 || length < 4) return;
+      const x2 = x + Math.cos(angle) * length;
+      const y2 = y + Math.sin(angle) * length;
+      const hue = 20 + depth * 8;
+      coralBranches.push({x1:x, y1:y, x2, y2, w, color:`hsl(${hue},85%,${30 + depth*5}%)`});
+      const spread = 0.45 + Math.random()*0.2;
+      branch(x2, y2, angle - spread, length*0.68, w*0.65, depth-1);
+      branch(x2, y2, angle + spread, length*0.72, w*0.6, depth-1);
+      if (depth > 3) branch(x2, y2, angle, length*0.6, w*0.55, depth-2);
+    }
+    const coralRoots = [W*0.08, W*0.22, W*0.42, W*0.62, W*0.78, W*0.92];
+    for (const rx of coralRoots) {
+      const len = 25 + Math.random()*25;
+      branch(rx, reefY + 5, -Math.PI/2 + (Math.random()-0.5)*0.4, len, 3+Math.random()*2, 5);
+    }
+  }
+
+  function buildJellies() {
+    jellies = [
+      { x: W*0.2, y: H*0.25, vy:-0.35, phase:0, pulsePhase:0, r:22, tentPhases:[0,0.5,1,1.5,2,2.5], label:'Long-Form Article' },
+      { x: W*0.6, y: H*0.35, vy:-0.28, phase:1.5, pulsePhase:1.2, r:16, tentPhases:[0.3,0.9,1.4,1.9,2.4,2.9], label:'Blog Post' },
+      { x: W*0.82, y: H*0.5, vy:-0.32, phase:3, pulsePhase:2.5, r:19, tentPhases:[0.1,0.7,1.2,1.7,2.2,2.7], label:'Long-Form Article' },
+    ];
+  }
+
+  function buildSchool() {
+    school = [];
+    for (let i = 0; i < 10; i++) {
+      school.push({
+        x: W*0.4 + (Math.random()-0.5)*60,
+        y: H*0.4 + (Math.random()-0.5)*40,
+        vx: (Math.random()-0.5)*1.5 + 1.2,
+        vy: (Math.random()-0.5)*0.8,
+      });
+    }
+  }
+
+  function buildAngler() {
+    angler = {
+      x: W*0.15, y: H*0.58, vx:0.55,
+      lurePhase:0, mouthOpen:0,
+      lureLabels:['Click-worthy','Trending','Viral','Going Global'],
+      lureIdx:0, lureLabelTimer:0,
+    };
+  }
+
+  function buildSquid() {
+    squid = {
+      x: W*0.75, y: H*0.3, vx:-0.3, vy:0.1,
+      jetTimer:0, jetActive:false, jetStrength:0,
+      tentPhases: Array.from({length:8}, (_,i) => i*Math.PI/4),
+      bodyPhase: 0,
+    };
+  }
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+    W = rect.width;
+    H = rect.height;
+
+    motes = Array.from({length:90}, () => ({
+      x: Math.random()*W, y: Math.random()*H,
+      vy: 0.12 + Math.random()*0.18,
+      vx: (Math.random()-0.5)*0.06,
+      r: 0.5 + Math.random()*1.2,
+      opacity: 0.05 + Math.random()*0.15,
+    }));
+
+    buildCoral();
+    buildJellies();
+    buildSchool();
+    buildAngler();
+    buildSquid();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    t++;
+
+    // Ocean gradient background
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+    bgGrad.addColorStop(0, '#030408');
+    bgGrad.addColorStop(0.6, '#04060d');
+    bgGrad.addColorStop(1, '#060a10');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Reef glow
+    const reefGlow = ctx.createRadialGradient(W/2, H*0.85, 10, W/2, H*0.85, W*0.7);
+    reefGlow.addColorStop(0, 'rgba(200,80,10,0.14)');
+    reefGlow.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = reefGlow;
+    ctx.fillRect(0, H*0.6, W, H*0.4);
+
+    // Marine snow
+    for (const m of motes) {
+      m.y += m.vy; m.x += m.vx + Math.sin(t*0.008 + m.x)*0.06;
+      if (m.y > H) { m.y = -2; m.x = Math.random()*W; }
+      ctx.beginPath();
+      ctx.arc(m.x, m.y, m.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(220,220,255,${m.opacity})`;
+      ctx.fill();
+    }
+
+    // Coral reef
+    for (const b of coralBranches) {
+      ctx.save();
+      const pulse = Math.sin(t*0.025 + b.x1*0.01) * 0.5 + 0.5;
+      ctx.shadowColor = '#f97316';
+      ctx.shadowBlur = 4 + pulse * 10;
+      ctx.strokeStyle = b.color;
+      ctx.lineWidth = b.w;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(b.x1, b.y1);
+      ctx.lineTo(b.x2, b.y2);
+      ctx.stroke();
+      // Polyp tip
+      if (b.w < 2.2) {
+        ctx.beginPath();
+        ctx.arc(b.x2, b.y2, 2.5 + pulse*1.5, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(249,183,70,${0.55 + pulse*0.35})`;
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // Reef floor
+    ctx.save();
+    const floorGrad = ctx.createLinearGradient(0, H*0.82, 0, H);
+    floorGrad.addColorStop(0, '#0a0505');
+    floorGrad.addColorStop(1, '#060306');
+    ctx.fillStyle = floorGrad;
+    ctx.fillRect(0, H*0.82, W, H*0.18);
+    ctx.restore();
+
+    // Jellyfish
+    for (const jelly of jellies) {
+      jelly.y += jelly.vy + Math.sin(t*0.018 + jelly.phase)*0.12;
+      jelly.x += Math.sin(t*0.01 + jelly.phase)*0.25;
+      jelly.pulsePhase += 0.04;
+      // Mouse attract
+      if (mouseX > 0) {
+        const dx = mouseX - jelly.x, dy = mouseY - jelly.y;
+        const dist = Math.sqrt(dx*dx+dy*dy);
+        if (dist < 150) { jelly.x += dx*0.0015; jelly.y += dy*0.0015; }
+      }
+      if (jelly.y < -50) jelly.y = H * 0.75;
+      if (jelly.x < -20) jelly.x = W + 20;
+      if (jelly.x > W + 20) jelly.x = -20;
+      drawJelly(jelly);
+    }
+
+    // Fish school boids
+    updateSchool();
+    drawSchool();
+
+    // Anglerfish
+    angler.x += angler.vx;
+    if (angler.x > W + 80) { angler.x = -80; angler.vx = 0.55; }
+    if (angler.x < -80) { angler.x = W + 80; angler.vx = -0.55; }
+    angler.lurePhase += 0.05;
+    angler.lureLabelTimer++;
+    if (angler.lureLabelTimer > 150) { angler.lureIdx = (angler.lureIdx+1)%angler.lureLabels.length; angler.lureLabelTimer = 0; }
+    angler.mouthOpen = Math.sin(t*0.03)*0.5+0.5;
+    // Mouse attract
+    if (mouseX > 0) {
+      const dx = mouseX - angler.x, dy = mouseY - angler.y;
+      const dist = Math.sqrt(dx*dx+dy*dy);
+      if (dist < 200) { angler.x += dx*0.001; angler.y += dy*0.001; }
+    }
+    drawAngler();
+
+    // Squid
+    squid.jetTimer++;
+    if (!squid.jetActive && squid.jetTimer > 90 + Math.random()*60) {
+      squid.jetActive = true; squid.jetStrength = 4.5 + Math.random()*2; squid.jetTimer = 0;
+    }
+    if (squid.jetActive) {
+      const ang = Math.atan2(squid.vy, squid.vx) + Math.PI;
+      squid.vx += Math.cos(ang)*0.35;
+      squid.vy += Math.sin(ang)*0.35;
+      squid.jetStrength--;
+      if (squid.jetStrength <= 0) squid.jetActive = false;
+    }
+    squid.vx *= 0.975; squid.vy *= 0.975;
+    squid.x += squid.vx; squid.y += squid.vy;
+    if (squid.x > W+60) squid.x = -60;
+    if (squid.x < -60) squid.x = W+60;
+    if (squid.y < 20) squid.vy += 0.05;
+    if (squid.y > H*0.75) squid.vy -= 0.05;
+    squid.bodyPhase += 0.04;
+    // Mouse attract
+    if (mouseX > 0) {
+      const dx = mouseX - squid.x, dy = mouseY - squid.y;
+      const dist = Math.sqrt(dx*dx+dy*dy);
+      if (dist < 180) { squid.vx += dx*0.00035; squid.vy += dy*0.00035; }
+    }
+    drawSquid();
+  }
+
+  function drawJelly(j: Jellyfish) {
+    const pulse = Math.sin(j.pulsePhase) * 0.5 + 0.5;
+    const cr = j.r * (0.88 + pulse*0.12);
+
+    ctx.save();
+    // Glow pass
+    ctx.shadowColor = '#f97316';
+    ctx.shadowBlur = 18 + pulse*14;
+    // Dome
+    const domeGrad = ctx.createRadialGradient(j.x, j.y - cr*0.2, cr*0.1, j.x, j.y, cr);
+    domeGrad.addColorStop(0, `rgba(255,180,80,${0.45+pulse*0.2})`);
+    domeGrad.addColorStop(0.6, `rgba(249,115,22,${0.25+pulse*0.1})`);
+    domeGrad.addColorStop(1, `rgba(180,60,0,0.05)`);
+    ctx.fillStyle = domeGrad;
+    ctx.beginPath();
+    ctx.arc(j.x, j.y, cr, Math.PI, 0);
+    ctx.closePath();
+    ctx.fill();
+    // Dome rim
+    ctx.strokeStyle = `rgba(249,183,70,${0.5+pulse*0.3})`;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(j.x, j.y, cr, Math.PI, 0);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Tentacles
+    for (let k = 0; k < j.tentPhases.length; k++) {
+      const tx = j.x + (k/(j.tentPhases.length-1) - 0.5) * cr * 1.6;
+      const len = 30 + Math.random()*5;
+      ctx.strokeStyle = `rgba(249,115,22,0.3)`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(tx, j.y + 2);
+      for (let s = 0; s <= 12; s++) {
+        const sy = j.y + 2 + (s/12)*len;
+        const sx = tx + Math.sin(t*0.03 + j.tentPhases[k] + s*0.5) * 5;
+        ctx.lineTo(sx, sy);
+      }
+      ctx.stroke();
+      // Glow nodes on tentacles
+      for (let n = 2; n < 12; n += 4) {
+        const ny = j.y + 2 + (n/12)*len;
+        const nx = tx + Math.sin(t*0.03 + j.tentPhases[k] + n*0.5) * 5;
+        ctx.beginPath(); ctx.arc(nx, ny, 1.5, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(255,183,70,${0.4+pulse*0.3})`;
+        ctx.fill();
+      }
+    }
+
+    // Label
+    ctx.fillStyle = 'rgba(255,183,70,0.7)';
+    ctx.font = '9px system-ui,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(j.label, j.x, j.y + cr + 12);
+    ctx.restore();
+  }
+
+  function updateSchool() {
+    const cx = school.reduce((s,f)=>s+f.x,0)/school.length;
+    const cy = school.reduce((s,f)=>s+f.y,0)/school.length;
+    // Mouse attract
+    const targetX = mouseX > 0 ? mouseX : cx;
+    const targetY = mouseY > 0 ? mouseY : cy;
+
+    for (const fish of school) {
+      // Cohesion
+      fish.vx += (cx - fish.x)*0.003;
+      fish.vy += (cy - fish.y)*0.003;
+      // Mouse
+      fish.vx += (targetX - fish.x)*0.0008;
+      fish.vy += (targetY - fish.y)*0.0008;
+      // Separation
+      for (const other of school) {
+        if (other === fish) continue;
+        const dx = fish.x - other.x, dy = fish.y - other.y;
+        const d2 = dx*dx + dy*dy;
+        if (d2 < 400 && d2 > 0) { fish.vx += dx/d2*8; fish.vy += dy/d2*8; }
+      }
+      // Speed limit
+      const spd = Math.sqrt(fish.vx*fish.vx + fish.vy*fish.vy);
+      if (spd > 2.8) { fish.vx = fish.vx/spd*2.8; fish.vy = fish.vy/spd*2.8; }
+      fish.x += fish.vx; fish.y += fish.vy;
+      // Bounds
+      if (fish.x > W - 20) fish.vx -= 0.2;
+      if (fish.x < 20) fish.vx += 0.2;
+      if (fish.y > H*0.75) fish.vy -= 0.2;
+      if (fish.y < 20) fish.vy += 0.2;
+    }
+  }
+
+  function drawSchool() {
+    ctx.save();
+    ctx.shadowColor = '#fbbf24';
+    ctx.shadowBlur = 8;
+    for (const fish of school) {
+      const ang = Math.atan2(fish.vy, fish.vx);
+      ctx.save();
+      ctx.translate(fish.x, fish.y);
+      ctx.rotate(ang);
+      ctx.fillStyle = 'rgba(255,200,80,0.85)';
+      ctx.beginPath();
+      ctx.moveTo(8, 0);
+      ctx.lineTo(-5, 3);
+      ctx.lineTo(-4, 0);
+      ctx.lineTo(-5, -3);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+    // Label
+    if (school.length > 0) {
+      const cx = school.reduce((s,f)=>s+f.x,0)/school.length;
+      const cy = school.reduce((s,f)=>s+f.y,0)/school.length;
+      ctx.fillStyle = 'rgba(255,220,130,0.6)';
+      ctx.font = '9px system-ui,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText('Tweet Thread', cx, cy + 14);
+    }
+    ctx.restore();
+  }
+
+  function drawAngler() {
+    const x = angler.x, y = angler.y;
+    const flip = angler.vx < 0 ? -1 : 1;
+    const lurePulse = Math.sin(angler.lurePhase) * 0.5 + 0.5;
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(flip, 1);
+
+    // Glow
+    ctx.shadowColor = '#f97316';
+    ctx.shadowBlur = 20 + lurePulse*15;
+
+    // Body
+    const bodyGrad = ctx.createRadialGradient(0, 0, 5, 0, 0, 38);
+    bodyGrad.addColorStop(0, 'rgba(120,50,8,0.85)');
+    bodyGrad.addColorStop(1, 'rgba(60,20,3,0.7)');
+    ctx.fillStyle = bodyGrad;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 38, 22, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // Eye
+    ctx.fillStyle = 'rgba(255,200,60,0.9)';
+    ctx.beginPath(); ctx.arc(18, -6, 5, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(20, -6, 2.5, 0, Math.PI*2); ctx.fill();
+
+    // Mouth
+    ctx.strokeStyle = 'rgba(249,115,22,0.7)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(22, 4, 14, -0.2 - angler.mouthOpen*0.5, 0.2 + angler.mouthOpen*0.5);
+    ctx.stroke();
+
+    // Teeth
+    for (let i = 0; i < 6; i++) {
+      const ang = (-0.15 + i*0.07) + angler.mouthOpen*0.1;
+      ctx.fillStyle = 'rgba(255,240,200,0.8)';
+      ctx.beginPath();
+      ctx.moveTo(22 + Math.cos(ang)*14, 4 + Math.sin(ang)*14);
+      ctx.lineTo(22 + Math.cos(ang)*18, 4 + Math.sin(ang)*18);
+      ctx.lineTo(22 + Math.cos(ang+0.04)*14, 4 + Math.sin(ang+0.04)*14);
+      ctx.closePath(); ctx.fill();
+    }
+
+    // Lure stalk
+    ctx.strokeStyle = 'rgba(200,100,20,0.6)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(8, -22);
+    ctx.quadraticCurveTo(30 + lurePulse*5, -45, 18, -55);
+    ctx.stroke();
+
+    // Lure bulb
+    const lureGrad = ctx.createRadialGradient(18, -60, 1, 18, -60, 10);
+    lureGrad.addColorStop(0, `rgba(255,220,80,${0.8+lurePulse*0.2})`);
+    lureGrad.addColorStop(0.5, `rgba(249,115,22,${0.5+lurePulse*0.3})`);
+    lureGrad.addColorStop(1, 'rgba(180,60,0,0)');
+    ctx.fillStyle = lureGrad;
+    ctx.beginPath(); ctx.arc(18, -60, 10, 0, Math.PI*2); ctx.fill();
+
+    ctx.shadowBlur = 0;
+    // Lure label
+    ctx.fillStyle = `rgba(255,220,80,${0.6+lurePulse*0.3})`;
+    ctx.font = 'bold 8px system-ui,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(angler.lureLabels[angler.lureIdx], 18, -73);
+
+    ctx.restore();
+
+    // Content label below
+    ctx.save();
+    ctx.fillStyle = 'rgba(249,180,70,0.55)';
+    ctx.font = '9px system-ui,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Viral Content', x, y + 32);
+    ctx.restore();
+  }
+
+  function drawSquid() {
+    const x = squid.x, y = squid.y;
+    const ang = Math.atan2(squid.vy, squid.vx) + Math.PI/2;
+    const bodyPulse = Math.sin(squid.bodyPhase) * 0.5 + 0.5;
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(ang);
+    ctx.shadowColor = '#3b82f6';
+    ctx.shadowBlur = 16 + bodyPulse*10;
+
+    // Mantle
+    const mGrad = ctx.createRadialGradient(0, -12, 2, 0, -8, 22);
+    mGrad.addColorStop(0, `rgba(80,120,200,${0.6+bodyPulse*0.2})`);
+    mGrad.addColorStop(0.5, `rgba(40,80,160,0.5)`);
+    mGrad.addColorStop(1, `rgba(10,30,80,0.2)`);
+    ctx.fillStyle = mGrad;
+    ctx.beginPath();
+    ctx.ellipse(0, -10, 10, 22, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // Eye spots
+    ctx.fillStyle = 'rgba(249,115,22,0.8)';
+    ctx.beginPath(); ctx.arc(-5, -8, 2.5, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(5, -8, 2.5, 0, Math.PI*2); ctx.fill();
+
+    // Bioluminescent spots on mantle
+    for (let i = 0; i < 5; i++) {
+      const sx = (Math.random()-0.5)*14;
+      const sy = -5 + (Math.random()-0.5)*18;
+      const sp = Math.sin(squid.bodyPhase*1.5 + i*1.1)*0.5+0.5;
+      ctx.fillStyle = `rgba(100,180,255,${sp*0.6})`;
+      ctx.beginPath(); ctx.arc(sx, sy, 1.5, 0, Math.PI*2); ctx.fill();
+    }
+
+    // Tentacles
+    for (let k = 0; k < 8; k++) {
+      const tAng = (k/8)*Math.PI*2;
+      const tLen = k < 2 ? 28 : 16;
+      ctx.strokeStyle = `rgba(60,120,200,0.45)`;
+      ctx.lineWidth = k < 2 ? 1.2 : 0.9;
+      ctx.beginPath();
+      ctx.moveTo(0, 10);
+      for (let s = 0; s <= 8; s++) {
+        const sr = (s/8)*tLen;
+        const wave = Math.sin(t*0.04 + squid.tentPhases[k] + s*0.6) * 4;
+        ctx.lineTo(Math.cos(tAng)*sr + wave*0.5, 10 + Math.sin(tAng)*sr + wave);
+      }
+      ctx.stroke();
+    }
+
+    // Jet stream when active
+    if (squid.jetActive) {
+      const jetGrad = ctx.createLinearGradient(0, 10, 0, 10 + 30);
+      jetGrad.addColorStop(0, 'rgba(100,160,255,0.6)');
+      jetGrad.addColorStop(1, 'rgba(100,160,255,0)');
+      ctx.strokeStyle = jetGrad;
+      ctx.lineWidth = 5;
+      ctx.globalAlpha = 0.5;
+      ctx.beginPath(); ctx.moveTo(0, 10); ctx.lineTo(0, 40); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    ctx.restore();
+
+    // Video label
+    ctx.save();
+    ctx.fillStyle = 'rgba(120,180,255,0.6)';
+    ctx.font = '9px system-ui,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Video Content', x, y + 40);
+    ctx.restore();
+  }
+
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+  });
+  canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
+
+  window.addEventListener('resize', resize);
+  resize();
+  function loop() { draw(); requestAnimationFrame(loop); }
+  loop();
+})();
+</script>
