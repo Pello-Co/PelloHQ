@@ -40,7 +40,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
             <div class="section-divider absolute top-0 left-0 right-0" aria-hidden="true"></div>
             <div class="container relative z-10">
               <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 xl:gap-20 items-center">
-                <div class="ps-info flex flex-col order-1 lg:order-2">
+                <div class="ps-info flex flex-col order-1 lg:order-2 lg:col-start-2">
                   <div class="flex items-center gap-3 mb-6">
                     <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: #8b5cf618; border: 1px solid #8b5cf628; color: #8b5cf6;" aria-hidden="true">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -87,7 +87,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
             <div class="section-divider absolute top-0 left-0 right-0" aria-hidden="true"></div>
             <div class="container relative z-10">
               <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 xl:gap-20 items-center">
-                <div class="ps-info flex flex-col order-1 lg:order-2">
+                <div class="ps-info flex flex-col order-1 lg:order-2 lg:col-start-2">
                   <div class="flex items-center gap-3 mb-6">
                     <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: #c026d318; border: 1px solid #c026d328; color: #c026d3;" aria-hidden="true">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -1785,7 +1785,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
 
   function initSocial(w: number, h: number): Record<string,unknown> {
     const GLOBE_R=Math.min(w,h)*(w<600?0.42:0.38);
-    const GLOBE_CX=w<600?w*0.50:w*0.32, GLOBE_CY=h*0.50;
+    const GLOBE_CX=w<600?w*0.50:w*0.68, GLOBE_CY=h*0.50;
     // Fibonacci sphere 800 dots
     const globeDots: SocGlobeDot[]=[];
     { const gr2=(1+Math.sqrt(5))/2;
