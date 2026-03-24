@@ -1,0 +1,616 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloBuild — Code Forge | Pello" description="PelloBuild forges raw requirements into polished, production-ready software. Watch rough ideas become finished features in real-time.">
+  <Header />
+  <main id="main-content">
+    <section class="forge-section" aria-labelledby="forge-headline">
+      <div class="forge-layout">
+        <div class="forge-text">
+          <span class="forge-badge">PelloBuild</span>
+          <h1 id="forge-headline">Raw Requirements. Polished Software.</h1>
+          <p>PelloBuild takes your roughest requirements and forges them into production-ready systems. Every feature hammered into shape with precision — built right the first time, every time.</p>
+          <ul class="forge-pills" role="list">
+            <li>Full-stack development</li>
+            <li>Data infrastructure</li>
+            <li>Internal tooling</li>
+            <li>Systems integration</li>
+          </ul>
+          <div class="forge-stats">
+            <div class="forge-stat">
+              <span class="forge-stat-num" id="forge-forged">0</span>
+              <span class="forge-stat-label">features forged</span>
+            </div>
+            <div class="forge-stat">
+              <span class="forge-stat-num" id="forge-temp">1847°</span>
+              <span class="forge-stat-label">forge temperature</span>
+            </div>
+          </div>
+        </div>
+        <div class="forge-canvas-col">
+          <canvas id="forge-canvas" aria-hidden="true"></canvas>
+          <div class="forge-tooltip" id="forge-tooltip"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .forge-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .forge-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .forge-layout { grid-template-columns: 1fr; } }
+  .forge-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .forge-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6366f1; width: fit-content; }
+  .forge-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .forge-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .forge-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .forge-pills li { padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .forge-stats { display: flex; gap: 2rem; }
+  .forge-stat { display: flex; flex-direction: column; gap: 0.25rem; }
+  .forge-stat-num { font-size: 1.75rem; font-weight: 700; color: #6366f1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1; }
+  .forge-stat-label { font-size: 0.6875rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.06em; }
+  .forge-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #forge-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: crosshair; }
+  .forge-tooltip { position: absolute; pointer-events: none; background: rgba(8,9,22,0.97); border: 1px solid rgba(99,102,241,0.4); border-radius: 8px; padding: 0.625rem 0.875rem; font-size: 0.75rem; color: #fff; max-width: 200px; opacity: 0; transition: opacity 0.15s; z-index: 20; line-height: 1.5; }
+  .forge-tooltip.visible { opacity: 1; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Requirement {
+  id: number;
+  label: string;
+  brief: string;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  phase: 'floating' | 'entering' | 'forging' | 'done';
+  alpha: number;
+  w: number;
+  h: number;
+  color: string;
+}
+
+interface Output {
+  id: number;
+  label: string;
+  spec: string;
+  x: number;
+  y: number;
+  targetX: number;
+  targetY: number;
+  alpha: number;
+  scale: number;
+  color: string;
+  age: number;
+}
+
+interface Spark {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  maxLife: number;
+  color: string;
+  size: number;
+}
+
+interface Ember {
+  x: number;
+  y: number;
+  vy: number;
+  vx: number;
+  life: number;
+  maxLife: number;
+  size: number;
+}
+
+interface HammerState {
+  x: number;
+  y: number;
+  angle: number;
+  striking: boolean;
+  strikePhase: number;
+}
+
+// ─── Data ─────────────────────────────────────────────────────────────────────
+
+const REQUIREMENTS = [
+  { label: 'User Auth',     brief: 'JWT-based auth with OAuth2 support, social logins, MFA, session management' },
+  { label: 'Dashboard',     brief: 'Real-time analytics dashboard with charts, filters, date ranges, and export' },
+  { label: 'API Layer',     brief: 'RESTful + GraphQL API with rate limiting, versioning, and OpenAPI docs' },
+  { label: 'Payments',      brief: 'Stripe integration with subscriptions, invoices, webhooks, and dunning flows' },
+  { label: 'Notifications', brief: 'Multi-channel: email, SMS, in-app, push. Template system. Preferences' },
+  { label: 'File Storage',  brief: 'S3-backed uploads with CDN, image transforms, virus scanning, quotas' },
+  { label: 'Search',        brief: 'Full-text search with Elasticsearch, facets, relevance tuning, autocomplete' },
+  { label: 'Permissions',   brief: 'Role-based access control with teams, workspaces, and audit logging' },
+  { label: 'Webhooks',      brief: 'Outbound webhook delivery with retries, signatures, and delivery logs' },
+  { label: 'Data Export',   brief: 'Scheduled CSV/JSON exports, async job queue, email delivery on completion' },
+];
+
+const OUTPUTS = [
+  { label: 'Auth System',      spec: '✓ Deployed · 98% coverage · 0 vulns',     color: '#4ade80' },
+  { label: 'Analytics UI',     spec: '✓ Shipped · Lighthouse 97 · <2s load',    color: '#34d399' },
+  { label: 'REST + GraphQL',   spec: '✓ Live · 12 endpoints · 99.9% uptime',    color: '#4ade80' },
+  { label: 'Payment Engine',   spec: '✓ PCI-compliant · £0 failed charges',     color: '#22c55e' },
+  { label: 'Notify Engine',    spec: '✓ 3 channels · 99.7% delivery rate',      color: '#4ade80' },
+  { label: 'Storage Layer',    spec: '✓ CDN-backed · <50ms globally',           color: '#34d399' },
+  { label: 'Search Engine',    spec: '✓ <10ms p99 · 1M+ indexed documents',    color: '#4ade80' },
+  { label: 'RBAC Module',      spec: '✓ Audited · SOC2 ready · Full coverage',  color: '#22c55e' },
+  { label: 'Webhook Service',  spec: '✓ 5-9s retry · HMAC verified · Logged',   color: '#4ade80' },
+  { label: 'Export Pipeline',  spec: '✓ Async · Queue-based · Rate limited',    color: '#34d399' },
+];
+
+// ─── State ────────────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('forge-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const col = canvas.parentElement as HTMLElement;
+const tooltipEl = document.getElementById('forge-tooltip') as HTMLElement;
+const forgedEl = document.getElementById('forge-forged') as HTMLElement;
+const tempEl = document.getElementById('forge-temp') as HTMLElement;
+
+let W = 0, H = 0, dpr = 1;
+let mouse = { x: -9999, y: -9999 };
+let frame = 0;
+let forgedCount = 0;
+let nextId = 0;
+
+const reqs: Requirement[] = [];
+const outputs: Output[] = [];
+const sparks: Spark[] = [];
+const embers: Ember[] = [];
+const hammer: HammerState = { x: 0, y: 0, angle: -0.4, striking: false, strikePhase: 0 };
+
+let forgeX = 0, forgeY = 0;
+let forgeCooldown = 0;
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = col.getBoundingClientRect();
+  W = rect.width;
+  H = rect.height || 560;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+  forgeX = W * 0.5;
+  forgeY = H * 0.52;
+  hammer.x = forgeX;
+  hammer.y = forgeY - 60;
+}
+
+// ─── Spawn ────────────────────────────────────────────────────────────────────
+
+function spawnRequirement(): void {
+  const data = REQUIREMENTS[nextId % REQUIREMENTS.length]!;
+  const r: Requirement = {
+    id: nextId++,
+    label: data.label,
+    brief: data.brief,
+    x: W * 0.02,
+    y: H * 0.2 + Math.random() * H * 0.6,
+    vx: 0.4 + Math.random() * 0.3,
+    vy: (Math.random() - 0.5) * 0.3,
+    phase: 'floating',
+    alpha: 0,
+    w: 110,
+    h: 40,
+    color: `hsl(${220 + Math.random() * 40}, 70%, 65%)`,
+  };
+  reqs.push(r);
+}
+
+function spawnOutput(reqId: number): void {
+  const idx = reqId % OUTPUTS.length;
+  const data = OUTPUTS[idx]!;
+  const o: Output = {
+    id: reqId,
+    label: data.label,
+    spec: data.spec,
+    x: forgeX,
+    y: forgeY,
+    targetX: W * 0.92,
+    targetY: H * 0.15 + (outputs.length % 8) * 56,
+    alpha: 0,
+    scale: 0.3,
+    color: data.color,
+    age: 0,
+  };
+  outputs.push(o);
+  if (outputs.length > 8) outputs.shift();
+}
+
+function spawnSparks(x: number, y: number, count: number): void {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 2 + Math.random() * 5;
+    sparks.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 2,
+      life: 1,
+      maxLife: 0.4 + Math.random() * 0.6,
+      color: Math.random() < 0.5 ? '#f97316' : '#fbbf24',
+      size: 1.5 + Math.random() * 2,
+    });
+  }
+}
+
+function spawnEmbers(): void {
+  if (Math.random() < 0.3) {
+    embers.push({
+      x: forgeX + (Math.random() - 0.5) * 60,
+      y: forgeY - 10,
+      vx: (Math.random() - 0.5) * 0.8,
+      vy: -0.8 - Math.random() * 1.2,
+      life: 1,
+      maxLife: 1 + Math.random() * 2,
+      size: 1 + Math.random() * 2.5,
+    });
+  }
+}
+
+// ─── Draw ─────────────────────────────────────────────────────────────────────
+
+function drawForge(): void {
+  const glow = 0.5 + 0.5 * Math.sin(frame * 0.03);
+
+  // Forge base glow
+  const grad = ctx.createRadialGradient(forgeX, forgeY + 10, 0, forgeX, forgeY + 10, 90);
+  grad.addColorStop(0, `rgba(255,100,0,${0.3 + 0.15 * glow})`);
+  grad.addColorStop(0.5, `rgba(255,60,0,${0.12 + 0.06 * glow})`);
+  grad.addColorStop(1, 'rgba(255,60,0,0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.ellipse(forgeX, forgeY + 20, 90, 50, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Molten core
+  ctx.save();
+  ctx.shadowColor = `rgba(255,120,0,${0.8 + 0.2 * glow})`;
+  ctx.shadowBlur = 20;
+
+  // Anvil shape
+  ctx.fillStyle = `rgba(40,42,60,0.95)`;
+  ctx.beginPath();
+  ctx.roundRect(forgeX - 52, forgeY - 10, 104, 28, 4);
+  ctx.fill();
+  ctx.fillRect(forgeX - 30, forgeY + 18, 60, 18);
+
+  // Molten top surface
+  const moltenGrad = ctx.createLinearGradient(forgeX - 52, forgeY - 10, forgeX + 52, forgeY + 10);
+  moltenGrad.addColorStop(0, `rgba(255,80,0,${0.4 + 0.3 * glow})`);
+  moltenGrad.addColorStop(0.5, `rgba(255,160,20,${0.7 + 0.2 * glow})`);
+  moltenGrad.addColorStop(1, `rgba(255,80,0,${0.4 + 0.3 * glow})`);
+  ctx.fillStyle = moltenGrad;
+  ctx.beginPath();
+  ctx.roundRect(forgeX - 52, forgeY - 10, 104, 8, [4, 4, 0, 0]);
+  ctx.fill();
+  ctx.restore();
+
+  // "FORGE" label
+  ctx.font = `700 8px -apple-system, sans-serif`;
+  ctx.fillStyle = 'rgba(255,160,80,0.7)';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('FORGE', forgeX, forgeY + 28);
+}
+
+function drawHammer(): void {
+  ctx.save();
+  ctx.translate(hammer.x, hammer.y);
+
+  // Animate strike
+  const strikeAngle = hammer.striking
+    ? -0.4 + Math.sin(hammer.strikePhase * Math.PI) * 1.1
+    : -0.4 + Math.sin(frame * 0.025) * 0.08;
+
+  ctx.rotate(strikeAngle);
+
+  // Handle
+  ctx.strokeStyle = 'rgba(160,140,100,0.9)';
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(0, 55);
+  ctx.stroke();
+
+  // Head
+  ctx.fillStyle = 'rgba(80,85,110,0.95)';
+  ctx.strokeStyle = 'rgba(120,125,160,0.6)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(-16, -18, 32, 22, 3);
+  ctx.fill();
+  ctx.stroke();
+
+  // Highlight
+  ctx.fillStyle = 'rgba(200,210,255,0.15)';
+  ctx.beginPath();
+  ctx.roundRect(-12, -16, 24, 6, 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawRequirement(r: Requirement): void {
+  const [ri,gi,bi] = [parseInt(r.color.slice(1,3),16)||160, parseInt(r.color.slice(3,5),16)||170, parseInt(r.color.slice(5,7),16)||220];
+  ctx.save();
+  ctx.globalAlpha = r.alpha;
+
+  // Check hover
+  const rect = canvas.getBoundingClientRect();
+  const mx = mouse.x - rect.left;
+  const my = mouse.y - rect.top;
+  const isHov = Math.abs(mx - r.x - r.w/2) < r.w/2 + 4 && Math.abs(my - r.y - r.h/2) < r.h/2 + 4;
+
+  if (isHov) {
+    tooltipEl.innerHTML = `<strong>${r.label}</strong><br><span style="color:rgba(255,255,255,0.6);font-size:0.6875rem">${r.brief}</span>`;
+    tooltipEl.style.left = (mx + 12) + 'px';
+    tooltipEl.style.top = (my - 20) + 'px';
+    tooltipEl.classList.add('visible');
+  }
+
+  ctx.beginPath();
+  ctx.roundRect(r.x, r.y, r.w, r.h, 6);
+  ctx.fillStyle = `rgba(12,14,30,0.92)`;
+  ctx.fill();
+  ctx.strokeStyle = `rgba(${ri},${gi},${bi},0.5)`;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Left accent
+  ctx.beginPath();
+  ctx.moveTo(r.x, r.y + 6);
+  ctx.lineTo(r.x, r.y + r.h - 6);
+  ctx.strokeStyle = `rgba(${ri},${gi},${bi},0.9)`;
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  ctx.font = `600 10px -apple-system, sans-serif`;
+  ctx.fillStyle = `rgba(255,255,255,0.9)`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(r.label, r.x + 12, r.y + r.h / 2 - 5);
+
+  ctx.font = `400 8px -apple-system, sans-serif`;
+  ctx.fillStyle = `rgba(${ri},${gi},${bi},0.7)`;
+  ctx.fillText('Requirement', r.x + 12, r.y + r.h / 2 + 8);
+
+  ctx.restore();
+}
+
+function drawOutput(o: Output): void {
+  const [ri,gi,bi] = [parseInt(o.color.slice(1,3),16)||74, parseInt(o.color.slice(3,5),16)||222, parseInt(o.color.slice(5,7),16)||128];
+  ctx.save();
+  ctx.globalAlpha = o.alpha;
+  ctx.translate(o.x, o.y);
+  ctx.scale(o.scale, o.scale);
+
+  const w = 160, h = 44;
+  const x = -w / 2, y = -h / 2;
+
+  // Check hover
+  const rect = canvas.getBoundingClientRect();
+  const mx = mouse.x - rect.left;
+  const my = mouse.y - rect.top;
+  const isHov = Math.abs(mx - o.x) < w/2 + 4 && Math.abs(my - o.y) < h/2 + 4 && o.scale > 0.8;
+
+  if (isHov) {
+    tooltipEl.innerHTML = `<strong>${o.label}</strong><br><span style="color:rgba(74,222,128,0.8);font-size:0.6875rem">${o.spec}</span>`;
+    tooltipEl.style.left = (mx + 12) + 'px';
+    tooltipEl.style.top = (my - 20) + 'px';
+    tooltipEl.classList.add('visible');
+  }
+
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, 6);
+  ctx.fillStyle = `rgba(5,20,12,0.95)`;
+  ctx.fill();
+  ctx.strokeStyle = `rgba(${ri},${gi},${bi},${isHov ? 0.9 : 0.45})`;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Top glow line
+  ctx.beginPath();
+  ctx.moveTo(x + 8, y);
+  ctx.lineTo(x + w - 8, y);
+  ctx.strokeStyle = `rgba(${ri},${gi},${bi},0.7)`;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.font = `600 10.5px -apple-system, sans-serif`;
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(o.label, x + 12, y + h / 2 - 5);
+
+  ctx.font = `400 8px -apple-system, sans-serif`;
+  ctx.fillStyle = `rgba(${ri},${gi},${bi},0.8)`;
+  ctx.fillText(o.spec, x + 12, y + h / 2 + 8);
+
+  ctx.restore();
+}
+
+// ─── Animation ────────────────────────────────────────────────────────────────
+
+let spawnTimer = 0;
+let hoverTooltipSet = false;
+
+function tick(): void {
+  frame++;
+  ctx.clearRect(0, 0, W, H);
+
+  hoverTooltipSet = false;
+
+  // Spawn requirement
+  spawnTimer++;
+  if (spawnTimer > 90 && reqs.filter(r => r.phase !== 'done').length < 3) {
+    spawnTimer = 0;
+    spawnRequirement();
+  }
+
+  // Background heat shimmer
+  const heatGrad = ctx.createRadialGradient(forgeX, forgeY, 0, forgeX, forgeY, H * 0.6);
+  heatGrad.addColorStop(0, 'rgba(30,15,5,0.3)');
+  heatGrad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = heatGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Draw forge first
+  drawForge();
+
+  // Flow line from left to forge
+  ctx.save();
+  const flowGrad = ctx.createLinearGradient(0, forgeY, forgeX - 52, forgeY);
+  flowGrad.addColorStop(0, 'rgba(99,102,241,0)');
+  flowGrad.addColorStop(1, 'rgba(99,102,241,0.15)');
+  ctx.strokeStyle = flowGrad;
+  ctx.lineWidth = 2;
+  ctx.setLineDash([4, 6]);
+  ctx.lineDashOffset = -frame * 0.5;
+  ctx.beginPath();
+  ctx.moveTo(0, forgeY);
+  ctx.lineTo(forgeX - 52, forgeY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // Flow line from forge to right
+  ctx.save();
+  const outGrad = ctx.createLinearGradient(forgeX + 52, forgeY, W, forgeY);
+  outGrad.addColorStop(0, 'rgba(74,222,128,0.15)');
+  outGrad.addColorStop(1, 'rgba(74,222,128,0)');
+  ctx.strokeStyle = outGrad;
+  ctx.lineWidth = 2;
+  ctx.setLineDash([4, 6]);
+  ctx.lineDashOffset = -frame * 0.5;
+  ctx.beginPath();
+  ctx.moveTo(forgeX + 52, forgeY);
+  ctx.lineTo(W, forgeY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // Update embers
+  spawnEmbers();
+  for (let i = embers.length - 1; i >= 0; i--) {
+    const e = embers[i]!;
+    e.x += e.vx;
+    e.y += e.vy;
+    e.vy *= 0.99;
+    e.life -= 1 / (e.maxLife * 60);
+    if (e.life <= 0) { embers.splice(i, 1); continue; }
+    const fade = Math.min(1, e.life * 3);
+    ctx.beginPath();
+    ctx.arc(e.x, e.y, e.size * fade, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,${120 + Math.random() * 60},0,${fade * 0.7})`;
+    ctx.fill();
+  }
+
+  // Update sparks
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const s = sparks[i]!;
+    s.x += s.vx;
+    s.y += s.vy;
+    s.vy += 0.15;
+    s.vx *= 0.97;
+    s.life -= 1 / (s.maxLife * 60);
+    if (s.life <= 0) { sparks.splice(i, 1); continue; }
+    const [sr,sg,sb] = [parseInt(s.color.slice(1,3),16), parseInt(s.color.slice(3,5),16), parseInt(s.color.slice(5,7),16)];
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.size * s.life, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${sr},${sg},${sb},${s.life})`;
+    ctx.fill();
+  }
+
+  // Update requirements
+  for (let i = reqs.length - 1; i >= 0; i--) {
+    const r = reqs[i]!;
+
+    if (r.phase === 'floating') {
+      r.alpha = Math.min(1, r.alpha + 0.04);
+      r.x += r.vx;
+      r.vy += (forgeY - r.y - r.h/2) * 0.002;
+      r.y += r.vy;
+
+      if (r.x + r.w > forgeX - 60) {
+        r.phase = 'entering';
+        r.vx = 1.5;
+      }
+    } else if (r.phase === 'entering') {
+      r.x += r.vx;
+      r.vx += 0.1;
+      r.y += (forgeY - r.y - r.h/2) * 0.1;
+
+      if (r.x + r.w / 2 >= forgeX - 10 && forgeCooldown <= 0) {
+        r.phase = 'forging';
+        hammer.striking = true;
+        hammer.strikePhase = 0;
+        forgeCooldown = 60;
+        spawnSparks(forgeX, forgeY - 5, 25);
+        forgedCount++;
+        forgedEl.textContent = String(forgedCount);
+        spawnOutput(r.id);
+        reqs.splice(i, 1);
+        continue;
+      }
+    }
+
+    drawRequirement(r);
+  }
+
+  // Forge cooldown
+  if (forgeCooldown > 0) forgeCooldown--;
+
+  // Hammer animation
+  if (hammer.striking) {
+    hammer.strikePhase = Math.min(1, hammer.strikePhase + 0.06);
+    if (hammer.strikePhase >= 1) hammer.striking = false;
+  }
+  drawHammer();
+
+  // Update outputs
+  for (const o of outputs) {
+    o.age++;
+    o.alpha = Math.min(1, o.alpha + 0.05);
+    o.scale += (1 - o.scale) * 0.1;
+    o.x += (o.targetX - o.x) * 0.08;
+    o.y += (o.targetY - o.y) * 0.08;
+    drawOutput(o);
+  }
+
+  // Temperature flicker
+  if (frame % 8 === 0) {
+    const temp = 1820 + Math.round(Math.random() * 60);
+    tempEl.textContent = temp + '°';
+  }
+
+  if (!hoverTooltipSet) tooltipEl.classList.remove('visible');
+
+  requestAnimationFrame(tick);
+}
+
+// ─── Events ───────────────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+canvas.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; tooltipEl.classList.remove('visible'); });
+
+const ro = new ResizeObserver(() => resize());
+ro.observe(col);
+resize();
+tick();
+</script>

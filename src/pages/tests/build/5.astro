@@ -1,0 +1,591 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloBuild — Circuit Board | Pello" description="PelloBuild assembles your software architecture component by component — every connection soldered with precision, every module integrated and live.">
+  <Header />
+  <main id="main-content">
+    <section class="circuit-section" aria-labelledby="circuit-headline">
+      <div class="circuit-layout">
+        <div class="circuit-text">
+          <span class="circuit-badge">PelloBuild</span>
+          <h1 id="circuit-headline">Every Component. Every Connection. Live.</h1>
+          <p>PelloBuild assembles your software architecture with the precision of a master engineer — every module tested, every integration verified, every system component connected and humming.</p>
+          <ul class="circuit-pills" role="list">
+            <li>Full-stack development</li>
+            <li>Data infrastructure</li>
+            <li>Internal tooling</li>
+            <li>Systems integration</li>
+          </ul>
+          <div class="circuit-health">
+            <div class="circuit-health-label">System Health</div>
+            <div class="circuit-health-bar">
+              <div class="circuit-health-fill" id="circuit-health-fill"></div>
+            </div>
+            <div class="circuit-health-reading">
+              <span id="circuit-voltage">0.0V</span>
+              <span id="circuit-status">INITIALISING</span>
+            </div>
+          </div>
+        </div>
+        <div class="circuit-canvas-col">
+          <canvas id="circuit-canvas" aria-hidden="true"></canvas>
+          <div class="circuit-tooltip" id="circuit-tooltip"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #030508; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .circuit-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .circuit-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .circuit-layout { grid-template-columns: 1fr; } }
+  .circuit-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .circuit-badge { display: inline-flex; align-items: center; padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6366f1; width: fit-content; }
+  .circuit-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .circuit-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .circuit-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .circuit-pills li { padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .circuit-health { display: flex; flex-direction: column; gap: 0.5rem; }
+  .circuit-health-label { font-size: 0.6875rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.08em; }
+  .circuit-health-bar { height: 4px; background: rgba(255,255,255,0.08); border-radius: 100px; overflow: hidden; }
+  .circuit-health-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #6366f1, #4ade80); border-radius: 100px; transition: width 0.8s ease; }
+  .circuit-health-reading { display: flex; justify-content: space-between; font-size: 0.8125rem; }
+  #circuit-voltage { color: #4ade80; font-weight: 600; font-variant-numeric: tabular-nums; }
+  #circuit-status { color: rgba(255,255,255,0.4); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.06em; align-self: center; }
+  .circuit-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #circuit-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: crosshair; }
+  .circuit-tooltip { position: absolute; pointer-events: none; background: rgba(5,6,15,0.97); border: 1px solid rgba(99,102,241,0.4); border-radius: 8px; padding: 0.625rem 0.875rem; font-size: 0.75rem; color: #fff; opacity: 0; transition: opacity 0.15s; z-index: 20; min-width: 150px; line-height: 1.6; }
+  .circuit-tooltip.visible { opacity: 1; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Trace {
+  x1: number; y1: number;
+  x2: number; y2: number;
+  lit: boolean;
+  litProgress: number; // 0–1
+  litDelay: number;
+  horizontal: boolean;
+  pulses: TracePulse[];
+  dataVolume?: string;
+}
+
+interface TracePulse {
+  t: number;
+  speed: number;
+  alpha: number;
+}
+
+interface Chip {
+  id: string;
+  label: string;
+  sublabel: string;
+  specs: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  color: string;
+  lit: boolean;
+  litDelay: number;
+  ledPhase: number;
+  glowAlpha: number;
+  solderProgress: number;
+  pins: Array<{ x: number; y: number; sparked: boolean }>;
+}
+
+interface SolderSpark {
+  x: number; y: number;
+  vx: number; vy: number;
+  life: number;
+  color: string;
+}
+
+interface LED {
+  x: number; y: number;
+  color: string;
+  phase: number;
+  lit: boolean;
+  litDelay: number;
+}
+
+// ─── Canvas Setup ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('circuit-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const colEl = canvas.parentElement as HTMLElement;
+const tooltipEl = document.getElementById('circuit-tooltip') as HTMLElement;
+const healthFill = document.getElementById('circuit-health-fill') as HTMLElement;
+const voltageEl = document.getElementById('circuit-voltage') as HTMLElement;
+const statusEl = document.getElementById('circuit-status') as HTMLElement;
+
+let W = 0, H = 0, dpr = 1;
+let mouse = { x: -9999, y: -9999 };
+let frame = 0;
+const solderSparks: SolderSpark[] = [];
+
+const GRID = 48; // Grid cell size
+
+let traces: Trace[] = [];
+let chips: Chip[] = [];
+let leds: LED[] = [];
+let totalComponents = 0;
+let litComponents = 0;
+
+function buildBoard(): void {
+  traces = [];
+  chips = [];
+  leds = [];
+
+  const cols = Math.floor(W / GRID);
+  const rows = Math.floor(H / GRID);
+
+  // Place chips at grid positions
+  const chipDefs = [
+    { id: 'auth',     label: 'Auth',     sublabel: 'Identity',  specs: 'JWT · OAuth2 · MFA\n6 endpoints · 8.2K LOC',  col: 1,   row: 1,   w: 3, h: 2, color: '#6366f1' },
+    { id: 'api',      label: 'Core API', sublabel: 'Business',  specs: 'REST + GraphQL\n48 endpoints · 41K LOC',      col: 4.5, row: 1,   w: 3, h: 2, color: '#818cf8' },
+    { id: 'db',       label: 'Postgres', sublabel: 'Primary DB',specs: '12 schemas · 280 tables\n99.99% uptime',       col: 1,   row: 4,   w: 3, h: 2, color: '#3b82f6' },
+    { id: 'cache',    label: 'Redis',    sublabel: 'Cache',     specs: '16 databases\n<0.5ms latency',                col: 4.5, row: 4,   w: 2, h: 2, color: '#f43f5e' },
+    { id: 'queue',    label: 'Queue',    sublabel: 'Bull/SQS',  specs: '8 workers\n10K jobs/min',                     col: 7,   row: 4,   w: 2, h: 2, color: '#fb923c' },
+    { id: 'analytics',label: 'Analytics',sublabel: 'Events',   specs: 'Clickhouse · Kafka\n50M events/day',           col: 7,   row: 1,   w: 3, h: 2, color: '#a78bfa' },
+    { id: 'cdn',      label: 'CDN',      sublabel: 'Edge',      specs: '42 PoPs · 99.99% SLA\n<15ms globally',        col: 1,   row: 7,   w: 2, h: 2, color: '#22d3ee' },
+    { id: 'payments', label: 'Payments', sublabel: 'Stripe',   specs: 'PCI-DSS Level 1\nWebhooks · Subscriptions',   col: 4,   row: 7,   w: 3, h: 2, color: '#4ade80' },
+    { id: 'email',    label: 'Email',    sublabel: 'Postmark', specs: '99.7% delivery\n<30s latency',                col: 7.5, row: 7,   w: 2, h: 2, color: '#fbbf24' },
+  ];
+
+  for (const def of chipDefs) {
+    if (def.col + def.w > cols - 0.5 || def.row + def.h > rows - 0.5) continue;
+    const x = def.col * GRID;
+    const y = def.row * GRID;
+    const w = def.w * GRID - 4;
+    const h = def.h * GRID - 4;
+    const delay = 0.5 + Math.random() * 2.5;
+
+    const pins: Array<{ x: number; y: number; sparked: boolean }> = [];
+    const pinCount = 4;
+    for (let p = 0; p < pinCount; p++) {
+      pins.push({ x: x + (w / (pinCount + 1)) * (p + 1), y: y + h, sparked: false });
+    }
+
+    chips.push({ id: def.id, label: def.label, sublabel: def.sublabel, specs: def.specs, x, y, w, h, color: def.color, lit: false, litDelay: delay, ledPhase: Math.random() * Math.PI * 2, glowAlpha: 0, solderProgress: 0, pins });
+  }
+
+  // Build traces connecting chips
+  const connections = [
+    { from: 'auth', to: 'api', vol: '14K req/s' },
+    { from: 'api', to: 'db', vol: '8K queries/s' },
+    { from: 'api', to: 'cache', vol: '80K ops/s' },
+    { from: 'api', to: 'queue', vol: '5K jobs/s' },
+    { from: 'api', to: 'analytics', vol: '50K events/s' },
+    { from: 'queue', to: 'email', vol: '1.2K emails/s' },
+    { from: 'queue', to: 'payments', vol: '400 txns/s' },
+    { from: 'db', to: 'cdn', vol: 'Assets' },
+    { from: 'auth', to: 'db', vol: '2K lookups/s' },
+  ];
+
+  let traceDelay = 1.0;
+  for (const conn of connections) {
+    const fromChip = chips.find(c => c.id === conn.from);
+    const toChip = chips.find(c => c.id === conn.to);
+    if (!fromChip || !toChip) continue;
+
+    const fx = fromChip.x + fromChip.w / 2;
+    const fy = fromChip.y + fromChip.h / 2;
+    const tx = toChip.x + toChip.w / 2;
+    const ty = toChip.y + toChip.h / 2;
+
+    // L-shaped trace: horizontal then vertical
+    traces.push({
+      x1: fx, y1: fy, x2: tx, y2: fy,
+      lit: false, litProgress: 0, litDelay: traceDelay,
+      horizontal: true, pulses: [], dataVolume: conn.vol,
+    });
+    traces.push({
+      x1: tx, y1: fy, x2: tx, y2: ty,
+      lit: false, litProgress: 0, litDelay: traceDelay + 0.2,
+      horizontal: false, pulses: [], dataVolume: conn.vol,
+    });
+    traceDelay += 0.25;
+  }
+
+  // Background traces (decorative)
+  for (let r = 1; r < rows - 1; r++) {
+    for (let c = 1; c < cols - 1; c++) {
+      if (Math.random() < 0.2) {
+        traces.push({
+          x1: c * GRID, y1: r * GRID, x2: (c + 1) * GRID, y2: r * GRID,
+          lit: false, litProgress: 0, litDelay: 3 + Math.random() * 2,
+          horizontal: true, pulses: [],
+        });
+      }
+      if (Math.random() < 0.2) {
+        traces.push({
+          x1: c * GRID, y1: r * GRID, x2: c * GRID, y2: (r + 1) * GRID,
+          lit: false, litProgress: 0, litDelay: 3 + Math.random() * 2,
+          horizontal: false, pulses: [],
+        });
+      }
+    }
+  }
+
+  // LEDs at grid intersections
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (Math.random() < 0.12) {
+        const colors = ['#6366f1', '#4ade80', '#fbbf24', '#f43f5e', '#22d3ee', '#a78bfa'];
+        leds.push({
+          x: c * GRID,
+          y: r * GRID,
+          color: colors[Math.floor(Math.random() * colors.length)]!,
+          phase: Math.random() * Math.PI * 2,
+          lit: false,
+          litDelay: 3.5 + Math.random() * 2,
+        });
+      }
+    }
+  }
+
+  totalComponents = chips.length + Math.round(traces.length * 0.3);
+}
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = colEl.getBoundingClientRect();
+  W = rect.width;
+  H = rect.height || 560;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+  buildBoard();
+}
+
+// ─── Drawing ──────────────────────────────────────────────────────────────────
+
+function drawBoardBackground(): void {
+  // PCB green substrate
+  ctx.fillStyle = 'rgba(3,8,5,1)';
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle grid
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,60,20,0.4)';
+  ctx.lineWidth = 0.5;
+  for (let x = 0; x < W; x += GRID) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = 0; y < H; y += GRID) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  // Grid dots
+  ctx.fillStyle = 'rgba(0,120,40,0.3)';
+  for (let x = 0; x < W; x += GRID) {
+    for (let y = 0; y < H; y += GRID) {
+      ctx.beginPath();
+      ctx.arc(x, y, 1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+function drawTrace(trace: Trace, t: number): void {
+  const elapsed = t - trace.litDelay;
+  if (elapsed < 0) return;
+
+  if (!trace.lit) {
+    trace.litProgress = Math.min(1, elapsed / 0.3);
+    if (trace.litProgress >= 1) trace.lit = true;
+  }
+
+  const prog = trace.litProgress;
+  const ex = trace.x1 + (trace.x2 - trace.x1) * prog;
+  const ey = trace.y1 + (trace.y2 - trace.y1) * prog;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(trace.x1, trace.y1);
+  ctx.lineTo(ex, ey);
+  ctx.strokeStyle = trace.lit ? 'rgba(99,102,241,0.6)' : 'rgba(99,102,241,0.8)';
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // Solder/spark tip
+  if (!trace.lit) {
+    const sparkGlow = ctx.createRadialGradient(ex, ey, 0, ex, ey, 8);
+    sparkGlow.addColorStop(0, 'rgba(255,200,100,0.9)');
+    sparkGlow.addColorStop(1, 'rgba(255,200,100,0)');
+    ctx.fillStyle = sparkGlow;
+    ctx.beginPath();
+    ctx.arc(ex, ey, 8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Spawn solder sparks
+    if (frame % 3 === 0) {
+      for (let i = 0; i < 2; i++) {
+        solderSparks.push({
+          x: ex, y: ey,
+          vx: (Math.random() - 0.5) * 3,
+          vy: (Math.random() - 0.5) * 3 - 1,
+          life: 1,
+          color: Math.random() < 0.5 ? '#fbbf24' : '#f97316',
+        });
+      }
+    }
+  }
+
+  // Pulses on lit traces
+  if (trace.lit) {
+    if (trace.pulses.length < 2 && Math.random() < 0.02) {
+      trace.pulses.push({ t: 0, speed: 0.005 + Math.random() * 0.008, alpha: 0.9 });
+    }
+
+    for (let i = trace.pulses.length - 1; i >= 0; i--) {
+      const p = trace.pulses[i]!;
+      p.t += p.speed;
+      if (p.t > 1) { trace.pulses.splice(i, 1); continue; }
+
+      const px = trace.x1 + (trace.x2 - trace.x1) * p.t;
+      const py = trace.y1 + (trace.y2 - trace.y1) * p.t;
+      const fade = p.t < 0.1 ? p.t / 0.1 : p.t > 0.9 ? (1 - p.t) / 0.1 : 1;
+
+      ctx.beginPath();
+      ctx.arc(px, py, 3, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(165,180,252,${fade * 0.9})`;
+      ctx.fill();
+
+      const tg = ctx.createRadialGradient(px, py, 0, px, py, 8);
+      tg.addColorStop(0, `rgba(165,180,252,${fade * 0.4})`);
+      tg.addColorStop(1, 'rgba(165,180,252,0)');
+      ctx.fillStyle = tg;
+      ctx.beginPath();
+      ctx.arc(px, py, 8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  ctx.restore();
+}
+
+function drawChip(chip: Chip, t: number): void {
+  const elapsed = t - chip.litDelay;
+  if (elapsed < 0) return;
+
+  if (!chip.lit) {
+    chip.solderProgress = Math.min(1, elapsed / 0.5);
+    if (chip.solderProgress >= 1) {
+      chip.lit = true;
+      litComponents++;
+    }
+  }
+
+  chip.glowAlpha = chip.lit ? 1 : chip.solderProgress;
+
+  const rect = canvas.getBoundingClientRect();
+  const mx = mouse.x - rect.left;
+  const my = mouse.y - rect.top;
+  const isHov = mx > chip.x - 4 && mx < chip.x + chip.w + 4 &&
+                my > chip.y - 4 && my < chip.y + chip.h + 4;
+
+  const [r,g,b] = [parseInt(chip.color.slice(1,3),16), parseInt(chip.color.slice(3,5),16), parseInt(chip.color.slice(5,7),16)];
+
+  ctx.save();
+  ctx.globalAlpha = chip.glowAlpha;
+
+  // Glow
+  if (chip.lit || chip.solderProgress > 0.5) {
+    const grd = ctx.createRadialGradient(chip.x + chip.w/2, chip.y + chip.h/2, 0, chip.x + chip.w/2, chip.y + chip.h/2, chip.w);
+    grd.addColorStop(0, `rgba(${r},${g},${b},${isHov ? 0.25 : 0.1})`);
+    grd.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.roundRect(chip.x - chip.w * 0.3, chip.y - chip.h * 0.3, chip.w * 1.6, chip.h * 1.6, 12);
+    ctx.fill();
+  }
+
+  // Chip body
+  ctx.shadowColor = isHov ? chip.color : 'transparent';
+  ctx.shadowBlur = isHov ? 16 : 0;
+  ctx.fillStyle = `rgba(10,14,12,0.97)`;
+  ctx.beginPath();
+  ctx.roundRect(chip.x, chip.y, chip.w, chip.h, 5);
+  ctx.fill();
+  ctx.strokeStyle = `rgba(${r},${g},${b},${isHov ? 0.9 : 0.45})`;
+  ctx.lineWidth = isHov ? 1.5 : 1;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // IC notch at top
+  ctx.beginPath();
+  ctx.arc(chip.x + chip.w / 2, chip.y, 5, 0, Math.PI);
+  ctx.fillStyle = `rgba(${r},${g},${b},0.3)`;
+  ctx.fill();
+
+  // Chip label
+  ctx.font = `700 ${Math.min(11, chip.w / 4)}px -apple-system, sans-serif`;
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(chip.label, chip.x + chip.w / 2, chip.y + chip.h / 2 - 6);
+
+  ctx.font = `400 8px -apple-system, sans-serif`;
+  ctx.fillStyle = `rgba(${r},${g},${b},0.8)`;
+  ctx.fillText(chip.sublabel, chip.x + chip.w / 2, chip.y + chip.h / 2 + 8);
+
+  // Status LED top-right
+  if (chip.lit) {
+    chip.ledPhase += 0.04;
+    const ledAlpha = 0.6 + 0.4 * Math.sin(chip.ledPhase);
+    ctx.beginPath();
+    ctx.arc(chip.x + chip.w - 8, chip.y + 8, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(74,222,128,${ledAlpha})`;
+    ctx.fill();
+    // LED glow
+    const lg = ctx.createRadialGradient(chip.x + chip.w - 8, chip.y + 8, 0, chip.x + chip.w - 8, chip.y + 8, 10);
+    lg.addColorStop(0, `rgba(74,222,128,${ledAlpha * 0.4})`);
+    lg.addColorStop(1, 'rgba(74,222,128,0)');
+    ctx.fillStyle = lg;
+    ctx.beginPath();
+    ctx.arc(chip.x + chip.w - 8, chip.y + 8, 10, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Pin array at bottom
+  for (const pin of chip.pins) {
+    ctx.beginPath();
+    ctx.moveTo(pin.x, pin.y);
+    ctx.lineTo(pin.x, pin.y + 6);
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.4)`;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(pin.x, pin.y + 6, 2, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${r},${g},${b},0.6)`;
+    ctx.fill();
+  }
+
+  // Solder sparks on arrival
+  if (!chip.lit && chip.solderProgress > 0.2 && frame % 4 === 0) {
+    for (let i = 0; i < 3; i++) {
+      solderSparks.push({
+        x: chip.x + Math.random() * chip.w,
+        y: chip.y + chip.h,
+        vx: (Math.random() - 0.5) * 4,
+        vy: -1 - Math.random() * 3,
+        life: 1,
+        color: '#fbbf24',
+      });
+    }
+  }
+
+  ctx.restore();
+
+  // Tooltip
+  if (isHov && chip.lit) {
+    tooltipEl.innerHTML = `<strong style="color:${chip.color}">${chip.label}</strong> <span style="color:rgba(255,255,255,0.4);font-size:0.6875rem">${chip.sublabel}</span><br><span style="color:rgba(255,255,255,0.55);font-size:0.6875rem;white-space:pre">${chip.specs}</span>`;
+    const tipX = Math.min(chip.x + chip.w + 8, W - 170);
+    tooltipEl.style.left = tipX + 'px';
+    tooltipEl.style.top = (chip.y - 8) + 'px';
+    tooltipEl.classList.add('visible');
+  }
+}
+
+function drawLEDs(t: number): void {
+  for (const led of leds) {
+    if (t < led.litDelay) continue;
+    if (!led.lit) led.lit = true;
+    led.phase += 0.05;
+    const a = 0.3 + 0.7 * Math.abs(Math.sin(led.phase));
+    const [r,g,b] = [parseInt(led.color.slice(1,3),16), parseInt(led.color.slice(3,5),16), parseInt(led.color.slice(5,7),16)];
+
+    ctx.beginPath();
+    ctx.arc(led.x, led.y, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+    ctx.fill();
+
+    if (a > 0.7) {
+      const lg = ctx.createRadialGradient(led.x, led.y, 0, led.x, led.y, 8);
+      lg.addColorStop(0, `rgba(${r},${g},${b},${a * 0.4})`);
+      lg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = lg;
+      ctx.beginPath();
+      ctx.arc(led.x, led.y, 8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+}
+
+// ─── Animation Loop ───────────────────────────────────────────────────────────
+
+let startTime = performance.now();
+
+function tick(): void {
+  frame++;
+  const t = (performance.now() - startTime) / 1000;
+
+  ctx.clearRect(0, 0, W, H);
+  drawBoardBackground();
+
+  tooltipEl.classList.remove('visible');
+
+  // Traces first
+  for (const trace of traces) drawTrace(trace, t);
+
+  // Solder sparks
+  for (let i = solderSparks.length - 1; i >= 0; i--) {
+    const s = solderSparks[i]!;
+    s.x += s.vx; s.y += s.vy; s.vy += 0.1; s.vx *= 0.97;
+    s.life -= 0.04;
+    if (s.life <= 0) { solderSparks.splice(i, 1); continue; }
+    const [sr,sg,sb] = [parseInt(s.color.slice(1,3),16), parseInt(s.color.slice(3,5),16), parseInt(s.color.slice(5,7),16)];
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, 1.5 * s.life, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${sr},${sg},${sb},${s.life})`;
+    ctx.fill();
+  }
+
+  // LEDs
+  drawLEDs(t);
+
+  // Chips on top
+  for (const chip of chips) drawChip(chip, t);
+
+  // Update health bar
+  const healthPct = Math.min(100, (litComponents / Math.max(1, chips.length)) * 100);
+  healthFill.style.width = healthPct + '%';
+
+  // Voltage reading
+  const voltage = 3.3 * (healthPct / 100);
+  voltageEl.textContent = voltage.toFixed(2) + 'V';
+
+  if (healthPct < 20) statusEl.textContent = 'INITIALISING';
+  else if (healthPct < 60) statusEl.textContent = 'SOLDERING';
+  else if (healthPct < 99) statusEl.textContent = 'INTEGRATING';
+  else statusEl.textContent = 'OPERATIONAL';
+
+  requestAnimationFrame(tick);
+}
+
+// ─── Events ───────────────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+canvas.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+
+const ro = new ResizeObserver(() => { resize(); startTime = performance.now(); litComponents = 0; });
+ro.observe(colEl);
+resize();
+tick();
+</script>

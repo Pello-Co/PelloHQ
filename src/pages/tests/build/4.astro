@@ -1,0 +1,430 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloBuild — Terminal Build | Pello" description="PelloBuild runs like a dream in production. Watch the full build pipeline execute — dependencies, code generation, tests, and deployment in real-time.">
+  <Header />
+  <main id="main-content">
+    <section class="term-section" aria-labelledby="term-headline">
+      <div class="term-layout">
+        <div class="term-text">
+          <span class="term-badge">PelloBuild</span>
+          <h1 id="term-headline">Engineering for Growth Teams.</h1>
+          <p>PelloBuild delivers production-ready software with obsessive attention to quality — 100% test coverage, zero-downtime deploys, and performance benchmarks that hold under load.</p>
+          <ul class="term-pills" role="list">
+            <li>Full-stack development</li>
+            <li>Data infrastructure</li>
+            <li>Internal tooling</li>
+            <li>Systems integration</li>
+          </ul>
+          <div class="term-metrics-row">
+            <div class="term-metric">
+              <span class="term-metric-num" id="tm-build">0.0s</span>
+              <span class="term-metric-label">Build Time</span>
+            </div>
+            <div class="term-metric">
+              <span class="term-metric-num" id="tm-cov">0%</span>
+              <span class="term-metric-label">Test Coverage</span>
+            </div>
+            <div class="term-metric">
+              <span class="term-metric-num" id="tm-lh">0</span>
+              <span class="term-metric-label">Lighthouse</span>
+            </div>
+          </div>
+        </div>
+        <div class="term-canvas-col">
+          <canvas id="term-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .term-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .term-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .term-layout { grid-template-columns: 1fr; } }
+  .term-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .term-badge { display: inline-flex; align-items: center; padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6366f1; width: fit-content; }
+  .term-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .term-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .term-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .term-pills li { padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .term-metrics-row { display: flex; gap: 1.5rem; }
+  .term-metric { display: flex; flex-direction: column; gap: 0.25rem; }
+  .term-metric-num { font-size: 1.5rem; font-weight: 700; color: #6366f1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1; }
+  .term-metric-label { font-size: 0.625rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.06em; }
+  .term-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #term-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: text; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface TermLine {
+  text: string;
+  color: string;
+  prefix?: string;
+  prefixColor?: string;
+  indent: number;
+  progress: number; // chars typed so far
+  done: boolean;
+  isBar?: boolean;
+  barValue?: number;
+  timestamp?: string;
+}
+
+interface MetricPanel {
+  label: string;
+  value: string;
+  targetValue: string;
+  color: string;
+  icon: string;
+}
+
+// ─── Build Script ─────────────────────────────────────────────────────────────
+
+type LineSpec = {
+  text: string;
+  color: string;
+  prefix?: string;
+  prefixColor?: string;
+  indent?: number;
+  delay?: number;
+  isBar?: boolean;
+  barValue?: number;
+};
+
+const BUILD_SCRIPT: LineSpec[] = [
+  { text: '$ pello build --project "growth-dashboard" --env prod', color: '#a5b4fc', prefix: '', prefixColor: '#6366f1', indent: 0 },
+  { text: '', color: '#fff', indent: 0, delay: 0.3 },
+  { text: 'Pello Build Engine v4.2.1', color: '#6366f1', indent: 0 },
+  { text: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', color: 'rgba(99,102,241,0.3)', indent: 0 },
+  { text: '', color: '#fff', indent: 0 },
+  { text: '◆  Resolving dependencies', color: '#94a3b8', indent: 0, prefix: '●', prefixColor: '#6366f1' },
+  { text: '  react@18.3.0', color: '#64748b', indent: 1 },
+  { text: '  typescript@5.4.2', color: '#64748b', indent: 1 },
+  { text: '  vite@5.2.0', color: '#64748b', indent: 1 },
+  { text: '  + 147 packages installed', color: '#4ade80', indent: 1 },
+  { text: '', color: '#fff', indent: 0 },
+  { text: '◆  Code generation', color: '#94a3b8', indent: 0, prefix: '●', prefixColor: '#6366f1' },
+  { text: '  Generating API client types...', color: '#64748b', indent: 1 },
+  { text: '  Generated 312 type definitions', color: '#4ade80', indent: 1 },
+  { text: '  Generating route handlers...', color: '#64748b', indent: 1 },
+  { text: '  Generated 48 endpoints', color: '#4ade80', indent: 1 },
+  { text: '', color: '#fff', indent: 0 },
+  { text: '◆  Running test suite', color: '#94a3b8', indent: 0, prefix: '●', prefixColor: '#6366f1' },
+  { text: '  ✓ Auth module                       (42 tests, 0.3s)', color: '#4ade80', indent: 1 },
+  { text: '  ✓ Dashboard components              (88 tests, 0.7s)', color: '#4ade80', indent: 1 },
+  { text: '  ✓ API layer                         (124 tests, 1.1s)', color: '#4ade80', indent: 1 },
+  { text: '  ✓ Database migrations               (31 tests, 0.2s)', color: '#4ade80', indent: 1 },
+  { text: '  ✓ Integration tests                 (67 tests, 2.4s)', color: '#4ade80', indent: 1 },
+  { text: '  Coverage: 98.4%  Branches: 97.1%', color: '#a78bfa', indent: 1 },
+  { text: '', color: '#fff', indent: 0 },
+  { text: '◆  Production build', color: '#94a3b8', indent: 0, prefix: '●', prefixColor: '#6366f1' },
+  { text: '  Compiling TypeScript...', color: '#64748b', indent: 1, isBar: true, barValue: 100 },
+  { text: '  Bundling assets (Vite)...', color: '#64748b', indent: 1, isBar: true, barValue: 100 },
+  { text: '  Optimising images...', color: '#64748b', indent: 1, isBar: true, barValue: 100 },
+  { text: '  dist/  4.2MB  (gzip: 1.1MB)', color: '#4ade80', indent: 1 },
+  { text: '', color: '#fff', indent: 0 },
+  { text: '◆  Deploying to production', color: '#94a3b8', indent: 0, prefix: '●', prefixColor: '#6366f1' },
+  { text: '  Pushing to registry...', color: '#64748b', indent: 1 },
+  { text: '  Running health checks...', color: '#64748b', indent: 1 },
+  { text: '  Zero-downtime swap complete', color: '#4ade80', indent: 1 },
+  { text: '', color: '#fff', indent: 0 },
+  { text: '  ✓ Build complete in 8.3s', color: '#4ade80', indent: 0, prefix: '✓', prefixColor: '#4ade80' },
+  { text: '  ✓ Deploy successful  — https://app.growth-dashboard.io', color: '#4ade80', indent: 0 },
+];
+
+// ─── Canvas Setup ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('term-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const colEl = canvas.parentElement as HTMLElement;
+const buildEl = document.getElementById('tm-build') as HTMLElement;
+const covEl = document.getElementById('tm-cov') as HTMLElement;
+const lhEl = document.getElementById('tm-lh') as HTMLElement;
+
+let W = 0, H = 0, dpr = 1;
+let mouse = { x: -9999, y: -9999 };
+let frame = 0;
+
+const lines: TermLine[] = [];
+let currentLineIdx = 0;
+let lineTimer = 0;
+let lineDelay = 0;
+const FONT_SIZE = 12;
+const LINE_HEIGHT = 18;
+const PAD_X = 20;
+const PAD_Y = 20;
+const TERM_MAX_LINES = 24;
+
+let buildTime = 0;
+let coverage = 0;
+let lighthouse = 0;
+let buildStarted = false;
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = colEl.getBoundingClientRect();
+  W = rect.width;
+  H = rect.height || 560;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+}
+
+// ─── Drawing ──────────────────────────────────────────────────────────────────
+
+function drawTerminal(): void {
+  // Terminal window chrome
+  const termX = PAD_X;
+  const termY = PAD_Y;
+  const termW = W - PAD_X * 2;
+  const termH = H - PAD_Y * 2;
+
+  // Shadow
+  ctx.save();
+  ctx.shadowColor = 'rgba(99,102,241,0.2)';
+  ctx.shadowBlur = 30;
+  ctx.fillStyle = 'rgba(8,9,20,0.97)';
+  ctx.beginPath();
+  ctx.roundRect(termX, termY, termW, termH, 10);
+  ctx.fill();
+  ctx.restore();
+
+  // Border
+  ctx.strokeStyle = 'rgba(99,102,241,0.2)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(termX, termY, termW, termH, 10);
+  ctx.stroke();
+
+  // Title bar
+  ctx.fillStyle = 'rgba(15,16,35,0.98)';
+  ctx.beginPath();
+  ctx.roundRect(termX, termY, termW, 32, [10, 10, 0, 0]);
+  ctx.fill();
+
+  ctx.strokeStyle = 'rgba(99,102,241,0.15)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(termX, termY + 32);
+  ctx.lineTo(termX + termW, termY + 32);
+  ctx.stroke();
+
+  // Traffic lights
+  const dots = [{ c: '#ff5f57' }, { c: '#ffbd2e' }, { c: '#28ca41' }];
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    ctx.arc(termX + 14 + i * 18, termY + 16, 5, 0, Math.PI * 2);
+    ctx.fillStyle = dots[i]!.c;
+    ctx.fill();
+  }
+
+  // Title
+  ctx.font = `500 11px -apple-system, sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('pello-build — zsh', termX + termW / 2, termY + 16);
+  ctx.textAlign = 'left';
+
+  // Clip content area
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(termX, termY + 32, termW, termH - 32, [0, 0, 10, 10]);
+  ctx.clip();
+
+  // Content background - subtle gradient
+  const bg = ctx.createLinearGradient(termX, termY + 32, termX, termY + termH);
+  bg.addColorStop(0, 'rgba(8,9,20,0.97)');
+  bg.addColorStop(1, 'rgba(6,7,18,0.99)');
+  ctx.fillStyle = bg;
+  ctx.fillRect(termX, termY + 32, termW, termH - 32);
+
+  // Line numbers gutter
+  ctx.fillStyle = 'rgba(255,255,255,0.03)';
+  ctx.fillRect(termX, termY + 32, 42, termH - 32);
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(termX + 42, termY + 32);
+  ctx.lineTo(termX + 42, termY + termH);
+  ctx.stroke();
+
+  // Draw lines
+  const visibleLines = lines.slice(-TERM_MAX_LINES);
+  let isHovered = false;
+  const rect = canvas.getBoundingClientRect();
+  const mx = mouse.x - rect.left;
+  const my = mouse.y - rect.top;
+
+  for (let i = 0; i < visibleLines.length; i++) {
+    const line = visibleLines[i]!;
+    const lx = termX + 50;
+    const ly = termY + 32 + PAD_Y + i * LINE_HEIGHT;
+
+    const hover = mx > termX + 42 && mx < termX + termW - 4 && my > ly - LINE_HEIGHT / 2 && my < ly + LINE_HEIGHT / 2;
+    if (hover && line.text.length > 0) {
+      ctx.fillStyle = 'rgba(99,102,241,0.08)';
+      ctx.fillRect(termX + 42, ly - LINE_HEIGHT / 2, termW - 42, LINE_HEIGHT);
+      isHovered = true;
+    }
+
+    // Line number
+    if (i > 0) {
+      ctx.font = `400 9px 'SF Mono', 'Courier New', monospace`;
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(i + 1), termX + 36, ly);
+      ctx.textAlign = 'left';
+    }
+
+    if (!line.text && !line.prefix) continue;
+
+    ctx.font = `400 ${FONT_SIZE}px 'SF Mono', 'Courier New', monospace`;
+    ctx.textBaseline = 'middle';
+
+    let drawX = lx + line.indent * 16;
+
+    // Prefix/icon
+    if (line.prefix && line.prefixColor) {
+      ctx.fillStyle = line.prefixColor;
+      ctx.fillText(line.prefix, drawX, ly);
+      drawX += ctx.measureText(line.prefix + '  ').width;
+    }
+
+    // Progress bar line
+    if (line.isBar && line.done) {
+      const barW = Math.min(200, (termW - 80));
+      const barH = 6;
+      const barX = drawX + ctx.measureText(line.text + '  ').width;
+      const barY = ly - barH / 2;
+      ctx.fillStyle = 'rgba(255,255,255,0.08)';
+      ctx.beginPath();
+      ctx.roundRect(barX, barY, barW, barH, 3);
+      ctx.fill();
+      const fill = (line.barValue || 100) / 100;
+      const barFill = ctx.createLinearGradient(barX, barY, barX + barW * fill, barY);
+      barFill.addColorStop(0, '#6366f1');
+      barFill.addColorStop(1, '#a78bfa');
+      ctx.fillStyle = barFill;
+      ctx.beginPath();
+      ctx.roundRect(barX, barY, barW * fill, barH, 3);
+      ctx.fill();
+    }
+
+    // Text
+    const displayText = line.done ? line.text : line.text.slice(0, line.progress);
+    ctx.fillStyle = line.color;
+    ctx.fillText(displayText, drawX, ly);
+
+    // Cursor blink on active line
+    if (!line.done && i === visibleLines.length - 1) {
+      const tw = ctx.measureText(displayText).width;
+      if (Math.floor(frame / 20) % 2 === 0) {
+        ctx.fillStyle = '#a5b4fc';
+        ctx.fillRect(drawX + tw + 1, ly - 7, 7, 13);
+      }
+    }
+  }
+
+  ctx.restore();
+}
+
+// ─── Typing Logic ─────────────────────────────────────────────────────────────
+
+function processLines(): void {
+  if (currentLineIdx >= BUILD_SCRIPT.length) {
+    // Restart after delay
+    if (frame % 300 === 0) {
+      lines.length = 0;
+      currentLineIdx = 0;
+      buildTime = 0;
+      coverage = 0;
+      lighthouse = 0;
+      buildStarted = false;
+    }
+    return;
+  }
+
+  lineTimer++;
+  const speedMultiplier = mouse.x > 0 ? 2.5 : 1;
+  const charsPerFrame = Math.max(1, Math.floor(speedMultiplier));
+
+  // Add new line if needed
+  if (lines.length === 0 || lines[lines.length - 1]!.done) {
+    const spec = BUILD_SCRIPT[currentLineIdx]!;
+    lines.push({
+      text: spec.text,
+      color: spec.color,
+      prefix: spec.prefix,
+      prefixColor: spec.prefixColor,
+      indent: spec.indent || 0,
+      progress: 0,
+      done: spec.text.length === 0,
+      isBar: spec.isBar,
+      barValue: spec.barValue,
+    });
+    if (spec.text.length === 0) currentLineIdx++;
+    buildStarted = true;
+    return;
+  }
+
+  const currentLine = lines[lines.length - 1]!;
+  if (!currentLine.done) {
+    const delay = lineTimer % Math.max(1, Math.round(3 / speedMultiplier));
+    if (delay === 0) {
+      currentLine.progress = Math.min(currentLine.text.length, currentLine.progress + charsPerFrame);
+    }
+    if (currentLine.progress >= currentLine.text.length) {
+      currentLine.done = true;
+      currentLineIdx++;
+      lineTimer = 0;
+
+      // Update metrics
+      if (currentLineIdx > 22 && coverage < 98.4) coverage = Math.min(98.4, coverage + 12);
+      if (currentLineIdx > 30 && lighthouse < 97) lighthouse = Math.min(97, lighthouse + 15);
+      if (currentLineIdx > 25) buildTime = Math.min(8.3, buildTime + 0.5);
+    }
+  }
+}
+
+// ─── Animation Loop ───────────────────────────────────────────────────────────
+
+function tick(): void {
+  frame++;
+  ctx.clearRect(0, 0, W, H);
+
+  processLines();
+  drawTerminal();
+
+  // Update DOM metrics
+  if (buildStarted) {
+    buildEl.textContent = buildTime.toFixed(1) + 's';
+    covEl.textContent = coverage.toFixed(1) + '%';
+    lhEl.textContent = String(Math.round(lighthouse));
+  }
+
+  requestAnimationFrame(tick);
+}
+
+// ─── Events ───────────────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+canvas.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+
+const ro = new ResizeObserver(() => resize());
+ro.observe(colEl);
+resize();
+tick();
+</script>
