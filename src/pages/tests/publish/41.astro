@@ -64,20 +64,68 @@ import Footer from '../../../components/layout/Footer.astro';
 
   // ── Input sources ──────────────────────────────────────────────────────
   const INPUTS = [
-    { label: 'Website\nScrape', color: '#6366f1', icon: 'globe' },
-    { label: 'News\nFeed',     color: '#22d3ee', icon: 'rss' },
-    { label: 'X Feed',         color: '#ffffff', icon: 'x' },
-    { label: 'Keywords',       color: '#4ade80', icon: 'search' },
+    { label: 'Website\nScrape', color: '#6366f1', icon: 'globe', feed: [
+      { tag: 'PAGE', text: '/about — "We help B2B SaaS scale revenue"' },
+      { tag: 'PAGE', text: '/pricing — 3 tiers, enterprise custom' },
+      { tag: 'BRAND', text: 'Tone: professional, data-driven' },
+      { tag: 'PRODUCT', text: '4 products detected, 12 features' },
+      { tag: 'META', text: '47 pages crawled in 3.2s' },
+    ]},
+    { label: 'News\nFeed', color: '#22d3ee', icon: 'rss', feed: [
+      { tag: 'TRENDING', text: 'OpenAI announces GPT-5 reasoning' },
+      { tag: 'BREAKING', text: 'Google rolls out AI Overviews globally' },
+      { tag: 'INDUSTRY', text: 'B2B content leads outperform paid 3x' },
+      { tag: 'EMERGING', text: 'Agentic commerce reshaping SaaS' },
+      { tag: 'FINANCE', text: 'Series B funding hits 3-year high' },
+    ]},
+    { label: 'X Feed', color: '#ffffff', icon: 'x', feed: [
+      { tag: '@rival', text: '"Just shipped AI outreach — 4x reply rates"' },
+      { tag: '#SaaS', text: 'Thread: Why PLG is dead in 2026' },
+      { tag: 'VIRAL', text: '"Our content strategy costs $0/month" — 12k likes' },
+      { tag: '@user', text: '"Anyone tried PelloPublish? Need reviews"' },
+      { tag: '#AI', text: 'AI content tools compared — 28 thread' },
+    ]},
+    { label: 'Keywords', color: '#4ade80', icon: 'search', feed: [
+      { tag: '2.4k/mo', text: '"b2b content marketing strategy"' },
+      { tag: '1.8k/mo', text: '"ai content generation tools"' },
+      { tag: '890/mo', text: '"automated social media posting"' },
+      { tag: '3.1k/mo', text: '"how to scale content production"' },
+      { tag: '720/mo', text: '"content repurposing workflow"' },
+    ]},
   ];
 
   // ── Output platforms ───────────────────────────────────────────────────
   const OUTPUTS = [
-    { label: 'Newsletter', color: '#f97316', icon: 'mail' },
-    { label: 'Instagram',  color: '#E1306C', icon: 'instagram' },
-    { label: 'TikTok',     color: '#00f2ea', icon: 'tiktok' },
-    { label: 'Twitter',    color: '#1d9bf0', icon: 'x' },
-    { label: 'LinkedIn',   color: '#0A66C2', icon: 'linkedin' },
-    { label: 'Blog',       color: '#a855f7', icon: 'blog' },
+    { label: 'Newsletter', color: '#f97316', icon: 'mail', feed: [
+      { tag: 'SUBJECT', text: '"5 AI Trends Reshaping B2B This Week"' },
+      { tag: 'OPEN RATE', text: '42.3% — sent to 8,400 subscribers' },
+      { tag: 'SECTION', text: 'News digest + product tie-in + CTA' },
+    ]},
+    { label: 'Instagram', color: '#E1306C', icon: 'instagram', feed: [
+      { tag: 'CAROUSEL', text: '"7 Signs Your Content Strategy is Broken"' },
+      { tag: 'REEL', text: '15s hook: "Stop writing content manually"' },
+      { tag: 'STORY', text: 'Poll: "How many posts/week?" — 2.1k votes' },
+    ]},
+    { label: 'TikTok', color: '#00f2ea', icon: 'tiktok', feed: [
+      { tag: 'HOOK', text: '"POV: Your competitor just posted 30x more"' },
+      { tag: 'SCRIPT', text: '45s explainer, 3-part series on AI content' },
+      { tag: 'TRENDING', text: 'Duet format — reacting to rival claims' },
+    ]},
+    { label: 'Twitter', color: '#1d9bf0', icon: 'x', feed: [
+      { tag: 'THREAD', text: '"We analysed 10k B2B posts. Here\'s what works:"' },
+      { tag: 'TWEET', text: '"Content at scale isn\'t spam. It\'s strategy." — 847 likes' },
+      { tag: 'REPLY', text: 'Engaging with industry conversation on AI' },
+    ]},
+    { label: 'LinkedIn', color: '#0A66C2', icon: 'linkedin', feed: [
+      { tag: 'ARTICLE', text: '"Why We Bet Everything on Content Automation"' },
+      { tag: 'POST', text: 'Thought leadership: "The 3-layer content stack"' },
+      { tag: 'ENGAGE', text: '2.4k impressions, 89 comments this week' },
+    ]},
+    { label: 'Blog', color: '#a855f7', icon: 'blog', feed: [
+      { tag: '2,400w', text: '"The Complete Guide to AI Content in 2026"' },
+      { tag: 'SEO', text: 'Targeting 3 keywords, 8 internal links added' },
+      { tag: 'RANK', text: 'Page 1 for "ai content generation" in 14 days' },
+    ]},
   ];
 
   // ── Draw SVG icons ─────────────────────────────────────────────────────
@@ -304,6 +352,89 @@ import Footer from '../../../components/layout/Footer.astro';
     ctx.fillText('ENGINE', x, y + 10);
   }
 
+  // ── Feed tooltip ────────────────────────────────────────────────────────
+  function drawFeedTooltip(tx: number, ty: number, feed: {tag: string; text: string}[], color: string, title: string) {
+    const TW = 240;
+    const rowH = 28;
+    const padY = 12;
+    const padX = 14;
+    const TH = padY * 2 + 24 + feed.length * rowH + 4;
+
+    // Clamp to canvas
+    tx = Math.max(8, Math.min(W - TW - 8, tx));
+    ty = Math.max(8, Math.min(H - TH - 8, ty));
+
+    // Glass background
+    ctx.save();
+    ctx.shadowColor = color + '30';
+    ctx.shadowBlur = 20;
+    ctx.beginPath();
+    ctx.roundRect(tx, ty, TW, TH, 10);
+    ctx.fillStyle = 'rgba(6,7,18,0.88)';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Tinted overlay
+    ctx.beginPath();
+    ctx.roundRect(tx, ty, TW, TH, 10);
+    ctx.fillStyle = color + '0a';
+    ctx.fill();
+
+    // Border
+    ctx.strokeStyle = color + '35';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Top accent bar
+    ctx.beginPath();
+    ctx.roundRect(tx, ty, TW, 3, [10, 10, 0, 0]);
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.7;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Title
+    ctx.font = 'bold 11px -apple-system, sans-serif';
+    ctx.fillStyle = color;
+    ctx.textAlign = 'left';
+    ctx.fillText(title.toUpperCase(), tx + padX, ty + 20);
+
+    // Separator
+    ctx.beginPath();
+    ctx.moveTo(tx + padX, ty + 28);
+    ctx.lineTo(tx + TW - padX, ty + 28);
+    ctx.strokeStyle = color + '18';
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+
+    // Feed items
+    feed.forEach((item, i) => {
+      const iy = ty + 36 + i * rowH;
+
+      // Tag badge
+      ctx.font = 'bold 8px "SF Mono", monospace, sans-serif';
+      const tagW = ctx.measureText(item.tag).width + 10;
+      ctx.beginPath();
+      ctx.roundRect(tx + padX, iy, tagW, 16, 3);
+      ctx.fillStyle = color + '18';
+      ctx.fill();
+      ctx.fillStyle = color;
+      ctx.fillText(item.tag, tx + padX + 5, iy + 11);
+
+      // Text (clipped)
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(tx + padX + tagW + 6, iy - 2, TW - padX * 2 - tagW - 6, 20);
+      ctx.clip();
+      ctx.font = '10px -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      ctx.fillText(item.text, tx + padX + tagW + 6, iy + 11);
+      ctx.restore();
+    });
+
+    ctx.restore();
+  }
+
   // ── Main render ────────────────────────────────────────────────────────
   function render(time: number) {
     requestAnimationFrame(render);
@@ -408,6 +539,18 @@ import Footer from '../../../components/layout/Footer.astro';
     for (let i = 0; i < OUTPUTS.length; i++) {
       const p = getOutputPos(i);
       drawNode(p.x, p.y, OUTPUTS[i].label, OUTPUTS[i].color, OUTPUTS[i].icon, hoveredOutput === i, 26);
+    }
+
+    // ── Tooltip popup ──────────────────────────────────────────────────
+    if (hoveredInput >= 0) {
+      const inp = INPUTS[hoveredInput];
+      const p = getInputPos(hoveredInput);
+      drawFeedTooltip(p.x + 40, p.y - 20, inp.feed, inp.color, inp.label.replace('\n', ' '));
+    }
+    if (hoveredOutput >= 0) {
+      const out = OUTPUTS[hoveredOutput];
+      const p = getOutputPos(hoveredOutput);
+      drawFeedTooltip(p.x - 260, p.y - 20, out.feed, out.color, out.label);
     }
 
     // "INPUTS" and "OUTPUTS" labels
