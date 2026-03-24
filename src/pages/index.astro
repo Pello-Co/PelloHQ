@@ -1396,7 +1396,7 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     }));
     // Legend positioned to the right of the "YOUR WEBSITE" box
     const BOX_W_INIT = 160;
-    const legX = w * 0.72 + BOX_W_INIT / 2 + 16;
+    const legX = GRID_CX + BOX_W_INIT / 2 + 16;
     const legStartY = Math.max(4, h * 0.12 - 44 - 6); // aligned with box top
     const legItems: ReachLegItem[] = [
       { label: 'Delivered', status: 'delivered', color: 'rgba(139,92,246,0.5)', x: legX, y: legStartY, w: 150, h: 22 },
@@ -1414,13 +1414,24 @@ import FinalCTA from '../components/sections/FinalCTA.astro';
     if (ty < 8) ty = sy + 14;
     if (ty + TH > H - 6) ty = sy - TH - 14;
     const pad = 12;
+    // Dynamic colour based on cell status
+    const clr = cell.status === 'replied'   ? '#4ade80'
+              : cell.status === 'opened'    ? '#a78bfa'
+              : '#8b5cf6'; // delivered
+    const clrRgb = cell.status === 'replied'   ? '74,222,128'
+                 : cell.status === 'opened'    ? '167,139,250'
+                 : '139,92,246';
     c.save();
-    c.shadowColor = 'rgba(139,92,246,0.3)'; c.shadowBlur = 20;
-    rrect(c, tx, ty, TW, TH, 9); c.fillStyle = 'rgba(6,7,18,0.88)'; c.fill();
+    // Glass background
+    c.shadowColor = `rgba(${clrRgb},0.25)`; c.shadowBlur = 20;
+    rrect(c, tx, ty, TW, TH, 9); c.fillStyle = 'rgba(6,7,18,0.75)'; c.fill();
     c.shadowBlur = 0; c.shadowColor = 'transparent';
-    rrect(c, tx, ty, TW, TH, 9); c.fillStyle = 'rgba(139,92,246,0.09)'; c.fill();
-    c.strokeStyle = 'rgba(139,92,246,0.35)'; c.lineWidth = 1; c.stroke();
-    c.globalAlpha = 0.65; rrect(c, tx, ty, TW, 3, 3); c.fillStyle = '#8b5cf6'; c.fill(); c.globalAlpha = 1;
+    // Tinted glass overlay
+    rrect(c, tx, ty, TW, TH, 9); c.fillStyle = `rgba(${clrRgb},0.07)`; c.fill();
+    // Border
+    c.strokeStyle = `rgba(${clrRgb},0.35)`; c.lineWidth = 1; c.stroke();
+    // Top accent bar — status colour
+    c.globalAlpha = 0.8; rrect(c, tx, ty, TW, 3, 3); c.fillStyle = clr; c.fill(); c.globalAlpha = 1;
     c.textAlign = 'left';
     c.font = 'bold 9px "SF Mono","Fira Code",monospace';
     c.fillStyle = 'rgba(139,92,246,0.8)';
