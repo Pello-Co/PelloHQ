@@ -1,0 +1,362 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloBuild — Space Station Construction | Pello" description="PelloBuild assembles complex systems with the precision of orbital engineering — each module purpose-built, tested in isolation, then locked into a unified platform that operates flawlessly in production.">
+  <Header />
+  <main id="main-content">
+    <section class="build-section" aria-labelledby="build-headline">
+      <div class="build-layout">
+        <div class="build-text">
+          <span class="build-badge">PelloBuild</span>
+          <h1 id="build-headline">Module by Module. Mission Ready.</h1>
+          <p>PelloBuild assembles complex systems with the precision of orbital engineering — each module purpose-built, tested in isolation, then locked into a unified platform that operates flawlessly in production.</p>
+          <ul class="build-pills" role="list">
+            <li>Full-stack development</li>
+            <li>Data infrastructure</li>
+            <li>Internal tooling</li>
+            <li>Systems integration</li>
+          </ul>
+        </div>
+        <div class="build-canvas-col">
+          <canvas id="build-canvas" aria-hidden="true"></canvas>
+          <div class="build-tooltip" id="build-tooltip" aria-hidden="true">
+            <div class="build-tooltip-name" id="build-tooltip-name"></div>
+            <div class="build-tooltip-status" id="build-tooltip-status"></div>
+            <div class="build-tooltip-mem" id="build-tooltip-mem"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .build-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .build-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .build-layout { grid-template-columns: 1fr; } }
+  .build-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .build-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6366f1; width: fit-content; }
+  .build-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .build-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .build-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .build-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .build-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #build-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: crosshair; }
+  .build-tooltip { position: absolute; background: rgba(8,10,28,0.96); border: 1px solid rgba(99,102,241,0.5); border-radius: 8px; padding: 0.625rem 0.875rem; pointer-events: none; z-index: 20; opacity: 0; transition: opacity 0.15s ease; min-width: 160px; transform: translate(-50%, -110%); }
+  .build-tooltip.visible { opacity: 1; }
+  .build-tooltip-name { font-size: 0.75rem; font-weight: 700; color: #6366f1; letter-spacing: 0.04em; margin-bottom: 0.25rem; }
+  .build-tooltip-status { font-size: 0.6875rem; color: rgba(255,255,255,0.55); margin-bottom: 0.125rem; }
+  .build-tooltip-mem { font-size: 0.6875rem; color: rgba(99,102,241,0.7); font-variant-numeric: tabular-nums; }
+</style>
+
+<script>
+interface Star { x: number; y: number; r: number; alpha: number; phase: number; speed: number; }
+interface StationModule {
+  id: string; label: string; memory: string; status: string;
+  relX: number; relY: number; w: number; h: number;
+  docked: boolean; dockProgress: number; flashTimer: number;
+  hovered: boolean; pulsePhase: number;
+  approachAngle: number; approachDist: number; dockedAt: boolean;
+}
+interface SolarPanel { moduleId: string; side: 'left' | 'right'; unfurlProgress: number; unfurling: boolean; }
+interface Astronaut { fromId: string; toId: string; t: number; speed: number; direction: 1 | -1; }
+
+const canvas = document.getElementById('build-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const col = canvas.parentElement as HTMLElement;
+const tooltip = document.getElementById('build-tooltip') as HTMLElement;
+const tooltipName = document.getElementById('build-tooltip-name') as HTMLElement;
+const tooltipStatus = document.getElementById('build-tooltip-status') as HTMLElement;
+const tooltipMem = document.getElementById('build-tooltip-mem') as HTMLElement;
+
+let W = 0, H = 0, dpr = 1, frame = 0;
+let stationAngle = 0, rotationPaused = false;
+let mouseX = -9999, mouseY = -9999;
+const ACCENT_RGB: [number,number,number] = [99, 102, 241];
+
+let stars: Star[] = [];
+let modules: StationModule[] = [];
+let solarPanels: SolarPanel[] = [];
+let astronauts: Astronaut[] = [];
+let nextDockFrame = 90;
+
+function buildStars(): void {
+  stars = [];
+  const count = Math.floor((W * H) / 2800);
+  for (let i = 0; i < count; i++) {
+    stars.push({ x: Math.random() * W, y: Math.random() * H, r: 0.4 + Math.random() * 1.2,
+      alpha: 0.3 + Math.random() * 0.7, phase: Math.random() * Math.PI * 2,
+      speed: 0.008 + Math.random() * 0.018 });
+  }
+}
+
+function drawStars(): void {
+  for (const s of stars) {
+    s.phase += s.speed;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,255,255,${s.alpha * (0.7 + 0.3 * Math.sin(s.phase))})`;
+    ctx.fill();
+  }
+}
+
+function drawEarth(): void {
+  const ex = W * 0.1, ey = H * 0.88, er = W * 0.18;
+  const halo = ctx.createRadialGradient(ex, ey, er * 0.7, ex, ey, er * 1.5);
+  halo.addColorStop(0, 'rgba(30,80,160,0.18)'); halo.addColorStop(1, 'rgba(0,20,60,0)');
+  ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(ex, ey, er * 1.5, 0, Math.PI * 2); ctx.fill();
+  const atmo = ctx.createRadialGradient(ex, ey, er * 0.9, ex, ey, er * 1.08);
+  atmo.addColorStop(0, 'rgba(60,140,220,0.3)'); atmo.addColorStop(1, 'rgba(60,140,220,0)');
+  ctx.fillStyle = atmo; ctx.beginPath(); ctx.arc(ex, ey, er * 1.08, 0, Math.PI * 2); ctx.fill();
+  const body = ctx.createRadialGradient(ex - er * 0.3, ey - er * 0.3, 0, ex, ey, er);
+  body.addColorStop(0, '#1a5fa8'); body.addColorStop(0.7, '#0d3a6e'); body.addColorStop(1, '#081e40');
+  ctx.fillStyle = body; ctx.beginPath(); ctx.arc(ex, ey, er, 0, Math.PI * 2); ctx.fill();
+  ctx.save(); ctx.beginPath(); ctx.arc(ex, ey, er, 0, Math.PI * 2); ctx.clip();
+  ctx.fillStyle = 'rgba(30,120,60,0.5)';
+  [[ex - er * 0.15, ey - er * 0.2, er * 0.28, er * 0.2, 0.4],
+   [ex + er * 0.2,  ey - er * 0.05, er * 0.18, er * 0.26, -0.3],
+   [ex - er * 0.3,  ey + er * 0.25, er * 0.22, er * 0.14, 0.6]].forEach(([lx, ly, rx, ry, rot]) => {
+    ctx.beginPath(); ctx.ellipse(lx!, ly!, rx!, ry!, rot!, 0, Math.PI * 2); ctx.fill();
+  });
+  ctx.restore();
+}
+
+function rr(x: number, y: number, w: number, h: number, r: number): void {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath();
+}
+
+function initStation(): void {
+  const defs: Omit<StationModule,'hovered'|'pulsePhase'|'docked'|'dockProgress'|'flashTimer'|'dockedAt'>[] = [
+    { id:'core',      label:'Core Hull',     memory:'512 MB',  status:'ONLINE', relX:0,    relY:0,   w:80, h:32, approachAngle:0,               approachDist:0 },
+    { id:'api',       label:'API Module',    memory:'256 MB',  status:'DOCKED', relX:-110, relY:0,   w:60, h:28, approachAngle:Math.PI,          approachDist:340 },
+    { id:'auth',      label:'Auth Ring',     memory:'128 MB',  status:'DOCKED', relX:110,  relY:0,   w:60, h:28, approachAngle:0,               approachDist:340 },
+    { id:'db',        label:'Database Silo', memory:'1.2 GB',  status:'DOCKED', relX:0,    relY:-60, w:32, h:50, approachAngle:-Math.PI/2,      approachDist:320 },
+    { id:'analytics', label:'Analytics Bay', memory:'384 MB',  status:'DOCKED', relX:-60,  relY:50,  w:52, h:26, approachAngle:Math.PI*0.75,    approachDist:300 },
+    { id:'dashboard', label:'Dashboard Pod', memory:'192 MB',  status:'DOCKED', relX:60,   relY:50,  w:52, h:26, approachAngle:Math.PI*0.25,    approachDist:300 },
+  ];
+  modules = defs.map((d, i) => ({ ...d, hovered:false, pulsePhase:Math.random()*Math.PI*2,
+    docked: i === 0, dockProgress: i === 0 ? 1 : 0, flashTimer:0, dockedAt: i === 0 }));
+  solarPanels = [
+    { moduleId:'core', side:'left',  unfurlProgress:1, unfurling:false },
+    { moduleId:'core', side:'right', unfurlProgress:1, unfurling:false },
+  ];
+  astronauts = [
+    { fromId:'core', toId:'api',       t:0.2, speed:0.0018, direction:1 },
+    { fromId:'auth', toId:'dashboard', t:0.6, speed:0.0022, direction:-1 },
+  ];
+  nextDockFrame = 90;
+}
+
+function worldPos(mod: StationModule, cx: number, cy: number): {x:number;y:number} {
+  const cos = Math.cos(stationAngle), sin = Math.sin(stationAngle);
+  return { x: cx + mod.relX * cos - mod.relY * sin, y: cy + mod.relX * sin + mod.relY * cos };
+}
+
+function approachPos(mod: StationModule, cx: number, cy: number): {x:number;y:number} {
+  const t = mod.dockProgress;
+  const wp = worldPos(mod, cx, cy);
+  const a = stationAngle + mod.approachAngle;
+  const sx = cx + Math.cos(a) * mod.approachDist, sy = cy + Math.sin(a) * mod.approachDist;
+  return { x: sx + (wp.x - sx) * t, y: sy + (wp.y - sy) * t };
+}
+
+function drawSolarPanel(wx: number, wy: number, side: 'left'|'right', unfurl: number, angle: number): void {
+  const len = 55 * unfurl, thick = 8, dir = side === 'left' ? -1 : 1;
+  ctx.save(); ctx.translate(wx, wy); ctx.rotate(angle);
+  ctx.strokeStyle = 'rgba(180,190,220,0.5)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(dir * len, 0); ctx.stroke();
+  const segs = 3, segLen = (len - 6) / segs;
+  for (let i = 0; i < segs; i++) {
+    const sx = dir * (8 + i * (segLen + 2));
+    ctx.fillStyle = 'rgba(30,60,160,0.75)'; ctx.strokeStyle = 'rgba(99,102,241,0.4)'; ctx.lineWidth = 0.8;
+    rr(sx - (dir < 0 ? segLen : 0), -thick/2, segLen, thick, 1); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = 'rgba(99,102,241,0.2)'; ctx.lineWidth = 0.5;
+    for (let c = 1; c < 4; c++) {
+      const lx = sx - (dir < 0 ? segLen : 0) + segLen * (c / 4);
+      ctx.beginPath(); ctx.moveTo(lx, -thick/2); ctx.lineTo(lx, thick/2); ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+function drawDish(cx: number, cy: number, baseAngle: number, spin: number): void {
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(baseAngle); ctx.translate(0, -28);
+  ctx.strokeStyle = 'rgba(200,210,230,0.5)'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-16); ctx.stroke();
+  ctx.save(); ctx.translate(0,-16); ctx.rotate(spin);
+  ctx.strokeStyle = 'rgba(99,102,241,0.7)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(0,0,9,Math.PI*1.1,Math.PI*1.9); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-7,-6);
+  ctx.strokeStyle = 'rgba(99,102,241,0.4)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.restore(); ctx.restore();
+}
+
+function drawStation(cx: number, cy: number): void {
+  // tethers
+  for (const ast of astronauts) {
+    const fm = modules.find(m => m.id === ast.fromId), tm = modules.find(m => m.id === ast.toId);
+    if (!fm?.dockedAt || !tm?.dockedAt) continue;
+    const fp = worldPos(fm, cx, cy), tp = worldPos(tm, cx, cy);
+    ctx.beginPath(); ctx.moveTo(fp.x, fp.y); ctx.lineTo(tp.x, tp.y);
+    ctx.strokeStyle = 'rgba(99,102,241,0.2)'; ctx.lineWidth = 0.8;
+    ctx.setLineDash([3,5]); ctx.stroke(); ctx.setLineDash([]);
+  }
+  // solar panels
+  for (const sp of solarPanels) {
+    const mod = modules.find(m => m.id === sp.moduleId);
+    if (!mod?.dockedAt) continue;
+    const mp = worldPos(mod, cx, cy);
+    drawSolarPanel(mp.x, mp.y, sp.side, sp.unfurlProgress, stationAngle);
+  }
+  // modules
+  for (const mod of modules) {
+    if (!mod.docked && mod.dockProgress === 0) continue;
+    const pos = mod.dockedAt ? worldPos(mod, cx, cy) : approachPos(mod, cx, cy);
+    mod.pulsePhase += 0.04;
+    const pulse = mod.hovered ? 0.5 + 0.5 * Math.sin(mod.pulsePhase * 2) : 0;
+    ctx.save(); ctx.translate(pos.x, pos.y); ctx.rotate(stationAngle);
+    const hw = mod.w / 2, hh = mod.h / 2;
+    // hover glow
+    if (mod.hovered) {
+      const [r,g,b] = ACCENT_RGB;
+      const grd = ctx.createRadialGradient(0,0,0,0,0,mod.w*0.9);
+      grd.addColorStop(0,`rgba(${r},${g},${b},${0.25*pulse})`); grd.addColorStop(1,`rgba(${r},${g},${b},0)`);
+      ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(0,0,mod.w*0.9,0,Math.PI*2); ctx.fill();
+    }
+    // dock flash
+    const flashA = mod.flashTimer > 0 ? (mod.flashTimer / 20) * 0.7 : 0;
+    if (flashA > 0) {
+      const [r,g,b] = ACCENT_RGB;
+      ctx.fillStyle = `rgba(${r},${g},${b},${flashA})`;
+      rr(-hw-6,-hh-6,mod.w+12,mod.h+12,6); ctx.fill();
+    }
+    const alpha = mod.dockedAt ? 1 : 0.5 + mod.dockProgress * 0.5;
+    rr(-hw,-hh,mod.w,mod.h,4);
+    ctx.fillStyle = `rgba(14,18,48,${alpha})`; ctx.fill();
+    ctx.strokeStyle = mod.hovered ? 'rgba(99,102,241,0.9)' : `rgba(120,130,200,${0.45*alpha})`;
+    ctx.lineWidth = mod.hovered ? 1.5 : 1; ctx.stroke();
+    // edge highlight
+    ctx.beginPath(); ctx.moveTo(-hw,-hh+2); ctx.lineTo(hw,-hh+2);
+    ctx.strokeStyle = `rgba(180,190,255,${0.15*alpha})`; ctx.lineWidth = 1; ctx.stroke();
+    // label
+    if (mod.dockedAt) {
+      ctx.font = '600 7px -apple-system,sans-serif';
+      ctx.fillStyle = mod.hovered ? 'rgba(99,102,241,0.95)' : `rgba(160,170,220,${0.7*alpha})`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(mod.label.toUpperCase(), 0, 0);
+      ctx.beginPath(); ctx.arc(hw-6,-hh+5,2.5,0,Math.PI*2);
+      ctx.fillStyle = mod.hovered ? '#6366f1' : 'rgba(80,200,120,0.8)'; ctx.fill();
+    }
+    ctx.restore();
+    if (mod.flashTimer > 0) mod.flashTimer--;
+  }
+  // dish
+  const core = modules.find(m => m.id === 'core')!;
+  const cp = worldPos(core, cx, cy);
+  drawDish(cp.x, cp.y, stationAngle, frame * 0.012);
+  // astronauts
+  for (const ast of astronauts) {
+    const fm = modules.find(m => m.id === ast.fromId), tm = modules.find(m => m.id === ast.toId);
+    if (!fm?.dockedAt || !tm?.dockedAt) continue;
+    const fp = worldPos(fm, cx, cy), tp = worldPos(tm, cx, cy);
+    ast.t += ast.speed * ast.direction;
+    if (ast.t >= 1) { ast.t = 1; ast.direction = -1; }
+    if (ast.t <= 0) { ast.t = 0; ast.direction = 1; }
+    const ax = fp.x + (tp.x - fp.x) * ast.t, ay = fp.y + (tp.y - fp.y) * ast.t;
+    ctx.save(); ctx.translate(ax, ay);
+    ctx.beginPath(); ctx.arc(0,0,4,0,Math.PI*2); ctx.fillStyle='rgba(220,230,255,0.9)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(0,-0.5,2,0,Math.PI*2); ctx.fillStyle='rgba(99,102,241,0.8)'; ctx.fill();
+    ctx.restore();
+  }
+}
+
+function updateDocking(): void {
+  for (const mod of modules) {
+    if (mod.id === 'core' || mod.dockedAt) continue;
+    if (!mod.docked && frame >= nextDockFrame) {
+      mod.docked = true;
+      nextDockFrame = frame + 200 + Math.floor(Math.random() * 120);
+      break;
+    }
+    if (mod.docked) {
+      mod.dockProgress = Math.min(1, mod.dockProgress + 0.008);
+      if (mod.dockProgress >= 1) {
+        mod.dockedAt = true; mod.flashTimer = 20;
+        solarPanels.push(
+          { moduleId: mod.id, side:'left',  unfurlProgress:0, unfurling:true },
+          { moduleId: mod.id, side:'right', unfurlProgress:0, unfurling:true },
+        );
+        break;
+      }
+    }
+  }
+  for (const sp of solarPanels) {
+    if (sp.unfurling) { sp.unfurlProgress = Math.min(1, sp.unfurlProgress + 0.012); if (sp.unfurlProgress >= 1) sp.unfurling = false; }
+  }
+}
+
+function hitTest(mx: number, my: number, cx: number, cy: number): StationModule | null {
+  let best: StationModule | null = null, bestDist = 48;
+  for (const mod of modules) {
+    if (!mod.dockedAt) continue;
+    const p = worldPos(mod, cx, cy);
+    const d = Math.hypot(mx - p.x, my - p.y);
+    if (d < bestDist) { bestDist = d; best = mod; }
+  }
+  return best;
+}
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = col.getBoundingClientRect();
+  W = rect.width; H = rect.height;
+  canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+  buildStars(); initStation();
+}
+
+function tick(): void {
+  frame++;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#060712'; ctx.fillRect(0, 0, W, H);
+  drawStars();
+  drawEarth();
+  const cx = W * 0.52, cy = H * 0.44;
+  if (!rotationPaused) stationAngle += 0.0015;
+  updateDocking();
+  const rect = canvas.getBoundingClientRect();
+  const lx = mouseX - rect.left, ly = mouseY - rect.top;
+  const hit = hitTest(lx, ly, cx, cy);
+  for (const mod of modules) mod.hovered = mod === hit;
+  rotationPaused = hit !== null;
+  if (hit) {
+    const p = worldPos(hit, cx, cy);
+    tooltipName.textContent = hit.label;
+    tooltipStatus.textContent = `Status: ${hit.status}`;
+    tooltipMem.textContent = `Memory: ${hit.memory}`;
+    tooltip.style.left = `${p.x}px`; tooltip.style.top = `${p.y - hit.h / 2 - 8}px`;
+    tooltip.classList.add('visible');
+  } else {
+    tooltip.classList.remove('visible');
+  }
+  drawStation(cx, cy);
+  requestAnimationFrame(tick);
+}
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => { mouseX = e.clientX; mouseY = e.clientY; });
+canvas.addEventListener('mouseleave', () => { mouseX = -9999; mouseY = -9999; tooltip.classList.remove('visible'); });
+new ResizeObserver(() => { resize(); }).observe(col);
+resize();
+tick();
+</script>

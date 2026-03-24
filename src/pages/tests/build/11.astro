@@ -1,0 +1,436 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloBuild — The Loom | Pello" description="PelloBuild constructs bespoke software with the precision of a master craftsman — every thread of infrastructure, every feature woven together into a seamless, high-performance system built exactly to your specification.">
+  <Header />
+  <main id="main-content">
+    <section class="build-section" aria-labelledby="build-headline">
+      <div class="build-layout">
+        <div class="build-text">
+          <span class="build-badge">PelloBuild</span>
+          <h1 id="build-headline">Woven From the Ground Up</h1>
+          <p>PelloBuild constructs bespoke software with the precision of a master craftsman — every thread of infrastructure, every feature woven together into a seamless, high-performance system built exactly to your specification.</p>
+          <ul class="build-pills" role="list">
+            <li>Full-stack development</li>
+            <li>Data infrastructure</li>
+            <li>Internal tooling</li>
+            <li>Systems integration</li>
+          </ul>
+        </div>
+        <div class="build-canvas-col">
+          <canvas id="build-canvas" aria-hidden="true"></canvas>
+          <div class="build-tooltip" id="build-tooltip" aria-hidden="true">
+            <span class="build-tooltip-name" id="build-tooltip-name"></span>
+            <span class="build-tooltip-status" id="build-tooltip-status"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .build-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .build-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .build-layout { grid-template-columns: 1fr; } }
+  .build-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .build-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6366f1; width: fit-content; }
+  .build-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .build-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .build-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .build-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .build-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #build-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: crosshair; }
+  .build-tooltip { position: absolute; top: 0; left: 0; pointer-events: none; background: rgba(8,8,20,0.95); border: 1px solid rgba(99,102,241,0.5); border-radius: 8px; padding: 0.5rem 0.75rem; display: flex; flex-direction: column; gap: 0.2rem; opacity: 0; transform: translateY(-4px); transition: opacity 0.15s ease, transform 0.15s ease; z-index: 20; min-width: 140px; }
+  .build-tooltip.visible { opacity: 1; transform: translateY(0); }
+  .build-tooltip-name { font-size: 0.8125rem; font-weight: 600; color: #fff; letter-spacing: -0.01em; }
+  .build-tooltip-status { font-size: 0.6875rem; color: rgba(99,102,241,0.8); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; }
+</style>
+
+<script>
+// ── Types ─────────────────────────────────────────────────────────────────────
+// Warp threads run vertically (infrastructure columns, indigo palette)
+// Weft threads run horizontally (feature layers, multi-color palette)
+// The shuttle races left↔right laying each weft row as it crosses warp threads
+// Component nodes mark named intersections; loose threads mark work-in-progress
+
+interface WarpThread {
+  x: number;
+  colorIndex: number;
+}
+
+interface WeftThread {
+  y: number;
+  progress: number;   // 0..1 how far across the loom this row has been woven
+  speed: number;
+  colorIndex: number;
+  label: string;
+  complete: boolean;
+  alpha: number;
+}
+
+interface ComponentNode {
+  warpIdx: number;
+  weftIdx: number;
+  x: number;
+  y: number;
+  name: string;
+  status: string;
+  woven: boolean;     // becomes true once the shuttle passes this intersection
+  pulsePhase: number;
+}
+
+interface Shuttle {
+  x: number;
+  y: number;
+  direction: number;   // 1 = rightward, -1 = leftward
+  currentWeftIdx: number;
+  speed: number;
+  trailX: number[];
+}
+
+interface LooseThread {
+  x: number;
+  y: number;
+  length: number;
+  wavePhase: number;
+  colorIndex: number;
+  side: 'left' | 'right' | 'top' | 'bottom';
+}
+
+interface HoverTarget {
+  type: 'node' | 'fabric';
+  node?: ComponentNode;
+  weftLabel?: string;
+  x: number;
+  y: number;
+}
+
+// ── Data ──────────────────────────────────────────────────────────────────────
+
+// Indigo family — warp threads represent core infrastructure
+const WARP_COLORS = ['#6366f1','#818cf8','#4f46e5','#6366f1','#a5b4fc','#6366f1','#818cf8','#4f46e5'];
+
+// Multi-color family — each weft row represents one feature/service layer
+const WEFT_COLORS = ['#22d3ee','#34d399','#f59e0b','#f472b6','#a78bfa','#38bdf8','#fb923c'];
+
+const COMPONENT_NAMES = [
+  'AuthGate','DataBus','APIRouter','EventQueue','CacheLayer','UIRenderer',
+  'RuleEngine','JobScheduler','LogPipeline','MetricsHub','SearchIndex',
+  'FileStore','EmailGateway','WebSocket','CDNEdge','DBMigrator','TypeSafe',
+  'LoadBalancer','RateLimiter','HealthCheck',
+];
+
+const WEFT_LABELS = [
+  'Authentication','Data Layer','API Gateway','UI Components',
+  'Business Logic','Integrations','Storage Layer','Event System','Monitoring','Deployment',
+];
+
+const STATUSES = [
+  'Production','Deployed','Tested','Integrated','Live','In Development','Building...','Staging',
+];
+
+// ── Canvas / state ────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('build-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const col = canvas.parentElement as HTMLElement;
+const tooltipEl = document.getElementById('build-tooltip') as HTMLElement;
+const tooltipName = document.getElementById('build-tooltip-name') as HTMLElement;
+const tooltipStatus = document.getElementById('build-tooltip-status') as HTMLElement;
+
+let W = 0, H = 0, dpr = 1;
+let mouse = { x: -9999, y: -9999 };
+let frame = 0;
+let hoverTarget: HoverTarget | null = null;
+
+let warpThreads: WarpThread[] = [];
+let weftThreads: WeftThread[] = [];
+let nodes: ComponentNode[] = [];
+let looseThreads: LooseThread[] = [];
+let shuttle: Shuttle = { x: 0, y: 0, direction: 1, currentWeftIdx: 0, speed: 2.6, trailX: [] };
+
+let loomX = 0, loomY = 0, loomW = 0, loomH = 0;
+let warpCount = 8, warpSpacing = 0, maxWeftRows = 0, weftSpacing = 0, activeWeftRow = 0;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function hexRgb(hex: string): [number, number, number] {
+  return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
+}
+function warpRgba(i: number, a = 1): string {
+  const [r,g,b] = hexRgb(WARP_COLORS[i % WARP_COLORS.length]!); return `rgba(${r},${g},${b},${a})`;
+}
+function weftRgba(i: number, a = 1): string {
+  const [r,g,b] = hexRgb(WEFT_COLORS[i % WEFT_COLORS.length]!); return `rgba(${r},${g},${b},${a})`;
+}
+
+// ── Build / resize ────────────────────────────────────────────────────────────
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = col.getBoundingClientRect();
+  W = rect.width; H = rect.height;
+  canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+  buildLoom();
+}
+
+function buildLoom(): void {
+  const pad = 48;
+  loomX = pad; loomY = pad + 20; loomW = W - pad * 2; loomH = H - pad * 2 - 40;
+  warpCount = Math.max(6, Math.min(10, Math.floor(loomW / 56)));
+  warpSpacing = loomW / (warpCount - 1);
+  maxWeftRows = Math.max(6, Math.min(10, Math.floor(loomH / 52)));
+  weftSpacing = loomH / (maxWeftRows - 1);
+
+  warpThreads = Array.from({ length: warpCount }, (_, i) => ({ x: loomX + i * warpSpacing, colorIndex: i }));
+
+  const oldWefts = weftThreads.slice();
+  weftThreads = Array.from({ length: maxWeftRows }, (_, r) => {
+    const old = oldWefts[r];
+    return { y: loomY + r * weftSpacing, progress: old ? old.progress : (r < 3 ? 1 : 0), speed: 0.0025, colorIndex: r % WEFT_COLORS.length, label: WEFT_LABELS[r % WEFT_LABELS.length]!, complete: old ? old.complete : r < 3, alpha: old ? old.alpha : (r < 3 ? 1 : 0) };
+  });
+
+  nodes = [];
+  let ni = 0;
+  for (let r = 0; r < maxWeftRows; r++) {
+    for (let c = 0; c < warpCount; c++) {
+      if ((r + c) % 3 === 0 || (r * c) % 5 === 0) {
+        nodes.push({ warpIdx: c, weftIdx: r, x: warpThreads[c]!.x, y: weftThreads[r]!.y, name: COMPONENT_NAMES[ni % COMPONENT_NAMES.length]!, status: STATUSES[ni % STATUSES.length]!, woven: weftThreads[r]!.complete, pulsePhase: Math.random() * Math.PI * 2 });
+        ni++;
+      }
+    }
+  }
+
+  looseThreads = Array.from({ length: 14 }, (_, i) => {
+    const side = (['left','right','top','bottom'] as const)[i % 4]!;
+    let tx = 0, ty = 0;
+    if (side === 'left')   { tx = loomX - 4;           ty = loomY + Math.random() * loomH; }
+    if (side === 'right')  { tx = loomX + loomW + 4;   ty = loomY + Math.random() * loomH; }
+    if (side === 'top')    { tx = loomX + Math.random() * loomW; ty = loomY - 4; }
+    if (side === 'bottom') { tx = loomX + Math.random() * loomW; ty = loomY + loomH + 4; }
+    return { x: tx, y: ty, length: 18 + Math.random() * 22, wavePhase: Math.random() * Math.PI * 2, colorIndex: Math.floor(Math.random() * WEFT_COLORS.length), side };
+  });
+
+  shuttle.x = loomX; shuttle.y = weftThreads[0]!.y; shuttle.direction = 1; shuttle.trailX = []; activeWeftRow = 0;
+}
+
+// ── Draw functions ────────────────────────────────────────────────────────────
+
+function drawWarpThreads(): void {
+  for (let i = 0; i < warpThreads.length; i++) {
+    const wt = warpThreads[i]!;
+    const pulse = Math.sin(frame * 0.018 + i * 0.7) * 0.08 + 0.18;
+    const grad = ctx.createLinearGradient(wt.x, loomY - 16, wt.x, loomY + loomH + 16);
+    grad.addColorStop(0, warpRgba(wt.colorIndex, 0));
+    grad.addColorStop(0.15, warpRgba(wt.colorIndex, pulse + 0.12));
+    grad.addColorStop(0.85, warpRgba(wt.colorIndex, pulse + 0.12));
+    grad.addColorStop(1, warpRgba(wt.colorIndex, 0));
+    ctx.beginPath(); ctx.moveTo(wt.x, loomY - 16); ctx.lineTo(wt.x, loomY + loomH + 16);
+    ctx.strokeStyle = grad; ctx.lineWidth = 1.5; ctx.stroke();
+  }
+}
+
+function drawWeftThreads(): void {
+  for (let r = 0; r < weftThreads.length; r++) {
+    const wt = weftThreads[r]!;
+    if (wt.alpha < 0.01) continue;
+    const endX = loomX + wt.progress * loomW;
+    const grad = ctx.createLinearGradient(loomX, wt.y, endX, wt.y);
+    grad.addColorStop(0, weftRgba(wt.colorIndex, 0));
+    grad.addColorStop(0.05, weftRgba(wt.colorIndex, wt.alpha * 0.8));
+    grad.addColorStop(0.95, weftRgba(wt.colorIndex, wt.alpha * 0.8));
+    grad.addColorStop(1, weftRgba(wt.colorIndex, 0.05));
+    ctx.beginPath(); ctx.moveTo(loomX, wt.y); ctx.lineTo(endX, wt.y);
+    ctx.strokeStyle = grad; ctx.lineWidth = 1.8; ctx.stroke();
+    if (wt.complete && wt.alpha > 0.5) {
+      ctx.font = '500 9px -apple-system, sans-serif';
+      ctx.fillStyle = weftRgba(wt.colorIndex, wt.alpha * 0.55);
+      ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+      ctx.fillText(wt.label, loomX + loomW + 10, wt.y);
+    }
+  }
+}
+
+function drawFabric(): void {
+  for (let r = 0; r < weftThreads.length - 1; r++) {
+    const wt = weftThreads[r]!;
+    if (!wt.complete || wt.alpha < 0.05) continue;
+    const nwt = weftThreads[r + 1]!;
+    if (!nwt.complete) continue;
+    for (let c = 0; c < warpThreads.length - 1; c++) {
+      const wx = warpThreads[c]!.x, nx = warpThreads[c + 1]!.x;
+      const cellW = nx - wx, cellH = nwt.y - wt.y;
+      const isOver = (r + c) % 2 === 0;
+      const [cr, cg, cb] = hexRgb(isOver ? WARP_COLORS[c % WARP_COLORS.length]! : WEFT_COLORS[r % WEFT_COLORS.length]!);
+      ctx.fillStyle = `rgba(${cr},${cg},${cb},${wt.alpha * 0.055})`;
+      ctx.fillRect(wx, wt.y, cellW, cellH);
+      if (cellW > 12 && cellH > 12) {
+        const sdx = Math.max(2, Math.floor(cellW / 8)), sdy = Math.max(2, Math.floor(cellH / 8));
+        ctx.strokeStyle = `rgba(${cr},${cg},${cb},${wt.alpha * 0.07})`; ctx.lineWidth = 0.5;
+        for (let sx = 1; sx < sdx; sx++) { const xp = wx + (sx/sdx)*cellW; ctx.beginPath(); ctx.moveTo(xp,wt.y); ctx.lineTo(xp,wt.y+cellH); ctx.stroke(); }
+        for (let sy = 1; sy < sdy; sy++) { const yp = wt.y + (sy/sdy)*cellH; ctx.beginPath(); ctx.moveTo(wx,yp); ctx.lineTo(wx+cellW,yp); ctx.stroke(); }
+      }
+    }
+  }
+}
+
+function drawNodes(): void {
+  for (const node of nodes) {
+    if (!node.woven) continue;
+    const wt = weftThreads[node.weftIdx];
+    if (!wt || wt.alpha < 0.1) continue;
+    const pulse = Math.sin(frame * 0.04 + node.pulsePhase) * 0.3 + 0.7;
+    const isHov = hoverTarget?.type === 'node' && hoverTarget.node === node;
+    const radius = isHov ? 6 : 4;
+    const [wr,wg,wb] = hexRgb(WARP_COLORS[node.warpIdx % WARP_COLORS.length]!);
+    const [fr,fg,fb] = hexRgb(WEFT_COLORS[node.weftIdx % WEFT_COLORS.length]!);
+    if (isHov || pulse > 0.85) {
+      const glow = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, radius * 3.5);
+      glow.addColorStop(0, `rgba(${wr},${wg},${wb},${pulse*0.35})`); glow.addColorStop(1, `rgba(${wr},${wg},${wb},0)`);
+      ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(node.x, node.y, radius * 3.5, 0, Math.PI * 2); ctx.fill();
+    }
+    const dotG = ctx.createRadialGradient(node.x - radius*0.3, node.y - radius*0.3, 0, node.x, node.y, radius);
+    dotG.addColorStop(0, `rgba(${fr},${fg},${fb},${pulse})`); dotG.addColorStop(1, `rgba(${wr},${wg},${wb},${pulse*0.8})`);
+    ctx.fillStyle = dotG; ctx.beginPath(); ctx.arc(node.x, node.y, radius, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = `rgba(255,255,255,${isHov ? 0.8 : pulse*0.3})`; ctx.lineWidth = isHov ? 1.5 : 0.8;
+    ctx.beginPath(); ctx.arc(node.x, node.y, radius + 2, 0, Math.PI * 2); ctx.stroke();
+  }
+}
+
+function drawShuttle(): void {
+  const sw = 22, sh = 8;
+  if (shuttle.trailX.length > 1) {
+    for (let i = 0; i < shuttle.trailX.length - 1; i++) {
+      ctx.strokeStyle = `rgba(255,220,80,${(i / shuttle.trailX.length) * 0.35})`;
+      ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(shuttle.trailX[i]!, shuttle.y); ctx.lineTo(shuttle.trailX[i+1]!, shuttle.y); ctx.stroke();
+    }
+  }
+  ctx.save(); ctx.translate(shuttle.x, shuttle.y);
+  const bg = ctx.createLinearGradient(-sw/2, -sh/2, sw/2, sh/2);
+  bg.addColorStop(0, 'rgba(255,235,120,0.95)'); bg.addColorStop(1, 'rgba(245,158,11,0.9)');
+  ctx.fillStyle = bg;
+  ctx.beginPath(); ctx.moveTo(-sw/2,0); ctx.quadraticCurveTo(-sw/2+2,-sh/2,0,-sh/2); ctx.quadraticCurveTo(sw/2-2,-sh/2,sw/2,0); ctx.quadraticCurveTo(sw/2-2,sh/2,0,sh/2); ctx.quadraticCurveTo(-sw/2+2,sh/2,-sw/2,0); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+function drawLooseThreads(): void {
+  for (const lt of looseThreads) {
+    const wave = Math.sin(frame * 0.022 + lt.wavePhase) * 4;
+    const wx = (lt.side === 'left' ? -lt.length : lt.side === 'right' ? lt.length : 0) + wave;
+    const wy = (lt.side === 'top' ? -lt.length : lt.side === 'bottom' ? lt.length : 0) + wave;
+    const [r,g,b] = hexRgb(WEFT_COLORS[lt.colorIndex]!);
+    const grad = ctx.createLinearGradient(lt.x, lt.y, lt.x + wx, lt.y + wy);
+    grad.addColorStop(0, `rgba(${r},${g},${b},0.6)`); grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    ctx.strokeStyle = grad; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(lt.x, lt.y); ctx.quadraticCurveTo(lt.x + wx*0.5 + wave, lt.y + wy*0.5 - wave, lt.x + wx, lt.y + wy); ctx.stroke();
+  }
+}
+
+function drawBackground(): void {
+  const cx = loomX + loomW / 2, cy = loomY + loomH / 2;
+  const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(loomW, loomH) * 0.65);
+  glow.addColorStop(0, 'rgba(99,102,241,0.07)'); glow.addColorStop(1, 'rgba(99,102,241,0)');
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+}
+
+// ── Shuttle update ────────────────────────────────────────────────────────────
+
+function updateShuttle(): void {
+  const localMouseY = mouse.y - col.getBoundingClientRect().top;
+  if (localMouseY > 0 && localMouseY < H) {
+    const rawRow = Math.round((localMouseY - loomY) / weftSpacing);
+    activeWeftRow = Math.max(0, Math.min(maxWeftRows - 1, rawRow));
+  }
+  const targetY = weftThreads[activeWeftRow]?.y ?? shuttle.y;
+  shuttle.y += (targetY - shuttle.y) * 0.08;
+  shuttle.x += shuttle.direction * shuttle.speed;
+  shuttle.trailX.push(shuttle.x);
+  if (shuttle.trailX.length > 28) shuttle.trailX.shift();
+
+  const wt = weftThreads[activeWeftRow];
+  if (!wt) return;
+  const shuttleProgress = (shuttle.x - loomX) / loomW;
+  if (shuttle.direction > 0 && shuttleProgress > wt.progress) {
+    wt.progress = Math.min(1, shuttleProgress);
+    wt.alpha = Math.min(1, wt.alpha + 0.015);
+  }
+  if (shuttle.x >= loomX + loomW) {
+    shuttle.direction = -1; shuttle.trailX = [];
+    if (wt.progress >= 0.98) {
+      wt.complete = true;
+      for (const node of nodes) { if (node.weftIdx === activeWeftRow) node.woven = true; }
+      for (let i = 0; i < weftThreads.length; i++) { if (!weftThreads[i]!.complete) { activeWeftRow = i; break; } }
+    }
+  }
+  if (shuttle.x <= loomX) { shuttle.direction = 1; shuttle.trailX = []; }
+}
+
+// ── Hover / tooltip ───────────────────────────────────────────────────────────
+
+function updateHover(): void {
+  const rect = col.getBoundingClientRect();
+  const mx = mouse.x - rect.left, my = mouse.y - rect.top;
+  hoverTarget = null;
+  for (const node of nodes) {
+    if (!node.woven) continue;
+    const wt = weftThreads[node.weftIdx];
+    if (!wt?.complete) continue;
+    if (Math.hypot(mx - node.x, my - node.y) < 12) {
+      hoverTarget = { type: 'node', node, x: node.x, y: node.y }; break;
+    }
+  }
+  if (!hoverTarget) {
+    for (let r = 0; r < weftThreads.length; r++) {
+      const wt = weftThreads[r]!;
+      if (!wt.complete) continue;
+      if (my >= wt.y - weftSpacing/2 && my < wt.y + weftSpacing/2 && mx >= loomX && mx <= loomX + loomW) {
+        hoverTarget = { type: 'fabric', weftLabel: wt.label, x: mx, y: my }; break;
+      }
+    }
+  }
+  if (hoverTarget) {
+    tooltipName.textContent = hoverTarget.type === 'node' ? hoverTarget.node!.name : hoverTarget.weftLabel!;
+    tooltipStatus.textContent = hoverTarget.type === 'node' ? hoverTarget.node!.status : 'Feature Layer — Complete';
+    tooltipEl.style.left = Math.min(hoverTarget.x + 14, W - 160) + 'px';
+    tooltipEl.style.top = Math.max(hoverTarget.y - 48, 4) + 'px';
+    tooltipEl.classList.add('visible'); tooltipEl.setAttribute('aria-hidden', 'false');
+  } else {
+    tooltipEl.classList.remove('visible'); tooltipEl.setAttribute('aria-hidden', 'true');
+  }
+}
+
+// ── Render loop ───────────────────────────────────────────────────────────────
+
+function tick(): void {
+  frame++;
+  ctx.clearRect(0, 0, W, H);
+  drawBackground();
+  drawFabric();
+  drawWarpThreads();
+  drawWeftThreads();
+  drawLooseThreads();
+  drawNodes();
+  drawShuttle();
+  updateShuttle();
+  updateHover();
+  requestAnimationFrame(tick);
+}
+
+// ── Events & init ─────────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+canvas.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+const ro = new ResizeObserver(() => { resize(); });
+ro.observe(col);
+resize();
+tick();
+</script>

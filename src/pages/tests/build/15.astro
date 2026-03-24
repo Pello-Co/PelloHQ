@@ -1,0 +1,420 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloBuild — Every Cog. Perfect Precision. | Pello" description="PelloBuild engineers systems where every component is purpose-made and perfectly calibrated — services that mesh together seamlessly, running at exactly the right speed, without grinding or slipping.">
+  <Header />
+  <main id="main-content">
+    <section class="build-section" aria-labelledby="build-headline">
+      <div class="build-layout">
+        <div class="build-text">
+          <span class="build-badge">PelloBuild</span>
+          <h1 id="build-headline">Every Cog. Perfect Precision.</h1>
+          <p>PelloBuild engineers systems where every component is purpose-made and perfectly calibrated — services that mesh together seamlessly, running at exactly the right speed, without grinding or slipping.</p>
+          <ul class="build-pills" role="list">
+            <li>Full-stack development</li>
+            <li>Data infrastructure</li>
+            <li>Internal tooling</li>
+            <li>Systems integration</li>
+          </ul>
+        </div>
+        <div class="build-canvas-col">
+          <canvas id="build-canvas" aria-hidden="true"></canvas>
+          <div id="build-tooltip" class="build-tooltip" aria-hidden="true"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .build-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .build-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .build-layout { grid-template-columns: 1fr; } }
+  .build-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .build-badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.375rem 0.875rem;
+    background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3);
+    border-radius: 100px; font-size: 0.75rem; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase; color: #6366f1; width: fit-content;
+  }
+  .build-text h1 { font-size: clamp(2rem,4vw,3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .build-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .build-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .build-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .build-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #build-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: crosshair; }
+  .build-tooltip {
+    position: fixed; pointer-events: none; z-index: 100;
+    background: rgba(6,7,18,0.95); border: 1px solid rgba(99,102,241,0.45);
+    border-radius: 10px; padding: 0.625rem 0.875rem;
+    font-size: 0.8125rem; color: #fff; line-height: 1.5; min-width: 160px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(99,102,241,0.1);
+    opacity: 0; transition: opacity 0.15s ease; white-space: nowrap;
+  }
+  .build-tooltip.visible { opacity: 1; }
+  .build-tooltip strong { display: block; font-size: 0.875rem; font-weight: 600; color: #a5b4fc; margin-bottom: 0.25rem; }
+  .build-tooltip span { display: block; font-size: 0.75rem; color: rgba(255,255,255,0.5); }
+  .build-tooltip .tooltip-rpm { color: rgba(99,102,241,0.9); font-weight: 500; font-size: 0.8125rem; }
+  .build-tooltip .tooltip-status {
+    display: inline-flex; align-items: center; gap: 0.25rem;
+    color: rgba(134,239,172,0.85); font-size: 0.75rem; margin-top: 0.125rem;
+  }
+  .build-tooltip .tooltip-status::before {
+    content: ''; display: inline-block; width: 6px; height: 6px;
+    background: #86efac; border-radius: 50%;
+  }
+</style>
+
+<script>
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+interface GearDef {
+  id: string;
+  label: string;
+  radius: number;
+  teeth: number;
+  cx: number;
+  cy: number;
+  rpm: number;
+  isCore: boolean;
+  gold: boolean;
+}
+
+interface Gear {
+  def: GearDef;
+  angle: number;
+  angularVel: number;
+  glowTarget: number;
+  glow: number;
+  speedMult: number;
+}
+
+interface Spring {
+  cx: number; cy: number; radius: number;
+  turns: number; angle: number; angularVel: number;
+}
+
+interface TooltipState { gear: Gear | null; }
+
+// ─── Data ─────────────────────────────────────────────────────────────────────
+// Core gear (index 0) is the driver. Satellites placed at tangent distance R_core+R_sat.
+// Rotation direction: core CW (+), all meshed satellites CCW (−).
+// Angular velocity ratio: ω_sat = ω_core × (R_core / R_sat)
+
+const GEAR_DEFS: GearDef[] = [
+  { id: 'core',  label: 'Core Engine',  radius: 90, teeth: 36, cx: 0.5, cy: 0.48, rpm:  8, isCore: true,  gold: true  },
+  { id: 'auth',  label: 'Auth Service', radius: 46, teeth: 18, cx: 0,   cy: 0,    rpm: 16, isCore: false, gold: false },
+  { id: 'api',   label: 'API Gateway',  radius: 56, teeth: 22, cx: 0,   cy: 0,    rpm: 13, isCore: false, gold: false },
+  { id: 'data',  label: 'Data Pipeline',radius: 40, teeth: 16, cx: 0,   cy: 0,    rpm: 18, isCore: false, gold: false },
+  { id: 'cache', label: 'Cache Layer',  radius: 32, teeth: 13, cx: 0,   cy: 0,    rpm: 22, isCore: false, gold: false },
+  { id: 'rate',  label: 'Rate Limiter', radius: 36, teeth: 14, cx: 0,   cy: 0,    rpm: 20, isCore: false, gold: true  },
+  { id: 'jobs',  label: 'Job Queue',    radius: 50, teeth: 20, cx: 0,   cy: 0,    rpm: 14, isCore: false, gold: false },
+];
+
+// Placement angles around core for each satellite (radians)
+const SATELLITE_ANGLES: number[] = [
+  -Math.PI / 3,
+   Math.PI / 8,
+   Math.PI * 0.65,
+   Math.PI * 1.1,
+  -Math.PI * 0.7,
+  -Math.PI * 0.08,
+];
+
+// ─── Canvas / State ──────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('build-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const col = canvas.parentElement as HTMLElement;
+const tooltipEl = document.getElementById('build-tooltip') as HTMLElement;
+
+let W = 0, H = 0, dpr = 1;
+let mouseX = -9999, mouseY = -9999;
+let canvasRect = canvas.getBoundingClientRect();
+let globalSpeed = 1.0, globalSpeedTarget = 1.0;
+
+const gears: Gear[] = [];
+const spring: Spring = { cx: 0, cy: 0, radius: 0, turns: 4, angle: 0, angularVel: 0.012 };
+const tooltip: TooltipState = { gear: null };
+
+// ─── Layout ──────────────────────────────────────────────────────────────────
+
+function computeLayout(): void {
+  const coreR = GEAR_DEFS[0]!.radius;
+  const coreCX = W * 0.5;
+  const coreCY = H * 0.48;
+  for (let i = 1; i < GEAR_DEFS.length; i++) {
+    const def = GEAR_DEFS[i]!;
+    const a = SATELLITE_ANGLES[i - 1]!;
+    const dist = coreR + def.radius + 2;
+    def.cx = coreCX + Math.cos(a) * dist;
+    def.cy = coreCY + Math.sin(a) * dist;
+  }
+  spring.cx = W * 0.1;
+  spring.cy = H * 0.82;
+  spring.radius = Math.min(W, H) * 0.07;
+}
+
+function buildGears(): void {
+  gears.length = 0;
+  const coreR = GEAR_DEFS[0]!.radius;
+  const coreBaseVel = (2 * Math.PI * GEAR_DEFS[0]!.rpm) / (60 * 60);
+  for (let i = 0; i < GEAR_DEFS.length; i++) {
+    const def = GEAR_DEFS[i]!;
+    const angularVel = i === 0
+      ? coreBaseVel
+      : -coreBaseVel * (coreR / def.radius);
+    gears.push({ def, angle: Math.random() * Math.PI * 2, angularVel, glowTarget: 0, glow: 0, speedMult: 1 });
+  }
+}
+
+// ─── Drawing ─────────────────────────────────────────────────────────────────
+
+function drawGear(gear: Gear): void {
+  const { def, angle, glow } = gear;
+  const { cx, cy, radius: R, teeth, isCore, gold } = def;
+  const toothH = R * 0.17;
+  const toothW = (2 * Math.PI * R) / (teeth * 2.6);
+  const innerR = R - toothH;
+  const hubR = R * 0.22;
+  const accentRgb = gold ? '240,180,41' : '99,102,241';
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(angle);
+
+  // Outer glow
+  if (glow > 0.01) {
+    const gg = ctx.createRadialGradient(0, 0, R * 0.5, 0, 0, R * 1.6);
+    gg.addColorStop(0, `rgba(99,102,241,${glow * 0.25})`);
+    gg.addColorStop(1, 'rgba(99,102,241,0)');
+    ctx.beginPath(); ctx.arc(0, 0, R * 1.6, 0, Math.PI * 2);
+    ctx.fillStyle = gg; ctx.fill();
+  }
+
+  // Body fill
+  const bg = ctx.createRadialGradient(0, 0, 0, 0, 0, R);
+  if (isCore) {
+    bg.addColorStop(0, 'rgba(99,102,241,0.32)');
+    bg.addColorStop(0.6, 'rgba(99,102,241,0.14)');
+    bg.addColorStop(1, 'rgba(99,102,241,0.06)');
+  } else {
+    bg.addColorStop(0, 'rgba(30,32,62,0.95)');
+    bg.addColorStop(1, 'rgba(14,16,36,0.95)');
+  }
+  ctx.beginPath(); ctx.arc(0, 0, innerR, 0, Math.PI * 2);
+  ctx.fillStyle = bg; ctx.fill();
+
+  // Teeth (sawtooth profile)
+  ctx.beginPath();
+  for (let t = 0; t < teeth; t++) {
+    const ba = (t / teeth) * Math.PI * 2;
+    const hw = toothW / R;
+    ctx.lineTo(Math.cos(ba - hw) * innerR,            Math.sin(ba - hw) * innerR);
+    ctx.lineTo(Math.cos(ba - hw * 0.5) * (R + toothH * 0.2), Math.sin(ba - hw * 0.5) * (R + toothH * 0.2));
+    ctx.lineTo(Math.cos(ba) * (R + toothH),           Math.sin(ba) * (R + toothH));
+    ctx.lineTo(Math.cos(ba + hw * 0.5) * (R + toothH * 0.2), Math.sin(ba + hw * 0.5) * (R + toothH * 0.2));
+    ctx.lineTo(Math.cos(ba + hw) * innerR,            Math.sin(ba + hw) * innerR);
+  }
+  ctx.closePath();
+  ctx.fillStyle = isCore ? `rgba(99,102,241,${0.12 + glow * 0.15})` : `rgba(22,24,48,${0.85 + glow * 0.1})`;
+  ctx.fill();
+  ctx.strokeStyle = `rgba(${accentRgb},${0.55 + glow * 0.45})`;
+  ctx.lineWidth = isCore ? 1.5 : 1;
+  ctx.stroke();
+
+  // Inner ring
+  ctx.beginPath(); ctx.arc(0, 0, innerR * 0.75, 0, Math.PI * 2);
+  ctx.strokeStyle = `rgba(${accentRgb},${0.2 + glow * 0.3})`; ctx.lineWidth = 0.75; ctx.stroke();
+
+  // Spokes
+  const spokeCount = isCore ? 6 : 4;
+  for (let s = 0; s < spokeCount; s++) {
+    const sa = (s / spokeCount) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(sa) * hubR * 1.1, Math.sin(sa) * hubR * 1.1);
+    ctx.lineTo(Math.cos(sa) * innerR * 0.74, Math.sin(sa) * innerR * 0.74);
+    ctx.strokeStyle = `rgba(${accentRgb},${0.3 + glow * 0.4})`;
+    ctx.lineWidth = isCore ? 1.5 : 0.75; ctx.stroke();
+  }
+
+  // Hub
+  ctx.beginPath(); ctx.arc(0, 0, hubR, 0, Math.PI * 2);
+  const hg = ctx.createRadialGradient(0, 0, 0, 0, 0, hubR);
+  hg.addColorStop(0, `rgba(${accentRgb},${0.5 + glow * 0.5})`);
+  hg.addColorStop(1, `rgba(${accentRgb},${0.1 + glow * 0.2})`);
+  ctx.fillStyle = hg; ctx.fill();
+  ctx.strokeStyle = `rgba(${accentRgb},${0.7 + glow * 0.3})`; ctx.lineWidth = 1; ctx.stroke();
+
+  // Center dot
+  ctx.beginPath(); ctx.arc(0, 0, hubR * 0.25, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(255,255,255,${0.6 + glow * 0.4})`; ctx.fill();
+
+  ctx.restore();
+
+  // Label (not rotated)
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const la = 0.55 + glow * 0.45;
+  if (isCore) {
+    ctx.font = `600 11px -apple-system, sans-serif`;
+    const lines = def.label.split(' ');
+    lines.forEach((ln, l) => {
+      ctx.fillStyle = `rgba(165,180,252,${la})`;
+      ctx.fillText(ln, 0, (l - (lines.length - 1) / 2) * 14);
+    });
+  } else {
+    ctx.font = `500 9px -apple-system, sans-serif`;
+    ctx.fillStyle = `rgba(200,204,255,${la})`;
+    ctx.fillText(def.label, 0, 0);
+  }
+  ctx.restore();
+}
+
+function drawSpring(): void {
+  const { cx, cy, radius, turns, angle } = spring;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.beginPath(); ctx.arc(0, 0, radius * 1.35, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(99,102,241,0.12)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.beginPath();
+  const steps = turns * 80;
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const a = angle + t * turns * Math.PI * 2;
+    const r = radius * 0.15 + radius * 0.85 * t;
+    if (i === 0) ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+    else ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+  }
+  ctx.strokeStyle = 'rgba(240,180,41,0.55)'; ctx.lineWidth = 1.2; ctx.stroke();
+  ctx.beginPath(); ctx.arc(0, 0, radius * 0.14, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(240,180,41,0.6)'; ctx.fill();
+  ctx.font = '500 8px -apple-system, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillStyle = 'rgba(240,180,41,0.5)';
+  ctx.fillText('Energy Store', 0, radius * 1.4);
+  ctx.restore();
+}
+
+function drawConnectionLines(): void {
+  if (!gears.length) return;
+  const core = gears[0]!;
+  for (let i = 1; i < gears.length; i++) {
+    const g = gears[i]!;
+    ctx.beginPath();
+    ctx.moveTo(core.def.cx, core.def.cy);
+    ctx.lineTo(g.def.cx, g.def.cy);
+    ctx.strokeStyle = `rgba(99,102,241,${0.06 + Math.max(core.glow, g.glow) * 0.1})`;
+    ctx.lineWidth = 0.5; ctx.stroke();
+  }
+}
+
+// ─── Hit Test & Tooltip ───────────────────────────────────────────────────────
+
+function getHoveredGear(mx: number, my: number): Gear | null {
+  let best: Gear | null = null, bestDist = Infinity;
+  for (const gear of gears) {
+    const dist = Math.hypot(mx - gear.def.cx, my - gear.def.cy);
+    if (dist < gear.def.radius * 1.2 && dist < bestDist) { bestDist = dist; best = gear; }
+  }
+  return best;
+}
+
+function updateTooltip(gear: Gear | null, sx: number, sy: number): void {
+  if (!gear) { tooltipEl.classList.remove('visible'); tooltip.gear = null; return; }
+  tooltip.gear = gear;
+  const rpm = Math.round(gear.def.rpm * globalSpeed * 10) / 10;
+  tooltipEl.innerHTML = `<strong>${gear.def.label}</strong><span class="tooltip-rpm">${rpm} RPM</span><span class="tooltip-status">Running</span>`;
+  const ttW = tooltipEl.offsetWidth || 170, ttH = tooltipEl.offsetHeight || 80, pad = 14;
+  let tx = sx + pad, ty = sy - ttH / 2;
+  if (tx + ttW + pad > window.innerWidth) tx = sx - ttW - pad;
+  ty = Math.max(pad, Math.min(ty, window.innerHeight - ttH - pad));
+  tooltipEl.style.left = tx + 'px';
+  tooltipEl.style.top = ty + 'px';
+  tooltipEl.classList.add('visible');
+}
+
+// ─── Resize ───────────────────────────────────────────────────────────────────
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = col.getBoundingClientRect();
+  W = rect.width; H = rect.height;
+  canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+  canvasRect = canvas.getBoundingClientRect();
+  computeLayout();
+  buildGears();
+}
+
+// ─── Animation Loop ───────────────────────────────────────────────────────────
+
+function tick(): void {
+  ctx.clearRect(0, 0, W, H);
+
+  // Vignette
+  const vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.1, W / 2, H / 2, H * 0.9);
+  vg.addColorStop(0, 'rgba(6,7,18,0)'); vg.addColorStop(1, 'rgba(6,7,18,0.6)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+
+  // Mouse Y → global speed (top = fast, bottom = slow)
+  const inCanvas = mouseX > canvasRect.left && mouseX < canvasRect.right
+                && mouseY > canvasRect.top  && mouseY < canvasRect.bottom;
+  if (inCanvas) {
+    const relY = Math.max(0, Math.min(1, (mouseY - canvasRect.top) / H));
+    globalSpeedTarget = 0.3 + (1 - relY) * 2.2;
+  } else {
+    globalSpeedTarget = 1.0;
+  }
+  globalSpeed += (globalSpeedTarget - globalSpeed) * 0.04;
+
+  const mx = mouseX - canvasRect.left;
+  const my = mouseY - canvasRect.top;
+  const hovered = getHoveredGear(mx, my);
+
+  for (const gear of gears) {
+    const isHov = gear === hovered;
+    gear.glowTarget = isHov ? 1 : 0;
+    gear.glow += (gear.glowTarget - gear.glow) * 0.1;
+    gear.angle += gear.angularVel * globalSpeed * (isHov ? 0.4 : 1.0);
+  }
+
+  spring.angle += spring.angularVel * globalSpeed;
+
+  drawConnectionLines();
+  drawSpring();
+  for (let i = gears.length - 1; i >= 0; i--) {
+    if (!gears[i]!.def.isCore) drawGear(gears[i]!);
+  }
+  if (gears[0]) drawGear(gears[0]);
+
+  updateTooltip(hovered, mouseX, mouseY);
+  requestAnimationFrame(tick);
+}
+
+// ─── Events ───────────────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => {
+  mouseX = e.clientX; mouseY = e.clientY;
+  canvasRect = canvas.getBoundingClientRect();
+});
+canvas.addEventListener('mouseleave', () => {
+  mouseX = -9999; mouseY = -9999;
+  tooltipEl.classList.remove('visible');
+});
+new ResizeObserver(() => resize()).observe(col);
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+resize();
+tick();
+</script>
