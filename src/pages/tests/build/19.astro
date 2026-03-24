@@ -1,0 +1,442 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloBuild — The Vault | Pello" description="PelloBuild secures your digital assets behind enterprise-grade engineering. Watch as each security layer clears, the vault opens, and your production application is delivered.">
+  <Header />
+  <main id="main-content">
+    <section class="build-section" aria-labelledby="build-headline">
+      <div class="build-layout">
+        <div class="build-text">
+          <span class="build-badge">PelloBuild</span>
+          <h1 id="build-headline">Your IP, Secured and Shipped.</h1>
+          <p>PelloBuild treats your codebase like a vault — every layer encrypted, every asset catalogued, every deployment authenticated. Production access granted only when everything checks out.</p>
+          <ul class="build-pills" role="list">
+            <li>Full-stack development</li>
+            <li>Data infrastructure</li>
+            <li>Internal tooling</li>
+            <li>Systems integration</li>
+          </ul>
+        </div>
+        <div class="build-canvas-col">
+          <canvas id="vault-canvas" aria-hidden="true"></canvas>
+          <div class="build-tooltip" id="vault-tooltip"></div>
+          <div class="vault-status" id="vault-status" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .build-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .build-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .build-layout { grid-template-columns: 1fr; } }
+  .build-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .build-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6366f1; width: fit-content; }
+  .build-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .build-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .build-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .build-pills li { padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .build-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #vault-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: crosshair; }
+  .build-tooltip { position: absolute; background: rgba(8,10,20,0.95); border: 1px solid rgba(99,102,241,0.4); border-radius: 8px; padding: 0.6rem 0.9rem; font-size: 0.75rem; color: #fff; pointer-events: none; display: none; z-index: 20; max-width: 200px; line-height: 1.6; }
+  .vault-status { position: absolute; top: 1rem; right: 1rem; font-size: 0.75rem; font-weight: 700; color: #6366f1; pointer-events: none; text-align: right; line-height: 1.8; letter-spacing: 0.05em; font-variant-numeric: tabular-nums; }
+</style>
+
+<script>
+interface Asset {
+  x: number; y: number; w: number; h: number;
+  label: string; type: string; clearance: string;
+  color: string; secured: boolean; hovered: boolean;
+  laserActive: boolean; glitch: number;
+}
+
+interface ScanLine {
+  y: number; speed: number; alpha: number; color: string;
+}
+
+interface LaserBeam {
+  x1: number; y1: number; x2: number; y2: number;
+  active: boolean; phase: number;
+}
+
+interface BiometricPanel {
+  x: number; y: number; w: number; h: number;
+  cleared: boolean; progress: number; label: string;
+}
+
+const canvas = document.getElementById('vault-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const col = canvas.parentElement as HTMLElement;
+const tooltip = document.getElementById('vault-tooltip') as HTMLElement;
+const statusEl = document.getElementById('vault-status') as HTMLElement;
+
+let W = 0, H = 0, dpr = 1;
+let mouse = { x: -9999, y: -9999 };
+let frame = 0;
+let vaultOpenAngle = 0;
+let buildProgress = 0;
+let combo = [8, 24, 37, 15];
+let comboCurrent = [0, 0, 0, 0];
+let scannerX = 0;
+
+const ASSETS: Asset[] = [
+  { x: 0, y: 0, w: 0, h: 0, label: 'Web App v2.4', type: 'SaaS Application', clearance: 'TOP SECRET', color: '#6366f1', secured: true, hovered: false, laserActive: true, glitch: 0 },
+  { x: 0, y: 0, w: 0, h: 0, label: 'Mobile SDK', type: 'iOS + Android', clearance: 'CLASSIFIED', color: '#8b5cf6', secured: true, hovered: false, laserActive: true, glitch: 0 },
+  { x: 0, y: 0, w: 0, h: 0, label: 'Data Pipeline', type: 'ETL Infrastructure', clearance: 'RESTRICTED', color: '#10b981', secured: true, hovered: false, laserActive: true, glitch: 0 },
+  { x: 0, y: 0, w: 0, h: 0, label: 'API Gateway', type: 'Public Endpoints', clearance: 'CONFIDENTIAL', color: '#f59e0b', secured: true, hovered: false, laserActive: true, glitch: 0 },
+  { x: 0, y: 0, w: 0, h: 0, label: 'Auth Service', type: 'Identity & Access', clearance: 'TOP SECRET', color: '#ef4444', secured: true, hovered: false, laserActive: true, glitch: 0 },
+  { x: 0, y: 0, w: 0, h: 0, label: 'Analytics DB', type: 'Data Warehouse', clearance: 'CLASSIFIED', color: '#06b6d4', secured: true, hovered: false, laserActive: true, glitch: 0 },
+];
+
+const scanLines: ScanLine[] = [];
+const bioPanels: BiometricPanel[] = [];
+
+function layoutVault(): void {
+  const vw = W * 0.44;
+  const vx = W * 0.5;
+  const vy = H * 0.16;
+  const vh = H * 0.72;
+  const cols = 2, rows = 3;
+  const pad = 10;
+  const aw = (vw - pad * (cols + 1)) / cols;
+  const ah = (vh - pad * (rows + 1)) / rows;
+
+  ASSETS.forEach((a, i) => {
+    const c = i % cols, r = Math.floor(i / cols);
+    a.x = vx + pad + c * (aw + pad);
+    a.y = vy + pad + r * (ah + pad);
+    a.w = aw;
+    a.h = ah;
+  });
+
+  // Bio panels
+  bioPanels.length = 0;
+  const panelW = vx * 0.7;
+  const panelLabels = ['DNA SCAN', 'RETINA', 'VOICE PRINT', 'CLEARANCE'];
+  panelLabels.forEach((label, i) => {
+    bioPanels.push({ x: vx * 0.08, y: H * 0.2 + i * (H * 0.16), w: panelW, h: H * 0.1, cleared: buildProgress > (i + 1) * 20, progress: 0, label });
+  });
+}
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = col.getBoundingClientRect();
+  W = rect.width; H = rect.height;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+  layoutVault();
+}
+
+function drawVaultDoor(): void {
+  const vx = W * 0.5;
+  const vy = H * 0.1;
+  const vw = W * 0.46;
+  const vh = H * 0.82;
+  const doorOpenX = -vw * 0.85 * vaultOpenAngle;
+
+  ctx.save();
+  ctx.translate(doorOpenX, 0);
+
+  // Door body
+  ctx.beginPath();
+  ctx.rect(vx - 2, vy, vw + 2, vh);
+  const doorGrad = ctx.createLinearGradient(vx, 0, vx + vw, 0);
+  doorGrad.addColorStop(0, '#0d0f1e');
+  doorGrad.addColorStop(0.3, '#1a1b30');
+  doorGrad.addColorStop(0.7, '#151628');
+  doorGrad.addColorStop(1, '#0a0b18');
+  ctx.fillStyle = doorGrad;
+  ctx.fill();
+  ctx.strokeStyle = `rgba(99,102,241,${0.6 - vaultOpenAngle * 0.5})`;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Tumbler rings (4 concentric)
+  const cx = vx + vw * 0.4, cy = vy + vh * 0.42;
+  const maxR = Math.min(vw, vh) * 0.3;
+  for (let i = 0; i < 4; i++) {
+    const r = maxR * (1 - i * 0.18);
+    const rotation = frame * (0.005 + i * 0.002) * (i % 2 === 0 ? 1 : -1);
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(rotation);
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(99,102,241,${0.3 - i * 0.05})`;
+    ctx.lineWidth = r * 0.08;
+    ctx.stroke();
+
+    // Notches
+    for (let n = 0; n < 8 + i * 4; n++) {
+      const a = (n / (8 + i * 4)) * Math.PI * 2;
+      const nx = Math.cos(a) * r;
+      const ny = Math.sin(a) * r;
+      ctx.beginPath();
+      ctx.arc(nx, ny, 2, 0, Math.PI * 2);
+      ctx.fillStyle = combo[i] === n ? '#6366f1' : `rgba(99,102,241,0.3)`;
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  // Combination readout
+  ctx.font = `700 ${Math.min(14, vw * 0.06)}px 'Courier New', monospace`;
+  ctx.fillStyle = 'rgba(99,102,241,0.8)';
+  ctx.textAlign = 'center';
+  comboCurrent.forEach((v, i) => {
+    ctx.fillText(String(v).padStart(2, '0'), cx - 45 + i * 30, cy + maxR + 18);
+  });
+
+  // Handle bar
+  ctx.beginPath();
+  ctx.arc(vx + vw * 0.88, vy + vh * 0.5, vw * 0.06, 0, Math.PI * 2);
+  const handleGrad = ctx.createRadialGradient(vx + vw * 0.86, vy + vh * 0.48, 0, vx + vw * 0.88, vy + vh * 0.5, vw * 0.06);
+  handleGrad.addColorStop(0, '#4a4a7a');
+  handleGrad.addColorStop(1, '#1e1e3a');
+  ctx.fillStyle = handleGrad;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(99,102,241,0.5)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Build progress text on door
+  if (vaultOpenAngle < 0.1) {
+    ctx.font = `600 ${Math.min(11, vw * 0.04)}px -apple-system, sans-serif`;
+    ctx.fillStyle = 'rgba(99,102,241,0.5)';
+    ctx.textAlign = 'center';
+    ctx.fillText('BUILD PROGRESS', cx, cy - maxR - 16);
+    ctx.font = `700 ${Math.min(18, vw * 0.07)}px 'Courier New', monospace`;
+    ctx.fillStyle = '#6366f1';
+    ctx.fillText(`${Math.round(buildProgress)}%`, cx, cy - maxR - 2);
+  }
+
+  ctx.restore();
+}
+
+function drawVaultInterior(): void {
+  const vx = W * 0.5;
+  const vy = H * 0.1;
+  const vw = W * 0.46;
+  const vh = H * 0.82;
+
+  // Interior background
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(vx, vy, vw, vh);
+  ctx.fillStyle = '#080a14';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(99,102,241,0.2)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Asset shelves
+  ASSETS.forEach(a => drawAsset(a));
+
+  ctx.restore();
+}
+
+function drawAsset(a: Asset): void {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(a.x, a.y, a.w, a.h);
+  ctx.fillStyle = 'rgba(10,12,24,0.9)';
+  ctx.fill();
+  ctx.strokeStyle = a.hovered ? a.color : `${a.color}44`;
+  ctx.lineWidth = a.hovered ? 1.5 : 1;
+  ctx.stroke();
+
+  // Glass case shimmer
+  if (a.secured) {
+    const shimmerX = a.x + (frame * 0.8 % (a.w + 20)) - 10;
+    const shimGrad = ctx.createLinearGradient(shimmerX, a.y, shimmerX + 20, a.y + a.h);
+    shimGrad.addColorStop(0, 'rgba(255,255,255,0)');
+    shimGrad.addColorStop(0.5, 'rgba(255,255,255,0.04)');
+    shimGrad.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = shimGrad;
+    ctx.fillRect(a.x, a.y, a.w, a.h);
+  }
+
+  // Laser grid
+  if (a.laserActive && buildProgress < 85) {
+    const gridAlpha = 0.15 + 0.1 * Math.sin(frame * 0.05);
+    ctx.strokeStyle = `rgba(239,68,68,${gridAlpha})`;
+    ctx.lineWidth = 0.5;
+    for (let gx = a.x + 8; gx < a.x + a.w - 4; gx += 10) {
+      ctx.beginPath(); ctx.moveTo(gx, a.y + 2); ctx.lineTo(gx, a.y + a.h - 2); ctx.stroke();
+    }
+    for (let gy = a.y + 8; gy < a.y + a.h - 4; gy += 8) {
+      ctx.beginPath(); ctx.moveTo(a.x + 2, gy); ctx.lineTo(a.x + a.w - 2, gy); ctx.stroke();
+    }
+  } else if (buildProgress >= 85) {
+    a.laserActive = false;
+  }
+
+  // Icon / label
+  ctx.font = `600 ${Math.max(8, a.w * 0.11)}px -apple-system, sans-serif`;
+  ctx.fillStyle = a.hovered ? a.color : 'rgba(255,255,255,0.85)';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(a.label, a.x + a.w / 2, a.y + a.h * 0.38);
+  ctx.font = `400 ${Math.max(7, a.w * 0.09)}px -apple-system, sans-serif`;
+  ctx.fillStyle = `${a.color}99`;
+  ctx.fillText(a.type, a.x + a.w / 2, a.y + a.h * 0.6);
+
+  // Clearance badge
+  ctx.font = `700 ${Math.max(6, a.w * 0.07)}px -apple-system, sans-serif`;
+  ctx.fillStyle = a.laserActive ? '#ef4444' : '#10b981';
+  ctx.fillText(a.clearance, a.x + a.w / 2, a.y + a.h * 0.82);
+
+  ctx.restore();
+}
+
+function drawBioPanel(p: BiometricPanel): void {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(p.x, p.y, p.w, p.h);
+  ctx.fillStyle = 'rgba(8,10,20,0.9)';
+  ctx.fill();
+  ctx.strokeStyle = p.cleared ? 'rgba(16,185,129,0.5)' : 'rgba(99,102,241,0.3)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Progress bar
+  const barW = (p.w - 16) * Math.min(1, p.progress / 100);
+  ctx.fillStyle = p.cleared ? 'rgba(16,185,129,0.3)' : 'rgba(99,102,241,0.2)';
+  ctx.fillRect(p.x + 8, p.y + p.h - 10, p.w - 16, 5);
+  ctx.fillStyle = p.cleared ? '#10b981' : '#6366f1';
+  ctx.fillRect(p.x + 8, p.y + p.h - 10, barW, 5);
+
+  ctx.font = `600 9px 'Courier New', monospace`;
+  ctx.fillStyle = p.cleared ? '#10b981' : 'rgba(99,102,241,0.8)';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(p.label, p.x + 8, p.y + 7);
+
+  ctx.font = `700 11px 'Courier New', monospace`;
+  ctx.fillStyle = p.cleared ? '#10b981' : 'rgba(255,255,255,0.6)';
+  ctx.textAlign = 'right';
+  ctx.fillText(p.cleared ? '✓ CLEARED' : `${Math.round(p.progress)}%`, p.x + p.w - 8, p.y + 7);
+
+  ctx.restore();
+}
+
+function drawScanner(): void {
+  const rect2 = canvas.getBoundingClientRect();
+  const mx = mouse.x - rect2.left;
+  const my = mouse.y - rect2.top;
+
+  // Scanner beam follows mouse
+  const beamX = mx > 0 && mx < W ? mx : scannerX;
+  scannerX += (beamX - scannerX) * 0.08;
+
+  ctx.save();
+  const scanGrad = ctx.createLinearGradient(scannerX - 20, 0, scannerX + 20, 0);
+  scanGrad.addColorStop(0, 'rgba(99,102,241,0)');
+  scanGrad.addColorStop(0.5, 'rgba(99,102,241,0.08)');
+  scanGrad.addColorStop(1, 'rgba(99,102,241,0)');
+  ctx.fillStyle = scanGrad;
+  ctx.fillRect(scannerX - 20, 0, 40, H);
+
+  ctx.beginPath();
+  ctx.moveTo(scannerX, 0);
+  ctx.lineTo(scannerX, H);
+  ctx.strokeStyle = 'rgba(99,102,241,0.25)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function tick(): void {
+  frame++;
+  ctx.clearRect(0, 0, W, H);
+
+  // Build progress
+  buildProgress = Math.min(100, buildProgress + 0.04);
+
+  // Vault opens when complete
+  if (buildProgress >= 99) {
+    vaultOpenAngle = Math.min(0.85, vaultOpenAngle + 0.003);
+  }
+
+  // Combo spinner
+  comboCurrent = combo.map((target, i) => {
+    const speed = 1 + i * 0.5;
+    const current = Math.round((frame * speed) % 60);
+    return buildProgress > (i + 1) * 22 ? target : current;
+  });
+
+  // Bio panels progress
+  bioPanels.forEach((p, i) => {
+    const threshold = (i + 1) * 22;
+    if (buildProgress >= threshold) {
+      p.progress = 100;
+      p.cleared = true;
+    } else if (buildProgress >= threshold - 22) {
+      p.progress = ((buildProgress - (i * 22)) / 22) * 100;
+    }
+  });
+
+  layoutVault();
+
+  // Background
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#060712');
+  bg.addColorStop(1, '#080a1a');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Vault wall texture
+  ctx.save();
+  ctx.strokeStyle = 'rgba(99,102,241,0.04)';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i < W; i += 20) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, H); ctx.stroke(); }
+  for (let i = 0; i < H; i += 20) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(W, i); ctx.stroke(); }
+  ctx.restore();
+
+  drawVaultInterior();
+  bioPanels.forEach(drawBioPanel);
+  drawScanner();
+  drawVaultDoor();
+
+  // Hover detection
+  const rect3 = canvas.getBoundingClientRect();
+  const hmx = mouse.x - rect3.left;
+  const hmy = mouse.y - rect3.top;
+  let anyHover = false;
+
+  ASSETS.forEach(a => {
+    a.hovered = hmx >= a.x && hmx <= a.x + a.w && hmy >= a.y && hmy <= a.y + a.h;
+    if (a.hovered) {
+      anyHover = true;
+      tooltip.style.display = 'block';
+      tooltip.style.left = (a.x - 190) + 'px';
+      tooltip.style.top = a.y + 'px';
+      tooltip.innerHTML = `<strong style="color:${a.color}">${a.label}</strong><br>${a.type}<br><span style="color:${a.laserActive ? '#ef4444' : '#10b981'}">${a.clearance}</span><br><span style="color:rgba(255,255,255,0.4)">Lasers: ${a.laserActive ? 'ACTIVE' : 'CLEARED'}</span>`;
+    }
+  });
+  if (!anyHover) tooltip.style.display = 'none';
+
+  // Status
+  statusEl.innerHTML = `BUILD: ${Math.round(buildProgress)}%<br>VAULT: ${vaultOpenAngle > 0.1 ? 'OPEN' : 'SEALED'}<br>LASERS: ${ASSETS.filter(a => a.laserActive).length} ACTIVE`;
+
+  requestAnimationFrame(tick);
+}
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+canvas.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+const ro = new ResizeObserver(() => resize());
+ro.observe(col);
+resize();
+tick();
+</script>
