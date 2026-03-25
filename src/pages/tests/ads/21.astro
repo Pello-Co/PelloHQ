@@ -181,12 +181,22 @@ function drawSparkline(x: number, y: number, w: number, h: number, data: number[
   }
   ctx.stroke();
   if (fill) {
+    const grad = ctx.createLinearGradient(x, y, x, y + h);
+    grad.addColorStop(0, color + '25');
+    grad.addColorStop(1, color + '03');
     ctx.lineTo(x + w, y + h);
     ctx.lineTo(x, y + h);
     ctx.closePath();
-    ctx.fillStyle = color + '18';
+    ctx.fillStyle = grad;
     ctx.fill();
   }
+  // End dot (latest value)
+  const lastX = x + w;
+  const lastY = y + h - data[data.length - 1] * h;
+  ctx.beginPath();
+  ctx.arc(lastX, lastY, 2, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
   ctx.restore();
 }
 
@@ -197,40 +207,75 @@ const GAP = 6;
 
 // ─── Stats Bar ────────────────────────────────────────────────────────────────
 function drawStatsBar() {
+  // Gradient background
+  const bgGrad = ctx.createLinearGradient(PAD, 0, W - PAD, 0);
+  bgGrad.addColorStop(0, 'rgba(124,58,237,0.05)');
+  bgGrad.addColorStop(0.5, '#0d0f1f');
+  bgGrad.addColorStop(1, 'rgba(34,197,94,0.04)');
   rr(PAD, PAD, W - PAD * 2, STATS_H, 8);
-  ctx.fillStyle = PANEL;
+  ctx.fillStyle = bgGrad;
   ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
 
   const stats = [
-    { label: 'VARIANTS',  value: '2,847',  accent: BRAND },
-    { label: 'WINNERS',   value: '23',     accent: GREEN },
-    { label: 'KILLED',    value: '2,104',  accent: RED },
-    { label: 'AVG ROAS',  value: '3.8x',   accent: AMBER },
-    { label: 'SAVED',     value: '$14.2k',  accent: '#22d3ee' },
+    { label: 'VARIANTS',  value: '2,847',  accent: BRAND,    icon: '◆' },
+    { label: 'WINNERS',   value: '23',     accent: GREEN,    icon: '✓' },
+    { label: 'KILLED',    value: '2,104',  accent: RED,      icon: '✕' },
+    { label: 'AVG ROAS',  value: '3.8x',   accent: AMBER,    icon: '◈' },
+    { label: 'SAVED',     value: '$14.2k',  accent: '#22d3ee', icon: '◇' },
   ];
 
   const segW = (W - PAD * 2) / stats.length;
   stats.forEach((s, i) => {
-    const cx = PAD + segW * i + segW / 2;
+    const cx = PAD + segW * i + 8;
+    const cardW = segW - 6;
 
-    // Accent dot
+    // Subtle card bg
+    rr(cx, PAD + 3, cardW, STATS_H - 6, 6);
+    ctx.fillStyle = 'rgba(255,255,255,0.015)';
+    ctx.fill();
+
+    // Pulsing glow dot
+    const dotX = cx + 10;
+    const dotY = PAD + STATS_H / 2;
+    const pulse = 0.4 + 0.6 * Math.abs(Math.sin(Date.now() * 0.002 + i * 1.2));
     ctx.beginPath();
-    ctx.arc(cx - 24, PAD + STATS_H / 2, 2.5, 0, Math.PI * 2);
+    ctx.arc(dotX, dotY, 6, 0, Math.PI * 2);
+    ctx.fillStyle = s.accent + Math.round(pulse * 15).toString(16).padStart(2, '0');
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, 3, 0, Math.PI * 2);
+    ctx.fillStyle = s.accent + '60';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, 1.5, 0, Math.PI * 2);
     ctx.fillStyle = s.accent;
     ctx.fill();
 
     // Label
     ctx.font = '500 7px -apple-system, sans-serif';
-    ctx.fillStyle = s.accent + '90';
+    ctx.fillStyle = s.accent + '80';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText(s.label, cx - 18, PAD + 9);
+    ctx.fillText(s.label, cx + 20, PAD + 9);
 
     // Value
-    ctx.font = '700 13px -apple-system, sans-serif';
+    ctx.font = '700 14px -apple-system, sans-serif';
     ctx.fillStyle = BRIGHT;
     ctx.textBaseline = 'bottom';
-    ctx.fillText(s.value, cx - 18, PAD + STATS_H - 7);
+    ctx.fillText(s.value, cx + 20, PAD + STATS_H - 6);
+
+    // Divider
+    if (i < stats.length - 1) {
+      ctx.beginPath();
+      ctx.moveTo(cx + cardW + 3, PAD + 10);
+      ctx.lineTo(cx + cardW + 3, PAD + STATS_H - 10);
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
   });
 }
 
@@ -246,6 +291,9 @@ function drawGrid() {
   rr(PAD, gridTop, gridW, gridH, 8);
   ctx.fillStyle = PANEL;
   ctx.fill();
+  ctx.strokeStyle = BRAND + '10';
+  ctx.lineWidth = 1;
+  ctx.stroke();
 
   const headerH = 32;
   const leftW = Math.floor(gridW * 0.28);
@@ -266,15 +314,23 @@ function drawGrid() {
     const px = PAD + leftW + c * colW + colW / 2;
     const py = gridTop + headerH / 2;
 
-    // Icon circle
+    // Icon circle with glow
+    ctx.save();
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = p.color + '30';
     ctx.beginPath();
-    ctx.arc(px, py - 4, 8, 0, Math.PI * 2);
-    ctx.fillStyle = p.color + '20';
+    ctx.arc(px, py - 4, 9, 0, Math.PI * 2);
+    const iconGrad = ctx.createRadialGradient(px, py - 4, 2, px, py - 4, 9);
+    iconGrad.addColorStop(0, p.color + '30');
+    iconGrad.addColorStop(1, p.color + '10');
+    ctx.fillStyle = iconGrad;
     ctx.fill();
-    ctx.strokeStyle = p.color + '40';
-    ctx.lineWidth = 0.5;
+    ctx.strokeStyle = p.color + '50';
+    ctx.lineWidth = 1;
     ctx.stroke();
-    ctx.font = '600 7px -apple-system, sans-serif';
+    ctx.shadowBlur = 0;
+    ctx.restore();
+    ctx.font = '700 7px -apple-system, sans-serif';
     ctx.fillStyle = p.color;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -348,14 +404,28 @@ function drawGrid() {
       }
       const isHov = hoveredCell?.row === r && hoveredCell?.col === c;
 
-      // Cell bg
-      rr(cx, cy, cw, ch, 4);
-      ctx.fillStyle = perfColor(cell.perf) + (isHov ? '35' : '15');
+      // Cell bg with gradient
+      rr(cx, cy, cw, ch, 5);
+      const cellGrad = ctx.createLinearGradient(cx, cy, cx, cy + ch);
+      cellGrad.addColorStop(0, perfColor(cell.perf) + (isHov ? '30' : '12'));
+      cellGrad.addColorStop(1, perfColor(cell.perf) + '05');
+      ctx.fillStyle = cellGrad;
       ctx.fill();
-      if (isHov) {
-        ctx.strokeStyle = perfColor(cell.perf) + '80';
+      ctx.strokeStyle = perfColor(cell.perf) + (isHov ? '60' : '15');
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Top performer glow
+      if (cell.perf > 0.75) {
+        ctx.save();
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = perfColor(cell.perf) + '30';
+        rr(cx, cy, cw, ch, 5);
+        ctx.strokeStyle = perfColor(cell.perf) + '20';
         ctx.lineWidth = 1;
         ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.restore();
       }
 
       // CTR
@@ -415,6 +485,9 @@ function drawCopyPanel(gridW: number, gridTop: number, gridH: number) {
   rr(panelX, panelY, panelW, panelH, 8);
   ctx.fillStyle = PANEL;
   ctx.fill();
+  ctx.strokeStyle = BRAND + '10';
+  ctx.lineWidth = 1;
+  ctx.stroke();
 
   // Title
   ctx.font = '600 8px -apple-system, sans-serif';
@@ -456,26 +529,41 @@ function drawCopyPanel(gridW: number, gridTop: number, gridH: number) {
     // Animate bar
     v.bar += (v.barTarget - v.bar) * 0.05;
 
-    // Card bg
+    // Card bg with gradient
     rr(cx, cy, cw, cardH, 5);
-    ctx.fillStyle = isHov ? '#161930' : '#0a0c1a';
+    const cardGrad = ctx.createLinearGradient(cx, cy, cx + cw, cy);
+    const cardAccent = v.status === 'winner' ? GREEN : BRAND;
+    cardGrad.addColorStop(0, cardAccent + (isHov ? '12' : '06'));
+    cardGrad.addColorStop(1, isHov ? '#161930' : '#0a0c1a');
+    ctx.fillStyle = cardGrad;
     ctx.fill();
-    if (isHov) {
-      ctx.strokeStyle = (v.status === 'winner' ? GREEN : BRAND) + '50';
+    ctx.strokeStyle = cardAccent + (isHov ? '40' : '10');
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Left accent bar
+    ctx.fillStyle = cardAccent + (isHov ? '80' : '30');
+    ctx.fillRect(cx + 1, cy + 4, 2, cardH - 8);
+
+    // Winner badge with glow
+    if (v.status === 'winner') {
+      const wp = 0.5 + 0.5 * Math.sin(Date.now() * 0.003);
+      ctx.save();
+      ctx.shadowBlur = 8 + wp * 4;
+      ctx.shadowColor = GREEN + '40';
+      rr(cx + cw - 48, cy + 3, 44, 13, 6);
+      ctx.fillStyle = GREEN + '18';
+      ctx.fill();
+      ctx.strokeStyle = GREEN + '50';
       ctx.lineWidth = 1;
       ctx.stroke();
-    }
-
-    // Winner badge
-    if (v.status === 'winner') {
-      rr(cx + cw - 44, cy + 3, 40, 12, 6);
-      ctx.fillStyle = GREEN + '20';
-      ctx.fill();
-      ctx.font = '600 7px -apple-system, sans-serif';
+      ctx.shadowBlur = 0;
+      ctx.restore();
+      ctx.font = '700 7px -apple-system, sans-serif';
       ctx.fillStyle = GREEN;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('WINNER', cx + cw - 24, cy + 9);
+      ctx.fillText('★ WINNER', cx + cw - 26, cy + 10);
     }
 
     // Rank
@@ -503,17 +591,28 @@ function drawCopyPanel(gridW: number, gridTop: number, gridH: number) {
     const barW = cw - 12;
     const barH = 4;
     rr(barX, barY, barW, barH, 2);
-    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.fillStyle = 'rgba(255,255,255,0.03)';
     ctx.fill();
     const fillW = barW * v.bar;
     if (fillW > 2) {
-      const grad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
       const barColor = v.status === 'winner' ? GREEN : BRAND;
-      grad.addColorStop(0, barColor + '80');
-      grad.addColorStop(1, barColor);
+      const barGrad = ctx.createLinearGradient(barX, 0, barX + fillW, 0);
+      barGrad.addColorStop(0, barColor + '40');
+      barGrad.addColorStop(0.5, barColor + 'cc');
+      barGrad.addColorStop(1, barColor);
       rr(barX, barY, fillW, barH, 2);
-      ctx.fillStyle = grad;
+      ctx.fillStyle = barGrad;
       ctx.fill();
+      // Glow at tip
+      ctx.save();
+      ctx.shadowBlur = 6;
+      ctx.shadowColor = barColor + '60';
+      ctx.beginPath();
+      ctx.arc(barX + fillW, barY + barH / 2, 2, 0, Math.PI * 2);
+      ctx.fillStyle = barColor;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.restore();
     }
 
     // Metrics row
@@ -550,8 +649,14 @@ function drawCopyPanel(gridW: number, gridTop: number, gridH: number) {
     const kw = panelW - 12;
 
     rr(kx, ky, kw, 20, 4);
-    ctx.fillStyle = RED + '08';
+    const killGrad = ctx.createLinearGradient(kx, ky, kx + kw, ky);
+    killGrad.addColorStop(0, RED + '10');
+    killGrad.addColorStop(1, RED + '03');
+    ctx.fillStyle = killGrad;
     ctx.fill();
+    ctx.strokeStyle = RED + '12';
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
 
     // X icon
     ctx.strokeStyle = RED + '80';
