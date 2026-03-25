@@ -389,46 +389,51 @@ function drawCalendar() {
     ctx.fillStyle = day.isToday ? TEXT_BRIGHT : TEXT_MID;
     ctx.fillText(String(day.date), cx + colW / 2, startY + 16);
 
-    // Agent dots
-    const dotY = startY + 36;
-    const relevantAgents = AGENTS.map((_, ai) => ai).filter(ai => day.agentTasks[ai] > 0);
-    const dotsToShow = agentFilter !== null
-      ? relevantAgents.filter(ai => ai === agentFilter)
-      : relevantAgents;
-    const dotSize = 5;
-    const totalDotW = dotsToShow.length * (dotSize + 2);
-    let dotX = cx + colW / 2 - totalDotW / 2;
-    dotsToShow.forEach(ai => {
-      ctx.beginPath();
-      ctx.arc(dotX + dotSize / 2, dotY, dotSize / 2, 0, Math.PI * 2);
+    // Stacked bar chart per day — each agent gets a segment
+    const chartTop = startY + 36;
+    const chartBot = startY + rowH - 10;
+    const chartH = chartBot - chartTop;
+    const maxTotal = Math.max(...WEEK.map(d => d.total), 1);
+    const barW = colW - 10;
+    const barX = cx + 5;
+    
+    // Background bar
+    roundRect(barX, chartTop, barW, chartH, 3);
+    ctx.fillStyle = 'rgba(255,255,255,0.03)';
+    ctx.fill();
+
+    // Stacked segments
+    const totalH = (day.total / maxTotal) * chartH;
+    let segY = chartBot;
+    for (let ai = 0; ai < AGENTS.length; ai++) {
+      const tasks = day.agentTasks[ai] || 0;
+      if (tasks === 0) continue;
+      const segH = (tasks / day.total) * totalH;
+      const isDimAgent = agentFilter !== null && agentFilter !== ai;
+
+      ctx.globalAlpha = isDimAgent ? 0.15 : alpha;
+      roundRect(barX + 1, segY - segH, barW - 2, segH - 1, 2);
       ctx.fillStyle = AGENTS[ai].color;
       ctx.fill();
-      dotX += dotSize + 2;
-    });
+      ctx.globalAlpha = alpha;
+      segY -= segH;
+    }
 
-    // Task count badge
-    const badgeY = startY + 52;
-    roundRect(cx + colW / 2 - 10, badgeY, 20, 14, 7);
-    ctx.fillStyle = day.isToday ? 'rgba(99,102,241,0.3)' : 'rgba(255,255,255,0.07)';
-    ctx.fill();
-    ctx.font = '600 9px -apple-system, sans-serif';
-    ctx.fillStyle = day.isToday ? '#a5b4fc' : TEXT_MID;
-    ctx.textBaseline = 'middle';
-    ctx.fillText(String(day.total), cx + colW / 2, badgeY + 7);
+    // Task count at bottom
+    ctx.font = '600 8px -apple-system, sans-serif';
+    ctx.fillStyle = day.isToday ? '#a5b4fc' : TEXT_DIM;
+    ctx.textBaseline = 'top';
+    ctx.fillText(String(day.total), cx + colW / 2, chartBot + 3);
 
-    // Completion bar
-    const barY  = startY + rowH - 18;
-    const barW  = colW - 12;
-    const barX  = cx + 6;
-    const barH  = 4;
-    roundRect(barX, barY, barW, barH, 2);
-    ctx.fillStyle = 'rgba(255,255,255,0.08)';
-    ctx.fill();
-    if (day.donePercent > 0) {
-      const filled = barW * (day.donePercent / 100);
-      roundRect(barX, barY, filled, barH, 2);
-      ctx.fillStyle = day.isToday ? BRAND : (day.donePercent === 100 ? '#22c55e' : BRAND);
-      ctx.fill();
+    // Completion indicator
+    if (day.donePercent === 100) {
+      ctx.font = '500 7px -apple-system, sans-serif';
+      ctx.fillStyle = '#22c55e';
+      ctx.fillText('✓', cx + colW / 2, chartBot + 13);
+    } else if (day.donePercent > 0) {
+      ctx.font = '500 7px -apple-system, sans-serif';
+      ctx.fillStyle = TEXT_DIM;
+      ctx.fillText(day.donePercent + '%', cx + colW / 2, chartBot + 13);
     }
 
     ctx.restore();
@@ -510,7 +515,7 @@ function drawAgentCards() {
     ctx.stroke();
 
     // Agent circle
-    const circR = 14;
+    const circR = Math.min(14, rect.h * 0.3);
     const circX = rect.x + 14 + circR;
     const circY = rect.y + rect.h / 2;
     ctx.beginPath();
@@ -536,43 +541,41 @@ function drawAgentCards() {
       ctx.stroke();
     }
 
-    // Name + status
+    // Name + task count on same line
     const tx = circX + circR + 8;
     ctx.textAlign = 'left';
-    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.textBaseline = 'middle';
+    const nameY = rect.y + rect.h * 0.3;
+    ctx.font = '600 10px -apple-system, sans-serif';
     ctx.fillStyle = TEXT_BRIGHT;
-    ctx.textBaseline = 'top';
-    ctx.fillText(agent.name, tx, rect.y + 5);
+    ctx.fillText(agent.name, tx, nameY);
 
-    ctx.font = '500 9px -apple-system, sans-serif';
-    ctx.fillStyle = agent.active ? '#22c55e' : TEXT_DIM;
-    ctx.fillText(agent.active ? '● Active' : '◉ Idle', tx, rect.y + 18);
-
-    // Tasks progress
-    const progX = tx + 60;
+    // Task count right-aligned
+    ctx.textAlign = 'right';
+    ctx.font = '500 8px -apple-system, sans-serif';
     ctx.fillStyle = TEXT_DIM;
-    ctx.font = '500 9px -apple-system, sans-serif';
-    ctx.fillText(`${agent.completed}/${agent.tasksToday} tasks`, progX, rect.y + 5);
+    ctx.fillText(`${agent.completed}/${agent.tasksToday}`, rect.x + rect.w - 8, nameY);
+    ctx.textAlign = 'left';
 
-    // Progress bar
-    const barW = rect.w - (progX - rect.x) - 8;
-    const barX2 = progX;
-    const barY2 = rect.y + 18;
+    // Status + progress bar on second line
+    const statusY = rect.y + rect.h * 0.65;
+    ctx.font = '500 8px -apple-system, sans-serif';
+    ctx.fillStyle = agent.active ? '#22c55e' : TEXT_DIM;
+    ctx.fillText(agent.active ? '● Active' : '◦ Idle', tx, statusY);
+
+    // Progress bar after status text
+    const barX2 = tx + 42;
+    const barW = rect.x + rect.w - barX2 - 8;
+    const barY2 = statusY - 1.5;
     roundRect(barX2, barY2, barW, 3, 1.5);
-    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    ctx.fillStyle = 'rgba(255,255,255,0.06)';
     ctx.fill();
     const pct = agent.tasksToday > 0 ? agent.completed / agent.tasksToday : 0;
     if (pct > 0) {
-      roundRect(barX2, barY2, barW * pct, 3, 1.5);
+      roundRect(barX2, barY2, Math.max(3, barW * pct), 3, 1.5);
       ctx.fillStyle = agent.color;
       ctx.fill();
     }
-
-    // Next task
-    ctx.font = '500 9px -apple-system, sans-serif';
-    ctx.fillStyle = TEXT_DIM;
-    ctx.textBaseline = 'bottom';
-    ctx.fillText(`Next: ${agent.nextTask} in ${agent.nextIn}`, tx, rect.y + rect.h - 4);
 
     ctx.restore();
   });
