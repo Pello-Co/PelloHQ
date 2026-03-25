@@ -1,0 +1,1070 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+<Layout title="PelloFlow — Resource Timeline | Pello" description="Real-time resource utilisation across all AI agents. Monitor CPU allocation, spot bottlenecks, and track cost efficiency with a live stacked timeline.">
+  <Header />
+  <main id="main-content">
+    <section class="flow-section" aria-labelledby="flow-headline">
+      <div class="flow-layout">
+        <div class="flow-text">
+          <span class="flow-badge">PelloFlow</span>
+          <h1 id="flow-headline">Resource Monitor</h1>
+          <p>Real-time resource utilisation across all AI agents. Monitor CPU allocation, spot bottlenecks, and track cost efficiency with a live stacked timeline.</p>
+          <ul class="flow-pills" role="list">
+            <li>Real-time utilisation</li>
+            <li>Stacked area view</li>
+            <li>Cost tracking</li>
+            <li>Peak detection</li>
+          </ul>
+        </div>
+        <div class="flow-canvas-col">
+          <canvas id="flow-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .flow-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .flow-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .flow-layout { grid-template-columns: 1fr; } }
+  .flow-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .flow-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(79,70,229,0.12); border: 1px solid rgba(79,70,229,0.35); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #818cf8; width: fit-content; }
+  .flow-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .flow-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .flow-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .flow-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .flow-canvas-col { position: relative; width: 100%; min-height: 620px; }
+  #flow-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: default; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface AgentDef {
+  name: string;
+  initials: string;
+  color: string;
+}
+
+interface ResourceKeyframe {
+  h: number;   // hour 0–24
+  pct: number; // percentage 0–100
+}
+
+interface AgentResource {
+  agentIdx: number;
+  keyframes: ResourceKeyframe[];
+}
+
+interface TaskBar {
+  id: string;
+  agentIdx: number;
+  label: string;
+  startH: number;
+  endH: number;
+  records: number;
+  successRate: number;
+  dataFlow: string;
+  environment: string;
+  slaStatus: string;
+  owner: string;
+  cost: string;
+  nextRun: string;
+  integrations: string;
+  cron: string;
+  // computed
+  rx: number; ry: number; rw: number; rh: number;
+}
+
+interface LegendItem {
+  agentIdx: number;
+  x: number; y: number; w: number; h: number;
+}
+
+interface PopupState {
+  taskId: string | null;
+  alpha: number;
+  targetAlpha: number;
+  px: number;
+  py: number;
+}
+
+interface CrosshairState {
+  active: boolean;
+  x: number;
+  chartH: number;  // fractional, for value read
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const BG        = '#060712';
+const BG_PANEL  = '#0d1020';
+const ACCENT    = '#4f46e5';
+const SCALE_THRESHOLD = 80; // %
+
+const AGENTS: AgentDef[] = [
+  { name: 'Sales',      initials: 'SA', color: '#6366f1' },
+  { name: 'Marketing',  initials: 'MK', color: '#ec4899' },
+  { name: 'Operations', initials: 'OP', color: '#f59e0b' },
+  { name: 'HR',         initials: 'HR', color: '#22c55e' },
+  { name: 'Outreach',   initials: 'OT', color: '#3b82f6' },
+];
+
+// Resource keyframes per agent — smooth sine interpolation will be applied
+const RESOURCE_KEYFRAMES: AgentResource[] = [
+  { agentIdx: 0, keyframes: [ // Sales
+    { h: 0,  pct: 2  }, { h: 3,  pct: 2  }, { h: 6,  pct: 4  },
+    { h: 9,  pct: 18 }, { h: 10, pct: 22 }, { h: 11, pct: 16 },
+    { h: 13, pct: 14 }, { h: 15, pct: 18 }, { h: 16, pct: 14 },
+    { h: 18, pct: 10 }, { h: 19, pct: 12 }, { h: 21, pct: 6  },
+    { h: 24, pct: 2  },
+  ]},
+  { agentIdx: 1, keyframes: [ // Marketing
+    { h: 0,  pct: 1  }, { h: 3,  pct: 1  }, { h: 6,  pct: 3  },
+    { h: 9,  pct: 10 }, { h: 11, pct: 20 }, { h: 13, pct: 12 },
+    { h: 14, pct: 16 }, { h: 15, pct: 14 }, { h: 17, pct: 15 },
+    { h: 18, pct: 10 }, { h: 20, pct: 12 }, { h: 22, pct: 8  },
+    { h: 24, pct: 2  },
+  ]},
+  { agentIdx: 2, keyframes: [ // Operations
+    { h: 0,  pct: 12 }, { h: 2,  pct: 25 }, { h: 4,  pct: 14 },
+    { h: 6,  pct: 10 }, { h: 8,  pct: 16 }, { h: 8.5,pct: 20 },
+    { h: 10, pct: 12 }, { h: 12, pct: 10 }, { h: 14, pct: 14 },
+    { h: 16, pct: 12 }, { h: 18, pct: 10 }, { h: 22, pct: 15 },
+    { h: 24, pct: 14 },
+  ]},
+  { agentIdx: 3, keyframes: [ // HR
+    { h: 0,  pct: 1  }, { h: 4,  pct: 1  }, { h: 6,  pct: 5  },
+    { h: 9,  pct: 12 }, { h: 9.5,pct: 15 }, { h: 11, pct: 10 },
+    { h: 12, pct: 8  }, { h: 14, pct: 18 }, { h: 15, pct: 14 },
+    { h: 16, pct: 10 }, { h: 18, pct: 4  }, { h: 21, pct: 2  },
+    { h: 24, pct: 1  },
+  ]},
+  { agentIdx: 4, keyframes: [ // Outreach
+    { h: 0,  pct: 2  }, { h: 3,  pct: 2  }, { h: 6,  pct: 5  },
+    { h: 8,  pct: 18 }, { h: 9,  pct: 16 }, { h: 11, pct: 15 },
+    { h: 12, pct: 8  }, { h: 14, pct: 6  }, { h: 16, pct: 5  },
+    { h: 18, pct: 4  }, { h: 20, pct: 3  }, { h: 24, pct: 2  },
+  ]},
+];
+
+const TASK_DEFS: Omit<TaskBar, 'rx'|'ry'|'rw'|'rh'>[] = [
+  { id: 'sa_lead',  agentIdx: 0, label: 'Lead Sync',       startH: 9.0,  endH: 9.5,  records: 2840, successRate: 98.7, dataFlow: 'Salesforce → Transform → HubSpot', environment: 'Production', slaStatus: '✓ On track', owner: 'Sales Team',      cost: '$0.08/run', nextRun: 'Tomorrow 09:00', integrations: 'Salesforce, HubSpot',   cron: '0 9 * * 1-5'  },
+  { id: 'sa_pipe',  agentIdx: 0, label: 'Pipeline Update', startH: 10.0, endH: 10.75,records: 340,  successRate: 97.5, dataFlow: 'HubSpot → Analyser → HubSpot',    environment: 'Production', slaStatus: '✓ On track', owner: 'Sales Team',      cost: '$0.05/run', nextRun: 'Tomorrow 10:00', integrations: 'HubSpot, Slack',        cron: '0 10 * * 1-5' },
+  { id: 'sa_deal',  agentIdx: 0, label: 'Deal Analysis',   startH: 15.0, endH: 15.67,records: 184,  successRate: 96.7, dataFlow: 'HubSpot → ML → Forecast',        environment: 'Production', slaStatus: '✓ On track', owner: 'Sales Team',      cost: '$0.10/run', nextRun: 'Tomorrow 15:00', integrations: 'HubSpot, Python ML',    cron: '0 15 * * 1-5' },
+  { id: 'sa_crm',   agentIdx: 0, label: 'CRM Backup',      startH: 18.0, endH: 18.25,records: 18200,successRate: 100,  dataFlow: 'HubSpot → S3 → Notify',          environment: 'Production', slaStatus: '✓ On track', owner: 'Sales Team',      cost: '$0.02/run', nextRun: 'Tomorrow 18:00', integrations: 'HubSpot, AWS S3',       cron: '0 18 * * *'   },
+  { id: 'mk_email', agentIdx: 1, label: 'Email Blast',     startH: 10.83,endH: 11.5, records: 8400, successRate: 96.2, dataFlow: 'Mailchimp → Send → Analytics',    environment: 'Production', slaStatus: '◷ At risk',  owner: 'Marketing Team',  cost: '$0.18/run', nextRun: 'Thursday 10:50', integrations: 'Mailchimp, Segment',    cron: '50 10 * * 2'  },
+  { id: 'mk_camp',  agentIdx: 1, label: 'Campaign Metrics',startH: 14.0, endH: 14.5, records: 1200, successRate: 100,  dataFlow: 'GA4 → Transform → Dashboard',    environment: 'Production', slaStatus: '✓ On track', owner: 'Marketing Team',  cost: '$0.04/run', nextRun: 'Tomorrow 14:00', integrations: 'GA4, Looker',           cron: '0 14 * * *'   },
+  { id: 'mk_news',  agentIdx: 1, label: 'Newsletter',      startH: 17.0, endH: 17.75,records: 12400,successRate: 98.3, dataFlow: 'CMS → Render → Mailchimp',        environment: 'Production', slaStatus: '✓ On track', owner: 'Marketing Team',  cost: '$0.22/run', nextRun: 'Next Week 17:00', integrations: 'Ghost, Mailchimp',     cron: '0 17 * * 3'   },
+  { id: 'mk_comp',  agentIdx: 1, label: 'Competitor Mon',  startH: 20.0, endH: 20.5, records: 640,  successRate: 95.5, dataFlow: 'Web → Scraper → Notion',          environment: 'Production', slaStatus: '✓ On track', owner: 'Marketing Team',  cost: '$0.06/run', nextRun: 'Tomorrow 20:00', integrations: 'Playwright, Notion',    cron: '0 20 * * *'   },
+  { id: 'op_clean', agentIdx: 2, label: 'Data Cleanup',    startH: 8.5,  endH: 9.25, records: 5100, successRate: 99.1, dataFlow: 'DB → Cleaner → DB',              environment: 'Production', slaStatus: '✓ On track', owner: 'Ops Team',        cost: '$0.04/run', nextRun: 'Tomorrow 08:30', integrations: 'Postgres, Redis',       cron: '30 8 * * *'   },
+  { id: 'op_inv',   agentIdx: 2, label: 'Invoice Process', startH: 11.0, endH: 12.0, records: 228,  successRate: 98.2, dataFlow: 'Xero → Validate → Xero',         environment: 'Production', slaStatus: '✓ On track', owner: 'Finance Team',    cost: '$0.07/run', nextRun: 'Tomorrow 11:00', integrations: 'Xero, Stripe',          cron: '0 11 * * 1-5' },
+  { id: 'op_audit', agentIdx: 2, label: 'Resource Audit',  startH: 14.5, endH: 15.0, records: 160,  successRate: 97.4, dataFlow: 'AWS → Analyser → Slack',         environment: 'Production', slaStatus: '✓ On track', owner: 'Ops Team',        cost: '$0.03/run', nextRun: 'Tomorrow 14:30', integrations: 'AWS, Slack',            cron: '30 14 * * *'  },
+  { id: 'op_arch',  agentIdx: 2, label: 'Data Archive',    startH: 22.0, endH: 23.5, records: 48000,successRate: 100,  dataFlow: 'DB → Compress → Glacier',        environment: 'Production', slaStatus: '✓ On track', owner: 'Ops Team',        cost: '$0.15/run', nextRun: 'Tomorrow 22:00', integrations: 'Postgres, AWS Glacier', cron: '0 22 * * *'   },
+  { id: 'op_bkup',  agentIdx: 2, label: 'DB Backup',       startH: 2.0,  endH: 4.0,  records: 92000,successRate: 100,  dataFlow: 'All DBs → Encrypt → S3',         environment: 'Production', slaStatus: '✓ On track', owner: 'Ops Team',        cost: '$0.20/run', nextRun: 'Tomorrow 02:00', integrations: 'Postgres, Redis, S3',   cron: '0 2 * * *'    },
+  { id: 'hr_onb',   agentIdx: 3, label: 'Onboarding Flow', startH: 9.25, endH: 9.75, records: 14,   successRate: 100,  dataFlow: 'HRIS → Sequence → Slack',        environment: 'Production', slaStatus: '✓ On track', owner: 'HR Team',         cost: '$0.06/run', nextRun: 'Tomorrow 09:15', integrations: 'BambooHR, Slack',       cron: '15 9 * * *'   },
+  { id: 'hr_pay',   agentIdx: 3, label: 'Payroll Sync',    startH: 12.0, endH: 12.5, records: 310,  successRate: 100,  dataFlow: 'HRIS → ADP → Finance',          environment: 'Production', slaStatus: '✓ On track', owner: 'HR Team',         cost: '$0.09/run', nextRun: 'Next Friday 12:00', integrations: 'BambooHR, ADP',      cron: '0 12 * * 5'   },
+  { id: 'hr_perf',  agentIdx: 3, label: 'Perf Reports',    startH: 14.0, endH: 15.0, records: 42,   successRate: 100,  dataFlow: 'HRIS → Score → Manager',        environment: 'Production', slaStatus: '✓ On track', owner: 'HR Team',         cost: '$0.08/run', nextRun: 'Next Month 14:00', integrations: 'BambooHR, Slack',     cron: '0 14 1 * *'   },
+  { id: 'hr_summ',  agentIdx: 3, label: 'Daily Summary',   startH: 6.0,  endH: 6.33, records: 580,  successRate: 100,  dataFlow: 'All Sources → Digest → Slack',   environment: 'Production', slaStatus: '✓ On track', owner: 'HR Team',         cost: '$0.05/run', nextRun: 'Tomorrow 06:00', integrations: 'All Integrations',      cron: '0 6 * * 1-5'  },
+  { id: 'ot_scr',   agentIdx: 4, label: 'Prospect Scrape', startH: 8.0,  endH: 8.75, records: 3200, successRate: 94.2, dataFlow: 'LinkedIn → Scraper → DB',        environment: 'Production', slaStatus: '✓ On track', owner: 'Outreach Team',   cost: '$0.12/run', nextRun: 'Tomorrow 08:00', integrations: 'LinkedIn, Apollo',      cron: '0 8 * * 1-5'  },
+  { id: 'ot_li',    agentIdx: 4, label: 'LinkedIn Seq',    startH: 9.5,  endH: 10.0, records: 520,  successRate: 91.3, dataFlow: 'CRM → LinkedIn → CRM',           environment: 'Production', slaStatus: '✓ On track', owner: 'Outreach Team',   cost: '$0.09/run', nextRun: 'Tomorrow 09:30', integrations: 'LinkedIn, Salesforce',  cron: '30 9 * * 1-5' },
+  { id: 'ot_cold',  agentIdx: 4, label: 'Cold Email',      startH: 11.5, endH: 12.25,records: 1200, successRate: 89.4, dataFlow: 'Apollo → Send → CRM',            environment: 'Production', slaStatus: '✓ On track', owner: 'Outreach Team',   cost: '$0.14/run', nextRun: 'Tomorrow 11:30', integrations: 'Apollo, HubSpot',       cron: '30 11 * * 1-5'},
+  { id: 'ot_warm',  agentIdx: 4, label: 'Warm Leads',      startH: 16.0, endH: 16.5, records: 420,  successRate: 92.6, dataFlow: 'Score Engine → CRM → Alert',     environment: 'Production', slaStatus: '✓ On track', owner: 'Outreach Team',   cost: '$0.07/run', nextRun: 'Tomorrow 16:00', integrations: 'Clearbit, HubSpot',     cron: '0 16 * * 1-5' },
+];
+
+// ─── State ────────────────────────────────────────────────────────────────────
+
+// Sim time: starts 10:05
+let simNow = 10 + 5 / 60;
+
+// isolated agent index (legend hover) — null = all visible
+let isolatedAgent: number | null = null;
+
+const popup: PopupState = { taskId: null, alpha: 0, targetAlpha: 0, px: 0, py: 0 };
+
+const crosshair: CrosshairState = { active: false, x: 0, chartH: 0 };
+
+const tasks: TaskBar[] = TASK_DEFS.map(t => ({ ...t, rx: 0, ry: 0, rw: 0, rh: 0 }));
+
+let legendItems: LegendItem[] = [];
+
+// ─── Canvas Setup ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('flow-canvas') as HTMLCanvasElement;
+const ctx    = canvas.getContext('2d')!;
+const col    = canvas.parentElement as HTMLElement;
+let W = 0, H = 0, dpr = 1;
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = col.getBoundingClientRect();
+  W = rect.width; H = rect.height;
+  canvas.width  = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+window.addEventListener('resize', resize);
+resize();
+
+// ─── Layout constants ─────────────────────────────────────────────────────────
+
+const LABEL_TOP    = 14;
+const LABEL_H      = 18;
+const CHART_TOP    = () => LABEL_TOP + LABEL_H + 8;
+const Y_AXIS_W     = 40;
+const CHART_LEFT   = () => Y_AXIS_W;
+const CHART_RIGHT  = () => W - 14;
+const CHART_W      = () => CHART_RIGHT() - CHART_LEFT();
+
+// Legend strip height
+const LEGEND_H    = 28;
+const LEGEND_TOP  = () => CHART_TOP() + CHART_AREA_H() + 8;
+
+// Gantt section
+const GANTT_LABEL_H = 18;
+const GANTT_TOP     = () => LEGEND_TOP() + LEGEND_H + GANTT_LABEL_H + 8;
+const GANTT_ROW_H   = 22;
+const GANTT_TOTAL_H = () => AGENTS.length * GANTT_ROW_H;
+
+// Chart area takes upper 52% of canvas minus fixed elements
+const CHART_AREA_H  = () => Math.max(140, H * 0.42);
+
+function hourToX(h: number): number {
+  return CHART_LEFT() + (h / 24) * CHART_W();
+}
+
+function pctToY(pct: number): number {
+  return CHART_TOP() + CHART_AREA_H() * (1 - pct / 100);
+}
+
+// ─── Resource curve interpolation ────────────────────────────────────────────
+
+/**
+ * Catmull-Rom–style smooth interpolation between keyframes.
+ * Returns percentage (0–100) at given hour h.
+ */
+function interpolateResource(keyframes: ResourceKeyframe[], h: number): number {
+  // clamp
+  if (h <= keyframes[0].h) return keyframes[0].pct;
+  if (h >= keyframes[keyframes.length - 1].h) return keyframes[keyframes.length - 1].pct;
+
+  // find surrounding keyframes
+  let i0 = 0;
+  for (let i = 0; i < keyframes.length - 1; i++) {
+    if (h >= keyframes[i].h && h < keyframes[i + 1].h) { i0 = i; break; }
+  }
+  const k0 = keyframes[i0];
+  const k1 = keyframes[i0 + 1];
+  const t  = (h - k0.h) / (k1.h - k0.h);
+  // smooth step interpolation
+  const t2 = t * t * (3 - 2 * t);
+  // add slight sine wobble for organic look
+  const wobble = Math.sin(h * 1.8 + i0 * 2.1) * 0.8;
+  return Math.max(0, k0.pct + (k1.pct - k0.pct) * t2 + wobble);
+}
+
+/**
+ * Build 288 sample points (every 5 min) for all agents.
+ * Returns stacked array: [agentIdx][sampleIdx] = cumulative pct
+ */
+function buildStackedCurves(): number[][] {
+  const SAMPLES = 288;
+  const curves: number[][] = AGENTS.map(() => new Array(SAMPLES).fill(0));
+  const stacked: number[][] = AGENTS.map(() => new Array(SAMPLES).fill(0));
+
+  for (let a = 0; a < AGENTS.length; a++) {
+    const kfs = RESOURCE_KEYFRAMES[a].keyframes;
+    for (let s = 0; s < SAMPLES; s++) {
+      const h = (s / SAMPLES) * 24;
+      curves[a][s] = interpolateResource(kfs, h);
+    }
+  }
+
+  // Stack: each agent's value adds to the cumulative
+  for (let s = 0; s < SAMPLES; s++) {
+    let cum = 0;
+    for (let a = 0; a < AGENTS.length; a++) {
+      cum += curves[a][s];
+      stacked[a][s] = cum;
+    }
+  }
+  return stacked;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function lerp(a: number, b: number, t: number): number { return a + (b - a) * t; }
+
+function hexToRgb(hex: string): [number, number, number] {
+  const m = hex.replace('#', '').match(/.{2}/g)!;
+  return [parseInt(m[0], 16), parseInt(m[1], 16), parseInt(m[2], 16)];
+}
+
+function rgba(hex: string, a: number): string {
+  const [r, g, b] = hexToRgb(hex);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function roundRect(x: number, y: number, w: number, h: number, r: number): void {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function fmtH(h: number): string {
+  const hh = Math.floor(h) % 24;
+  const mm  = Math.round((h - Math.floor(h)) * 60);
+  return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+}
+
+// ─── Draw background ──────────────────────────────────────────────────────────
+
+function drawBackground(): void {
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, W, H);
+}
+
+// ─── Draw area chart ──────────────────────────────────────────────────────────
+
+function drawAreaChart(stacked: number[][]): void {
+  const SAMPLES = stacked[0].length;
+  const ct = CHART_TOP();
+  const ch = CHART_AREA_H();
+  const cl = CHART_LEFT();
+
+  // Section label
+  ctx.font = '600 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('Resource Utilisation', cl, LABEL_TOP + LABEL_H / 2);
+
+  // Chart border/bg
+  ctx.fillStyle = 'rgba(255,255,255,0.015)';
+  ctx.fillRect(cl, ct, CHART_W(), ch);
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(cl, ct, CHART_W(), ch);
+
+  // Grid lines at 0, 25, 50, 75, 100
+  for (const pct of [0, 25, 50, 75, 100]) {
+    const gy = pctToY(pct);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(cl, gy);
+    ctx.lineTo(CHART_RIGHT(), gy);
+    ctx.stroke();
+
+    // Y-axis labels
+    ctx.font = '9px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${pct}%`, cl - 4, gy);
+  }
+
+  // Scale threshold line at 80%
+  const threshY = pctToY(SCALE_THRESHOLD);
+  ctx.save();
+  ctx.setLineDash([5, 3]);
+  ctx.strokeStyle = 'rgba(239,68,68,0.6)';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(cl, threshY);
+  ctx.lineTo(CHART_RIGHT(), threshY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.font = '600 9px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.fillStyle = 'rgba(239,68,68,0.8)';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('Scale threshold 80%', cl + 4, threshY - 2);
+  ctx.restore();
+
+  // Time on sim: animate left of simNow at full opacity, right at lower opacity
+  const nowX = hourToX(simNow);
+
+  // Draw stacked areas (bottom agent = index 4, top = index 0)
+  // We draw from agent 4 down to agent 0 so lower agents appear on top
+  for (let a = AGENTS.length - 1; a >= 0; a--) {
+    const color = AGENTS[a].color;
+    const isIsolated = isolatedAgent === a;
+    const isDimmed   = isolatedAgent !== null && !isIsolated;
+    const alpha      = isDimmed ? 0.06 : 0.72;
+
+    // Past region (fully opaque stacked area)
+    ctx.save();
+    ctx.beginPath();
+    // top curve of agent a
+    let drawn = false;
+    for (let s = 0; s < SAMPLES; s++) {
+      const h = (s / SAMPLES) * 24;
+      if (h > simNow + 0.1) break;
+      const x = hourToX(h);
+      const y = pctToY(Math.min(stacked[a][s], 100));
+      if (!drawn) { ctx.moveTo(x, y); drawn = true; }
+      else ctx.lineTo(x, y);
+    }
+    // bottom curve (previous agent, or baseline at 0)
+    const prevSamples: number[] = a < AGENTS.length - 1 ? stacked[a + 1] : new Array(SAMPLES).fill(0);
+    for (let s = SAMPLES - 1; s >= 0; s--) {
+      const h = (s / SAMPLES) * 24;
+      if (h > simNow + 0.1) continue;
+      const x = hourToX(h);
+      const y = pctToY(Math.min(prevSamples[s], 100));
+      ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = rgba(color, alpha);
+    ctx.fill();
+
+    // Future region (dimmer, projection)
+    ctx.beginPath();
+    drawn = false;
+    for (let s = 0; s < SAMPLES; s++) {
+      const h = (s / SAMPLES) * 24;
+      if (h < simNow - 0.05) continue;
+      const x = hourToX(h);
+      const y = pctToY(Math.min(stacked[a][s], 100));
+      if (!drawn) { ctx.moveTo(x, y); drawn = true; }
+      else ctx.lineTo(x, y);
+    }
+    for (let s = SAMPLES - 1; s >= 0; s--) {
+      const h = (s / SAMPLES) * 24;
+      if (h < simNow - 0.05) continue;
+      const x = hourToX(h);
+      const y = pctToY(Math.min(prevSamples[s], 100));
+      ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = rgba(color, isDimmed ? 0.03 : 0.22);
+    ctx.fill();
+
+    // Top line stroke
+    ctx.beginPath();
+    drawn = false;
+    for (let s = 0; s < SAMPLES; s++) {
+      const h = (s / SAMPLES) * 24;
+      const x = hourToX(h);
+      const y = pctToY(Math.min(stacked[a][s], 100));
+      const past  = h <= simNow;
+      ctx.strokeStyle = rgba(color, isDimmed ? 0.05 : past ? 0.7 : 0.25);
+      ctx.lineWidth = isDimmed ? 0.5 : 1;
+      if (!drawn) { ctx.moveTo(x, y); drawn = true; ctx.beginPath(); ctx.moveTo(x, y); }
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Peak markers: scan for local maxima in total resource above threshold
+  const peakCandidates: { h: number; total: number }[] = [];
+  for (let s = 5; s < SAMPLES - 5; s++) {
+    const total = stacked[0][s]; // stacked[0] is cumulative total
+    if (total > SCALE_THRESHOLD) {
+      // local max?
+      const prev = stacked[0][s - 3];
+      const next = stacked[0][s + 3];
+      if (total >= prev && total >= next && total - prev > 1 && total - next > 1) {
+        peakCandidates.push({ h: (s / SAMPLES) * 24, total });
+      }
+    }
+  }
+  // deduplicate peaks (min 1h apart)
+  const peaks: { h: number; total: number }[] = [];
+  for (const c of peakCandidates) {
+    if (!peaks.some(p => Math.abs(p.h - c.h) < 1.0)) peaks.push(c);
+  }
+
+  for (const peak of peaks) {
+    const px = hourToX(peak.h);
+    const py2 = pctToY(peak.total);
+    // Triangle marker above line
+    ctx.fillStyle = 'rgba(239,68,68,0.8)';
+    ctx.beginPath();
+    ctx.moveTo(px, py2 - 14);
+    ctx.lineTo(px - 5, py2 - 6);
+    ctx.lineTo(px + 5, py2 - 6);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.font = '600 8px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.fillStyle = 'rgba(239,68,68,0.9)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('Peak', px, py2 - 16);
+  }
+
+  // X-axis time labels
+  for (let h = 0; h <= 24; h += 3) {
+    const x = hourToX(h);
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, ct + ch);
+    ctx.lineTo(x, ct + ch + 4);
+    ctx.stroke();
+
+    ctx.font = '9px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(h === 0 ? '00:00' : `${String(h).padStart(2,'0')}:00`, x, ct + ch + 6);
+  }
+
+  // Now line on chart
+  ctx.save();
+  ctx.shadowColor = '#ef4444';
+  ctx.shadowBlur  = 6;
+  ctx.strokeStyle = 'rgba(239,68,68,0.85)';
+  ctx.lineWidth   = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(nowX, ct);
+  ctx.lineTo(nowX, ct + ch);
+  ctx.stroke();
+  ctx.restore();
+
+  // Now label pill on chart
+  const nowLabel = fmtH(simNow);
+  ctx.font = 'bold 9px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  const nlw = ctx.measureText(nowLabel).width + 8;
+  ctx.fillStyle = '#ef4444';
+  roundRect(nowX - nlw / 2, ct - 16, nlw, 13, 3);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(nowLabel, nowX, ct - 9.5);
+}
+
+// ─── Draw legend ──────────────────────────────────────────────────────────────
+
+function drawLegend(): void {
+  legendItems = [];
+  const ly  = LEGEND_TOP();
+  const lh  = LEGEND_H;
+  let cx = CHART_LEFT();
+
+  ctx.font = '600 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+
+  for (let i = 0; i < AGENTS.length; i++) {
+    const ag  = AGENTS[i];
+    const lw  = ctx.measureText(ag.name).width + 26;
+    const isIsolated = isolatedAgent === i;
+    const isDimmed   = isolatedAgent !== null && !isIsolated;
+
+    ctx.save();
+    ctx.globalAlpha = isDimmed ? 0.3 : 1;
+
+    roundRect(cx, ly + 2, lw, lh - 4, 3);
+    ctx.fillStyle = isIsolated ? rgba(ag.color, 0.2) : 'rgba(255,255,255,0.04)';
+    ctx.fill();
+    if (isIsolated) {
+      roundRect(cx, ly + 2, lw, lh - 4, 3);
+      ctx.strokeStyle = rgba(ag.color, 0.6);
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Color square
+    ctx.fillStyle = ag.color;
+    roundRect(cx + 6, ly + lh / 2 - 4, 8, 8, 2);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.textAlign  = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(ag.name, cx + 18, ly + lh / 2);
+
+    ctx.restore();
+
+    legendItems.push({ agentIdx: i, x: cx, y: ly + 2, w: lw, h: lh - 4 });
+    cx += lw + 8;
+  }
+}
+
+// ─── Draw Gantt bars ──────────────────────────────────────────────────────────
+
+function computeGanttHitboxes(): void {
+  for (const t of tasks) {
+    const rowY = GANTT_TOP() + t.agentIdx * GANTT_ROW_H;
+    const x1   = hourToX(t.startH);
+    const x2   = hourToX(t.endH);
+    t.rx = x1;
+    t.ry = rowY + 2;
+    t.rw = Math.max(4, x2 - x1);
+    t.rh = GANTT_ROW_H - 4;
+  }
+}
+
+function drawGantt(): void {
+  const gt     = GANTT_TOP();
+  const gtotal = GANTT_TOTAL_H();
+  const cl     = CHART_LEFT();
+
+  // Gantt label
+  ctx.font = '600 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('Task Timeline', cl, gt - GANTT_LABEL_H / 2 - 2);
+
+  // Gantt bg
+  ctx.fillStyle = 'rgba(255,255,255,0.012)';
+  ctx.fillRect(cl, gt, CHART_W(), gtotal);
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(cl, gt, CHART_W(), gtotal);
+
+  // Agent row separators + labels
+  for (let i = 0; i < AGENTS.length; i++) {
+    const ag  = AGENTS[i];
+    const rowY = gt + i * GANTT_ROW_H;
+    const even = i % 2 === 0;
+    ctx.fillStyle = even ? 'rgba(255,255,255,0.01)' : 'rgba(255,255,255,0.02)';
+    ctx.fillRect(cl, rowY, CHART_W(), GANTT_ROW_H);
+
+    // Agent dot
+    ctx.beginPath();
+    ctx.arc(cl - 14, rowY + GANTT_ROW_H / 2, 3, 0, Math.PI * 2);
+    ctx.fillStyle = ag.color;
+    ctx.fill();
+  }
+
+  // Grid lines every 3h
+  for (let h = 0; h <= 24; h += 3) {
+    const x = hourToX(h);
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, gt);
+    ctx.lineTo(x, gt + gtotal);
+    ctx.stroke();
+  }
+
+  // Task bars
+  computeGanttHitboxes();
+  for (const t of tasks) {
+    const ag       = AGENTS[t.agentIdx];
+    const isHovered = popup.taskId === t.id && popup.alpha > 0.1;
+    const isDimmed  = isolatedAgent !== null && isolatedAgent !== t.agentIdx;
+    const alpha     = isDimmed ? 0.1 : 1.0;
+
+    if (t.rw < 2) continue;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    roundRect(t.rx, t.ry, t.rw, t.rh, 2);
+    ctx.fillStyle = rgba(ag.color, isHovered ? 0.7 : 0.45);
+    ctx.fill();
+
+    roundRect(t.rx, t.ry, t.rw, t.rh, 2);
+    ctx.strokeStyle = rgba(ag.color, isHovered ? 1.0 : 0.6);
+    ctx.lineWidth = isHovered ? 1.5 : 0.75;
+    ctx.stroke();
+
+    if (isHovered) {
+      ctx.shadowColor = ag.color;
+      ctx.shadowBlur  = 8;
+      roundRect(t.rx - 1, t.ry - 1, t.rw + 2, t.rh + 2, 3);
+      ctx.strokeStyle = rgba(ag.color, 0.5);
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Label if wide enough
+    if (t.rw > 40) {
+      ctx.font = '500 9px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.save();
+      ctx.beginPath();
+      roundRect(t.rx + 1, t.ry, t.rw - 2, t.rh, 2);
+      ctx.clip();
+      ctx.fillText(t.label, t.rx + 4, t.ry + t.rh / 2);
+      ctx.restore();
+    }
+
+    ctx.restore();
+  }
+
+  // Now line on gantt
+  const nowX = hourToX(simNow);
+  ctx.strokeStyle = 'rgba(239,68,68,0.7)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(nowX, gt);
+  ctx.lineTo(nowX, gt + gtotal);
+  ctx.stroke();
+}
+
+// ─── Draw crosshair + tooltip ─────────────────────────────────────────────────
+
+function drawCrosshair(stacked: number[][]): void {
+  if (!crosshair.active) return;
+
+  const ct  = CHART_TOP();
+  const ch  = CHART_AREA_H();
+  const cl  = CHART_LEFT();
+  const cr  = CHART_RIGHT();
+
+  if (crosshair.x < cl || crosshair.x > cr) return;
+
+  const hoverH = ((crosshair.x - cl) / CHART_W()) * 24;
+
+  // Vertical line
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath();
+  ctx.moveTo(crosshair.x, ct);
+  ctx.lineTo(crosshair.x, ct + ch);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Horizontal line at mouse Y clamped to chart
+  const mouseY = Math.max(ct, Math.min(ct + ch, crosshair.chartH));
+  ctx.beginPath();
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.moveTo(cl, mouseY);
+  ctx.lineTo(cr, mouseY);
+  ctx.stroke();
+  ctx.restore();
+
+  // Tooltip
+  const SAMPLES = stacked[0].length;
+  const sIdx    = Math.round((hoverH / 24) * SAMPLES);
+  const si      = Math.max(0, Math.min(SAMPLES - 1, sIdx));
+
+  // Get per-agent values (unstacked)
+  const perAgent: number[] = [];
+  for (let a = 0; a < AGENTS.length; a++) {
+    const prev = a === AGENTS.length - 1 ? 0 : stacked[a + 1][si];
+    perAgent[a] = Math.max(0, stacked[a][si] - prev);
+  }
+  const total = stacked[0][si];
+
+  // Tasks running at hoverH
+  const runningTasks = TASK_DEFS.filter(t => {
+    const s = t.startH, e = t.endH;
+    return hoverH >= s && hoverH < e;
+  });
+
+  // Cost rate
+  const costRate = (total * 0.000425).toFixed(3);
+
+  // Tooltip box
+  const PAD  = 10;
+  const TW   = 185;
+  const LINEH = 16;
+  const nLines = 3 + AGENTS.length + 2 + Math.min(runningTasks.length, 4) + 2;
+  const TH   = PAD * 2 + LINEH * nLines;
+
+  let tx = crosshair.x + 12;
+  let ty = mouseY - TH / 2;
+  if (tx + TW > cr - 4) tx = crosshair.x - TW - 12;
+  if (ty < ct) ty = ct;
+  if (ty + TH > ct + ch) ty = ct + ch - TH;
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.5)';
+  ctx.shadowBlur  = 16;
+  roundRect(tx, ty, TW, TH, 6);
+  ctx.fillStyle = BG_PANEL;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  roundRect(tx, ty, TW, TH, 6);
+  ctx.strokeStyle = rgba(ACCENT, 0.35);
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  let ly = ty + PAD;
+  // Time header
+  ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(fmtH(hoverH), tx + PAD, ly);
+
+  ctx.font = '600 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.fillStyle = total > SCALE_THRESHOLD ? '#f87171' : '#4ade80';
+  ctx.textAlign = 'right';
+  ctx.fillText(`${total.toFixed(1)}% total`, tx + TW - PAD, ly);
+  ly += LINEH + 4;
+
+  // Separator
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(tx + PAD, ly);
+  ctx.lineTo(tx + TW - PAD, ly);
+  ctx.stroke();
+  ly += 6;
+
+  // Per-agent
+  ctx.font = '10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  for (let a = 0; a < AGENTS.length; a++) {
+    const ag = AGENTS[a];
+    ctx.beginPath();
+    ctx.arc(tx + PAD + 5, ly + LINEH / 2, 4, 0, Math.PI * 2);
+    ctx.fillStyle = ag.color;
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(ag.name, tx + PAD + 14, ly + LINEH / 2);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.88)';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${perAgent[a].toFixed(1)}%`, tx + TW - PAD, ly + LINEH / 2);
+    ly += LINEH;
+  }
+
+  // Cost rate
+  ly += 4;
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.beginPath();
+  ctx.moveTo(tx + PAD, ly);
+  ctx.lineTo(tx + TW - PAD, ly);
+  ctx.stroke();
+  ly += 6;
+
+  ctx.font = '10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.textAlign = 'left';
+  ctx.fillText('Cost rate', tx + PAD, ly + LINEH / 2);
+  ctx.fillStyle = '#fbbf24';
+  ctx.textAlign = 'right';
+  ctx.fillText(`$${costRate}/min`, tx + TW - PAD, ly + LINEH / 2);
+  ly += LINEH;
+
+  // Active tasks
+  if (runningTasks.length > 0) {
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.textAlign = 'left';
+    ctx.fillText('Active tasks', tx + PAD, ly + LINEH / 2);
+    ly += LINEH;
+    const maxShow = Math.min(4, runningTasks.length);
+    for (let i = 0; i < maxShow; i++) {
+      const rt = runningTasks[i];
+      ctx.fillStyle = rgba(AGENTS[rt.agentIdx].color, 0.9);
+      ctx.fillText(`• ${rt.label}`, tx + PAD + 4, ly + LINEH / 2);
+      ly += LINEH;
+    }
+    if (runningTasks.length > 4) {
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.fillText(`+${runningTasks.length - 4} more`, tx + PAD + 4, ly + LINEH / 2);
+    }
+  }
+
+  ctx.restore();
+}
+
+// ─── Draw task popup ──────────────────────────────────────────────────────────
+
+function drawTaskPopup(): void {
+  if (popup.alpha < 0.02) return;
+  const task = tasks.find(t => t.id === popup.taskId);
+  if (!task) return;
+
+  const ag   = AGENTS[task.agentIdx];
+  const PAD  = 12;
+  const PW   = 200;
+  const LINEH = 17;
+  const lines: { label: string; value: string; color?: string }[] = [
+    { label: 'Agent',       value: ag.name,           color: ag.color },
+    { label: 'Time',        value: `${fmtH(task.startH)} → ${fmtH(task.endH)}` },
+    { label: 'Duration',    value: `${Math.round((task.endH - task.startH) * 60)} min` },
+    { label: 'Records',     value: task.records.toLocaleString() },
+    { label: 'Success',     value: `${task.successRate}%`, color: task.successRate > 95 ? '#4ade80' : '#fbbf24' },
+    { label: 'Data Flow',   value: task.dataFlow },
+    { label: 'SLA',         value: task.slaStatus,    color: task.slaStatus.includes('✓') ? '#4ade80' : '#fbbf24' },
+    { label: 'Owner',       value: task.owner },
+    { label: 'Cost',        value: task.cost },
+    { label: 'Next Run',    value: task.nextRun },
+    { label: 'Integrations',value: task.integrations },
+    { label: 'Cron',        value: task.cron },
+  ];
+
+  const PH = PAD * 2 + LINEH * (lines.length + 1.5);
+  let px = popup.px + 12;
+  let py = popup.py - PH / 2;
+  if (px + PW > W - 8)   px = popup.px - PW - 12;
+  if (py < 8)            py = 8;
+  if (py + PH > H - 8)  py = H - PH - 8;
+
+  ctx.save();
+  ctx.globalAlpha = popup.alpha;
+  ctx.shadowColor = 'rgba(0,0,0,0.6)';
+  ctx.shadowBlur  = 18;
+
+  roundRect(px, py, PW, PH, 7);
+  ctx.fillStyle = BG_PANEL;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  roundRect(px, py, PW, PH, 7);
+  ctx.strokeStyle = rgba(ACCENT, 0.45);
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  roundRect(px, py, 3, PH, 4);
+  ctx.fillStyle = ag.color;
+  ctx.fill();
+
+  const tx2 = px + 3 + PAD;
+  ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(task.label, tx2, py + PAD);
+
+  ctx.font = '9px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  for (let i = 0; i < lines.length; i++) {
+    const ily = py + PAD + LINEH * (i + 1.4);
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.textAlign = 'left';
+    ctx.fillText(lines[i].label, tx2, ily);
+    ctx.fillStyle = lines[i].color ?? 'rgba(255,255,255,0.85)';
+    ctx.textAlign = 'right';
+    let val = lines[i].value;
+    while (ctx.measureText(val).width > PW - PAD * 2 - 8 && val.length > 6) val = val.slice(0, -1);
+    if (val !== lines[i].value) val = val.slice(0, -1) + '…';
+    ctx.fillText(val, px + PW - PAD, ily);
+  }
+  ctx.restore();
+}
+
+// ─── Main draw ────────────────────────────────────────────────────────────────
+
+function draw(): void {
+  const stacked = buildStackedCurves();
+  ctx.clearRect(0, 0, W, H);
+  drawBackground();
+  drawAreaChart(stacked);
+  drawLegend();
+  drawGantt();
+  if (crosshair.active) drawCrosshair(stacked);
+  drawTaskPopup();
+}
+
+// ─── Mouse events ─────────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx   = e.clientX - rect.left;
+  const my   = e.clientY - rect.top;
+
+  const ct = CHART_TOP();
+  const ch = CHART_AREA_H();
+  const cl = CHART_LEFT();
+  const cr = CHART_RIGHT();
+
+  // Crosshair on area chart
+  if (mx >= cl && mx <= cr && my >= ct && my <= ct + ch) {
+    crosshair.active  = true;
+    crosshair.x       = mx;
+    crosshair.chartH  = my;
+    canvas.style.cursor = 'crosshair';
+  } else {
+    crosshair.active = false;
+    canvas.style.cursor = 'default';
+  }
+
+  // Legend hover
+  isolatedAgent = null;
+  for (const li of legendItems) {
+    if (mx >= li.x && mx <= li.x + li.w && my >= li.y && my <= li.y + li.h) {
+      isolatedAgent = li.agentIdx;
+      canvas.style.cursor = 'pointer';
+      break;
+    }
+  }
+
+  // Gantt task bar hover
+  computeGanttHitboxes();
+  let hitTask: TaskBar | null = null;
+  for (const t of tasks) {
+    if (mx >= t.rx && mx <= t.rx + t.rw && my >= t.ry && my <= t.ry + t.rh) {
+      hitTask = t;
+      canvas.style.cursor = 'pointer';
+      break;
+    }
+  }
+
+  if (hitTask) {
+    popup.taskId      = hitTask.id;
+    popup.targetAlpha = 1;
+    popup.px = mx;
+    popup.py = my;
+    crosshair.active = false;
+  } else if (!crosshair.active) {
+    popup.targetAlpha = 0;
+  }
+});
+
+canvas.addEventListener('mouseleave', () => {
+  crosshair.active  = false;
+  isolatedAgent     = null;
+  popup.targetAlpha = 0;
+  canvas.style.cursor = 'default';
+});
+
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx   = e.clientX - rect.left;
+  const my   = e.clientY - rect.top;
+  for (const li of legendItems) {
+    if (mx >= li.x && mx <= li.x + li.w && my >= li.y && my <= li.y + li.h) {
+      isolatedAgent = isolatedAgent === li.agentIdx ? null : li.agentIdx;
+      return;
+    }
+  }
+});
+
+// ─── Animation loop ───────────────────────────────────────────────────────────
+
+let lastTime = 0;
+
+function tick(ts: number): void {
+  const dt = Math.min((ts - lastTime) / 1000, 0.05);
+  lastTime = ts;
+
+  // 1 sim-min per 5 real seconds
+  simNow += dt / 300;
+  if (simNow >= 24) simNow -= 24;
+
+  // Lerp popup
+  popup.alpha = lerp(popup.alpha, popup.targetAlpha, 0.14);
+
+  draw();
+  requestAnimationFrame(tick);
+}
+
+requestAnimationFrame((ts) => { lastTime = ts; requestAnimationFrame(tick); });
+</script>

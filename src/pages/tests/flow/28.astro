@@ -1,0 +1,826 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+<Layout title="PelloFlow — Agenda View | Pello" description="PelloFlow Agenda — chronological task schedule with agent filtering, live status, and execution details.">
+  <Header />
+  <main id="main-content">
+    <section class="flow-section" aria-labelledby="flow-headline">
+      <div class="flow-layout">
+        <div class="flow-text">
+          <span class="flow-badge">PelloFlow</span>
+          <h1 id="flow-headline">Agenda View</h1>
+          <p>Your full day schedule in one clean list. Filter by agent, track live progress, and inspect every task detail without leaving the view.</p>
+          <ul class="flow-pills" role="list">
+            <li>Chronological schedule</li>
+            <li>Agent filtering</li>
+            <li>Live status</li>
+            <li>Task details</li>
+          </ul>
+        </div>
+        <div class="flow-canvas-col">
+          <canvas id="flow-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .flow-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .flow-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .flow-layout { grid-template-columns: 1fr; } }
+  .flow-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .flow-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(79,70,229,0.12); border: 1px solid rgba(79,70,229,0.35); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #818cf8; width: fit-content; }
+  .flow-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .flow-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .flow-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .flow-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .flow-canvas-col { position: relative; width: 100%; min-height: 600px; }
+  #flow-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: default; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface AgentDef {
+  name: string;
+  initials: string;
+  color: string;
+}
+
+type TaskStatus = 'running' | 'done' | 'pending';
+
+interface AgendaTask {
+  id: string;
+  agentIdx: number;
+  label: string;
+  timeH: number;   // hour decimal e.g. 9.25 = 09:15
+  durationMin: number;
+  // popup extra data
+  records: number;
+  successRate: number;
+  dataFlow: string;
+  environment: string;
+  slaStatus: string;
+  owner: string;
+  cost: string;
+  nextRun: string;
+  integrations: string;
+  cron: string;
+  // computed
+  status: TaskStatus;
+  rowY: number;
+  rowH: number;
+}
+
+interface PopupState {
+  taskId: string | null;
+  alpha: number;
+  targetAlpha: number;
+  x: number;
+  y: number;
+  panelX: number;   // current lerp position of side panel
+  panelTargetX: number;
+}
+
+interface ChipState {
+  hoveredIdx: number | null;
+  activeIdx: number | null;  // clicked/filtered
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const BG       = '#060712';
+const BG_PANEL = '#0d1020';
+const ACCENT   = '#4f46e5';
+const CHIP_H   = 28;
+const CHIP_BAR_H = 38;   // total height of the filter bar at top
+const PANEL_W  = 290;
+const ROW_H    = 38;
+const LIST_TOP_OFFSET = CHIP_BAR_H + 14;
+const TIME_COL_W = 46;
+const COLOR_BAR_W = 3;
+const CONTENT_X = TIME_COL_W + COLOR_BAR_W + 10;
+
+const AGENTS: AgentDef[] = [
+  { name: 'Sales',      initials: 'SA', color: '#6366f1' },
+  { name: 'Marketing',  initials: 'MK', color: '#ec4899' },
+  { name: 'Operations', initials: 'OP', color: '#f59e0b' },
+  { name: 'HR',         initials: 'HR', color: '#22c55e' },
+  { name: 'Outreach',   initials: 'OT', color: '#3b82f6' },
+];
+
+interface TaskDef {
+  id: string;
+  agentIdx: number;
+  label: string;
+  timeH: number;
+  durationMin: number;
+  records: number;
+  successRate: number;
+  dataFlow: string;
+  environment: string;
+  slaStatus: string;
+  owner: string;
+  cost: string;
+  nextRun: string;
+  integrations: string;
+  cron: string;
+}
+
+const TASK_DEFS: TaskDef[] = [
+  // Morning
+  { id: 't01', agentIdx: 4, label: 'Prospect Scrape',      timeH: 8.00,  durationMin: 45, records: 3200, successRate: 94.2, dataFlow: 'LinkedIn → Scraper → DB',          environment: 'Production', slaStatus: '✓ On track', owner: 'Outreach Team',    cost: '$0.12/run', nextRun: 'Tomorrow 08:00', integrations: 'LinkedIn, Apollo',         cron: '0 8 * * 1-5'  },
+  { id: 't02', agentIdx: 2, label: 'Data Cleanup',         timeH: 8.50,  durationMin: 45, records: 5100, successRate: 99.1, dataFlow: 'DB → Cleaner → DB',              environment: 'Production', slaStatus: '✓ On track', owner: 'Ops Team',        cost: '$0.04/run', nextRun: 'Tomorrow 08:30', integrations: 'Postgres, Redis',          cron: '30 8 * * *'   },
+  { id: 't03', agentIdx: 0, label: 'Lead Sync',            timeH: 9.00,  durationMin: 30, records: 2840, successRate: 98.7, dataFlow: 'Salesforce → Transform → HubSpot', environment: 'Production', slaStatus: '✓ On track', owner: 'Sales Team',      cost: '$0.08/run', nextRun: 'Tomorrow 09:00', integrations: 'Salesforce, HubSpot',      cron: '0 9 * * 1-5'  },
+  { id: 't04', agentIdx: 3, label: 'Onboarding Flow',      timeH: 9.25,  durationMin: 30, records: 14,   successRate: 100,  dataFlow: 'HRIS → Sequence → Slack',        environment: 'Production', slaStatus: '✓ On track', owner: 'HR Team',         cost: '$0.06/run', nextRun: 'Tomorrow 09:15', integrations: 'BambooHR, Slack',          cron: '15 9 * * *'   },
+  { id: 't05', agentIdx: 4, label: 'LinkedIn Sequence',    timeH: 9.50,  durationMin: 30, records: 520,  successRate: 91.3, dataFlow: 'CRM → LinkedIn → CRM',           environment: 'Production', slaStatus: '✓ On track', owner: 'Outreach Team',    cost: '$0.09/run', nextRun: 'Tomorrow 09:30', integrations: 'LinkedIn, Salesforce',     cron: '30 9 * * 1-5' },
+  { id: 't06', agentIdx: 0, label: 'Pipeline Update',      timeH: 10.00, durationMin: 45, records: 340,  successRate: 97.5, dataFlow: 'HubSpot → Analyser → HubSpot',   environment: 'Production', slaStatus: '✓ On track', owner: 'Sales Team',      cost: '$0.05/run', nextRun: 'Tomorrow 10:00', integrations: 'HubSpot, Slack',           cron: '0 10 * * 1-5' },
+  { id: 't07', agentIdx: 2, label: 'System Health',        timeH: 10.50, durationMin: 5,  records: 88,   successRate: 100,  dataFlow: 'Monitors → Alert Engine',        environment: 'Production', slaStatus: '✓ On track', owner: 'Ops Team',        cost: '$0.01/run', nextRun: 'Today 22:30',    integrations: 'Datadog, PagerDuty',       cron: '30 10 * * *'  },
+  { id: 't08', agentIdx: 1, label: 'Email Blast',          timeH: 10.833,durationMin: 40, records: 8400, successRate: 96.2, dataFlow: 'Mailchimp → Send → Analytics',   environment: 'Production', slaStatus: '◷ At risk',  owner: 'Marketing Team',  cost: '$0.18/run', nextRun: 'Thursday 10:50', integrations: 'Mailchimp, Segment',       cron: '50 10 * * 2'  },
+  { id: 't09', agentIdx: 1, label: 'Social Posts',         timeH: 11.00, durationMin: 15, records: 24,   successRate: 100,  dataFlow: 'Content DB → Buffer → Social',   environment: 'Production', slaStatus: '✓ On track', owner: 'Marketing Team',  cost: '$0.03/run', nextRun: 'Tomorrow 11:00', integrations: 'Buffer, Twitter, LinkedIn', cron: '0 11 * * *'   },
+  { id: 't10', agentIdx: 2, label: 'Invoice Process',      timeH: 11.00, durationMin: 60, records: 228,  successRate: 98.2, dataFlow: 'Xero → Validate → Xero',         environment: 'Production', slaStatus: '✓ On track', owner: 'Finance Team',    cost: '$0.07/run', nextRun: 'Tomorrow 11:00', integrations: 'Xero, Stripe',             cron: '0 11 * * 1-5' },
+  { id: 't11', agentIdx: 4, label: 'Cold Email',           timeH: 11.50, durationMin: 45, records: 1200, successRate: 89.4, dataFlow: 'Apollo → Send → CRM',            environment: 'Production', slaStatus: '✓ On track', owner: 'Outreach Team',    cost: '$0.14/run', nextRun: 'Tomorrow 11:30', integrations: 'Apollo, HubSpot',          cron: '30 11 * * 1-5'},
+  // Afternoon
+  { id: 't12', agentIdx: 3, label: 'Payroll Sync',         timeH: 12.00, durationMin: 30, records: 310,  successRate: 100,  dataFlow: 'HRIS → ADP → Finance',          environment: 'Production', slaStatus: '✓ On track', owner: 'HR Team',         cost: '$0.09/run', nextRun: 'Next Friday 12:00', integrations: 'BambooHR, ADP',         cron: '0 12 * * 5'   },
+  { id: 't13', agentIdx: 0, label: 'Follow-up Sequence',   timeH: 13.00, durationMin: 20, records: 640,  successRate: 95.8, dataFlow: 'CRM → Email → CRM',              environment: 'Production', slaStatus: '✓ On track', owner: 'Sales Team',      cost: '$0.06/run', nextRun: 'Tomorrow 13:00', integrations: 'Salesforce, Gmail',        cron: '0 13 * * 1-5' },
+  { id: 't14', agentIdx: 4, label: 'Response Parse',       timeH: 13.50, durationMin: 30, records: 890,  successRate: 93.1, dataFlow: 'Inbox → NLP → CRM',              environment: 'Production', slaStatus: '✓ On track', owner: 'Outreach Team',    cost: '$0.11/run', nextRun: 'Tomorrow 13:30', integrations: 'Gmail, OpenAI, HubSpot',   cron: '30 13 * * 1-5'},
+  { id: 't15', agentIdx: 1, label: 'Campaign Metrics',     timeH: 14.00, durationMin: 30, records: 1200, successRate: 100,  dataFlow: 'GA4 → Transform → Dashboard',    environment: 'Production', slaStatus: '✓ On track', owner: 'Marketing Team',  cost: '$0.04/run', nextRun: 'Tomorrow 14:00', integrations: 'GA4, Looker, Notion',      cron: '0 14 * * *'   },
+  { id: 't16', agentIdx: 3, label: 'Performance Reports',  timeH: 14.00, durationMin: 60, records: 42,   successRate: 100,  dataFlow: 'HRIS → Score → Manager',        environment: 'Production', slaStatus: '✓ On track', owner: 'HR Team',         cost: '$0.08/run', nextRun: 'Next Month 14:00', integrations: 'BambooHR, Slack',       cron: '0 14 1 * *'   },
+  { id: 't17', agentIdx: 2, label: 'Resource Audit',       timeH: 14.50, durationMin: 30, records: 160,  successRate: 97.4, dataFlow: 'AWS → Analyser → Slack',         environment: 'Production', slaStatus: '✓ On track', owner: 'Ops Team',        cost: '$0.03/run', nextRun: 'Tomorrow 14:30', integrations: 'AWS, PagerDuty, Slack',    cron: '30 14 * * *'  },
+  { id: 't18', agentIdx: 0, label: 'Deal Analysis',        timeH: 15.00, durationMin: 40, records: 184,  successRate: 96.7, dataFlow: 'HubSpot → ML → Forecast',        environment: 'Production', slaStatus: '✓ On track', owner: 'Sales Team',      cost: '$0.10/run', nextRun: 'Tomorrow 15:00', integrations: 'HubSpot, Python ML',       cron: '0 15 * * 1-5' },
+  { id: 't19', agentIdx: 1, label: 'A/B Analysis',         timeH: 15.75, durationMin: 30, records: 3600, successRate: 100,  dataFlow: 'Optimizely → Stats → Notion',    environment: 'Production', slaStatus: '✓ On track', owner: 'Marketing Team',  cost: '$0.05/run', nextRun: 'Tomorrow 15:45', integrations: 'Optimizely, Notion',       cron: '45 15 * * *'  },
+  { id: 't20', agentIdx: 3, label: 'Compliance Check',     timeH: 16.00, durationMin: 30, records: 78,   successRate: 100,  dataFlow: 'Policies DB → Verify → Report',  environment: 'Production', slaStatus: '✓ On track', owner: 'Legal & HR',      cost: '$0.06/run', nextRun: 'Tomorrow 16:00', integrations: 'DocuSign, JIRA',           cron: '0 16 * * *'   },
+  { id: 't21', agentIdx: 4, label: 'Warm Leads',           timeH: 16.00, durationMin: 30, records: 420,  successRate: 92.6, dataFlow: 'Score Engine → CRM → Alert',     environment: 'Production', slaStatus: '✓ On track', owner: 'Outreach Team',    cost: '$0.07/run', nextRun: 'Tomorrow 16:00', integrations: 'Clearbit, HubSpot',        cron: '0 16 * * 1-5' },
+  // Evening
+  { id: 't22', agentIdx: 1, label: 'Newsletter',           timeH: 17.00, durationMin: 45, records: 12400,successRate: 98.3, dataFlow: 'CMS → Render → Mailchimp',       environment: 'Production', slaStatus: '✓ On track', owner: 'Marketing Team',  cost: '$0.22/run', nextRun: 'Next Week 17:00', integrations: 'Ghost, Mailchimp',        cron: '0 17 * * 3'   },
+  { id: 't23', agentIdx: 0, label: 'CRM Backup',           timeH: 18.00, durationMin: 15, records: 18200,successRate: 100,  dataFlow: 'HubSpot → S3 → Notify',         environment: 'Production', slaStatus: '✓ On track', owner: 'Sales Team',      cost: '$0.02/run', nextRun: 'Tomorrow 18:00', integrations: 'HubSpot, AWS S3',          cron: '0 18 * * *'   },
+  { id: 't24', agentIdx: 2, label: 'System Health',        timeH: 18.50, durationMin: 5,  records: 88,   successRate: 100,  dataFlow: 'Monitors → Alert Engine',        environment: 'Production', slaStatus: '✓ On track', owner: 'Ops Team',        cost: '$0.01/run', nextRun: 'Tomorrow 06:30',  integrations: 'Datadog, PagerDuty',      cron: '30 18 * * *'  },
+  { id: 't25', agentIdx: 0, label: 'Lead Scoring',         timeH: 19.00, durationMin: 25, records: 2100, successRate: 97.1, dataFlow: 'Events → ML Model → CRM',        environment: 'Production', slaStatus: '✓ On track', owner: 'Sales Team',      cost: '$0.09/run', nextRun: 'Tomorrow 19:00', integrations: 'Segment, Python ML',       cron: '0 19 * * *'   },
+  { id: 't26', agentIdx: 1, label: 'Competitor Monitor',   timeH: 20.00, durationMin: 30, records: 640,  successRate: 95.5, dataFlow: 'Web → Scraper → Notion',         environment: 'Production', slaStatus: '✓ On track', owner: 'Marketing Team',  cost: '$0.06/run', nextRun: 'Tomorrow 20:00', integrations: 'Playwright, Notion',       cron: '0 20 * * *'   },
+  // Overnight
+  { id: 't27', agentIdx: 2, label: 'Data Archive',         timeH: 22.00, durationMin: 90, records: 48000,successRate: 100,  dataFlow: 'DB → Compress → Glacier',        environment: 'Production', slaStatus: '✓ On track', owner: 'Ops Team',        cost: '$0.15/run', nextRun: 'Tomorrow 22:00', integrations: 'Postgres, AWS Glacier',    cron: '0 22 * * *'   },
+  { id: 't28', agentIdx: 1, label: 'SEO Report',           timeH: 23.50, durationMin: 45, records: 2800, successRate: 99.4, dataFlow: 'GSC → Analyser → Notion',        environment: 'Production', slaStatus: '✓ On track', owner: 'Marketing Team',  cost: '$0.08/run', nextRun: 'Tomorrow 23:30', integrations: 'Google Search Console',    cron: '30 23 * * *'  },
+  { id: 't29', agentIdx: 2, label: 'Database Backup',      timeH: 2.00,  durationMin: 120,records: 92000,successRate: 100,  dataFlow: 'All DBs → Encrypt → S3',         environment: 'Production', slaStatus: '✓ On track', owner: 'Ops Team',        cost: '$0.20/run', nextRun: 'Tomorrow 02:00', integrations: 'Postgres, Redis, AWS S3',  cron: '0 2 * * *'    },
+  { id: 't30', agentIdx: 3, label: 'Daily Summary',        timeH: 6.00,  durationMin: 20, records: 580,  successRate: 100,  dataFlow: 'All Sources → Digest → Slack',   environment: 'Production', slaStatus: '✓ On track', owner: 'HR Team',         cost: '$0.05/run', nextRun: 'Tomorrow 06:00', integrations: 'All Integrations, Slack',  cron: '0 6 * * 1-5'  },
+];
+
+// Groups definition (order they appear in list)
+interface GroupDef {
+  label: string;
+  startH: number;
+  endH: number;
+}
+const GROUPS: GroupDef[] = [
+  { label: '🌅 Morning (08:00–12:00)',   startH: 8,  endH: 12 },
+  { label: '☀️ Afternoon (12:00–17:00)', startH: 12, endH: 17 },
+  { label: '🌆 Evening (17:00–22:00)',   startH: 17, endH: 22 },
+  { label: '🌙 Overnight (22:00–08:00)', startH: 22, endH: 32 }, // 22-32 wraps through midnight
+];
+
+// Sort tasks in overnight group by wrapping hours >24 for sorting
+function sortKey(t: TaskDef): number {
+  // overnight: put 0–8 range after 22
+  if (t.timeH < 8) return t.timeH + 24;
+  return t.timeH;
+}
+
+// ─── State ────────────────────────────────────────────────────────────────────
+
+// Sim time starts 10:05
+let simNow = 10 + 5 / 60;
+
+const chips: ChipState = { hoveredIdx: null, activeIdx: null };
+
+const popup: PopupState = {
+  taskId: null,
+  alpha: 0,
+  targetAlpha: 0,
+  x: 0,
+  y: 0,
+  panelX: 0,
+  panelTargetX: 0,
+};
+
+// Scroll state
+let scrollOffset = 0;
+let scrollTarget  = 0;
+let maxScroll     = 0;
+
+// Chip hit areas [x, y, w, h]
+let chipRects: { x: number; y: number; w: number; h: number }[] = [];
+
+// Row hit areas
+interface RowHit {
+  taskId: string;
+  y: number;
+  h: number;
+}
+let rowHits: RowHit[] = [];
+
+let hoveredTaskId: string | null = null;
+
+// Mini bar chart run history (fixed per task, seeded from id)
+function miniHistory(id: string): ('ok' | 'fail' | 'warn')[] {
+  const seed = id.charCodeAt(0) + id.charCodeAt(id.length - 1);
+  const r: ('ok' | 'fail' | 'warn')[] = [];
+  for (let i = 0; i < 5; i++) {
+    const v = (seed * (i + 3) * 7919) % 100;
+    r.push(v > 85 ? 'fail' : v > 70 ? 'warn' : 'ok');
+  }
+  return r;
+}
+
+// ─── Canvas Setup ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('flow-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const col = canvas.parentElement as HTMLElement;
+
+let W = 0, H = 0, dpr = 1;
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = col.getBoundingClientRect();
+  W = rect.width;
+  H = rect.height;
+  canvas.width  = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  // reset panel positions
+  popup.panelTargetX = W;
+  popup.panelX = W;
+}
+
+window.addEventListener('resize', resize);
+resize();
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function lerp(a: number, b: number, t: number): number { return a + (b - a) * t; }
+
+function hexToRgb(hex: string): [number, number, number] {
+  const m = hex.replace('#', '').match(/.{2}/g)!;
+  return [parseInt(m[0], 16), parseInt(m[1], 16), parseInt(m[2], 16)];
+}
+
+function rgba(hex: string, a: number): string {
+  const [r, g, b] = hexToRgb(hex);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function fmtH(h: number): string {
+  const hh = Math.floor(h) % 24;
+  const mm = Math.round((h - Math.floor(h)) * 60);
+  return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+}
+
+function roundRect(x: number, y: number, w: number, h: number, r: number): void {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function taskStatus(task: TaskDef, now: number): TaskStatus {
+  const normalNow = now % 24;
+  const taskStart = task.timeH % 24;
+  const taskEnd   = (task.timeH + task.durationMin / 60) % 24;
+
+  // overnight task (e.g. 22:00–00:30)
+  if (taskEnd < taskStart) {
+    if (normalNow >= taskStart || normalNow < taskEnd) return 'running';
+    if (normalNow < taskStart) return 'pending';
+    return 'done';
+  }
+
+  if (normalNow < taskStart) return 'pending';
+  if (normalNow >= taskStart && normalNow < taskEnd) return 'running';
+  return 'done';
+}
+
+// ─── Draw chip bar ────────────────────────────────────────────────────────────
+
+function drawChips(): void {
+  chipRects = [];
+  const totalW = W - PANEL_W * 0.3; // available width considering panel
+  let cx = 12;
+  const cy = 6;
+
+  ctx.font = '600 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+
+  for (let i = 0; i < AGENTS.length; i++) {
+    const ag = AGENTS[i];
+    const label = ag.initials + '  ' + ag.name;
+    const tw = ctx.measureText(label).width;
+    const cw = tw + 20;
+
+    const isActive  = chips.activeIdx === i;
+    const isHovered = chips.hoveredIdx === i;
+    const dim = chips.activeIdx !== null && !isActive;
+
+    ctx.save();
+    ctx.globalAlpha = dim ? 0.3 : 1;
+
+    roundRect(cx, cy, cw, CHIP_H, CHIP_H / 2);
+    if (isActive) {
+      ctx.fillStyle = ag.color;
+      ctx.fill();
+    } else {
+      ctx.fillStyle = rgba(ag.color, isHovered ? 0.18 : 0.08);
+      ctx.fill();
+      roundRect(cx, cy, cw, CHIP_H, CHIP_H / 2);
+      ctx.strokeStyle = rgba(ag.color, isHovered ? 0.8 : 0.4);
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = isActive ? '#fff' : rgba(ag.color, 0.95);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, cx + cw / 2, cy + CHIP_H / 2);
+    ctx.restore();
+
+    chipRects.push({ x: cx, y: cy, w: cw, h: CHIP_H });
+    cx += cw + 8;
+  }
+}
+
+// ─── Draw list ────────────────────────────────────────────────────────────────
+
+function getFilteredTasks(): TaskDef[] {
+  if (chips.activeIdx === null) return TASK_DEFS;
+  return TASK_DEFS.filter(t => t.agentIdx === chips.activeIdx);
+}
+
+function drawList(ts: number): void {
+  const listX     = 8;
+  const listW     = W - PANEL_W * (popup.alpha > 0.05 ? 1 : 0) - 16;
+  const clipH     = H - LIST_TOP_OFFSET;
+  const filteredSet = new Set(getFilteredTasks().map(t => t.id));
+
+  // Clip to list region
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, LIST_TOP_OFFSET, W, clipH);
+  ctx.clip();
+
+  let cursor = LIST_TOP_OFFSET + 8 - scrollOffset;
+  rowHits = [];
+  let totalHeight = 16;
+
+  for (const group of GROUPS) {
+    // Gather tasks in this group
+    let groupTasks = TASK_DEFS.filter(t => {
+      const sk = sortKey(t);
+      return sk >= group.startH && sk < group.endH;
+    });
+    groupTasks = groupTasks.slice().sort((a, b) => sortKey(a) - sortKey(b));
+
+    if (groupTasks.length === 0) continue;
+
+    // Group header
+    const headerY = cursor;
+    totalHeight += 32;
+
+    if (headerY + 32 > LIST_TOP_OFFSET && headerY < H) {
+      // separator line
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(listX, headerY + 12);
+      ctx.lineTo(listX + listW, headerY + 12);
+      ctx.stroke();
+
+      ctx.font = '11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(group.label, listX + 8, headerY + 12);
+    }
+    cursor += 28;
+
+    // Task rows
+    for (const task of groupTasks) {
+      const rowY  = cursor;
+      const isInFilter = filteredSet.has(task.id);
+      const isHovered  = hoveredTaskId === task.id;
+      const status     = taskStatus(task, simNow);
+      const dimRow     = chips.activeIdx !== null && !isInFilter;
+
+      totalHeight += ROW_H;
+      rowHits.push({ taskId: task.id, y: rowY - LIST_TOP_OFFSET + scrollOffset, h: ROW_H });
+
+      if (rowY + ROW_H > LIST_TOP_OFFSET && rowY < H) {
+        ctx.save();
+        ctx.globalAlpha = dimRow ? 0.15 : 1;
+
+        // Alternating row bg
+        const rowIdx = TASK_DEFS.indexOf(task);
+        ctx.fillStyle = rowIdx % 2 === 0 ? 'rgba(255,255,255,0.018)' : 'rgba(255,255,255,0.032)';
+        ctx.fillRect(listX, rowY, listW, ROW_H);
+
+        // Hover bg
+        if (isHovered && !dimRow) {
+          ctx.fillStyle = rgba(AGENTS[task.agentIdx].color, 0.08);
+          ctx.fillRect(listX, rowY, listW, ROW_H);
+          // left accent
+          ctx.fillStyle = AGENTS[task.agentIdx].color;
+          ctx.fillRect(listX, rowY, 2, ROW_H);
+        }
+
+        // Time column
+        ctx.font = '500 11px "SF Mono", "Fira Mono", monospace';
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(fmtH(task.timeH), listX + TIME_COL_W - 4, rowY + ROW_H / 2);
+
+        // Agent color bar
+        ctx.fillStyle = AGENTS[task.agentIdx].color;
+        ctx.fillRect(listX + TIME_COL_W, rowY + 4, COLOR_BAR_W, ROW_H - 8);
+
+        // Task name
+        ctx.font = `600 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+        ctx.fillStyle = 'rgba(255,255,255,0.92)';
+        ctx.textAlign = 'left';
+        ctx.fillText(task.label, listX + CONTENT_X, rowY + ROW_H / 2 - 7);
+
+        // Agent badge
+        const badgeLabel = AGENTS[task.agentIdx].name;
+        ctx.font = '500 9px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+        const bw = ctx.measureText(badgeLabel).width + 10;
+        const bx = listX + CONTENT_X;
+        const by = rowY + ROW_H / 2 + 2;
+        roundRect(bx, by, bw, 14, 7);
+        ctx.fillStyle = rgba(AGENTS[task.agentIdx].color, 0.18);
+        ctx.fill();
+        roundRect(bx, by, bw, 14, 7);
+        ctx.strokeStyle = rgba(AGENTS[task.agentIdx].color, 0.4);
+        ctx.lineWidth = 0.75;
+        ctx.stroke();
+        ctx.fillStyle = rgba(AGENTS[task.agentIdx].color, 0.9);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(badgeLabel, bx + bw / 2, by + 7);
+
+        // Status tag
+        const statusX = listX + CONTENT_X + 140;
+        const statusY = rowY + ROW_H / 2;
+        let statusText = '';
+        let statusColor = '';
+        if (status === 'running') {
+          statusText = '● Running';
+          statusColor = '#22c55e';
+          // Animate alpha with sine wave
+          const pulse = 0.6 + 0.4 * Math.sin(ts / 400);
+          ctx.fillStyle = rgba(statusColor, pulse);
+        } else if (status === 'done') {
+          statusText = '✓ Done';
+          statusColor = 'rgba(255,255,255,0.35)';
+          ctx.fillStyle = statusColor;
+        } else {
+          statusText = '◷ Pending';
+          statusColor = '#f59e0b';
+          ctx.fillStyle = rgba(statusColor, 0.85);
+        }
+        ctx.font = '500 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(statusText, statusX, statusY);
+
+        // Duration (right side)
+        ctx.font = '500 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.textAlign = 'right';
+        ctx.fillText(`${task.durationMin}m`, listX + listW - 10, rowY + ROW_H / 2);
+
+        ctx.restore();
+      }
+      cursor += ROW_H;
+    }
+    cursor += 4;
+  }
+
+  maxScroll = Math.max(0, totalHeight - clipH);
+
+  ctx.restore();
+}
+
+// ─── Draw side detail panel ───────────────────────────────────────────────────
+
+function drawPanel(ts: number): void {
+  if (popup.alpha < 0.02) return;
+  const task = TASK_DEFS.find(t => t.id === popup.taskId);
+  if (!task) return;
+
+  const ag     = AGENTS[task.agentIdx];
+  const status = taskStatus(task, simNow);
+  const px     = popup.panelX;
+  const py     = LIST_TOP_OFFSET;
+  const ph     = H - LIST_TOP_OFFSET;
+
+  ctx.save();
+  ctx.globalAlpha = popup.alpha;
+
+  // Shadow / divider
+  ctx.shadowColor = 'rgba(0,0,0,0.5)';
+  ctx.shadowBlur = 20;
+
+  // Panel bg
+  ctx.fillStyle = BG_PANEL;
+  ctx.fillRect(px, py, PANEL_W, ph);
+  ctx.shadowBlur = 0;
+
+  // Left border
+  ctx.fillStyle = ag.color;
+  ctx.fillRect(px, py, 3, ph);
+
+  // Top accent line
+  ctx.strokeStyle = rgba(ACCENT, 0.25);
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(px, py);
+  ctx.lineTo(px + PANEL_W, py);
+  ctx.stroke();
+
+  const pad  = 16;
+  const tx   = px + pad + 3;
+  let   ty   = py + pad;
+
+  // Task name
+  ctx.font = 'bold 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+
+  // Word-wrap task name if needed
+  const maxLabelW = PANEL_W - pad * 2 - 3;
+  const words = task.label.split(' ');
+  let line = '';
+  for (const word of words) {
+    const test = line ? line + ' ' + word : word;
+    if (ctx.measureText(test).width > maxLabelW && line) {
+      ctx.fillText(line, tx, ty);
+      ty += 17;
+      line = word;
+    } else {
+      line = test;
+    }
+  }
+  if (line) { ctx.fillText(line, tx, ty); ty += 17; }
+  ty += 6;
+
+  // Status badge
+  let sText = '';
+  let sColor = '';
+  if (status === 'running')      { sText = '● Running'; sColor = '#22c55e'; }
+  else if (status === 'done')    { sText = '✓ Done';    sColor = 'rgba(255,255,255,0.5)'; }
+  else                           { sText = '◷ Pending'; sColor = '#f59e0b'; }
+
+  ctx.font = '600 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.fillStyle = status === 'running' ? rgba('#22c55e', 0.6 + 0.4 * Math.sin(ts / 400)) : sColor;
+  ctx.fillText(sText, tx, ty);
+  ty += 20;
+
+  // Separator
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(px + 3, ty);
+  ctx.lineTo(px + PANEL_W - 4, ty);
+  ctx.stroke();
+  ty += 10;
+
+  // Data grid (2-column)
+  const CELL_H = 36;
+  const col2X  = tx + (PANEL_W - pad * 2) / 2 - 4;
+
+  interface DataRow { label: string; value: string; color?: string; full?: boolean; }
+  const dataRows: DataRow[] = [
+    { label: 'Agent',        value: ag.name,                       color: ag.color },
+    { label: 'Schedule',     value: `Daily ${fmtH(task.timeH)}` },
+    { label: 'Duration',     value: `${task.durationMin} min` },
+    { label: 'Records',      value: task.records.toLocaleString() },
+    { label: 'Success Rate', value: `${task.successRate}%`,        color: task.successRate > 95 ? '#4ade80' : '#fbbf24' },
+    { label: 'Environment',  value: task.environment },
+    { label: 'SLA Status',   value: task.slaStatus,                color: task.slaStatus.includes('✓') ? '#4ade80' : '#fbbf24' },
+    { label: 'Owner',        value: task.owner,                    full: true },
+    { label: 'Cost',         value: task.cost },
+    { label: 'Next Run',     value: task.nextRun,                  full: true },
+    { label: 'Integrations', value: task.integrations,             full: true },
+    { label: 'Data Flow',    value: task.dataFlow,                 full: true },
+  ];
+
+  for (let i = 0; i < dataRows.length; i++) {
+    const dr   = dataRows[i];
+    const isRight = !dr.full && i % 2 === 1;
+    const cellX   = isRight ? col2X : tx;
+    const cellW   = dr.full ? PANEL_W - pad * 2 - 6 : (PANEL_W - pad * 2) / 2 - 4;
+
+    // Skip right-column item if left was full-width
+    if (isRight && dataRows[i - 1]?.full) { continue; }
+
+    // Background
+    ctx.fillStyle = i % 4 < 2 ? 'rgba(255,255,255,0.025)' : 'rgba(255,255,255,0.012)';
+    roundRect(cellX - 4, ty, cellW, CELL_H - 2, 4);
+    ctx.fill();
+
+    ctx.font = '10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(dr.label, cellX, ty + 4);
+
+    ctx.font = '600 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.fillStyle = dr.color ?? 'rgba(255,255,255,0.88)';
+    ctx.textBaseline = 'bottom';
+    // Truncate long values
+    let val = dr.value;
+    while (ctx.measureText(val).width > cellW - 2 && val.length > 8) val = val.slice(0, -1);
+    if (val !== dr.value) val = val.slice(0, -2) + '…';
+    ctx.fillText(val, cellX, ty + CELL_H - 4);
+
+    if (!dr.full && i % 2 === 0 && !dataRows[i + 1]?.full) {
+      // don't advance ty yet (pair goes side by side)
+    } else {
+      ty += CELL_H;
+    }
+    if (!isRight && !dr.full && i % 2 === 0) {
+      // Leave ty where it is — next right item draws alongside
+    } else {
+      // next item will increment ty only after right item
+    }
+    // Simpler: just advance per full row
+    if (dr.full || i % 2 === 1) ty += CELL_H;
+    else if (dr.full) ty += CELL_H;
+  }
+
+  // Mini bar chart
+  ty += 6;
+  ctx.font = '10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('Last 5 runs', tx, ty);
+  ty += 14;
+
+  const history = miniHistory(task.id);
+  const barW    = 18;
+  const barGap  = 5;
+  const barMaxH = 20;
+  for (let i = 0; i < 5; i++) {
+    const run   = history[i];
+    const color = run === 'ok' ? '#22c55e' : run === 'fail' ? '#ef4444' : '#f59e0b';
+    const bh    = run === 'ok' ? barMaxH : run === 'warn' ? barMaxH * 0.65 : barMaxH * 0.35;
+    ctx.fillStyle = color;
+    roundRect(tx + i * (barW + barGap), ty + barMaxH - bh, barW, bh, 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+// ─── Main draw ────────────────────────────────────────────────────────────────
+
+function draw(ts: number): void {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, W, H);
+
+  // Chip bar background
+  ctx.fillStyle = 'rgba(255,255,255,0.025)';
+  ctx.fillRect(0, 0, W, CHIP_BAR_H);
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, CHIP_BAR_H);
+  ctx.lineTo(W, CHIP_BAR_H);
+  ctx.stroke();
+
+  drawChips();
+  drawList(ts);
+  drawPanel(ts);
+}
+
+// ─── Mouse events ─────────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx   = e.clientX - rect.left;
+  const my   = e.clientY - rect.top;
+
+  // Check chips
+  chips.hoveredIdx = null;
+  for (let i = 0; i < chipRects.length; i++) {
+    const c = chipRects[i];
+    if (mx >= c.x && mx <= c.x + c.w && my >= c.y && my <= c.y + c.h) {
+      chips.hoveredIdx = i;
+      canvas.style.cursor = 'pointer';
+      break;
+    }
+  }
+
+  // Check row hits
+  hoveredTaskId = null;
+  if (my > LIST_TOP_OFFSET) {
+    const relY = my - LIST_TOP_OFFSET + scrollOffset;
+    for (const rh of rowHits) {
+      if (relY >= rh.y && relY < rh.y + rh.h) {
+        // Check if dimmed
+        const task = TASK_DEFS.find(t => t.id === rh.taskId)!;
+        if (chips.activeIdx === null || task.agentIdx === chips.activeIdx) {
+          hoveredTaskId = rh.taskId;
+          canvas.style.cursor = 'pointer';
+        }
+        break;
+      }
+    }
+  }
+
+  if (chips.hoveredIdx === null && hoveredTaskId === null) {
+    canvas.style.cursor = 'default';
+  }
+
+  if (hoveredTaskId !== null && hoveredTaskId !== popup.taskId) {
+    popup.taskId = hoveredTaskId;
+    popup.targetAlpha = 1;
+    popup.panelTargetX = W - PANEL_W;
+  } else if (hoveredTaskId === null && chips.hoveredIdx === null) {
+    popup.targetAlpha = 0;
+    popup.panelTargetX = W;
+  }
+});
+
+canvas.addEventListener('mouseleave', () => {
+  chips.hoveredIdx = null;
+  hoveredTaskId    = null;
+  popup.targetAlpha = 0;
+  popup.panelTargetX = W;
+  canvas.style.cursor = 'default';
+});
+
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx   = e.clientX - rect.left;
+  const my   = e.clientY - rect.top;
+
+  for (let i = 0; i < chipRects.length; i++) {
+    const c = chipRects[i];
+    if (mx >= c.x && mx <= c.x + c.w && my >= c.y && my <= c.y + c.h) {
+      chips.activeIdx = chips.activeIdx === i ? null : i;
+      // Close panel when filter changes
+      popup.targetAlpha = 0;
+      popup.panelTargetX = W;
+      hoveredTaskId = null;
+      popup.taskId  = null;
+      scrollTarget  = 0;
+      return;
+    }
+  }
+});
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  scrollTarget = Math.max(0, Math.min(maxScroll, scrollTarget + e.deltaY * 0.8));
+}, { passive: false });
+
+// ─── Animation loop ───────────────────────────────────────────────────────────
+
+let lastTime = 0;
+
+function tick(ts: number): void {
+  const dt = Math.min((ts - lastTime) / 1000, 0.05);
+  lastTime = ts;
+
+  // Advance sim: 1 sim-minute per 5 real seconds = 1/300 per second
+  simNow += dt / 300;
+  if (simNow >= 24) simNow -= 24;
+
+  // Lerp scroll
+  scrollOffset = lerp(scrollOffset, scrollTarget, 0.15);
+
+  // Lerp popup
+  popup.alpha  = lerp(popup.alpha,  popup.targetAlpha,  0.14);
+  popup.panelX = lerp(popup.panelX, popup.panelTargetX, 0.14);
+
+  draw(ts);
+  requestAnimationFrame(tick);
+}
+
+requestAnimationFrame((ts) => { lastTime = ts; requestAnimationFrame(tick); });
+</script>
