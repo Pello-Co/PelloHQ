@@ -1,0 +1,443 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloFlow — Conditional Logic | Pello" description="PelloFlow's visual rule builder lets you design IF/THEN/ELSE logic with live evaluation — routing leads, triggering actions, and branching workflows with precision.">
+  <Header />
+  <main id="main-content">
+    <section class="flow-section" aria-labelledby="flow-headline">
+      <div class="flow-layout">
+        <div class="flow-text">
+          <span class="flow-badge">PelloFlow</span>
+          <h1 id="flow-headline">Logic That Adapts.<br/>Rules That Scale.</h1>
+          <p>Build IF/THEN/ELSE rule trees that evaluate in real time — route leads, branch workflows, and trigger the right action for every condition, automatically.</p>
+          <ul class="flow-pills" role="list">
+            <li>Custom AI agents</li>
+            <li>End-to-end automation</li>
+            <li>API &amp; webhook integration</li>
+            <li>Ongoing maintenance</li>
+          </ul>
+        </div>
+        <div class="flow-canvas-col">
+          <canvas id="flow-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .flow-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .flow-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .flow-layout { grid-template-columns: 1fr; } }
+  .flow-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .flow-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(79,70,229,0.12); border: 1px solid rgba(79,70,229,0.35); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #818cf8; width: fit-content; }
+  .flow-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .flow-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .flow-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .flow-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .flow-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #flow-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: default; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Condition {
+  id: string;
+  expr: string;
+  operator?: 'AND' | 'OR';
+  result: boolean | null;
+  hitRate: number;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  flashT: number;
+  hovered: boolean;
+}
+
+interface Branch {
+  label: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  color: string;
+}
+
+// ─── Canvas setup ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('flow-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+
+function resize() {
+  const rect = canvas.parentElement!.getBoundingClientRect();
+  canvas.width = rect.width * devicePixelRatio;
+  canvas.height = rect.height * devicePixelRatio;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  buildLayout();
+}
+
+let W = 0, H = 0;
+
+function buildLayout() {
+  const rect = canvas.parentElement!.getBoundingClientRect();
+  W = rect.width;
+  H = rect.height;
+  layoutNodes();
+}
+
+// ─── Data ─────────────────────────────────────────────────────────────────────
+
+const CONDITIONS: Condition[] = [
+  { id: 'c1', expr: 'lead.score > 80', operator: 'AND', result: null, hitRate: 34, x: 0, y: 0, w: 200, h: 44, flashT: 0, hovered: false },
+  { id: 'c2', expr: 'company_size > 50', operator: undefined, result: null, hitRate: 41, x: 0, y: 0, w: 200, h: 44, flashT: 0, hovered: false },
+  { id: 'c3', expr: "lead.source = 'referral'", operator: undefined, result: null, hitRate: 18, x: 0, y: 0, w: 210, h: 44, flashT: 0, hovered: false },
+];
+
+const BRANCHES: Branch[] = [
+  { label: 'Enterprise Team', x: 0, y: 0, w: 160, h: 40, color: '#4f46e5' },
+  { label: 'Priority Queue', x: 0, y: 0, w: 150, h: 40, color: '#7c3aed' },
+  { label: 'Standard Flow', x: 0, y: 0, w: 148, h: 40, color: '#374151' },
+];
+
+// Sample lead for test panel
+const SAMPLE_LEAD = { score: 85, company_size: 62, source: 'referral' };
+
+let evalStep = 0;
+let evalT = 0;
+const EVAL_INTERVAL = 90; // frames per step
+
+function layoutNodes() {
+  // Two-column layout inside canvas
+  const padX = 24, padY = 60;
+  const colLeft = padX + 20;
+  const colRight = W * 0.62;
+
+  // Condition cards stacked
+  const cSpacing = 64;
+  let cy = padY + 80;
+  for (const c of CONDITIONS) {
+    c.x = colLeft;
+    c.y = cy;
+    cy += c.h + cSpacing - 20;
+  }
+
+  // Branch cards
+  const bSpacing = 18;
+  let by = padY + 80;
+  BRANCHES[0].x = colRight;
+  BRANCHES[0].y = by;
+  by += BRANCHES[0].h + bSpacing + 30;
+  BRANCHES[1].x = colRight;
+  BRANCHES[1].y = by;
+  by += BRANCHES[1].h + bSpacing + 30;
+  BRANCHES[2].x = colRight;
+  BRANCHES[2].y = by;
+}
+
+// ─── Mouse ────────────────────────────────────────────────────────────────────
+
+let mouseX = -1, mouseY = -1;
+
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = e.clientX - r.left;
+  mouseY = e.clientY - r.top;
+  for (const c of CONDITIONS) {
+    c.hovered = mouseX >= c.x && mouseX <= c.x + c.w && mouseY >= c.y && mouseY <= c.y + c.h;
+  }
+});
+canvas.addEventListener('mouseleave', () => {
+  mouseX = -1; mouseY = -1;
+  CONDITIONS.forEach(c => c.hovered = false);
+});
+
+// ─── Draw helpers ─────────────────────────────────────────────────────────────
+
+function roundRect(x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function drawConnector(x1: number, y1: number, x2: number, y2: number, color: string, alpha = 0.4) {
+  const mx = (x1 + x2) / 2;
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.bezierCurveTo(mx, y1, mx, y2, x2, y2);
+  ctx.strokeStyle = color;
+  ctx.globalAlpha = alpha;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+// ─── Evaluation logic ─────────────────────────────────────────────────────────
+
+function stepEvaluation(t: number) {
+  evalT = t;
+  const step = Math.floor(t / EVAL_INTERVAL) % (CONDITIONS.length + 2);
+
+  CONDITIONS.forEach((c, i) => {
+    if (step > i) {
+      // Already evaluated
+      if (c.id === 'c1') c.result = SAMPLE_LEAD.score > 80;
+      if (c.id === 'c2') c.result = SAMPLE_LEAD.company_size > 50;
+      if (c.id === 'c3') c.result = SAMPLE_LEAD.source === 'referral';
+    } else if (step === i) {
+      // Currently evaluating — flash
+      c.result = null;
+      c.flashT = (t % EVAL_INTERVAL) / EVAL_INTERVAL;
+    } else {
+      c.result = null;
+      c.flashT = 0;
+    }
+  });
+
+  evalStep = step;
+}
+
+// ─── Draw ─────────────────────────────────────────────────────────────────────
+
+let frame = 0;
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  stepEvaluation(frame);
+
+  // ── Background panel ──────────────────────────────────────────────────────
+  roundRect(12, 12, W - 24, H - 24, 12);
+  ctx.fillStyle = '#0d0f1a';
+  ctx.fill();
+  roundRect(12, 12, W - 24, H - 24, 12);
+  ctx.strokeStyle = 'rgba(79,70,229,0.18)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // ── Header ────────────────────────────────────────────────────────────────
+  ctx.font = '600 11px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.fillText('RULE BUILDER', 28, 38);
+
+  const stepLabel = evalStep >= CONDITIONS.length ? 'COMPLETE' : 'EVALUATING';
+  const labelColor = evalStep >= CONDITIONS.length ? '#22c55e' : '#f59e0b';
+  ctx.font = '600 10px -apple-system, sans-serif';
+  ctx.fillStyle = labelColor;
+  const lw = ctx.measureText(stepLabel).width;
+  ctx.fillText(stepLabel, W - 28 - lw, 38);
+
+  // ── Column labels ─────────────────────────────────────────────────────────
+  ctx.font = '500 10px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.fillText('CONDITIONS', 32, 62);
+  ctx.fillText('THEN / ELSE IF', W * 0.62, 62);
+
+  // ── "IF" label ────────────────────────────────────────────────────────────
+  ctx.font = '700 13px -apple-system, sans-serif';
+  ctx.fillStyle = '#818cf8';
+  ctx.fillText('IF', 32, 84 + 22);
+
+  // ── Conditions ────────────────────────────────────────────────────────────
+  for (let i = 0; i < CONDITIONS.length; i++) {
+    const c = CONDITIONS[i];
+    const isTrue = c.result === true;
+    const isFalse = c.result === false;
+    const isEval = c.result === null && c.flashT > 0;
+
+    // Pulse alpha for evaluating node
+    const pulseAlpha = isEval ? 0.3 + 0.5 * Math.sin(c.flashT * Math.PI * 4) : 0;
+
+    // Card bg
+    const bgAlpha = isTrue ? 0.15 : isFalse ? 0.06 : 0.08;
+    roundRect(c.x, c.y, c.w, c.h, 8);
+    ctx.fillStyle = isTrue ? `rgba(34,197,94,${bgAlpha})` : isFalse ? `rgba(239,68,68,${bgAlpha})` : `rgba(255,255,255,${bgAlpha})`;
+    ctx.fill();
+
+    // Pulse glow
+    if (isEval) {
+      roundRect(c.x - 2, c.y - 2, c.w + 4, c.h + 4, 10);
+      ctx.strokeStyle = `rgba(245,158,11,${pulseAlpha})`;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // Card border
+    roundRect(c.x, c.y, c.w, c.h, 8);
+    const borderColor = isTrue ? 'rgba(34,197,94,0.5)' : isFalse ? 'rgba(239,68,68,0.3)' : isEval ? 'rgba(245,158,11,0.6)' : 'rgba(255,255,255,0.1)';
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Expr text
+    ctx.font = '500 12px "SF Mono", "Fira Mono", monospace';
+    ctx.fillStyle = isTrue ? '#86efac' : isFalse ? '#fca5a5' : 'rgba(255,255,255,0.85)';
+    ctx.fillText(c.expr, c.x + 12, c.y + c.h / 2 + 4);
+
+    // Result icon
+    if (isTrue || isFalse) {
+      const icon = isTrue ? '✓' : '✗';
+      ctx.font = '700 13px sans-serif';
+      ctx.fillStyle = isTrue ? '#22c55e' : '#ef4444';
+      ctx.fillText(icon, c.x + c.w - 22, c.y + c.h / 2 + 5);
+    }
+
+    // Hit rate tooltip on hover
+    if (c.hovered) {
+      const tip = `Hit rate: ${c.hitRate}%`;
+      const tw = ctx.measureText(tip).width;
+      ctx.font = '500 11px -apple-system, sans-serif';
+      roundRect(c.x + c.w + 8, c.y + 8, tw + 16, 26, 6);
+      ctx.fillStyle = '#1e2235';
+      ctx.fill();
+      roundRect(c.x + c.w + 8, c.y + 8, tw + 16, 26, 6);
+      ctx.strokeStyle = 'rgba(79,70,229,0.5)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = '#a5b4fc';
+      ctx.fillText(tip, c.x + c.w + 16, c.y + 26);
+    }
+
+    // Operator badge between conditions
+    if (c.operator && i < CONDITIONS.length - 1) {
+      const opX = c.x + c.w / 2 - 18;
+      const opY = c.y + c.h + 10;
+      roundRect(opX, opY, 36, 20, 4);
+      ctx.fillStyle = '#1a1d2e';
+      ctx.fill();
+      roundRect(opX, opY, 36, 20, 4);
+      ctx.strokeStyle = 'rgba(79,70,229,0.5)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.font = '700 10px -apple-system, sans-serif';
+      ctx.fillStyle = '#818cf8';
+      ctx.textAlign = 'center';
+      ctx.fillText(c.operator, opX + 18, opY + 13);
+      ctx.textAlign = 'left';
+    }
+
+    // ELSE IF label before 3rd condition
+    if (i === 2) {
+      ctx.font = '700 11px -apple-system, sans-serif';
+      ctx.fillStyle = '#a78bfa';
+      ctx.fillText('ELSE IF', c.x - 4, c.y - 8);
+    }
+  }
+
+  // ── Branch cards ──────────────────────────────────────────────────────────
+  const THEN_LABELS = ['THEN', 'ELSE IF → THEN', 'ELSE'];
+  const BRANCH_COLORS_BG = ['rgba(79,70,229,0.15)', 'rgba(124,58,237,0.12)', 'rgba(55,65,81,0.18)'];
+
+  for (let i = 0; i < BRANCHES.length; i++) {
+    const b = BRANCHES[i];
+
+    // Activated state
+    const active = (i === 0 && evalStep >= 2) || (i === 1 && evalStep >= 3) || (i === 2);
+    const highlight = (i === 0 && CONDITIONS[0].result && CONDITIONS[1].result) ||
+                      (i === 1 && !(CONDITIONS[0].result && CONDITIONS[1].result) && CONDITIONS[2].result);
+
+    roundRect(b.x, b.y, b.w, b.h, 8);
+    ctx.fillStyle = highlight ? b.color.replace(')', ',0.3)').replace('rgb', 'rgba') : BRANCH_COLORS_BG[i];
+    ctx.fill();
+
+    roundRect(b.x, b.y, b.w, b.h, 8);
+    ctx.strokeStyle = highlight ? b.color : 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = highlight ? 1.5 : 1;
+    ctx.stroke();
+
+    // Label above
+    ctx.font = '600 9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.fillText(THEN_LABELS[i], b.x, b.y - 6);
+
+    // Branch label
+    ctx.font = '600 12px -apple-system, sans-serif';
+    ctx.fillStyle = highlight ? '#fff' : 'rgba(255,255,255,0.7)';
+    ctx.fillText(b.label, b.x + 12, b.y + b.h / 2 + 4);
+
+    // Active dot
+    if (highlight) {
+      ctx.beginPath();
+      ctx.arc(b.x + b.w - 14, b.y + b.h / 2, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#22c55e';
+      ctx.fill();
+    }
+  }
+
+  // ── Connectors ────────────────────────────────────────────────────────────
+  // Condition 1+2 → Branch 0 (Enterprise)
+  const c1 = CONDITIONS[0], c2 = CONDITIONS[1], c3 = CONDITIONS[2];
+  const b0 = BRANCHES[0], b1 = BRANCHES[1], b2 = BRANCHES[2];
+
+  const bothTrue = c1.result === true && c2.result === true;
+  const referralTrue = c3.result === true && !bothTrue;
+
+  drawConnector(c1.x + c1.w, c1.y + c1.h / 2, b0.x, b0.y + b0.h / 2, bothTrue ? '#22c55e' : '#4f46e5', bothTrue ? 0.8 : 0.25);
+  drawConnector(c2.x + c2.w, c2.y + c2.h / 2, b0.x, b0.y + b0.h / 2, bothTrue ? '#22c55e' : '#4f46e5', bothTrue ? 0.8 : 0.25);
+  drawConnector(c3.x + c3.w, c3.y + c3.h / 2, b1.x, b1.y + b1.h / 2, referralTrue ? '#22c55e' : '#7c3aed', referralTrue ? 0.8 : 0.25);
+  drawConnector(c3.x + c3.w, c3.y + c3.h / 2, b2.x, b2.y + b2.h / 2, '#374151', 0.2);
+
+  // ── Test panel ────────────────────────────────────────────────────────────
+  const tpX = 24, tpY = H - 72, tpW = W - 48, tpH = 52;
+  roundRect(tpX, tpY, tpW, tpH, 8);
+  ctx.fillStyle = 'rgba(255,255,255,0.03)';
+  ctx.fill();
+  roundRect(tpX, tpY, tpW, tpH, 8);
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.font = '600 10px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.fillText('TEST LEAD', tpX + 12, tpY + 16);
+
+  const fields = [
+    `score: ${SAMPLE_LEAD.score}`,
+    `company_size: ${SAMPLE_LEAD.company_size}`,
+    `source: '${SAMPLE_LEAD.source}'`,
+  ];
+  ctx.font = '500 11px "SF Mono", "Fira Mono", monospace';
+  let fx = tpX + 80;
+  for (const f of fields) {
+    ctx.fillStyle = '#a5b4fc';
+    ctx.fillText(f, fx, tpY + 34);
+    fx += ctx.measureText(f).width + 20;
+  }
+
+  // Route result
+  let routeText = '→ Evaluating…';
+  let routeColor = '#f59e0b';
+  if (bothTrue) { routeText = '→ Enterprise Team'; routeColor = '#22c55e'; }
+  else if (evalStep >= CONDITIONS.length && !bothTrue && referralTrue) { routeText = '→ Priority Queue'; routeColor = '#a78bfa'; }
+  else if (evalStep >= CONDITIONS.length) { routeText = '→ Standard Flow'; routeColor = '#9ca3af'; }
+
+  ctx.font = '600 11px -apple-system, sans-serif';
+  ctx.fillStyle = routeColor;
+  ctx.fillText(routeText, W - 28 - ctx.measureText(routeText).width, tpY + 34);
+
+  frame++;
+  requestAnimationFrame(draw);
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+window.addEventListener('resize', resize);
+resize();
+draw();
+</script>

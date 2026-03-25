@@ -1,0 +1,349 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloFlow — Notification Centre | Pello" description="PelloFlow's alert management panel lets you configure multi-channel escalation chains, monitor trigger history, and track response SLAs across every workflow.">
+  <Header />
+  <main id="main-content">
+    <section class="flow-section" aria-labelledby="flow-headline">
+      <div class="flow-layout">
+        <div class="flow-text">
+          <span class="flow-badge">PelloFlow</span>
+          <h1 id="flow-headline">Alerts That Find<br/>The Right Person.</h1>
+          <p>Configure multi-channel escalation chains, set SLA thresholds, and ensure every failure reaches the right team — via Slack, PagerDuty, email, or SMS.</p>
+          <ul class="flow-pills" role="list">
+            <li>Custom AI agents</li>
+            <li>End-to-end automation</li>
+            <li>API &amp; webhook integration</li>
+            <li>Ongoing maintenance</li>
+          </ul>
+        </div>
+        <div class="flow-canvas-col">
+          <canvas id="flow-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .flow-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .flow-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .flow-layout { grid-template-columns: 1fr; } }
+  .flow-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .flow-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(79,70,229,0.12); border: 1px solid rgba(79,70,229,0.35); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #818cf8; width: fit-content; }
+  .flow-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .flow-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .flow-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .flow-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .flow-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #flow-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: default; }
+</style>
+
+<script>
+// ─── Canvas setup ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('flow-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+
+let W = 0, H = 0;
+
+function resize() {
+  const rect = canvas.parentElement!.getBoundingClientRect();
+  canvas.width = rect.width * devicePixelRatio;
+  canvas.height = rect.height * devicePixelRatio;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  W = rect.width;
+  H = rect.height;
+}
+
+// ─── Types & data ─────────────────────────────────────────────────────────────
+
+interface AlertRule {
+  condition: string;
+  channel: string;
+  channelIcon: string;
+  status: 'armed' | 'muted';
+  triggers7d: number;
+  lastTriggered: string;
+  sla: 'green' | 'amber' | 'red';
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  hovered: boolean;
+}
+
+const RULES: AlertRule[] = [
+  { condition: 'Error rate > 1%', channel: 'PagerDuty', channelIcon: 'PD', status: 'armed', triggers7d: 3, lastTriggered: '2h ago', sla: 'green', x: 0, y: 0, w: 0, h: 44, hovered: false },
+  { condition: 'Queue depth > 1000', channel: 'Slack #ops', channelIcon: 'SL', status: 'armed', triggers7d: 8, lastTriggered: '14m ago', sla: 'amber', x: 0, y: 0, w: 0, h: 44, hovered: false },
+  { condition: 'Workflow failed', channel: 'Email admin', channelIcon: 'EM', status: 'armed', triggers7d: 1, lastTriggered: '1d ago', sla: 'green', x: 0, y: 0, w: 0, h: 44, hovered: false },
+  { condition: 'SLA breach', channel: 'SMS', channelIcon: 'SM', status: 'muted', triggers7d: 0, lastTriggered: 'Never', sla: 'red', x: 0, y: 0, w: 0, h: 44, hovered: false },
+];
+
+const SLA_COLORS = { green: '#22c55e', amber: '#f59e0b', red: '#ef4444' };
+const CHANNEL_COLORS: Record<string, string> = { PD: '#e0443c', SL: '#4a154b', EM: '#4f46e5', SM: '#059669' };
+
+interface NotifEvent {
+  time: string;
+  rule: string;
+  channel: string;
+  delivered: boolean;
+}
+
+const NOTIF_EVENTS: NotifEvent[] = [
+  { time: '07:14', rule: 'Queue depth > 1000', channel: 'Slack #ops', delivered: true },
+  { time: '07:02', rule: 'Error rate > 1%', channel: 'PagerDuty', delivered: true },
+  { time: '05:41', rule: 'Queue depth > 1000', channel: 'Slack #ops', delivered: true },
+  { time: 'Yesterday', rule: 'Workflow failed', channel: 'Email admin', delivered: true },
+];
+
+// Escalation chain
+const ESC_CHAIN = [
+  { level: 'L1', name: 'Slack #ops', color: '#4a154b', slaMin: 5 },
+  { level: 'L2', name: 'PagerDuty', color: '#e0443c', slaMin: 15 },
+  { level: 'L3', name: 'Phone call', color: '#7c3aed', slaMin: 30 },
+];
+
+// ─── Mouse ────────────────────────────────────────────────────────────────────
+
+let mouseX = -1, mouseY = -1;
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = e.clientX - r.left;
+  mouseY = e.clientY - r.top;
+  RULES.forEach(rule => {
+    rule.hovered = mouseX >= rule.x && mouseX <= rule.x + rule.w && mouseY >= rule.y && mouseY <= rule.y + rule.h;
+  });
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; RULES.forEach(r => r.hovered = false); });
+
+// ─── Draw helpers ─────────────────────────────────────────────────────────────
+
+function roundRect(x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// ─── Draw ─────────────────────────────────────────────────────────────────────
+
+let frame = 0;
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  roundRect(12, 12, W - 24, H - 24, 12);
+  ctx.fillStyle = '#0d0f1a';
+  ctx.fill();
+  roundRect(12, 12, W - 24, H - 24, 12);
+  ctx.strokeStyle = 'rgba(79,70,229,0.18)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Header
+  ctx.font = '600 11px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.fillText('NOTIFICATION CENTRE', 28, 38);
+
+  ctx.font = '600 10px -apple-system, sans-serif';
+  ctx.fillStyle = '#4f46e5';
+  ctx.fillText('4 ACTIVE RULES', W - 100, 38);
+
+  // ── Alert Rules ───────────────────────────────────────────────────────────
+  const rulesTop = 52;
+  ctx.font = '600 9px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.fillText('CONDITION', 28, rulesTop);
+  ctx.fillText('CHANNEL', W * 0.42, rulesTop);
+  ctx.fillText('TRIGGERS (7D)', W * 0.58, rulesTop);
+  ctx.fillText('LAST', W * 0.77, rulesTop);
+  ctx.fillText('SLA', W - 44, rulesTop);
+
+  const ruleStart = rulesTop + 10;
+  const ruleGap = 52;
+
+  RULES.forEach((rule, i) => {
+    const ry = ruleStart + i * ruleGap;
+    rule.x = 24;
+    rule.y = ry;
+    rule.w = W - 48;
+
+    roundRect(rule.x, ry, rule.w, rule.h, 7);
+    ctx.fillStyle = rule.hovered ? 'rgba(79,70,229,0.07)' : 'rgba(255,255,255,0.025)';
+    ctx.fill();
+    if (rule.hovered) {
+      roundRect(rule.x, ry, rule.w, rule.h, 7);
+      ctx.strokeStyle = 'rgba(79,70,229,0.3)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Status dot
+    const statusColor = rule.status === 'armed' ? '#22c55e' : '#6b7280';
+    const dotAlpha = rule.status === 'armed' ? 0.6 + 0.4 * Math.sin(frame * 0.07 + i) : 1;
+    ctx.beginPath();
+    ctx.arc(rule.x + 14, ry + rule.h / 2, 4, 0, Math.PI * 2);
+    ctx.fillStyle = statusColor;
+    ctx.globalAlpha = dotAlpha;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Condition
+    ctx.font = '500 11px -apple-system, sans-serif';
+    ctx.fillStyle = rule.status === 'muted' ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.85)';
+    ctx.fillText(rule.condition, rule.x + 26, ry + rule.h / 2 + 4);
+
+    // Channel badge
+    const chColor = CHANNEL_COLORS[rule.channelIcon] || '#4f46e5';
+    const chX = W * 0.42;
+    roundRect(chX, ry + rule.h / 2 - 10, 72, 18, 4);
+    ctx.fillStyle = chColor + '25';
+    ctx.fill();
+    ctx.font = '500 10px -apple-system, sans-serif';
+    ctx.fillStyle = chColor;
+    ctx.fillText(rule.channel, chX + 6, ry + rule.h / 2 + 4);
+
+    // Trigger count
+    ctx.font = '600 13px -apple-system, sans-serif';
+    ctx.fillStyle = rule.triggers7d > 5 ? '#f59e0b' : 'rgba(255,255,255,0.6)';
+    const tcX = W * 0.58 + 16;
+    ctx.textAlign = 'center';
+    ctx.fillText(String(rule.triggers7d), tcX, ry + rule.h / 2 + 4);
+    ctx.textAlign = 'left';
+
+    // Last triggered
+    ctx.font = '400 10px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.fillText(rule.lastTriggered, W * 0.77, ry + rule.h / 2 + 4);
+
+    // SLA indicator
+    const slaX = W - 40;
+    ctx.beginPath();
+    ctx.arc(slaX, ry + rule.h / 2, 5, 0, Math.PI * 2);
+    ctx.fillStyle = SLA_COLORS[rule.sla];
+    ctx.fill();
+
+    // Hover — mini trigger chart
+    if (rule.hovered) {
+      const chartX = W * 0.58 + 34;
+      const chartW = 40;
+      const chartH = 16;
+      const chartY2 = ry + (rule.h - chartH) / 2;
+      const barCount = 7;
+      const barW = (chartW - (barCount - 1) * 2) / barCount;
+      for (let b = 0; b < barCount; b++) {
+        const bh = Math.max(2, Math.random() * chartH);
+        const bx = chartX + b * (barW + 2);
+        roundRect(bx, chartY2 + chartH - bh, barW, bh, 1);
+        ctx.fillStyle = 'rgba(79,70,229,0.6)';
+        ctx.fill();
+      }
+    }
+  });
+
+  // ── Timeline ──────────────────────────────────────────────────────────────
+  const tlY = ruleStart + RULES.length * ruleGap + 12;
+  ctx.font = '600 9px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.fillText('RECENT ALERTS', 28, tlY);
+
+  NOTIF_EVENTS.forEach((ev, i) => {
+    const ey = tlY + 12 + i * 26;
+    if (ey > H - 80) return;
+
+    ctx.font = '400 10px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.fillText(ev.time, 28, ey + 12);
+
+    ctx.font = '500 10px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.fillText(ev.rule, 80, ey + 12);
+
+    const chCol = Object.values(CHANNEL_COLORS)[i % 4];
+    roundRect(W * 0.62, ey, 80, 18, 3);
+    ctx.fillStyle = chCol + '20';
+    ctx.fill();
+    ctx.font = '500 9px -apple-system, sans-serif';
+    ctx.fillStyle = chCol;
+    ctx.fillText(ev.channel, W * 0.62 + 6, ey + 12);
+
+    // Delivered tick
+    ctx.font = '600 10px sans-serif';
+    ctx.fillStyle = '#22c55e';
+    ctx.fillText('✓ sent', W - 56, ey + 12);
+  });
+
+  // ── Escalation chain ──────────────────────────────────────────────────────
+  const ecY = H - 72;
+  ctx.beginPath();
+  ctx.moveTo(24, ecY - 6);
+  ctx.lineTo(W - 24, ecY - 6);
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.font = '600 9px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.fillText('ESCALATION CHAIN', 28, ecY + 6);
+
+  const ecSpacing = (W - 80) / ESC_CHAIN.length;
+  ESC_CHAIN.forEach((ec, i) => {
+    const ex = 36 + i * ecSpacing;
+    const ey2 = ecY + 16;
+
+    roundRect(ex, ey2, 100, 36, 6);
+    ctx.fillStyle = ec.color + '18';
+    ctx.fill();
+    roundRect(ex, ey2, 100, 36, 6);
+    ctx.strokeStyle = ec.color + '50';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.font = '700 10px -apple-system, sans-serif';
+    ctx.fillStyle = ec.color;
+    ctx.fillText(ec.level, ex + 10, ey2 + 14);
+
+    ctx.font = '500 10px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.fillText(ec.name, ex + 10, ey2 + 26);
+
+    ctx.font = '400 9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillText(`SLA ${ec.slaMin}min`, ex + 62, ey2 + 14);
+
+    if (i < ESC_CHAIN.length - 1) {
+      const arrowX = ex + 108;
+      const arrowY = ey2 + 18;
+      ctx.font = '500 12px sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.2)';
+      ctx.fillText('→', arrowX, arrowY);
+    }
+  });
+
+  frame++;
+  requestAnimationFrame(draw);
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+window.addEventListener('resize', resize);
+resize();
+draw();
+</script>

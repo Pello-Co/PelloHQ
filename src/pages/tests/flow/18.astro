@@ -1,0 +1,425 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloFlow — Resource Monitor | Pello" description="PelloFlow's infrastructure dashboard gives you real-time CPU, memory, worker pool status, and auto-scaling visibility for all your running automations.">
+  <Header />
+  <main id="main-content">
+    <section class="flow-section" aria-labelledby="flow-headline">
+      <div class="flow-layout">
+        <div class="flow-text">
+          <span class="flow-badge">PelloFlow</span>
+          <h1 id="flow-headline">Infra That Scales.<br/>Always Visible.</h1>
+          <p>Monitor your automation cluster in real time — CPU, memory, worker pools, and auto-scaling. Always know what's running, what's busy, and what it costs.</p>
+          <ul class="flow-pills" role="list">
+            <li>Custom AI agents</li>
+            <li>End-to-end automation</li>
+            <li>API &amp; webhook integration</li>
+            <li>Ongoing maintenance</li>
+          </ul>
+        </div>
+        <div class="flow-canvas-col">
+          <canvas id="flow-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .flow-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .flow-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .flow-layout { grid-template-columns: 1fr; } }
+  .flow-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .flow-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(79,70,229,0.12); border: 1px solid rgba(79,70,229,0.35); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #818cf8; width: fit-content; }
+  .flow-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .flow-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .flow-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .flow-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .flow-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #flow-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: default; }
+</style>
+
+<script>
+// ─── Canvas setup ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('flow-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+
+let W = 0, H = 0;
+
+function resize() {
+  const rect = canvas.parentElement!.getBoundingClientRect();
+  canvas.width = rect.width * devicePixelRatio;
+  canvas.height = rect.height * devicePixelRatio;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  W = rect.width;
+  H = rect.height;
+}
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type WorkerStatus = 'active' | 'idle' | 'busy' | 'error';
+
+interface Worker {
+  status: WorkerStatus;
+  task: string;
+  x: number;
+  y: number;
+}
+
+// ─── Data ─────────────────────────────────────────────────────────────────────
+
+const WORKER_TASKS = ['Lead Router', 'CRM Sync', 'Email Drip', 'Data Enrich', 'Report Gen', 'Webhook Fan'];
+const WORKER_STATUSES: WorkerStatus[] = ['active', 'active', 'active', 'active', 'busy', 'busy', 'busy', 'idle', 'idle', 'idle', 'idle', 'error'];
+
+const workers: Worker[] = WORKER_STATUSES.map((s, i) => ({
+  status: s,
+  task: s !== 'idle' && s !== 'error' ? WORKER_TASKS[i % WORKER_TASKS.length] : '',
+  x: 0, y: 0
+}));
+
+const WORKER_COLORS: Record<WorkerStatus, string> = {
+  active: '#22c55e',
+  idle: '#3b82f6',
+  busy: '#f59e0b',
+  error: '#ef4444',
+};
+
+const WORKFLOWS = [
+  { name: 'Lead Router', pct: 0.38, color: '#4f46e5' },
+  { name: 'CRM Sync', pct: 0.24, color: '#0891b2' },
+  { name: 'Email Drip', pct: 0.18, color: '#7c3aed' },
+  { name: 'Other', pct: 0.20, color: '#374151' },
+];
+
+// Scale history: 24 points
+const SCALE_HISTORY: number[] = [2, 2, 3, 4, 6, 8, 10, 12, 12, 11, 10, 8, 7, 6, 5, 4, 4, 5, 6, 7, 8, 9, 10, 12];
+
+// ─── Mouse ────────────────────────────────────────────────────────────────────
+
+let mouseX = -1, mouseY = -1;
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = e.clientX - r.left;
+  mouseY = e.clientY - r.top;
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
+
+// ─── Draw helpers ─────────────────────────────────────────────────────────────
+
+function roundRect(x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function gauge(cx: number, cy: number, r: number, value: number, color: string, label: string, sublabel: string) {
+  const startA = Math.PI * 0.8;
+  const endA = Math.PI * 2.2;
+  const range = endA - startA;
+  const fillA = startA + range * value;
+
+  // Track
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, startA, endA);
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 6;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // Fill
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, startA, fillA);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 6;
+  ctx.stroke();
+
+  // Value
+  ctx.font = '700 14px -apple-system, sans-serif';
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.fillText(label, cx, cy + 4);
+
+  ctx.font = '400 9px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.fillText(sublabel, cx, cy + 16);
+  ctx.textAlign = 'left';
+}
+
+// ─── Main draw ────────────────────────────────────────────────────────────────
+
+let frame = 0;
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  const t = frame * 0.01;
+
+  // Animated metric values
+  const cpuVal = 0.52 + 0.12 * Math.sin(t * 1.3);
+  const memVal = 0.68 + 0.06 * Math.sin(t * 0.8);
+  const netVal = 0.31 + 0.15 * Math.sin(t * 1.7);
+
+  // Background panel
+  roundRect(12, 12, W - 24, H - 24, 12);
+  ctx.fillStyle = '#0d0f1a';
+  ctx.fill();
+  roundRect(12, 12, W - 24, H - 24, 12);
+  ctx.strokeStyle = 'rgba(79,70,229,0.18)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Header
+  ctx.font = '600 11px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.fillText('RESOURCE MONITOR', 28, 38);
+
+  ctx.font = '600 10px -apple-system, sans-serif';
+  ctx.fillStyle = '#22c55e';
+  ctx.fillText('CLUSTER HEALTHY', W - 130, 38);
+
+  // ── Gauges row ────────────────────────────────────────────────────────────
+  const gaugeY = 90;
+  const gaugeR = 30;
+  const gaugeSpacing = (W - 56) / 3;
+
+  gauge(28 + gaugeSpacing * 0 + gaugeSpacing / 2, gaugeY, gaugeR, cpuVal, '#4f46e5', `${Math.round(cpuVal * 100)}%`, 'CPU');
+  gauge(28 + gaugeSpacing * 1 + gaugeSpacing / 2, gaugeY, gaugeR, memVal, '#0891b2', `${Math.round(memVal * 100)}%`, 'Memory');
+  gauge(28 + gaugeSpacing * 2 + gaugeSpacing / 2, gaugeY, gaugeR, netVal, '#7c3aed', `${Math.round(netVal * 100)}%`, 'Network');
+
+  const secY = gaugeY + 50;
+
+  // ── Worker pool ───────────────────────────────────────────────────────────
+  const wpX = 24, wpY = secY + 8, wpW = W * 0.46 - 8;
+  roundRect(wpX, wpY, wpW, 140, 8);
+  ctx.fillStyle = 'rgba(255,255,255,0.02)';
+  ctx.fill();
+  roundRect(wpX, wpY, wpW, 140, 8);
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.font = '600 10px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.fillText('WORKER POOL', wpX + 12, wpY + 18);
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.fillText('12 slots', wpX + wpW - 44, wpY + 18);
+
+  const wSize = 22, wGap = 6;
+  const wCols = 4;
+  const wStartX = wpX + 14;
+  const wStartY = wpY + 30;
+
+  workers.forEach((w, i) => {
+    const col = i % wCols;
+    const row = Math.floor(i / wCols);
+    w.x = wStartX + col * (wSize + wGap);
+    w.y = wStartY + row * (wSize + wGap);
+
+    const color = WORKER_COLORS[w.status];
+    const isHov = mouseX >= w.x && mouseX <= w.x + wSize && mouseY >= w.y && mouseY <= w.y + wSize;
+
+    roundRect(w.x, w.y, wSize, wSize, 4);
+    ctx.fillStyle = color + '25';
+    ctx.fill();
+    roundRect(w.x, w.y, wSize, wSize, 4);
+    ctx.strokeStyle = color + (isHov ? 'cc' : '60');
+    ctx.lineWidth = isHov ? 1.5 : 1;
+    ctx.stroke();
+
+    // Pulse for active
+    if (w.status === 'active' || w.status === 'busy') {
+      const pulse = 0.3 + 0.3 * Math.sin(frame * 0.08 + i * 0.8);
+      roundRect(w.x - 1, w.y - 1, wSize + 2, wSize + 2, 5);
+      ctx.strokeStyle = color.replace(')', `,${pulse})`).replace('rgb', 'rgba');
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Dot
+    ctx.beginPath();
+    ctx.arc(w.x + wSize / 2, w.y + wSize / 2, 4, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+
+    // Hover tooltip
+    if (isHov && w.task) {
+      const tip = w.task;
+      const tw = ctx.measureText(tip).width;
+      ctx.font = '500 10px -apple-system, sans-serif';
+      roundRect(w.x + wSize + 4, w.y, tw + 12, 20, 4);
+      ctx.fillStyle = '#1a1d2e';
+      ctx.fill();
+      roundRect(w.x + wSize + 4, w.y, tw + 12, 20, 4);
+      ctx.strokeStyle = 'rgba(79,70,229,0.4)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = '#c7d2fe';
+      ctx.fillText(tip, w.x + wSize + 10, w.y + 13);
+    }
+  });
+
+  // Worker legend
+  const statuses: WorkerStatus[] = ['active', 'busy', 'idle', 'error'];
+  statuses.forEach((s, i) => {
+    const lx = wpX + 14 + i * (wpW / 4 - 2);
+    const ly = wpY + 122;
+    ctx.beginPath();
+    ctx.arc(lx + 4, ly, 3, 0, Math.PI * 2);
+    ctx.fillStyle = WORKER_COLORS[s];
+    ctx.fill();
+    ctx.font = '400 9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    const count = workers.filter(w => w.status === s).length;
+    ctx.fillText(`${s} (${count})`, lx + 10, ly + 4);
+  });
+
+  // ── Task distribution ─────────────────────────────────────────────────────
+  const tdX = W * 0.46 + 16, tdY = secY + 8, tdW = W - tdX - 24;
+  roundRect(tdX, tdY, tdW, 140, 8);
+  ctx.fillStyle = 'rgba(255,255,255,0.02)';
+  ctx.fill();
+  roundRect(tdX, tdY, tdW, 140, 8);
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.font = '600 10px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.fillText('TASK DISTRIBUTION', tdX + 12, tdY + 18);
+
+  let barY = tdY + 30;
+  for (const wf of WORKFLOWS) {
+    const barW = (tdW - 28) * wf.pct;
+    roundRect(tdX + 12, barY, tdW - 28, 14, 3);
+    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+    ctx.fill();
+    roundRect(tdX + 12, barY, barW, 14, 3);
+    ctx.fillStyle = wf.color;
+    ctx.fill();
+    ctx.font = '500 9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fillText(wf.name, tdX + 12, barY - 3);
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${Math.round(wf.pct * 100)}%`, tdX + tdW - 16, barY + 10);
+    ctx.textAlign = 'left';
+    barY += 28;
+  }
+
+  // ── Scaling timeline ──────────────────────────────────────────────────────
+  const stX = 24, stY = secY + 158, stW = W * 0.62 - 8, stH = 90;
+  roundRect(stX, stY, stW, stH, 8);
+  ctx.fillStyle = 'rgba(255,255,255,0.02)';
+  ctx.fill();
+  roundRect(stX, stY, stW, stH, 8);
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.font = '600 10px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.fillText('AUTO-SCALING — INSTANCE COUNT', stX + 12, stY + 16);
+
+  const chartX = stX + 16, chartY = stY + 24, chartW = stW - 32, chartH = stH - 36;
+  const pts = SCALE_HISTORY.length;
+  const maxV = 14;
+
+  // Grid
+  for (let g = 0; g <= 4; g++) {
+    const gy = chartY + chartH - (g / 4) * chartH;
+    ctx.beginPath();
+    ctx.moveTo(chartX, gy);
+    ctx.lineTo(chartX + chartW, gy);
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.font = '400 8px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.fillText(`${Math.round((g / 4) * maxV)}`, chartX - 16, gy + 3);
+  }
+
+  // Line
+  ctx.beginPath();
+  for (let i = 0; i < pts; i++) {
+    const px = chartX + (i / (pts - 1)) * chartW;
+    const scrollShift = (frame * 0.003) % 1;
+    const shifted = (i + Math.floor(frame * 0.03)) % pts;
+    const py = chartY + chartH - (SCALE_HISTORY[shifted] / maxV) * chartH;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.strokeStyle = '#4f46e5';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Fill under
+  ctx.lineTo(chartX + chartW, chartY + chartH);
+  ctx.lineTo(chartX, chartY + chartH);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, chartY, 0, chartY + chartH);
+  grad.addColorStop(0, 'rgba(79,70,229,0.25)');
+  grad.addColorStop(1, 'rgba(79,70,229,0)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // ── Cost tracker ──────────────────────────────────────────────────────────
+  const ctX = W * 0.62 + 12, ctY = secY + 158, ctW = W - ctX - 24, ctH = 90;
+  roundRect(ctX, ctY, ctW, ctH, 8);
+  ctx.fillStyle = 'rgba(255,255,255,0.02)';
+  ctx.fill();
+  roundRect(ctX, ctY, ctW, ctH, 8);
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.font = '600 10px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.fillText('COST TODAY', ctX + 12, ctY + 18);
+
+  ctx.font = '700 22px -apple-system, sans-serif';
+  ctx.fillStyle = '#22c55e';
+  ctx.fillText('$12.40', ctX + 12, ctY + 48);
+
+  ctx.font = '400 10px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.fillText('/day', ctX + 12, ctY + 62);
+
+  roundRect(ctX + 12, ctY + 68, ctW - 24, 6, 3);
+  ctx.fillStyle = 'rgba(255,255,255,0.07)';
+  ctx.fill();
+  roundRect(ctX + 12, ctY + 68, (ctW - 24) * 0.33, 6, 3);
+  ctx.fillStyle = '#22c55e';
+  ctx.fill();
+
+  ctx.font = '600 9px -apple-system, sans-serif';
+  ctx.fillStyle = '#22c55e';
+  ctx.textAlign = 'right';
+  ctx.fillText('67% under budget', ctX + ctW - 12, ctY + 82);
+  ctx.textAlign = 'left';
+
+  frame++;
+  requestAnimationFrame(draw);
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+window.addEventListener('resize', resize);
+resize();
+draw();
+</script>
