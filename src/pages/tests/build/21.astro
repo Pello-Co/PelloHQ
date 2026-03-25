@@ -641,8 +641,9 @@ function draw(): void {
   const halfW = (W - pad * 3) / 2;
   const topH = 100;
   const midH = 58;
-  const row3H = 70;
-  const codeH = Math.max(140, H - topH - midH - row3H - pad * 5);
+  const remaining = Math.max(260, H - topH - midH - pad * 5);
+  const row3H = Math.round(remaining * 0.45);
+  const codeH = remaining - row3H;
 
   // Row 1: req volume | latency
   drawReqVolume(pad, pad, halfW, topH);
