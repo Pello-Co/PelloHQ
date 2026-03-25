@@ -1,0 +1,403 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloBuild — System Architecture | Pello" description="PelloBuild designs and builds distributed systems with clean architecture — every service connected, monitored, and running at production scale.">
+  <Header />
+  <main id="main-content">
+    <section class="build-section" aria-labelledby="build-headline">
+      <div class="build-layout">
+        <div class="build-text">
+          <span class="build-badge">PelloBuild</span>
+          <h1 id="build-headline">Distributed Systems. Built to Last.</h1>
+          <p>PelloBuild architects and builds production-grade distributed systems — every service designed for reliability, every integration engineered for scale.</p>
+          <ul class="build-pills" role="list">
+            <li>Full-stack development</li>
+            <li>Data infrastructure</li>
+            <li>Internal tooling</li>
+            <li>Systems integration</li>
+          </ul>
+        </div>
+        <div class="build-canvas-col">
+          <canvas id="build-canvas" aria-hidden="true"></canvas>
+          <div id="build-tooltip" class="build-tooltip" aria-hidden="true"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #080a12; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .build-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .build-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .build-layout { grid-template-columns: 1fr; } }
+  .build-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .build-badge { display: inline-flex; align-items: center; padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6366f1; width: fit-content; }
+  .build-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .build-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .build-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .build-pills li { padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .build-canvas-col { position: relative; width: 100%; min-height: 580px; }
+  #build-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: default; }
+  .build-tooltip {
+    position: absolute; pointer-events: none;
+    background: rgba(8,10,20,0.97); border: 1px solid rgba(99,102,241,0.35);
+    border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #fff;
+    opacity: 0; transition: opacity 0.15s; z-index: 20;
+    min-width: 160px; line-height: 1.7;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+  }
+  .build-tooltip.visible { opacity: 1; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Service {
+  id: string;
+  name: string;
+  version: string;
+  uptime: number;      // %
+  latency: number;     // ms
+  rps: number;
+  lastDeploy: string;
+  color: string;
+  icon: string;
+  x: number; y: number;
+  w: number; h: number;
+  pulse: number;       // 0–1
+  pulsePhase: number;
+}
+
+interface Connection {
+  from: string;
+  to: string;
+  label: string;
+  dots: FlowDot[];
+}
+
+interface FlowDot {
+  progress: number;
+  speed: number;
+}
+
+// ─── Canvas Setup ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('build-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const col = canvas.parentElement as HTMLElement;
+const tooltip = document.getElementById('build-tooltip') as HTMLElement;
+
+let W = 0, H = 0, dpr = 1, frame = 0;
+let mouse = { x: -9999, y: -9999 };
+let hoveredService: Service | null = null;
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = col.getBoundingClientRect();
+  W = rect.width; H = rect.height;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+  layoutServices();
+}
+
+// ─── Service Definitions ──────────────────────────────────────────────────────
+
+const SERVICES: Service[] = [
+  { id: 'cdn',     name: 'CDN',            version: 'v1.4.2', uptime: 99.99, latency: 4,   rps: 8420, lastDeploy: '3d ago',  color: '#22d3ee', icon: '◈', x:0,y:0,w:0,h:0, pulse:0, pulsePhase:0.0 },
+  { id: 'gateway', name: 'API Gateway',    version: 'v3.1.0', uptime: 99.97, latency: 8,   rps: 3840, lastDeploy: '12h ago', color: '#6366f1', icon: '⊕', x:0,y:0,w:0,h:0, pulse:0, pulsePhase:0.4 },
+  { id: 'auth',    name: 'Auth Service',   version: 'v2.8.1', uptime: 99.99, latency: 12,  rps: 1240, lastDeploy: '2d ago',  color: '#f59e0b', icon: '⊗', x:0,y:0,w:0,h:0, pulse:0, pulsePhase:0.8 },
+  { id: 'user',    name: 'User Service',   version: 'v4.0.3', uptime: 99.94, latency: 22,  rps: 640,  lastDeploy: '6h ago',  color: '#6366f1', icon: '⊙', x:0,y:0,w:0,h:0, pulse:0, pulsePhase:1.2 },
+  { id: 'payment', name: 'Payment Svc',   version: 'v2.2.0', uptime: 99.98, latency: 45,  rps: 180,  lastDeploy: '5d ago',  color: '#4ade80', icon: '⊛', x:0,y:0,w:0,h:0, pulse:0, pulsePhase:1.6 },
+  { id: 'db',      name: 'PostgreSQL',     version: 'v15.2',  uptime: 99.99, latency: 3,   rps: 2100, lastDeploy: '—',       color: '#22d3ee', icon: '◫', x:0,y:0,w:0,h:0, pulse:0, pulsePhase:2.0 },
+  { id: 'cache',   name: 'Redis Cache',    version: 'v7.2.0', uptime: 99.98, latency: 1,   rps: 4800, lastDeploy: '—',       color: '#f472b6', icon: '◈', x:0,y:0,w:0,h:0, pulse:0, pulsePhase:2.4 },
+  { id: 'queue',   name: 'Message Queue',  version: 'v3.11',  uptime: 99.95, latency: 6,   rps: 920,  lastDeploy: '8d ago',  color: '#fb923c', icon: '◉', x:0,y:0,w:0,h:0, pulse:0, pulsePhase:2.8 },
+];
+
+const CONNECTIONS: Connection[] = [
+  { from: 'cdn',     to: 'gateway', label: 'HTTPS',  dots: [] },
+  { from: 'gateway', to: 'auth',    label: 'gRPC',   dots: [] },
+  { from: 'gateway', to: 'user',    label: 'REST',   dots: [] },
+  { from: 'gateway', to: 'payment', label: 'REST',   dots: [] },
+  { from: 'user',    to: 'db',      label: 'SQL',    dots: [] },
+  { from: 'user',    to: 'cache',   label: 'Redis',  dots: [] },
+  { from: 'payment', to: 'db',      label: 'SQL',    dots: [] },
+  { from: 'gateway', to: 'queue',   label: 'AMQP',   dots: [] },
+  { from: 'auth',    to: 'cache',   label: 'Redis',  dots: [] },
+];
+
+// Seed flow dots
+for (const conn of CONNECTIONS) {
+  const count = 2 + Math.floor(Math.random() * 2);
+  for (let i = 0; i < count; i++) {
+    conn.dots.push({ progress: Math.random(), speed: 0.003 + Math.random() * 0.003 });
+  }
+}
+
+function serviceById(id: string): Service | undefined {
+  return SERVICES.find(s => s.id === id);
+}
+
+// ─── Layout ───────────────────────────────────────────────────────────────────
+
+function layoutServices(): void {
+  const sw = 108, sh = 56, pad = 16;
+
+  // Logical grid positions (col, row), 0-indexed
+  const layout: Record<string, [number, number]> = {
+    cdn:     [2, 0],
+    gateway: [2, 1],
+    auth:    [0, 2],
+    user:    [2, 2],
+    payment: [4, 2],
+    db:      [1, 3],
+    cache:   [3, 3],
+    queue:   [4, 3],
+  };
+
+  const cols = 5, rows = 4;
+  const cellW = (W - pad * 2) / cols;
+  const cellH = (H - pad * 2) / rows;
+
+  for (const svc of SERVICES) {
+    const [c, r] = layout[svc.id] ?? [0, 0];
+    svc.x = pad + c * cellW + (cellW - sw) / 2;
+    svc.y = pad + r * cellH + (cellH - sh) / 2;
+    svc.w = sw;
+    svc.h = sh;
+  }
+}
+
+// ─── Drawing Helpers ──────────────────────────────────────────────────────────
+
+function roundRect(x: number, y: number, w: number, h: number, r: number): void {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// ─── Draw: Connection ─────────────────────────────────────────────────────────
+
+function drawConnection(conn: Connection): void {
+  const from = serviceById(conn.from);
+  const to = serviceById(conn.to);
+  if (!from || !to) return;
+
+  const fx = from.x + from.w / 2;
+  const fy = from.y + from.h / 2;
+  const tx = to.x + to.w / 2;
+  const ty = to.y + to.h / 2;
+
+  // Line
+  ctx.beginPath();
+  ctx.moveTo(fx, fy);
+  ctx.lineTo(tx, ty);
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Arrow
+  const angle = Math.atan2(ty - fy, tx - fx);
+  const arrowX = tx - Math.cos(angle) * (to.w / 2 + 4);
+  const arrowY = ty - Math.sin(angle) * (to.h / 2 + 4);
+  ctx.beginPath();
+  ctx.moveTo(arrowX, arrowY);
+  ctx.lineTo(arrowX - 6 * Math.cos(angle - 0.4), arrowY - 6 * Math.sin(angle - 0.4));
+  ctx.lineTo(arrowX - 6 * Math.cos(angle + 0.4), arrowY - 6 * Math.sin(angle + 0.4));
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(255,255,255,0.12)';
+  ctx.fill();
+
+  // Flow dots
+  for (const dot of conn.dots) {
+    dot.progress = (dot.progress + dot.speed) % 1;
+    const dx = fx + (tx - fx) * dot.progress;
+    const dy = fy + (ty - fy) * dot.progress;
+    ctx.beginPath();
+    ctx.arc(dx, dy, 2, 0, Math.PI * 2);
+    ctx.fillStyle = from.color;
+    ctx.globalAlpha = 0.7;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  // Label (midpoint)
+  const midX = (fx + tx) / 2;
+  const midY = (fy + ty) / 2;
+  ctx.font = '400 8px "SF Mono", monospace';
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+  ctx.fillText(conn.label, midX, midY - 7);
+  ctx.textAlign = 'left';
+}
+
+// ─── Draw: Service Node ───────────────────────────────────────────────────────
+
+function drawService(svc: Service): void {
+  const { x, y, w, h, color } = svc;
+  const mx = mouse.x - col.getBoundingClientRect().left;
+  const my = mouse.y - col.getBoundingClientRect().top;
+  const hov = mx > x && mx < x + w && my > y && my < y + h;
+
+  // Pulse ring
+  if (svc.pulse > 0) {
+    const pr = 32 + svc.pulse * 20;
+    ctx.beginPath();
+    ctx.arc(x + w / 2, y + h / 2, pr, 0, Math.PI * 2);
+    ctx.strokeStyle = color;
+    ctx.globalAlpha = (1 - svc.pulse) * 0.15;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    svc.pulse += 0.015;
+    if (svc.pulse > 1) svc.pulse = 0;
+  }
+
+  // Trigger pulse periodically
+  if (frame % 90 === Math.floor(svc.pulsePhase * 20) % 90) {
+    svc.pulse = 0.01;
+  }
+
+  // Shadow glow
+  if (hov) {
+    ctx.save();
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 16;
+    roundRect(x, y, w, h, 7);
+    ctx.fillStyle = 'transparent';
+    ctx.strokeStyle = color + 'aa';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Box background
+  roundRect(x, y, w, h, 7);
+  ctx.fillStyle = hov ? 'rgba(14,16,32,0.99)' : 'rgba(10,12,24,0.95)';
+  ctx.fill();
+  ctx.strokeStyle = hov ? color + 'bb' : 'rgba(255,255,255,0.09)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Left accent bar
+  roundRect(x, y + 8, 3, h - 16, 2);
+  ctx.fillStyle = color;
+  ctx.globalAlpha = 0.7;
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // Health dot
+  ctx.beginPath();
+  ctx.arc(x + w - 10, y + 10, 3, 0, Math.PI * 2);
+  ctx.fillStyle = svc.uptime > 99.9 ? '#4ade80' : svc.uptime > 99 ? '#f59e0b' : '#ef4444';
+  ctx.fill();
+
+  // Service name
+  ctx.font = '600 10px -apple-system, sans-serif';
+  ctx.fillStyle = hov ? '#fff' : 'rgba(255,255,255,0.85)';
+  ctx.textBaseline = 'top';
+  ctx.fillText(svc.name, x + 12, y + 10);
+
+  // Version
+  ctx.font = '400 8px "SF Mono", monospace';
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.fillText(svc.version, x + 12, y + 23);
+
+  // Latency
+  const latColor = svc.latency < 10 ? '#4ade80' : svc.latency < 50 ? '#f59e0b' : '#ef4444';
+  ctx.font = '500 8px "SF Mono", monospace';
+  ctx.fillStyle = latColor;
+  ctx.fillText(`${svc.latency}ms`, x + 12, y + h - 14);
+
+  // RPS
+  const rpsFlicker = svc.rps + Math.floor(Math.sin(frame * 0.05 + svc.pulsePhase) * (svc.rps * 0.02));
+  ctx.textAlign = 'right';
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.fillText(`${rpsFlicker}/s`, x + w - 8, y + h - 14);
+  ctx.textAlign = 'left';
+}
+
+// ─── Tooltip ──────────────────────────────────────────────────────────────────
+
+function updateTooltip(): void {
+  const mx = mouse.x - col.getBoundingClientRect().left;
+  const my = mouse.y - col.getBoundingClientRect().top;
+  hoveredService = null;
+
+  for (const svc of SERVICES) {
+    if (mx > svc.x && mx < svc.x + svc.w && my > svc.y && my < svc.y + svc.h) {
+      hoveredService = svc;
+      break;
+    }
+  }
+
+  if (hoveredService) {
+    tooltip.innerHTML = `
+      <div style="color:${hoveredService.color};font-weight:600;font-size:11px;margin-bottom:4px">${hoveredService.name}</div>
+      <div style="color:rgba(255,255,255,0.4);font-size:10px">Uptime: <span style="color:#4ade80">${hoveredService.uptime}%</span></div>
+      <div style="color:rgba(255,255,255,0.4);font-size:10px">Latency: <span style="color:rgba(255,255,255,0.8)">${hoveredService.latency}ms</span></div>
+      <div style="color:rgba(255,255,255,0.4);font-size:10px">Req/s: <span style="color:rgba(255,255,255,0.8)">${hoveredService.rps.toLocaleString()}</span></div>
+      <div style="color:rgba(255,255,255,0.4);font-size:10px">Deployed: <span style="color:rgba(255,255,255,0.5)">${hoveredService.lastDeploy}</span></div>
+    `;
+    const tipX = Math.min(mouse.x - col.getBoundingClientRect().left + 12, W - 170);
+    const tipY = mouse.y - col.getBoundingClientRect().top - 80;
+    tooltip.style.left = tipX + 'px';
+    tooltip.style.top = Math.max(8, tipY) + 'px';
+    tooltip.classList.add('visible');
+  } else {
+    tooltip.classList.remove('visible');
+  }
+}
+
+// ─── Main Draw ────────────────────────────────────────────────────────────────
+
+function draw(): void {
+  ctx.clearRect(0, 0, W, H);
+
+  // Background grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.02)';
+  ctx.lineWidth = 1;
+  const gs = 40;
+  for (let gx = 0; gx < W; gx += gs) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke(); }
+  for (let gy = 0; gy < H; gy += gs) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); }
+
+  for (const conn of CONNECTIONS) drawConnection(conn);
+  for (const svc of SERVICES) drawService(svc);
+
+  updateTooltip();
+}
+
+// ─── Loop ─────────────────────────────────────────────────────────────────────
+
+function tick(): void {
+  frame++;
+  draw();
+  requestAnimationFrame(tick);
+}
+
+// ─── Events ───────────────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+canvas.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; tooltip.classList.remove('visible'); });
+const ro = new ResizeObserver(() => resize());
+ro.observe(col);
+
+resize();
+tick();
+</script>

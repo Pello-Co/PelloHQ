@@ -1,0 +1,501 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloBuild — Performance Metrics | Pello" description="PelloBuild delivers systems that perform — 99.97% uptime, sub-30ms response times, and zero critical incidents across every production deployment.">
+  <Header />
+  <main id="main-content">
+    <section class="build-section" aria-labelledby="build-headline">
+      <div class="build-layout">
+        <div class="build-text">
+          <span class="build-badge">PelloBuild</span>
+          <h1 id="build-headline">Production-Grade. Board-Ready Metrics.</h1>
+          <p>PelloBuild engineers systems that hold under load — 99.97% uptime, millisecond response times, and the kind of reliability numbers you can put in a board deck.</p>
+          <ul class="build-pills" role="list">
+            <li>Full-stack development</li>
+            <li>Data infrastructure</li>
+            <li>Internal tooling</li>
+            <li>Systems integration</li>
+          </ul>
+        </div>
+        <div class="build-canvas-col">
+          <canvas id="build-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #080a12; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .build-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .build-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .build-layout { grid-template-columns: 1fr; } }
+  .build-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .build-badge { display: inline-flex; align-items: center; padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6366f1; width: fit-content; }
+  .build-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .build-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .build-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .build-pills li { padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .build-canvas-col { position: relative; width: 100%; min-height: 580px; }
+  #build-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: default; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Metric {
+  label: string;
+  value: number;
+  displayValue: string;
+  target: number;
+  suffix: string;
+  prefix: string;
+  color: string;
+  status: 'healthy' | 'warning' | 'critical';
+  spark: number[];
+  trend: 'up' | 'down' | 'stable';
+  trendGood: boolean; // is up good or bad for this metric?
+}
+
+interface LatencyPoint {
+  p50: number;
+  p95: number;
+  p99: number;
+}
+
+// ─── Canvas Setup ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('build-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const col = canvas.parentElement as HTMLElement;
+
+let W = 0, H = 0, dpr = 1, frame = 0;
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = col.getBoundingClientRect();
+  W = rect.width; H = rect.height;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+}
+
+// ─── Metric Definitions ───────────────────────────────────────────────────────
+
+function genSpark(base: number, variance: number, count = 30): number[] {
+  const out: number[] = [];
+  let v = base;
+  for (let i = 0; i < count; i++) {
+    v += (Math.random() - 0.5) * variance;
+    v = Math.max(base - variance * 2, Math.min(base + variance * 2, v));
+    out.push(v);
+  }
+  return out;
+}
+
+const METRICS: Metric[] = [
+  {
+    label: 'Uptime',
+    value: 99.97, displayValue: '99.97', target: 99.97,
+    suffix: '%', prefix: '',
+    color: '#4ade80', status: 'healthy',
+    spark: genSpark(99.97, 0.01),
+    trend: 'stable', trendGood: true,
+  },
+  {
+    label: 'Avg Response',
+    value: 23, displayValue: '23', target: 23,
+    suffix: 'ms', prefix: '',
+    color: '#6366f1', status: 'healthy',
+    spark: genSpark(23, 4),
+    trend: 'down', trendGood: true,
+  },
+  {
+    label: 'Requests / day',
+    value: 2400000, displayValue: '2.4M', target: 2400000,
+    suffix: '', prefix: '',
+    color: '#22d3ee', status: 'healthy',
+    spark: genSpark(2400000, 80000),
+    trend: 'up', trendGood: true,
+  },
+  {
+    label: 'Critical Incidents',
+    value: 0, displayValue: '0', target: 0,
+    suffix: '', prefix: '',
+    color: '#4ade80', status: 'healthy',
+    spark: Array(30).fill(0),
+    trend: 'stable', trendGood: false,
+  },
+];
+
+// Animated display values (count up on load)
+const displayValues: number[] = METRICS.map(() => 0);
+const displayDone: boolean[] = METRICS.map(() => false);
+
+// ─── Latency Trace ────────────────────────────────────────────────────────────
+
+const latencyHistory: LatencyPoint[] = [];
+const MAX_LAT_POINTS = 80;
+
+// Seed
+let baseP50 = 23, baseP95 = 48, baseP99 = 94;
+for (let i = 0; i < MAX_LAT_POINTS; i++) {
+  latencyHistory.push({
+    p50: baseP50 + (Math.random() - 0.5) * 8,
+    p95: baseP95 + (Math.random() - 0.5) * 16,
+    p99: baseP99 + (Math.random() - 0.5) * 30,
+  });
+}
+
+// ─── Drawing Helpers ──────────────────────────────────────────────────────────
+
+function roundRect(x: number, y: number, w: number, h: number, r: number): void {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function panel(x: number, y: number, w: number, h: number, glow = false): void {
+  roundRect(x, y, w, h, 8);
+  ctx.fillStyle = 'rgba(10,12,24,0.96)';
+  ctx.fill();
+  ctx.strokeStyle = glow ? 'rgba(99,102,241,0.3)' : 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+function sparkline(
+  data: number[], x: number, y: number, w: number, h: number, color: string
+): void {
+  if (data.length < 2) return;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const pts: [number, number][] = data.map((v, i) => [
+    x + (i / (data.length - 1)) * w,
+    y + h - ((v - min) / range) * h,
+  ]);
+
+  // Fill
+  ctx.beginPath();
+  ctx.moveTo(pts[0]![0], y + h);
+  for (const [px2, py2] of pts) ctx.lineTo(px2, py2);
+  ctx.lineTo(pts[pts.length - 1]![0], y + h);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(x, y, x, y + h);
+  grad.addColorStop(0, color + '30');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  ctx.moveTo(pts[0]![0], pts[0]![1]);
+  for (let i = 1; i < pts.length; i++) {
+    const [px2, py2] = pts[i]!;
+    const [ppx, ppy] = pts[i - 1]!;
+    ctx.bezierCurveTo((ppx + px2) / 2, ppy, (ppx + px2) / 2, py2, px2, py2);
+  }
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+}
+
+// ─── Draw: Metric Card ────────────────────────────────────────────────────────
+
+function drawMetricCard(
+  metric: Metric, idx: number,
+  px: number, py: number, pw: number, ph: number
+): void {
+  panel(px, py, pw, ph);
+
+  // Large number (animated count-up)
+  const animated = displayValues[idx]!;
+  let numStr: string;
+
+  if (metric.label === 'Uptime') {
+    numStr = animated.toFixed(2) + '%';
+  } else if (metric.label === 'Requests / day') {
+    numStr = animated >= 1000000
+      ? (animated / 1000000).toFixed(1) + 'M'
+      : animated >= 1000
+      ? (animated / 1000).toFixed(0) + 'K'
+      : String(Math.round(animated));
+  } else {
+    numStr = Math.round(animated) + metric.suffix;
+  }
+
+  ctx.font = `700 ${Math.min(28, pw * 0.22)}px -apple-system, sans-serif`;
+  ctx.fillStyle = metric.color;
+  ctx.textBaseline = 'top';
+  ctx.fillText(numStr, px + 12, py + 14);
+
+  // Label
+  ctx.font = '500 9px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.fillText(metric.label.toUpperCase(), px + 12, py + ph - 32);
+
+  // Sparkline
+  sparkline(metric.spark, px + 8, py + ph - 28, pw - 16, 20, metric.color);
+
+  // Trend badge
+  const trendX = px + pw - 12;
+  const trendY = py + 14;
+  ctx.textAlign = 'right';
+  ctx.font = '500 9px -apple-system, sans-serif';
+  const trendOk = (metric.trend === 'up' && metric.trendGood) ||
+                  (metric.trend === 'down' && !metric.trendGood) ||
+                  metric.trend === 'stable';
+  ctx.fillStyle = trendOk ? 'rgba(74,222,128,0.7)' : 'rgba(245,158,11,0.8)';
+  const trendArrow = metric.trend === 'up' ? '↑' : metric.trend === 'down' ? '↓' : '→';
+  ctx.fillText(trendArrow, trendX, trendY + 4);
+  ctx.textAlign = 'left';
+
+  // Status dot
+  ctx.beginPath();
+  ctx.arc(px + pw - 10, py + 10, 3, 0, Math.PI * 2);
+  ctx.fillStyle = metric.status === 'healthy' ? '#4ade80' : metric.status === 'warning' ? '#f59e0b' : '#ef4444';
+  ctx.fill();
+}
+
+// ─── Draw: Latency Trace ──────────────────────────────────────────────────────
+
+function drawLatencyTrace(px: number, py: number, pw: number, ph: number): void {
+  panel(px, py, pw, ph);
+
+  ctx.font = '500 9px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.textBaseline = 'top';
+  ctx.fillText('Live Latency Trace', px + 12, py + 10);
+
+  // Legend
+  const legend = [
+    { label: 'P50', color: '#4ade80' },
+    { label: 'P95', color: '#6366f1' },
+    { label: 'P99', color: '#f59e0b' },
+  ];
+  let lx = px + pw - 12;
+  ctx.font = '400 8px -apple-system, sans-serif';
+  for (let i = legend.length - 1; i >= 0; i--) {
+    const leg = legend[i]!;
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillText(leg.label, lx, py + 11);
+    lx -= ctx.measureText(leg.label).width + 4;
+    ctx.beginPath();
+    ctx.arc(lx, py + 15, 3, 0, Math.PI * 2);
+    ctx.fillStyle = leg.color;
+    ctx.fill();
+    lx -= 12;
+  }
+  ctx.textAlign = 'left';
+
+  // Chart area
+  const chartX = px + 12;
+  const chartY = py + 26;
+  const chartW = pw - 24;
+  const chartH = ph - 46;
+
+  // Grid lines + labels
+  const gridVals = [0, 50, 100, 200];
+  const maxVal = 200;
+  ctx.font = '400 8px "SF Mono", monospace';
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for (const gv of gridVals) {
+    const gy = chartY + chartH - (gv / maxVal) * chartH;
+    ctx.beginPath(); ctx.moveTo(chartX, gy); ctx.lineTo(chartX + chartW, gy); ctx.stroke();
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${gv}ms`, chartX - 2, gy);
+    ctx.textAlign = 'left';
+  }
+
+  // Draw each percentile
+  const series: { key: keyof LatencyPoint; color: string }[] = [
+    { key: 'p99', color: '#f59e0b' },
+    { key: 'p95', color: '#6366f1' },
+    { key: 'p50', color: '#4ade80' },
+  ];
+
+  for (const s of series) {
+    const vals = latencyHistory.map(p => Math.min(maxVal, p[s.key]));
+    if (vals.length < 2) continue;
+    const pts: [number, number][] = vals.map((v, i) => [
+      chartX + (i / (MAX_LAT_POINTS - 1)) * chartW,
+      chartY + chartH - (v / maxVal) * chartH,
+    ]);
+
+    ctx.beginPath();
+    ctx.moveTo(pts[0]![0], pts[0]![1]);
+    for (let i = 1; i < pts.length; i++) {
+      const [px2, py2] = pts[i]!;
+      const [ppx, ppy] = pts[i - 1]!;
+      ctx.bezierCurveTo((ppx + px2) / 2, ppy, (ppx + px2) / 2, py2, px2, py2);
+    }
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = 1.5;
+    ctx.globalAlpha = s.key === 'p50' ? 1 : 0.65;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // Current value label at right edge
+    const lastVal = vals[vals.length - 1]!;
+    const lastPt = pts[pts.length - 1]!;
+    ctx.font = '500 8px "SF Mono", monospace';
+    ctx.fillStyle = s.color;
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${Math.round(lastVal)}`, lastPt[0] + 3, lastPt[1]);
+  }
+
+  // Time labels
+  ctx.font = '400 8px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.textBaseline = 'top';
+  ctx.textAlign = 'left';
+  ctx.fillText('30s ago', chartX, chartY + chartH + 3);
+  ctx.textAlign = 'center';
+  ctx.fillText('15s ago', chartX + chartW / 2, chartY + chartH + 3);
+  ctx.textAlign = 'right';
+  ctx.fillText('now', chartX + chartW, chartY + chartH + 3);
+  ctx.textAlign = 'left';
+}
+
+// ─── Draw: SLA Status Banner ──────────────────────────────────────────────────
+
+function drawSLABanner(px: number, py: number, pw: number, ph: number): void {
+  roundRect(px, py, pw, ph, 6);
+  ctx.fillStyle = 'rgba(74,222,128,0.06)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(74,222,128,0.2)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Green dot
+  const pulse = (Math.sin(frame * 0.1) + 1) / 2;
+  ctx.beginPath();
+  ctx.arc(px + 14, py + ph / 2, 4, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(74,222,128,${0.4 + pulse * 0.4})`;
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(px + 14, py + ph / 2, 3, 0, Math.PI * 2);
+  ctx.fillStyle = '#4ade80';
+  ctx.fill();
+
+  ctx.font = '500 10px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(74,222,128,0.9)';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('All systems operational', px + 26, py + ph / 2);
+
+  ctx.textAlign = 'right';
+  ctx.font = '400 9px "SF Mono", monospace';
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.fillText('SLA: 99.9% target  ·  30d window', px + pw - 12, py + ph / 2);
+  ctx.textAlign = 'left';
+}
+
+// ─── Data Updates ─────────────────────────────────────────────────────────────
+
+function updateData(): void {
+  // Count-up animation on load
+  METRICS.forEach((metric, i) => {
+    if (displayDone[i]) return;
+    const current = displayValues[i]!;
+    const diff = metric.value - current;
+    if (Math.abs(diff) < 0.01) {
+      displayValues[i] = metric.value;
+      displayDone[i] = true;
+    } else {
+      displayValues[i] = current + diff * 0.04;
+    }
+  });
+
+  // Rolling latency data
+  if (frame % 6 === 0) {
+    baseP50 += (Math.random() - 0.5) * 3;
+    baseP50 = Math.max(10, Math.min(60, baseP50));
+    baseP95 += (Math.random() - 0.5) * 5;
+    baseP95 = Math.max(30, Math.min(120, baseP95));
+    baseP99 += (Math.random() - 0.5) * 12;
+    baseP99 = Math.max(50, Math.min(190, baseP99));
+
+    latencyHistory.push({ p50: baseP50, p95: baseP95, p99: baseP99 });
+    if (latencyHistory.length > MAX_LAT_POINTS) latencyHistory.shift();
+  }
+
+  // Update metric sparklines
+  if (frame % 60 === 0) {
+    for (const metric of METRICS) {
+      if (metric.label === 'Critical Incidents') continue;
+      const last = metric.spark[metric.spark.length - 1] ?? metric.value;
+      const variance = metric.label === 'Uptime' ? 0.005 : metric.label === 'Avg Response' ? 3 : 50000;
+      let next = last + (Math.random() - 0.48) * variance;
+      if (metric.label === 'Uptime') next = Math.max(99.90, Math.min(99.999, next));
+      else if (metric.label === 'Avg Response') next = Math.max(8, Math.min(80, next));
+      else next = Math.max(1800000, Math.min(3200000, next));
+      metric.spark.push(next);
+      if (metric.spark.length > 30) metric.spark.shift();
+    }
+  }
+}
+
+// ─── Main Draw ────────────────────────────────────────────────────────────────
+
+function draw(): void {
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = 10;
+  const bannerH = 28;
+  const latH = Math.max(120, H * 0.34);
+  const cardRows = 2;
+  const cardCols = 2;
+  const cardAreaH = H - bannerH - latH - pad * (cardRows + 2);
+  const cardH = cardAreaH / cardRows;
+  const cardW = (W - pad * (cardCols + 1)) / cardCols;
+
+  // SLA banner
+  drawSLABanner(pad, pad, W - pad * 2, bannerH);
+
+  // 2x2 metric cards
+  for (let i = 0; i < 4; i++) {
+    const col2 = i % 2;
+    const row = Math.floor(i / 2);
+    const cx = pad + col2 * (cardW + pad);
+    const cy = pad * 2 + bannerH + row * (cardH + pad);
+    drawMetricCard(METRICS[i]!, i, cx, cy, cardW, cardH);
+  }
+
+  // Latency trace
+  const latY = pad * 2 + bannerH + cardAreaH + pad;
+  drawLatencyTrace(pad, latY, W - pad * 2, latH);
+}
+
+// ─── Loop ─────────────────────────────────────────────────────────────────────
+
+function tick(): void {
+  frame++;
+  updateData();
+  draw();
+  requestAnimationFrame(tick);
+}
+
+const ro = new ResizeObserver(() => resize());
+ro.observe(col);
+resize();
+tick();
+</script>

@@ -1,0 +1,525 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloBuild — Code Generation | Pello" description="PelloBuild turns requirements into production-ready code — full TypeScript applications generated, tested, and deployed from a single brief.">
+  <Header />
+  <main id="main-content">
+    <section class="build-section" aria-labelledby="build-headline">
+      <div class="build-layout">
+        <div class="build-text">
+          <span class="build-badge">PelloBuild</span>
+          <h1 id="build-headline">Brief In. Production Code Out.</h1>
+          <p>PelloBuild transforms your requirements into production-ready applications — architectured, tested, and deployed with no boilerplate, no scaffolding, no back-and-forth.</p>
+          <ul class="build-pills" role="list">
+            <li>Full-stack development</li>
+            <li>Data infrastructure</li>
+            <li>Internal tooling</li>
+            <li>Systems integration</li>
+          </ul>
+        </div>
+        <div class="build-canvas-col">
+          <canvas id="build-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #080a12; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .build-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .build-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .build-layout { grid-template-columns: 1fr; } }
+  .build-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .build-badge { display: inline-flex; align-items: center; padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6366f1; width: fit-content; }
+  .build-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .build-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .build-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .build-pills li { padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .build-canvas-col { position: relative; width: 100%; min-height: 580px; }
+  #build-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: default; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface CodeFile {
+  name: string;
+  lang: string;
+  lines: CodeLine[];
+}
+
+interface CodeLine {
+  tokens: Token[];
+}
+
+interface Token {
+  text: string;
+  color: string;
+}
+
+interface FileTreeItem {
+  name: string;
+  type: 'dir' | 'file';
+  depth: number;
+  visible: boolean;
+  revealAt: number; // chars total when this appears
+}
+
+// ─── Canvas Setup ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('build-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const col = canvas.parentElement as HTMLElement;
+
+let W = 0, H = 0, dpr = 1, frame = 0;
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = col.getBoundingClientRect();
+  W = rect.width; H = rect.height;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+}
+
+// ─── Code Content ─────────────────────────────────────────────────────────────
+
+const C_KW   = '#c792ea';
+const C_FN   = '#82aaff';
+const C_STR  = '#c3e88d';
+const C_NUM  = '#f78c6c';
+const C_TYPE = '#ffcb6b';
+const C_CMT  = '#546e7a';
+const C_PUN  = 'rgba(255,255,255,0.45)';
+const C_DEF  = 'rgba(255,255,255,0.82)';
+const C_DEC  = '#89ddff';
+
+function t(text: string, color: string): Token { return { text, color }; }
+function kw(text: string): Token { return t(text, C_KW); }
+function fn(text: string): Token { return t(text, C_FN); }
+function str(text: string): Token { return t(text, C_STR); }
+function ty(text: string): Token { return t(text, C_TYPE); }
+function cmt(text: string): Token { return t(text, C_CMT); }
+function pun(text: string): Token { return t(text, C_PUN); }
+function dec(text: string): Token { return t(text, C_DEC); }
+function def(text: string): Token { return t(text, C_DEF); }
+
+const AUTH_FILE: CodeFile = {
+  name: 'auth.service.ts',
+  lang: 'TypeScript',
+  lines: [
+    { tokens: [cmt('// auth.service.ts — OAuth2 + JWT + RBAC')] },
+    { tokens: [kw('import'), def(' { Injectable } '), kw('from'), str(" '@nestjs/common'")] },
+    { tokens: [kw('import'), def(' { JwtService } '), kw('from'), str(" '@nestjs/jwt'")] },
+    { tokens: [kw('import'), def(' { PrismaService } '), kw('from'), str(" './prisma.service'")] },
+    { tokens: [] },
+    { tokens: [dec('@Injectable'), pun('()')] },
+    { tokens: [kw('export class '), ty('AuthService'), pun(' {')] },
+    { tokens: [def('  constructor'), pun('('), kw('private '), def('jwt'), pun(': '), ty('JwtService'), pun(',') ] },
+    { tokens: [def('               '), kw('private '), def('prisma'), pun(': '), ty('PrismaService'), pun(') {}')] },
+    { tokens: [] },
+    { tokens: [kw('  async '), fn('signIn'), pun('('), def('email'), pun(': '), ty('string'), pun(', '), def('password'), pun(': '), ty('string'), pun(')')] },
+    { tokens: [pun('           : '), ty('Promise'), pun('<'), ty('AuthResponse'), pun('> {')] },
+    { tokens: [kw('    const '), def('user'), pun(' = '), kw('await '), kw('this'), pun('.'), fn('prisma.user.findUnique'), pun('({')] },
+    { tokens: [def('      where'), pun(': { '), def('email'), pun(' },')] },
+    { tokens: [def('      select'), pun(': { '), def('id'), pun(', '), def('role'), pun(', '), def('passwordHash'), pun(' }')] },
+    { tokens: [pun('    });')] },
+    { tokens: [] },
+    { tokens: [kw('    if '), pun('(!user || !'), kw('await '), fn('bcrypt.compare'), pun('('), def('password'), pun(', '), def('user.passwordHash'), pun(')) {')] },
+    { tokens: [kw('      throw new '), ty('UnauthorizedException'), pun('('), str("'Invalid credentials'"), pun(');')] },
+    { tokens: [pun('    }')] },
+    { tokens: [] },
+    { tokens: [kw('    const '), def('payload'), pun(' = { '), def('sub'), pun(': '), def('user.id'), pun(', '), def('role'), pun(': '), def('user.role'), pun(' };')] },
+    { tokens: [kw('    const '), def('accessToken'), pun(' = '), kw('this'), pun('.'), fn('jwt.sign'), pun('('), def('payload'), pun(', { '), def('expiresIn'), pun(': '), str("'15m'"), pun(' });')] },
+    { tokens: [kw('    const '), def('refreshToken'), pun(' = '), kw('this'), pun('.'), fn('jwt.sign'), pun('('), def('payload'), pun(', { '), def('expiresIn'), pun(': '), str("'7d'"), pun(' });')] },
+    { tokens: [] },
+    { tokens: [kw('    return'), pun(' { '), def('accessToken'), pun(', '), def('refreshToken'), pun(', '), def('user'), pun(': { '), def('id'), pun(': '), def('user.id'), pun(', '), def('role'), pun(': '), def('user.role'), pun(' } };')] },
+    { tokens: [pun('  }')] },
+    { tokens: [pun('}')] },
+  ],
+};
+
+const GUARD_FILE: CodeFile = {
+  name: 'roles.guard.ts',
+  lang: 'TypeScript',
+  lines: [
+    { tokens: [cmt('// roles.guard.ts — RBAC guard')] },
+    { tokens: [kw('import'), def(' { Injectable, CanActivate } '), kw('from'), str(" '@nestjs/common'")] },
+    { tokens: [kw('import'), def(' { Reflector } '), kw('from'), str(" '@nestjs/core'")] },
+    { tokens: [] },
+    { tokens: [dec('@Injectable'), pun('()')] },
+    { tokens: [kw('export class '), ty('RolesGuard'), kw(' implements '), ty('CanActivate'), pun(' {')] },
+    { tokens: [def('  constructor'), pun('('), kw('private '), def('reflector'), pun(': '), ty('Reflector'), pun(') {}')] },
+    { tokens: [] },
+    { tokens: [fn('  canActivate'), pun('('), def('context'), pun(': '), ty('ExecutionContext'), pun('): '), ty('boolean'), pun(' {')] },
+    { tokens: [kw('    const '), def('required'), pun(' = '), kw('this'), pun('.'), fn('reflector.getAllAndOverride'), pun('<'), ty('Role'), pun('[]>('), str("ROLES_KEY"), pun(', [')] },
+    { tokens: [def('      context'), pun('.'), fn('getHandler'), pun('(), '), def('context'), pun('.'), fn('getClass'), pun('(),')] },
+    { tokens: [pun('    ]);')] },
+    { tokens: [kw('    if '), pun('(!required) '), kw('return true'), pun(';')] },
+    { tokens: [kw('    const '), pun('{ '), def('user'), pun(' } = '), def('context'), pun('.'), fn('switchToHttp'), pun('().'), fn('getRequest'), pun('();')] },
+    { tokens: [kw('    return '), def('required'), pun('.'), fn('some'), pun('(('), def('role'), pun(') => '), def('user'), pun('.'), def('role'), pun(' === '), def('role'), pun(');')] },
+    { tokens: [pun('  }')] },
+    { tokens: [pun('}')] },
+  ],
+};
+
+const FILES: CodeFile[] = [AUTH_FILE, GUARD_FILE];
+
+// ─── File Tree ────────────────────────────────────────────────────────────────
+
+const FILE_TREE: FileTreeItem[] = [
+  { name: 'src/', type: 'dir', depth: 0, visible: true, revealAt: 0 },
+  { name: 'auth/', type: 'dir', depth: 1, visible: false, revealAt: 20 },
+  { name: 'auth.service.ts', type: 'file', depth: 2, visible: false, revealAt: 80 },
+  { name: 'auth.controller.ts', type: 'file', depth: 2, visible: false, revealAt: 200 },
+  { name: 'jwt.strategy.ts', type: 'file', depth: 2, visible: false, revealAt: 320 },
+  { name: 'roles.guard.ts', type: 'file', depth: 2, visible: false, revealAt: 480 },
+  { name: 'roles.decorator.ts', type: 'file', depth: 2, visible: false, revealAt: 600 },
+  { name: 'users/', type: 'dir', depth: 1, visible: false, revealAt: 700 },
+  { name: 'users.service.ts', type: 'file', depth: 2, visible: false, revealAt: 760 },
+  { name: 'users.controller.ts', type: 'file', depth: 2, visible: false, revealAt: 900 },
+  { name: 'prisma/', type: 'dir', depth: 1, visible: false, revealAt: 1000 },
+  { name: 'prisma.service.ts', type: 'file', depth: 2, visible: false, revealAt: 1050 },
+  { name: 'schema.prisma', type: 'file', depth: 2, visible: false, revealAt: 1150 },
+  { name: 'main.ts', type: 'file', depth: 1, visible: false, revealAt: 1250 },
+  { name: 'app.module.ts', type: 'file', depth: 1, visible: false, revealAt: 1350 },
+];
+
+// ─── Typing State ─────────────────────────────────────────────────────────────
+
+let currentFileIdx = 0;
+let totalCharsTyped = 0;
+let charsInFile = 0;
+let typingSpeed = 2.2; // chars per frame (avg)
+let typingVariance = 0;
+
+function currentFile(): CodeFile { return FILES[currentFileIdx % FILES.length]!; }
+
+function totalCharsInFile(file: CodeFile): number {
+  return file.lines.reduce((s, l) => s + l.tokens.reduce((ts, tk) => ts + tk.text.length, 0), 0);
+}
+
+// ─── Drawing Helpers ──────────────────────────────────────────────────────────
+
+function roundRect(x: number, y: number, w: number, h: number, r: number): void {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function panel(x: number, y: number, w: number, h: number): void {
+  roundRect(x, y, w, h, 8);
+  ctx.fillStyle = 'rgba(10,12,24,0.96)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+// ─── Draw: Brief Panel ────────────────────────────────────────────────────────
+
+function drawBrief(px: number, py: number, pw: number, ph: number): void {
+  panel(px, py, pw, ph);
+  ctx.font = '500 9px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.textBaseline = 'top';
+  ctx.fillText('BRIEF', px + 12, py + 10);
+
+  const briefText = 'Build a user authentication system with OAuth2 PKCE flow, JWT access + refresh tokens, and role-based access control (admin, editor, viewer).';
+  ctx.font = '400 9.5px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+
+  const words = briefText.split(' ');
+  let line = '', lineY = py + 24;
+  const maxW = pw - 24;
+  for (const word of words) {
+    const test = line ? line + ' ' + word : word;
+    if (ctx.measureText(test).width > maxW && line) {
+      ctx.fillText(line, px + 12, lineY);
+      line = word;
+      lineY += 13;
+    } else line = test;
+  }
+  if (line) ctx.fillText(line, px + 12, lineY);
+}
+
+// ─── Draw: Progress Bar ───────────────────────────────────────────────────────
+
+function drawProgress(px: number, py: number, pw: number, ph: number): void {
+  panel(px, py, pw, ph);
+
+  const file = currentFile();
+  const total = totalCharsInFile(file);
+  const progress = Math.min(1, charsInFile / total);
+
+  ctx.font = '500 9px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(`Generating: ${file.name}`, px + 12, py + ph / 2 - 4);
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#6366f1';
+  ctx.font = '600 9px "SF Mono", monospace';
+  ctx.fillText(`${Math.round(progress * 100)}%`, px + pw - 12, py + ph / 2 - 4);
+  ctx.textAlign = 'left';
+
+  const barY = py + ph / 2 + 5;
+  roundRect(px + 12, barY, pw - 24, 3, 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  ctx.fill();
+
+  roundRect(px + 12, barY, (pw - 24) * progress, 3, 2);
+  ctx.fillStyle = '#6366f1';
+  ctx.fill();
+
+  // Files done count
+  ctx.font = '400 8px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  const doneFiles = Math.min(FILE_TREE.filter(f => f.visible && f.type === 'file').length, 13);
+  ctx.fillText(`${doneFiles} / 13 files`, px + 12, barY + 10);
+}
+
+// ─── Draw: Code Editor ────────────────────────────────────────────────────────
+
+function drawEditor(px: number, py: number, pw: number, ph: number): void {
+  panel(px, py, pw, ph);
+
+  // Title bar
+  roundRect(px, py, pw, 26, 8);
+  ctx.fillStyle = 'rgba(255,255,255,0.03)';
+  ctx.fill();
+
+  // Traffic dots
+  const dotColors = ['#ef4444', '#f59e0b', '#4ade80'];
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath(); ctx.arc(px + 16 + i * 14, py + 13, 4, 0, Math.PI * 2);
+    ctx.fillStyle = dotColors[i]!; ctx.globalAlpha = 0.65; ctx.fill(); ctx.globalAlpha = 1;
+  }
+
+  // File tabs
+  const tabs = FILES.map(f => f.name);
+  let tabX = px + 60;
+  for (let i = 0; i < tabs.length; i++) {
+    const active = i === currentFileIdx % FILES.length;
+    const tw = ctx.measureText(tabs[i]!).width + 20;
+    ctx.font = '400 9px -apple-system, sans-serif';
+    if (active) {
+      roundRect(tabX, py + 5, tw, 18, 4);
+      ctx.fillStyle = 'rgba(99,102,241,0.15)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(99,102,241,0.3)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    ctx.fillStyle = active ? '#fff' : 'rgba(255,255,255,0.35)';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(tabs[i]!, tabX + 10, py + 14);
+    tabX += tw + 4;
+  }
+
+  // Line number gutter
+  const gutterW = 28;
+  const editorY = py + 30;
+  const editorH = ph - 30;
+  const lineH = 14;
+  const maxLines = Math.floor(editorH / lineH);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.03)';
+  ctx.fillRect(px, editorY, gutterW, editorH);
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(px + gutterW, editorY); ctx.lineTo(px + gutterW, editorY + editorH); ctx.stroke();
+
+  // Render typed code
+  const file = currentFile();
+  const total = totalCharsInFile(file);
+  let charsLeft = charsInFile;
+  let lineNum = 0;
+
+  for (const codeLine of file.lines) {
+    if (lineNum >= maxLines) break;
+    const drawY = editorY + lineNum * lineH;
+
+    // Line number
+    ctx.font = '400 8px "SF Mono", monospace';
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'right';
+    ctx.fillText(String(lineNum + 1), px + gutterW - 4, drawY + 2);
+    ctx.textAlign = 'left';
+
+    // Tokens
+    let tokenX = px + gutterW + 8;
+    let lineFullyTyped = true;
+    let foundCursor = false;
+
+    for (const token of codeLine.tokens) {
+      if (charsLeft <= 0) {
+        lineFullyTyped = false;
+        break;
+      }
+      if (charsLeft < token.text.length) {
+        const partial = token.text.slice(0, charsLeft);
+        ctx.font = '400 9.5px "SF Mono", "Fira Code", monospace';
+        ctx.fillStyle = token.color;
+        ctx.fillText(partial, tokenX, drawY + 2);
+        tokenX += ctx.measureText(partial).width;
+
+        // Cursor
+        if (!foundCursor && frame % 60 < 40) {
+          ctx.fillStyle = '#6366f1';
+          ctx.fillRect(tokenX, drawY + 2, 1.5, 10);
+          foundCursor = true;
+        }
+
+        charsLeft = 0;
+        lineFullyTyped = false;
+        break;
+      } else {
+        ctx.font = '400 9.5px "SF Mono", "Fira Code", monospace';
+        ctx.fillStyle = token.color;
+        ctx.fillText(token.text, tokenX, drawY + 2);
+        tokenX += ctx.measureText(token.text).width;
+        charsLeft -= token.text.length;
+      }
+    }
+
+    if (lineFullyTyped && charsLeft === 0 && !foundCursor && lineNum === file.lines.length - 1) {
+      if (frame % 60 < 40) {
+        ctx.fillStyle = '#6366f1';
+        ctx.fillRect(tokenX, drawY + 2, 1.5, 10);
+      }
+    }
+
+    lineNum++;
+    if (charsLeft <= 0 && !lineFullyTyped) break;
+  }
+
+  // Completion overlay
+  if (charsInFile >= total) {
+    ctx.fillStyle = 'rgba(74,222,128,0.07)';
+    ctx.fillRect(px, editorY, pw, editorH);
+  }
+}
+
+// ─── Draw: File Tree ──────────────────────────────────────────────────────────
+
+function drawFileTree(px: number, py: number, pw: number, ph: number): void {
+  panel(px, py, pw, ph);
+
+  ctx.font = '500 9px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.textBaseline = 'top';
+  ctx.fillText('EXPLORER', px + 10, py + 9);
+
+  // Reveal items based on chars typed
+  for (const item of FILE_TREE) {
+    if (totalCharsTyped >= item.revealAt) item.visible = true;
+  }
+
+  const lineH = 15;
+  let lx = py + 24;
+
+  for (const item of FILE_TREE) {
+    if (!item.visible) continue;
+    if (lx > py + ph - 8) break;
+
+    const ix = px + 8 + item.depth * 12;
+
+    if (item.type === 'dir') {
+      ctx.font = '500 9px -apple-system, sans-serif';
+      ctx.fillStyle = '#f59e0b';
+      ctx.fillText('▾ ' + item.name, ix, lx);
+    } else {
+      ctx.font = '400 9px "SF Mono", monospace';
+      const isActive = item.name === currentFile().name;
+      ctx.fillStyle = isActive ? '#fff' : 'rgba(255,255,255,0.5)';
+      if (isActive) {
+        ctx.fillStyle = 'rgba(99,102,241,0.15)';
+        ctx.fillRect(px, lx - 2, pw, 13);
+        ctx.fillStyle = '#c792ea';
+      }
+      ctx.fillText(item.name, ix, lx);
+    }
+    lx += lineH;
+  }
+}
+
+// ─── Layout Constants ─────────────────────────────────────────────────────────
+
+function draw(): void {
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = 10;
+  const treeW = Math.min(130, W * 0.25);
+  const briefH = 68;
+  const progressH = 36;
+  const editorW = W - treeW - pad * 3;
+  const editorH = H - briefH - progressH - pad * 4;
+  const treeH = H - pad * 2;
+
+  // Left: file tree
+  drawFileTree(pad, pad, treeW, treeH);
+
+  // Right top: brief
+  drawBrief(pad * 2 + treeW, pad, editorW, briefH);
+
+  // Right: progress bar
+  drawProgress(pad * 2 + treeW, pad * 2 + briefH, editorW, progressH);
+
+  // Right: editor
+  drawEditor(pad * 2 + treeW, pad * 3 + briefH + progressH, editorW, editorH);
+}
+
+// ─── Typing Progression ───────────────────────────────────────────────────────
+
+function advanceTyping(): void {
+  // Variable speed (mimic human)
+  typingVariance = typingVariance * 0.9 + (Math.random() - 0.5) * 1.5;
+  const speed = Math.max(0.5, typingSpeed + typingVariance);
+
+  charsInFile += speed;
+  totalCharsTyped += speed;
+
+  const file = currentFile();
+  const total = totalCharsInFile(file);
+
+  if (charsInFile >= total) {
+    // Pause, then switch file
+    if (frame % 120 === 0) {
+      currentFileIdx++;
+      charsInFile = 0;
+      typingVariance = 0;
+    }
+  }
+}
+
+// ─── Loop ─────────────────────────────────────────────────────────────────────
+
+function tick(): void {
+  frame++;
+  advanceTyping();
+  draw();
+  requestAnimationFrame(tick);
+}
+
+const ro = new ResizeObserver(() => resize());
+ro.observe(col);
+resize();
+tick();
+</script>

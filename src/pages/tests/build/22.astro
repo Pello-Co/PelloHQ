@@ -1,0 +1,572 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloBuild — Deployment Pipeline | Pello" description="PelloBuild ships production code through a fully automated CI/CD pipeline — build, test, review, stage, and deploy in one seamless flow.">
+  <Header />
+  <main id="main-content">
+    <section class="build-section" aria-labelledby="build-headline">
+      <div class="build-layout">
+        <div class="build-text">
+          <span class="build-badge">PelloBuild</span>
+          <h1 id="build-headline">From Commit to Production. Fully Automated.</h1>
+          <p>PelloBuild ships your software through a battle-tested CI/CD pipeline — every commit tested, reviewed, and deployed with zero manual intervention.</p>
+          <ul class="build-pills" role="list">
+            <li>Full-stack development</li>
+            <li>Data infrastructure</li>
+            <li>Internal tooling</li>
+            <li>Systems integration</li>
+          </ul>
+        </div>
+        <div class="build-canvas-col">
+          <canvas id="build-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #080a12; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .build-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .build-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .build-layout { grid-template-columns: 1fr; } }
+  .build-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .build-badge { display: inline-flex; align-items: center; padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6366f1; width: fit-content; }
+  .build-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .build-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .build-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .build-pills li { padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .build-canvas-col { position: relative; width: 100%; min-height: 580px; }
+  #build-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: default; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type StageStatus = 'done' | 'running' | 'pending' | 'failed';
+
+interface Stage {
+  name: string;
+  status: StageStatus;
+  duration: number; // seconds
+  elapsed: number;  // frames
+  totalFrames: number;
+}
+
+interface TermLine {
+  text: string;
+  color: string;
+  age: number;
+}
+
+interface ConnectorDot {
+  fromIdx: number;
+  progress: number; // 0–1
+  active: boolean;
+}
+
+// ─── Canvas Setup ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('build-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const col = canvas.parentElement as HTMLElement;
+
+let W = 0, H = 0, dpr = 1, frame = 0;
+let mouse = { x: -9999, y: -9999 };
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = col.getBoundingClientRect();
+  W = rect.width; H = rect.height;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+}
+
+// ─── Pipeline State ───────────────────────────────────────────────────────────
+
+const STAGES: Stage[] = [
+  { name: 'Build',  status: 'done',    duration: 47,  elapsed: 2820, totalFrames: 2820 },
+  { name: 'Test',   status: 'done',    duration: 83,  elapsed: 4980, totalFrames: 4980 },
+  { name: 'Review', status: 'running', duration: 15,  elapsed: 0,    totalFrames: 900  },
+  { name: 'Stage',  status: 'pending', duration: 22,  elapsed: 0,    totalFrames: 1320 },
+  { name: 'Deploy', status: 'pending', duration: 34,  elapsed: 0,    totalFrames: 2040 },
+];
+
+let reviewProgress = 0; // 0–1
+let runningStageIdx = 2;
+let pipelineCompleted = false;
+let completedAt = 0;
+let restartDelay = 0;
+
+const CONNECTOR_DOTS: ConnectorDot[] = [
+  { fromIdx: 0, progress: 0, active: true },
+  { fromIdx: 1, progress: 0.5, active: true },
+];
+
+// ─── Terminal ─────────────────────────────────────────────────────────────────
+
+const TERM_LINES: TermLine[] = [
+  { text: '$ git push origin feature/auth-improvements', color: 'rgba(255,255,255,0.5)', age: 999 },
+  { text: '▸ Triggered by: sina@pello.co · feat/auth-improvements', color: 'rgba(99,102,241,0.8)', age: 999 },
+  { text: '▸ Commit: a3f8c12 — "feat: add OAuth2 PKCE flow"', color: 'rgba(255,255,255,0.55)', age: 999 },
+  { text: '', color: '', age: 999 },
+  { text: '[build] Installing dependencies...', color: 'rgba(255,255,255,0.4)', age: 999 },
+  { text: '[build] npm ci  ✓  2.3s', color: 'rgba(74,222,128,0.8)', age: 999 },
+  { text: '[build] tsc --noEmit  ✓  4.1s', color: 'rgba(74,222,128,0.8)', age: 999 },
+  { text: '[build] Build complete. 847 modules  ✓  41s', color: 'rgba(74,222,128,0.9)', age: 999 },
+  { text: '', color: '', age: 999 },
+  { text: '[test] Running 284 unit tests...', color: 'rgba(255,255,255,0.4)', age: 999 },
+  { text: '[test] 284 passed  0 failed  ✓  71s', color: 'rgba(74,222,128,0.9)', age: 999 },
+  { text: '[test] Coverage: 94.2%  ✓', color: 'rgba(74,222,128,0.8)', age: 999 },
+];
+
+const REVIEW_LINES: TermLine[] = [
+  { text: '[review] Running security audit...', color: 'rgba(255,255,255,0.4)', age: 0 },
+  { text: '[review] Checking 47 dependencies...', color: 'rgba(255,255,255,0.35)', age: 0 },
+  { text: '[review] No critical vulnerabilities  ✓', color: 'rgba(74,222,128,0.8)', age: 0 },
+  { text: '[review] Linting: 0 errors, 2 warnings  ✓', color: 'rgba(74,222,128,0.7)', age: 0 },
+  { text: '[review] Code review approved by 2/2  ✓', color: 'rgba(74,222,128,0.9)', age: 0 },
+];
+
+const STAGE_LINES: TermLine[] = [
+  { text: '[stage] Deploying to staging.pello.co...', color: 'rgba(255,255,255,0.4)', age: 0 },
+  { text: '[stage] Health checks: 3/3 passing  ✓', color: 'rgba(74,222,128,0.8)', age: 0 },
+  { text: '[stage] Smoke tests: 12/12 passing  ✓', color: 'rgba(74,222,128,0.8)', age: 0 },
+];
+
+const DEPLOY_LINES: TermLine[] = [
+  { text: '[deploy] Rolling update: production  ●●●●●●●●●●', color: 'rgba(99,102,241,0.8)', age: 0 },
+  { text: '[deploy] 0 downtime  ✓  Zero-config rollback ready', color: 'rgba(74,222,128,0.9)', age: 0 },
+  { text: '[deploy] Release v2.4.1 live  ✓', color: 'rgba(74,222,128,1)', age: 0 },
+];
+
+let termLines: TermLine[] = [...TERM_LINES];
+let nextReviewLine = 0;
+let nextStageLine = 0;
+let nextDeployLine = 0;
+
+// ─── Environments ─────────────────────────────────────────────────────────────
+
+interface Env { name: string; deploys: number; color: string; }
+const ENVS: Env[] = [
+  { name: 'Production', deploys: 247, color: '#6366f1' },
+  { name: 'Staging',    deploys: 1843, color: '#22d3ee' },
+  { name: 'Dev',        deploys: 5291, color: '#4ade80' },
+];
+
+// ─── Drawing Helpers ──────────────────────────────────────────────────────────
+
+function roundRect(x: number, y: number, w: number, h: number, r: number): void {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function panel(x: number, y: number, w: number, h: number, glow = false): void {
+  roundRect(x, y, w, h, 8);
+  ctx.fillStyle = 'rgba(10,12,24,0.96)';
+  ctx.fill();
+  ctx.strokeStyle = glow ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+// ─── Draw: Environment Badges ─────────────────────────────────────────────────
+
+function drawEnvBadges(py: number): void {
+  const badgeW = 100;
+  const badgeH = 28;
+  const gap = 8;
+  const totalW = ENVS.length * badgeW + (ENVS.length - 1) * gap;
+  let bx = (W - totalW) / 2;
+
+  for (const env of ENVS) {
+    roundRect(bx, py, badgeW, badgeH, 14);
+    ctx.fillStyle = 'rgba(10,12,24,0.9)';
+    ctx.fill();
+    ctx.strokeStyle = env.color.replace(')', ',0.3)').replace('#', 'rgba(').replace(/^rgba\(([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/, (_, r, g, b) =>
+      `rgba(${parseInt(r,16)},${parseInt(g,16)},${parseInt(b,16)}`);
+    ctx.strokeStyle = env.color + '55';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.font = '600 9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'center';
+    ctx.fillText(env.name, bx + badgeW / 2, py + badgeH / 2 - 2);
+
+    ctx.font = '400 8px "SF Mono", monospace';
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillText(`${env.deploys.toLocaleString()} deploys`, bx + badgeW / 2, py + badgeH / 2 + 7);
+
+    bx += badgeW + gap;
+  }
+  ctx.textAlign = 'left';
+}
+
+// ─── Draw: Pipeline Stages ────────────────────────────────────────────────────
+
+let stageBoxes: { x: number; y: number; w: number; h: number }[] = [];
+
+function drawPipeline(py: number, ph: number): void {
+  const stageCount = STAGES.length;
+  const connW = 24;
+  const totalConn = (stageCount - 1) * connW;
+  const stageW = (W - 24 - totalConn) / stageCount;
+  const stageH = ph;
+
+  stageBoxes = [];
+
+  for (let i = 0; i < stageCount; i++) {
+    const stage = STAGES[i]!;
+    const sx = 12 + i * (stageW + connW);
+    const sy = py;
+
+    stageBoxes.push({ x: sx, y: sy, w: stageW, h: stageH });
+
+    const mx = mouse.x - col.getBoundingClientRect().left;
+    const my = mouse.y - col.getBoundingClientRect().top;
+    const hov = mx > sx && mx < sx + stageW && my > sy && my < sy + stageH;
+
+    // Panel
+    roundRect(sx, sy, stageW, stageH, 8);
+    ctx.fillStyle = stage.status === 'running'
+      ? 'rgba(99,102,241,0.08)'
+      : stage.status === 'done'
+      ? 'rgba(74,222,128,0.04)'
+      : 'rgba(10,12,24,0.9)';
+    ctx.fill();
+
+    const borderColor = stage.status === 'running'
+      ? `rgba(99,102,241,${0.5 + Math.sin(frame * 0.08) * 0.2})`
+      : stage.status === 'done'
+      ? 'rgba(74,222,128,0.3)'
+      : hov
+      ? 'rgba(255,255,255,0.15)'
+      : 'rgba(255,255,255,0.07)';
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Status indicator
+    const dotX = sx + stageW / 2;
+    const dotY = sy + 16;
+    const dotR = 6;
+
+    if (stage.status === 'done') {
+      ctx.beginPath();
+      ctx.arc(dotX, dotY, dotR, 0, Math.PI * 2);
+      ctx.fillStyle = '#4ade80';
+      ctx.fill();
+      // Checkmark
+      ctx.strokeStyle = '#080a12';
+      ctx.lineWidth = 1.5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(dotX - 3, dotY);
+      ctx.lineTo(dotX - 0.5, dotY + 2.5);
+      ctx.lineTo(dotX + 3.5, dotY - 2.5);
+      ctx.stroke();
+      ctx.lineCap = 'butt';
+    } else if (stage.status === 'running') {
+      // Spinning arc
+      const a = (frame * 0.07) % (Math.PI * 2);
+      ctx.beginPath();
+      ctx.arc(dotX, dotY, dotR, a, a + Math.PI * 1.4);
+      ctx.strokeStyle = '#6366f1';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      // Inner dot
+      ctx.beginPath();
+      ctx.arc(dotX, dotY, 2, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(99,102,241,0.5)';
+      ctx.fill();
+    } else if (stage.status === 'failed') {
+      ctx.beginPath();
+      ctx.arc(dotX, dotY, dotR, 0, Math.PI * 2);
+      ctx.fillStyle = '#ef4444';
+      ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.arc(dotX, dotY, dotR, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    // Stage name
+    ctx.font = '600 10px -apple-system, sans-serif';
+    ctx.fillStyle = stage.status === 'running'
+      ? '#fff'
+      : stage.status === 'done'
+      ? 'rgba(255,255,255,0.85)'
+      : 'rgba(255,255,255,0.35)';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'center';
+    ctx.fillText(stage.name, dotX, sy + stageH - 20);
+
+    // Duration
+    if (stage.status === 'done') {
+      ctx.font = '400 8px "SF Mono", monospace';
+      ctx.fillStyle = 'rgba(74,222,128,0.6)';
+      ctx.fillText(`${stage.duration}s`, dotX, sy + stageH - 9);
+    } else if (stage.status === 'running') {
+      const elapsed = Math.floor(reviewProgress * stage.duration);
+      ctx.font = '400 8px "SF Mono", monospace';
+      ctx.fillStyle = 'rgba(99,102,241,0.8)';
+      ctx.fillText(`${elapsed}s…`, dotX, sy + stageH - 9);
+    }
+
+    ctx.textAlign = 'left';
+
+    // Connector dots
+    if (i < stageCount - 1) {
+      const cx1 = sx + stageW;
+      const cx2 = sx + stageW + connW;
+      const cy = sy + stageH / 2;
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 3]);
+      ctx.beginPath();
+      ctx.moveTo(cx1, cy);
+      ctx.lineTo(cx2, cy);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Animated dot on connector (between done stages or done→running)
+      if ((STAGES[i]!.status === 'done') && (STAGES[i + 1]?.status !== 'pending')) {
+        const dotProg = ((frame * 0.015 + i * 0.3) % 1);
+        const dx = cx1 + dotProg * connW;
+        ctx.beginPath();
+        ctx.arc(dx, cy, 2, 0, Math.PI * 2);
+        ctx.fillStyle = '#6366f1';
+        ctx.fill();
+      }
+    }
+  }
+}
+
+// ─── Draw: Progress Bar ───────────────────────────────────────────────────────
+
+function drawProgressBar(py: number): void {
+  const totalFrames = STAGES.reduce((s, st) => s + st.totalFrames, 0);
+  const doneFrames = STAGES
+    .filter(s => s.status === 'done')
+    .reduce((acc, s) => acc + s.totalFrames, 0);
+  const runningFrames = STAGES[runningStageIdx]?.status === 'running'
+    ? reviewProgress * (STAGES[runningStageIdx]?.totalFrames ?? 0)
+    : 0;
+  const progress = (doneFrames + runningFrames) / totalFrames;
+
+  const barW = W - 24;
+  const barH = 3;
+
+  roundRect(12, py, barW, barH, 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  ctx.fill();
+
+  roundRect(12, py, barW * progress, barH, 2);
+  const grad = ctx.createLinearGradient(12, py, 12 + barW, py);
+  grad.addColorStop(0, '#6366f1');
+  grad.addColorStop(1, '#4ade80');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Label
+  ctx.font = '400 9px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'right';
+  ctx.fillText(`${Math.round(progress * 100)}%`, W - 12, py + barH / 2);
+  ctx.textAlign = 'left';
+}
+
+// ─── Draw: Terminal ───────────────────────────────────────────────────────────
+
+function drawTerminal(py: number, ph: number): void {
+  panel(12, py, W - 24, ph);
+
+  // Header bar
+  roundRect(12, py, W - 24, 22, 8);
+  ctx.fillStyle = 'rgba(255,255,255,0.04)';
+  ctx.fill();
+
+  // Traffic light dots
+  const dotColors = ['#ef4444', '#f59e0b', '#4ade80'];
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    ctx.arc(26 + i * 14, py + 11, 4, 0, Math.PI * 2);
+    ctx.fillStyle = dotColors[i]!;
+    ctx.globalAlpha = 0.7;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.font = '500 9px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+  ctx.fillText('deploy.log', W / 2, py + 11);
+  ctx.textAlign = 'left';
+
+  // Terminal content
+  const lineH = 14;
+  const maxLines = Math.floor((ph - 28) / lineH);
+  const visible = termLines.slice(-maxLines);
+
+  for (let i = 0; i < visible.length; i++) {
+    const line = visible[i]!;
+    if (!line.text) continue;
+    const a = Math.min(line.age / 12, 1);
+    ctx.font = '400 9.5px "SF Mono", "Fira Code", monospace';
+    ctx.fillStyle = line.color;
+    ctx.globalAlpha = a;
+    ctx.textBaseline = 'top';
+    ctx.fillText(line.text, 20, py + 28 + i * lineH);
+    ctx.globalAlpha = 1;
+  }
+
+  // Cursor blink
+  if (frame % 60 < 30) {
+    const cursorY = py + 28 + Math.min(visible.length, maxLines - 1) * lineH;
+    ctx.fillStyle = '#6366f1';
+    ctx.fillRect(20, cursorY, 6, 10);
+  }
+}
+
+// ─── Pipeline Progression ─────────────────────────────────────────────────────
+
+function advancePipeline(): void {
+  if (pipelineCompleted) {
+    if (frame - completedAt > 180) {
+      // Reset
+      STAGES[0]!.status = 'running';
+      STAGES[1]!.status = 'pending';
+      STAGES[2]!.status = 'pending';
+      STAGES[3]!.status = 'pending';
+      STAGES[4]!.status = 'pending';
+      reviewProgress = 0;
+      runningStageIdx = 0;
+      pipelineCompleted = false;
+      termLines = [...TERM_LINES.slice(0, 4)];
+      nextReviewLine = 0; nextStageLine = 0; nextDeployLine = 0;
+
+      STAGES[0]!.status = 'done';
+      STAGES[1]!.status = 'done';
+      STAGES[2]!.status = 'running';
+      runningStageIdx = 2;
+      termLines = [...TERM_LINES];
+    }
+    return;
+  }
+
+  const running = STAGES[runningStageIdx];
+  if (!running) return;
+
+  const speed = 0.0008;
+  reviewProgress = Math.min(1, reviewProgress + speed);
+
+  // Add terminal lines at intervals
+  if (runningStageIdx === 2) {
+    const threshold = (nextReviewLine + 1) / REVIEW_LINES.length;
+    if (reviewProgress > threshold * 0.8 && nextReviewLine < REVIEW_LINES.length) {
+      const l = REVIEW_LINES[nextReviewLine];
+      if (l) { termLines.push({ ...l, age: 0 }); nextReviewLine++; }
+    }
+  } else if (runningStageIdx === 3) {
+    const threshold = (nextStageLine + 1) / STAGE_LINES.length;
+    if (reviewProgress > threshold * 0.7 && nextStageLine < STAGE_LINES.length) {
+      const l = STAGE_LINES[nextStageLine];
+      if (l) { termLines.push({ ...l, age: 0 }); nextStageLine++; }
+    }
+  } else if (runningStageIdx === 4) {
+    const threshold = (nextDeployLine + 1) / DEPLOY_LINES.length;
+    if (reviewProgress > threshold * 0.7 && nextDeployLine < DEPLOY_LINES.length) {
+      const l = DEPLOY_LINES[nextDeployLine];
+      if (l) { termLines.push({ ...l, age: 0 }); nextDeployLine++; }
+    }
+  }
+
+  // Advance terminal line ages
+  for (const l of termLines) l.age++;
+
+  if (reviewProgress >= 1) {
+    running.status = 'done';
+    runningStageIdx++;
+    reviewProgress = 0;
+
+    if (runningStageIdx < STAGES.length) {
+      STAGES[runningStageIdx]!.status = 'running';
+      if (runningStageIdx === 3) {
+        ENVS[1]!.deploys++;
+      } else if (runningStageIdx === 4) {
+        // nothing yet
+      }
+    } else {
+      pipelineCompleted = true;
+      completedAt = frame;
+      ENVS[0]!.deploys++;
+      termLines.push({ text: '', color: '', age: 999 });
+      termLines.push({ text: '✓ Pipeline complete · v2.4.1 · 0 errors', color: 'rgba(74,222,128,1)', age: 0 });
+    }
+  }
+}
+
+// ─── Main Draw ────────────────────────────────────────────────────────────────
+
+function draw(): void {
+  ctx.clearRect(0, 0, W, H);
+
+  const envH = 32;
+  const stageH = 80;
+  const progH = 12;
+  const termH = H - envH - stageH - progH - 36;
+
+  drawEnvBadges(12);
+  drawPipeline(12 + envH + 8, stageH);
+  drawProgressBar(12 + envH + 8 + stageH + 6);
+  drawTerminal(12 + envH + stageH + progH + 14, termH);
+}
+
+// ─── Loop ─────────────────────────────────────────────────────────────────────
+
+function tick(): void {
+  frame++;
+  advancePipeline();
+  draw();
+  requestAnimationFrame(tick);
+}
+
+// ─── Events ───────────────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+});
+canvas.addEventListener('mouseleave', () => {
+  mouse.x = -9999; mouse.y = -9999;
+});
+const ro = new ResizeObserver(() => resize());
+ro.observe(col);
+
+resize();
+tick();
+</script>
