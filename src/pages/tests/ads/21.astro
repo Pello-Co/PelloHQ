@@ -22,7 +22,7 @@ let frame = 0;
 function resize() {
   const par = canvas.parentElement!;
   W = Math.min(900, par.clientWidth - 32);
-  H = Math.round(W * 0.62);
+  H = Math.round(W * 0.5);
   canvas.width = W * dpr;
   canvas.height = H * dpr;
   canvas.style.width = W + 'px';
@@ -202,7 +202,7 @@ function drawSparkline(x: number, y: number, w: number, h: number, data: number[
 
 // ─── Layout Constants ─────────────────────────────────────────────────────────
 const PAD = 8;
-const STATS_H = 42;
+const STATS_H = 36;
 const GAP = 6;
 
 // ─── Stats Bar ────────────────────────────────────────────────────────────────
@@ -259,13 +259,13 @@ function drawStatsBar() {
     ctx.fillStyle = s.accent + '80';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText(s.label, cx + 20, PAD + 9);
+    ctx.fillText(s.label, cx + 20, PAD + 7);
 
     // Value
-    ctx.font = '700 14px -apple-system, sans-serif';
+    ctx.font = '700 12px -apple-system, sans-serif';
     ctx.fillStyle = BRIGHT;
     ctx.textBaseline = 'bottom';
-    ctx.fillText(s.value, cx + 20, PAD + STATS_H - 6);
+    ctx.fillText(s.value, cx + 20, PAD + STATS_H - 5);
 
     // Divider
     if (i < stats.length - 1) {
@@ -286,7 +286,7 @@ let hoveredCell: { row: number; col: number } | null = null;
 function drawGrid() {
   const gridTop = PAD + STATS_H + GAP;
   const gridH = H - gridTop - PAD;
-  const gridW = Math.floor(W * 0.58);
+  const gridW = Math.floor(W * 0.6);
 
   rr(PAD, gridTop, gridW, gridH, 8);
   ctx.fillStyle = PANEL;
@@ -295,8 +295,8 @@ function drawGrid() {
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  const headerH = 32;
-  const leftW = Math.floor(gridW * 0.28);
+  const headerH = 28;
+  const leftW = Math.floor(gridW * 0.24);
   const cellAreaW = gridW - leftW - 12;
   const colW = cellAreaW / PLATFORMS.length;
   const rowH = (gridH - headerH - 8) / CAMPAIGNS.length;
@@ -306,7 +306,7 @@ function drawGrid() {
   ctx.fillStyle = DIM;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText('CAMPAIGNS', PAD + 12, gridTop + headerH / 2);
+  ctx.fillText('CAMPAIGNS', PAD + 10, gridTop + headerH / 2);
 
   // Platform headers
   for (let c = 0; c < PLATFORMS.length; c++) {
@@ -381,14 +381,14 @@ function drawGrid() {
     }
 
     // Campaign name
-    ctx.font = '500 9px -apple-system, sans-serif';
+    ctx.font = '500 8px -apple-system, sans-serif';
     ctx.fillStyle = MID;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(camp.name, PAD + 22, dotY - 5);
+    ctx.fillText(camp.name, PAD + 20, dotY - 4);
     ctx.font = '400 7px -apple-system, sans-serif';
     ctx.fillStyle = statusCol[camp.status] + 'bb';
-    ctx.fillText(camp.status.toUpperCase(), PAD + 22, dotY + 7);
+    ctx.fillText(camp.status.toUpperCase(), PAD + 20, dotY + 6);
 
     // Grid cells
     for (let c = 0; c < PLATFORMS.length; c++) {
@@ -429,14 +429,14 @@ function drawGrid() {
       }
 
       // CTR
-      ctx.font = `600 ${isHov ? 10 : 9}px -apple-system, sans-serif`;
+      ctx.font = `600 ${isHov ? 9 : 8}px -apple-system, sans-serif`;
       ctx.fillStyle = perfTextColor(cell.perf);
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.fillText(`${cell.ctr}%`, cx + cw / 2, cy + 3);
+      ctx.fillText(`${cell.ctr}%`, cx + cw / 2, cy + 2);
 
       // Sparkline
-      drawSparkline(cx + 2, cy + 16, cw - 4, ch - 20, cell.spark, perfTextColor(cell.perf));
+      drawSparkline(cx + 2, cy + 13, cw - 4, ch - 16, cell.spark, perfTextColor(cell.perf));
     }
 
     // Row divider
@@ -498,25 +498,28 @@ function drawCopyPanel(gridW: number, gridTop: number, gridH: number) {
 
   // Active count badge
   const activeCount = VARIANTS.filter(v => v.status !== 'killed').length;
-  rr(panelX + panelW - 52, panelY + 5, 42, 14, 7);
-  ctx.fillStyle = GREEN + '20';
+  rr(panelX + panelW - 50, panelY + 5, 40, 13, 6);
+  ctx.fillStyle = GREEN + '18';
   ctx.fill();
-  ctx.font = '600 8px -apple-system, sans-serif';
+  ctx.strokeStyle = GREEN + '30';
+  ctx.lineWidth = 0.5;
+  ctx.stroke();
+  ctx.font = '600 7px -apple-system, sans-serif';
   ctx.fillStyle = GREEN;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(`${activeCount} active`, panelX + panelW - 31, panelY + 12);
+  ctx.fillText(`${activeCount} active`, panelX + panelW - 30, panelY + 11);
 
-  const startY = panelY + 28;
+  const startY = panelY + 24;
   const activeVars = VARIANTS.filter(v => v.status !== 'killed');
   const killedVars = VARIANTS.filter(v => v.status === 'killed');
-  const cardH = Math.min(42, (panelH - 28 - killedVars.length * 28 - 28) / activeVars.length - 3);
+  const cardH = Math.min(36, (panelH - 26 - killedVars.length * 22 - 22) / activeVars.length - 2);
 
   hoveredVariant = -1;
 
   // Active variants
   activeVars.forEach((v, i) => {
-    const cy = startY + i * (cardH + 3);
+    const cy = startY + i * (cardH + 2);
     const cx = panelX + 6;
     const cw = panelW - 12;
 
@@ -551,7 +554,7 @@ function drawCopyPanel(gridW: number, gridTop: number, gridH: number) {
       ctx.save();
       ctx.shadowBlur = 8 + wp * 4;
       ctx.shadowColor = GREEN + '40';
-      rr(cx + cw - 48, cy + 3, 44, 13, 6);
+      rr(cx + cw - 48, cy + 2, 44, 12, 6);
       ctx.fillStyle = GREEN + '18';
       ctx.fill();
       ctx.strokeStyle = GREEN + '50';
@@ -563,7 +566,7 @@ function drawCopyPanel(gridW: number, gridTop: number, gridH: number) {
       ctx.fillStyle = GREEN;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('★ WINNER', cx + cw - 26, cy + 10);
+      ctx.fillText('★ WINNER', cx + cw - 26, cy + 8);
     }
 
     // Rank
@@ -583,13 +586,13 @@ function drawCopyPanel(gridW: number, gridTop: number, gridH: number) {
     ctx.font = '700 9px -apple-system, sans-serif';
     ctx.fillStyle = ctrColor;
     ctx.textAlign = 'right';
-    ctx.fillText(`${v.ctr}%`, cx + cw - (v.status === 'winner' ? 48 : 6), cy + 4);
+    ctx.fillText(`${v.ctr}%`, cx + cw - (v.status === 'winner' ? 52 : 6), cy + 4);
 
     // Progress bar
     const barX = cx + 6;
-    const barY = cy + 18;
+    const barY = cy + 16;
     const barW = cw - 12;
-    const barH = 4;
+    const barH = 3;
     rr(barX, barY, barW, barH, 2);
     ctx.fillStyle = 'rgba(255,255,255,0.03)';
     ctx.fill();
@@ -619,13 +622,13 @@ function drawCopyPanel(gridW: number, gridTop: number, gridH: number) {
     ctx.font = '400 7px -apple-system, sans-serif';
     ctx.fillStyle = DIM;
     ctx.textAlign = 'left';
-    ctx.fillText(`ROAS ${v.roas}x  ·  ${v.conv} conv`, cx + 6, cy + 26);
+    ctx.fillText(`ROAS ${v.roas}x  ·  ${v.conv} conv`, cx + 6, cy + 24);
     ctx.textAlign = 'right';
-    ctx.fillText(`vs best: ${Math.round(v.bar * 100)}%`, cx + cw - 6, cy + 26);
+    ctx.fillText(`vs best: ${Math.round(v.bar * 100)}%`, cx + cw - 6, cy + 24);
   });
 
   // Divider before killed section
-  const killedTop = startY + activeVars.length * (cardH + 3) + 6;
+  const killedTop = startY + activeVars.length * (cardH + 2) + 4;
   ctx.beginPath();
   ctx.moveTo(panelX + 10, killedTop);
   ctx.lineTo(panelX + panelW - 10, killedTop);
@@ -644,11 +647,11 @@ function drawCopyPanel(gridW: number, gridTop: number, gridH: number) {
 
   // Killed variants
   killedVars.forEach((v, i) => {
-    const ky = killedTop + 18 + i * 24;
+    const ky = killedTop + 16 + i * 20;
     const kx = panelX + 6;
     const kw = panelW - 12;
 
-    rr(kx, ky, kw, 20, 4);
+    rr(kx, ky, kw, 18, 4);
     const killGrad = ctx.createLinearGradient(kx, ky, kx + kw, ky);
     killGrad.addColorStop(0, RED + '10');
     killGrad.addColorStop(1, RED + '03');
@@ -662,7 +665,7 @@ function drawCopyPanel(gridW: number, gridTop: number, gridH: number) {
     ctx.strokeStyle = RED + '80';
     ctx.lineWidth = 1.5;
     ctx.lineCap = 'round';
-    const xc = kx + 10, yc = ky + 10;
+    const xc = kx + 10, yc = ky + 9;
     ctx.beginPath(); ctx.moveTo(xc - 3, yc - 3); ctx.lineTo(xc + 3, yc + 3); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(xc + 3, yc - 3); ctx.lineTo(xc - 3, yc + 3); ctx.stroke();
 
@@ -671,11 +674,11 @@ function drawCopyPanel(gridW: number, gridTop: number, gridH: number) {
     ctx.fillStyle = 'rgba(255,255,255,0.3)';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(v.headline, kx + 20, ky + 10);
+    ctx.fillText(v.headline, kx + 20, ky + 9);
     const tw = ctx.measureText(v.headline).width;
     ctx.beginPath();
-    ctx.moveTo(kx + 20, ky + 10);
-    ctx.lineTo(kx + 20 + tw, ky + 10);
+    ctx.moveTo(kx + 20, ky + 9);
+    ctx.lineTo(kx + 20 + tw, ky + 9);
     ctx.strokeStyle = 'rgba(255,255,255,0.2)';
     ctx.lineWidth = 1;
     ctx.stroke();
@@ -684,7 +687,7 @@ function drawCopyPanel(gridW: number, gridTop: number, gridH: number) {
     ctx.font = '500 7px -apple-system, sans-serif';
     ctx.fillStyle = RED + '90';
     ctx.textAlign = 'right';
-    ctx.fillText(v.killReason || '', kx + kw - 6, ky + 10);
+    ctx.fillText(v.killReason || '', kx + kw - 6, ky + 9);
   });
 
   return { panelX, panelY, panelW, panelH };
