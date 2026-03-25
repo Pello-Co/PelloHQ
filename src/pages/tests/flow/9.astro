@@ -1,0 +1,547 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloFlow — Webhook Inspector | Pello" description="PelloFlow inspects every inbound webhook in real time — method, endpoint, status, timing, headers, and JSON payload. Debug, replay, and monitor your entire integration surface from one place.">
+  <Header />
+  <main id="main-content">
+    <section class="flow-section" aria-labelledby="flow-headline">
+      <div class="flow-layout">
+        <div class="flow-text">
+          <span class="flow-badge">PelloFlow</span>
+          <h1 id="flow-headline">Every Webhook.<br>Fully Inspected.</h1>
+          <p>PelloFlow captures every inbound event from Stripe, HubSpot, GitHub, and your own APIs — surfacing headers, payloads, and response times in a real-time inspector you can actually use.</p>
+          <ul class="flow-pills" role="list">
+            <li>Custom AI agents</li>
+            <li>End-to-end automation</li>
+            <li>API & webhook integration</li>
+            <li>Ongoing maintenance</li>
+          </ul>
+        </div>
+        <div class="flow-canvas-col">
+          <canvas id="flow-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .flow-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .flow-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .flow-layout { grid-template-columns: 1fr; } }
+  .flow-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .flow-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(79,70,229,0.12); border: 1px solid rgba(79,70,229,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #818cf8; width: fit-content; }
+  .flow-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .flow-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .flow-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .flow-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .flow-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #flow-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: crosshair; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type StatusCode = 200 | 202 | 400 | 500;
+type FilterTab = 'All' | 'Success' | 'Failed' | 'Retrying';
+
+interface WebhookEvent {
+  id: number;
+  method: string;
+  path: string;
+  event: string;
+  source: string;
+  status: StatusCode;
+  ms: number;
+  timestamp: number;    // frame number when spawned
+  hovered: boolean;
+  scrollY: number;      // visual position
+}
+
+interface JsonToken {
+  text: string;
+  color: string;
+}
+
+// ─── Data ─────────────────────────────────────────────────────────────────────
+
+const WEBHOOK_SOURCES = [
+  { source: 'Stripe',   path: '/webhooks/stripe',   events: ['payment.completed', 'invoice.paid', 'subscription.updated', 'charge.failed'] },
+  { source: 'HubSpot',  path: '/webhooks/hubspot',  events: ['contact.created', 'deal.updated', 'contact.propertyChange'] },
+  { source: 'GitHub',   path: '/webhooks/github',   events: ['push', 'pull_request.opened', 'workflow_run.completed'] },
+  { source: 'Slack',    path: '/webhooks/slack',    events: ['message', 'app_mention', 'reaction_added'] },
+  { source: 'Internal', path: '/webhooks/internal', events: ['lead.scored', 'task.completed', 'alert.triggered'] },
+];
+
+const STATUS_WEIGHTS: [StatusCode, number][] = [[200, 0.78], [202, 0.12], [400, 0.05], [500, 0.05]];
+
+const PAYLOADS: Record<string, string[]> = {
+  'payment.completed': [
+    '{\n  "id": "evt_3Ns4aK",\n  "type": "payment_intent.succeeded",\n  "data": {\n    "object": {\n      "amount": 4900,\n      "currency": "usd",\n      "status": "succeeded"\n    }\n  }\n}',
+  ],
+  'contact.created': [
+    '{\n  "subscriptionId": "sub_hs_001",\n  "eventId": "evt_cc_48291",\n  "subscriptionType": "contact.creation",\n  "portalId": 2134567,\n  "objectId": 48291\n}',
+  ],
+  'push': [
+    '{\n  "ref": "refs/heads/main",\n  "before": "a4f9c3b",\n  "after": "e8d12a1",\n  "repository": {\n    "full_name": "Pello-Co/PelloHQ"\n  },\n  "pusher": { "name": "dev" }\n}',
+  ],
+  default: [
+    '{\n  "id": "evt_auto_001",\n  "source": "pelloflow",\n  "timestamp": 1742899200,\n  "payload": {\n    "status": "ok"\n  }\n}',
+  ],
+};
+
+const FILTER_TABS: FilterTab[] = ['All', 'Success', 'Failed', 'Retrying'];
+
+// ─── State ────────────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('flow-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const colEl = canvas.parentElement as HTMLElement;
+
+let W = 0;
+let H = 0;
+let dpr = 1;
+let mouse = { x: -9999, y: -9999 };
+let frame = 0;
+let eventIdCounter = 1000;
+let events: WebhookEvent[] = [];
+let selectedEvent: WebhookEvent | null = null;
+let activeFilter: FilterTab = 'All';
+let totalCount = 2847;
+let scrollOffset = 0;
+const LIST_ITEM_H = 38;
+const MAX_EVENTS = 20;
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = colEl.getBoundingClientRect();
+  W = rect.width;
+  H = rect.height;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function roundRect(x: number, y: number, w: number, h: number, r: number): void {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function statusColor(code: StatusCode): string {
+  if (code === 200 || code === 202) return '#22c55e';
+  if (code === 400) return '#f59e0b';
+  return '#ef4444';
+}
+
+function statusIcon(code: StatusCode): string {
+  if (code === 200) return '✓';
+  if (code === 202) return '↻';
+  if (code === 400) return '⚠';
+  return '✗';
+}
+
+function isFiltered(ev: WebhookEvent): boolean {
+  if (activeFilter === 'All') return true;
+  if (activeFilter === 'Success') return ev.status === 200 || ev.status === 202;
+  if (activeFilter === 'Failed') return ev.status === 400 || ev.status === 500;
+  if (activeFilter === 'Retrying') return ev.status === 202;
+  return true;
+}
+
+function spawnEvent(): void {
+  const src = WEBHOOK_SOURCES[Math.floor(Math.random() * WEBHOOK_SOURCES.length)]!;
+  const evt = src.events[Math.floor(Math.random() * src.events.length)]!;
+  let status: StatusCode = 200;
+  let r = Math.random();
+  for (const [code, weight] of STATUS_WEIGHTS) {
+    r -= weight;
+    if (r <= 0) { status = code; break; }
+  }
+  events.unshift({
+    id: eventIdCounter++,
+    method: 'POST',
+    path: src.path,
+    event: evt,
+    source: src.source,
+    status,
+    ms: 20 + Math.floor(Math.random() * 280),
+    timestamp: frame,
+    hovered: false,
+    scrollY: 0,
+  });
+  if (events.length > MAX_EVENTS) events.pop();
+  totalCount++;
+  if (!selectedEvent) selectedEvent = events[0]!;
+}
+
+// ─── Draw filter tabs ─────────────────────────────────────────────────────────
+
+function drawFilterTabs(x: number, y: number, tabW: number): void {
+  const tabH = 24;
+  const gap = 6;
+  for (let i = 0; i < FILTER_TABS.length; i++) {
+    const tab = FILTER_TABS[i]!;
+    const tx = x + i * (tabW / FILTER_TABS.length + gap);
+    const tw = tabW / FILTER_TABS.length;
+    const active = tab === activeFilter;
+
+    roundRect(tx, y, tw, tabH, 5);
+    ctx.fillStyle = active ? 'rgba(79,70,229,0.25)' : 'rgba(255,255,255,0.04)';
+    ctx.fill();
+    ctx.strokeStyle = active ? 'rgba(79,70,229,0.7)' : 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.font = `${active ? 600 : 400} 9px -apple-system, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = active ? '#818cf8' : 'rgba(255,255,255,0.45)';
+    ctx.fillText(tab, tx + tw / 2, y + tabH / 2);
+  }
+}
+
+// ─── Draw event list ──────────────────────────────────────────────────────────
+
+function drawEventList(x: number, y: number, w: number, h: number): void {
+  // Clip to list area
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+
+  const filtered = events.filter(isFiltered);
+  let iy = y + 4;
+  for (const ev of filtered) {
+    if (iy > y + h) break;
+    const isSelected = selectedEvent?.id === ev.id;
+    const sc = statusColor(ev.status);
+
+    roundRect(x + 2, iy, w - 4, LIST_ITEM_H - 4, 5);
+    ctx.fillStyle = isSelected ? 'rgba(79,70,229,0.18)' : ev.hovered ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.02)';
+    ctx.fill();
+    if (isSelected) {
+      ctx.strokeStyle = 'rgba(79,70,229,0.5)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Status badge
+    ctx.font = '700 8px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = sc;
+    ctx.fillText(statusIcon(ev.status), x + 14, iy + LIST_ITEM_H / 2 - 2);
+
+    // Method + path
+    ctx.font = '600 9px "SF Mono", monospace';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#818cf8';
+    ctx.fillText('POST', x + 22, iy + 10);
+    ctx.font = '500 9px "SF Mono", monospace';
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.fillText(ev.path, x + 48, iy + 10);
+
+    // Event type
+    ctx.font = '400 8px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.fillText(ev.event, x + 22, iy + 24);
+
+    // Status code + ms
+    ctx.font = '500 9px -apple-system, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillStyle = sc;
+    ctx.fillText(`${ev.status}`, x + w - 30, iy + 10);
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillText(`${ev.ms}ms`, x + w - 6, iy + 10);
+
+    ev.hovered = false;
+    ev.scrollY = iy;
+    iy += LIST_ITEM_H;
+  }
+
+  ctx.restore();
+}
+
+// ─── Draw detail panel ────────────────────────────────────────────────────────
+
+function tokeniseJson(json: string): JsonToken[] {
+  const tokens: JsonToken[] = [];
+  const lines = json.split('\n');
+  for (const line of lines) {
+    // Simple tokenizer: keys in purple, strings in green, numbers in orange
+    const keyMatch = line.match(/^(\s*)("[\w_]+")(\s*:\s*)(.*)$/);
+    if (keyMatch) {
+      tokens.push({ text: keyMatch[1]!, color: 'transparent' });
+      tokens.push({ text: keyMatch[2]!, color: '#c084fc' });
+      tokens.push({ text: keyMatch[3]!, color: 'rgba(255,255,255,0.4)' });
+      const val = keyMatch[4]!;
+      if (val.startsWith('"')) tokens.push({ text: val, color: '#86efac' });
+      else if (/^\d/.test(val)) tokens.push({ text: val, color: '#fbbf24' });
+      else tokens.push({ text: val, color: 'rgba(255,255,255,0.6)' });
+    } else {
+      tokens.push({ text: line, color: 'rgba(255,255,255,0.35)' });
+    }
+    tokens.push({ text: '\n', color: 'transparent' });
+  }
+  return tokens;
+}
+
+function drawDetailPanel(x: number, y: number, w: number, h: number): void {
+  if (!selectedEvent) return;
+  const ev = selectedEvent;
+
+  roundRect(x, y, w, h, 8);
+  ctx.fillStyle = 'rgba(8,6,22,0.95)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x + 1, y + 1, w - 2, h - 2);
+  ctx.clip();
+
+  let cy2 = y + 12;
+
+  // Source + event
+  ctx.font = '600 10px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = '#818cf8';
+  ctx.fillText(ev.source, x + 10, cy2);
+  ctx.font = '400 9px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.fillText(ev.event, x + 10 + ctx.measureText(ev.source).width + 8, cy2 + 1);
+  cy2 += 18;
+
+  // Status row
+  const sc = statusColor(ev.status);
+  ctx.font = '600 11px -apple-system, sans-serif';
+  ctx.fillStyle = sc;
+  ctx.fillText(`${ev.status} ${statusIcon(ev.status)}`, x + 10, cy2);
+  ctx.font = '400 9px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.fillText(`${ev.ms}ms`, x + 60, cy2 + 2);
+  cy2 += 18;
+
+  // Headers
+  ctx.font = '600 8px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  ctx.fillText('HEADERS', x + 10, cy2);
+  cy2 += 14;
+
+  const headers = [
+    ['Content-Type', 'application/json'],
+    ['X-Webhook-Source', ev.source.toLowerCase()],
+    ['X-Event-ID', `evt_${ev.id}`],
+  ];
+  for (const [k, v] of headers) {
+    ctx.font = '400 8.5px "SF Mono", monospace';
+    ctx.fillStyle = '#c084fc';
+    ctx.fillText(`${k}: `, x + 10, cy2);
+    ctx.fillStyle = '#86efac';
+    ctx.fillText(v!, x + 10 + ctx.measureText(`${k}: `).width, cy2);
+    cy2 += 13;
+  }
+  cy2 += 6;
+
+  // Divider
+  ctx.beginPath();
+  ctx.moveTo(x + 10, cy2);
+  ctx.lineTo(x + w - 10, cy2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  cy2 += 10;
+
+  // Body
+  ctx.font = '600 8px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  ctx.fillText('BODY', x + 10, cy2);
+  cy2 += 14;
+
+  // Syntax-highlighted JSON
+  const payload = PAYLOADS[ev.event]?.[0] ?? PAYLOADS.default![0]!;
+  const lines = payload.split('\n');
+  ctx.font = '400 8.5px "SF Mono", monospace';
+  for (const line of lines) {
+    if (cy2 > y + h - 8) break;
+    const keyMatch = line.match(/^(\s*)("[\w_]+")(\s*:\s*)(.*)$/);
+    if (keyMatch) {
+      let lx = x + 10;
+      // indent
+      ctx.fillStyle = 'transparent';
+      const indentW = ctx.measureText(keyMatch[1]!).width;
+      lx += indentW;
+      // key
+      ctx.fillStyle = '#c084fc';
+      ctx.fillText(keyMatch[2]!, lx, cy2);
+      lx += ctx.measureText(keyMatch[2]!).width;
+      // colon
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.fillText(keyMatch[3]!, lx, cy2);
+      lx += ctx.measureText(keyMatch[3]!).width;
+      // value
+      const val = keyMatch[4]!;
+      if (val.startsWith('"')) ctx.fillStyle = '#86efac';
+      else if (/^\d/.test(val)) ctx.fillStyle = '#fbbf24';
+      else ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.fillText(val, lx, cy2);
+    } else {
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.fillText(line, x + 10, cy2);
+    }
+    cy2 += 13;
+  }
+
+  ctx.restore();
+}
+
+// ─── Counter ──────────────────────────────────────────────────────────────────
+
+function drawCounter(x: number, y: number): void {
+  ctx.font = '700 20px -apple-system, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = '#818cf8';
+  ctx.fillText(totalCount.toLocaleString(), x, y);
+  ctx.font = '400 8px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(129,140,248,0.5)';
+  ctx.fillText('EVENTS RECEIVED', x, y + 22);
+}
+
+// ─── Main Loop ────────────────────────────────────────────────────────────────
+
+function tick(): void {
+  frame++;
+  ctx.clearRect(0, 0, W, H);
+
+  if (frame % 55 === 0) spawnEvent();
+
+  const rect = canvas.getBoundingClientRect();
+  const mx = mouse.x - rect.left;
+  const my = mouse.y - rect.top;
+
+  const splitX = W * 0.46;
+  const pad = 10;
+  const topY = 36;
+  const listH = H - topY - 8;
+  const detailX = splitX + pad;
+  const detailW = W - detailX - pad;
+
+  // Detect hover + click area for filter tabs
+  const tabW = splitX - pad * 2;
+  for (let i = 0; i < FILTER_TABS.length; i++) {
+    const tw = tabW / FILTER_TABS.length;
+    const gap = 6;
+    const tx = pad + i * (tw + gap);
+    if (mx >= tx && mx <= tx + tw && my >= 8 && my <= 32) {
+      if (frame % 2 === 0 && mouse.x > -100) {
+        // hover effect only — clicks handled below
+      }
+    }
+  }
+
+  // Hover events in list
+  const filtered = events.filter(isFiltered);
+  for (const ev of filtered) {
+    if (ev.scrollY && mx >= pad && mx <= splitX - pad && my >= ev.scrollY && my <= ev.scrollY + LIST_ITEM_H - 4) {
+      ev.hovered = true;
+    }
+  }
+
+  // Header bar
+  roundRect(pad, 4, splitX - pad * 2, 28, 5);
+  ctx.fillStyle = 'rgba(10,8,28,0.85)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Filter tabs
+  drawFilterTabs(pad + 4, 8, splitX - pad * 2 - 8);
+
+  // List panel
+  roundRect(pad, topY, splitX - pad * 2, listH, 6);
+  ctx.fillStyle = 'rgba(8,6,22,0.9)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  drawEventList(pad, topY, splitX - pad * 2, listH);
+
+  // Detail panel
+  drawDetailPanel(detailX, 4, detailW, H - 8);
+
+  // Counter
+  drawCounter(W - pad, 6);
+
+  requestAnimationFrame(tick);
+}
+
+// ─── Events ───────────────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+canvas.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+
+canvas.addEventListener('click', (e: MouseEvent) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  // Filter tab click
+  const pad = 10;
+  const splitX = W * 0.46;
+  const tabW = splitX - pad * 2;
+  for (let i = 0; i < FILTER_TABS.length; i++) {
+    const tw = tabW / FILTER_TABS.length;
+    const gap = 6;
+    const tx = pad + 4 + i * (tw + gap);
+    if (mx >= tx && mx <= tx + tw && my >= 8 && my <= 32) {
+      activeFilter = FILTER_TABS[i]!;
+      return;
+    }
+  }
+
+  // Event row click
+  const filtered = events.filter(isFiltered);
+  for (const ev of filtered) {
+    if (ev.scrollY && mx >= pad && mx <= splitX - pad && my >= ev.scrollY && my <= ev.scrollY + LIST_ITEM_H - 4) {
+      selectedEvent = ev;
+      return;
+    }
+  }
+});
+
+const ro = new ResizeObserver(() => resize());
+ro.observe(colEl);
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+resize();
+spawnEvent();
+spawnEvent();
+spawnEvent();
+tick();
+</script>

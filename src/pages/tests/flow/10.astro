@@ -1,0 +1,504 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloFlow — Automation Metrics | Pello" description="PelloFlow tracks every automation outcome — workflows active, tasks completed, hours saved, and error rates — in a Stripe-quality analytics dashboard that updates in real time.">
+  <Header />
+  <main id="main-content">
+    <section class="flow-section" aria-labelledby="flow-headline">
+      <div class="flow-layout">
+        <div class="flow-text">
+          <span class="flow-badge">PelloFlow</span>
+          <h1 id="flow-headline">Every Automation.<br>Fully Measured.</h1>
+          <p>PelloFlow surfaces the business impact of your automations in real time — tasks completed, hours saved, error rates, and volume trends across every workflow in your stack.</p>
+          <ul class="flow-pills" role="list">
+            <li>Custom AI agents</li>
+            <li>End-to-end automation</li>
+            <li>API & webhook integration</li>
+            <li>Ongoing maintenance</li>
+          </ul>
+        </div>
+        <div class="flow-canvas-col">
+          <canvas id="flow-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .flow-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .flow-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .flow-layout { grid-template-columns: 1fr; } }
+  .flow-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .flow-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(79,70,229,0.12); border: 1px solid rgba(79,70,229,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #818cf8; width: fit-content; }
+  .flow-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .flow-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .flow-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .flow-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .flow-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #flow-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: crosshair; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface MetricCard {
+  label: string;
+  value: number;
+  displayValue: string;
+  suffix: string;
+  prefix: string;
+  delta: string;
+  deltaPositive: boolean;
+  color: string;
+  hovered: boolean;
+  detail: string;
+}
+
+interface BreakdownRow {
+  label: string;
+  pct: number;
+  color: string;
+}
+
+interface CompletionEntry {
+  workflow: string;
+  tasks: number;
+  duration: string;
+  timestamp: number;
+}
+
+// ─── Data ─────────────────────────────────────────────────────────────────────
+
+const INDIGO = '#4f46e5';
+const INDIGO_RGB = '79,70,229';
+
+const METRICS: MetricCard[] = [
+  { label: 'Workflows Active',  value: 24,      displayValue: '24',       suffix: '',   prefix: '',  delta: '+3 this week',     deltaPositive: true,  color: '#818cf8', hovered: false, detail: '24 workflows running across 8 integrations' },
+  { label: 'Tasks Completed',   value: 128492,  displayValue: '128,492',  suffix: '',   prefix: '',  delta: '+2,847 today',     deltaPositive: true,  color: '#22c55e', hovered: false, detail: 'Avg 5,354 tasks/day over last 30 days' },
+  { label: 'Time Saved',        value: 847,     displayValue: '847h',     suffix: 'h',  prefix: '',  delta: '+32h today',       deltaPositive: true,  color: '#f59e0b', hovered: false, detail: 'Based on avg 6.6 min saved per automated task' },
+  { label: 'Error Rate',        value: 0.03,    displayValue: '0.03%',    suffix: '%',  prefix: '',  delta: '↓ from 0.07%',     deltaPositive: true,  color: '#34d399', hovered: false, detail: 'Last 7d avg: 38 errors / 128k tasks' },
+];
+
+const BREAKDOWN: BreakdownRow[] = [
+  { label: 'Lead Routing',    pct: 34, color: '#4f46e5' },
+  { label: 'Data Processing', pct: 28, color: '#7c3aed' },
+  { label: 'Notifications',   pct: 22, color: '#0ea5e9' },
+  { label: 'Onboarding',      pct: 16, color: '#06b6d4' },
+];
+
+const WORKFLOW_NAMES = ['Lead scoring', 'CRM sync', 'Email sequences', 'Slack alerts', 'Data enrichment', 'Invoice webhooks', 'Onboarding drip', 'Report generation'];
+const DURATIONS = ['0.3s', '0.8s', '1.2s', '0.5s', '2.1s', '0.7s', '1.8s', '0.4s'];
+
+// ─── Canvas Setup ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('flow-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const colEl = canvas.parentElement as HTMLElement;
+
+let W = 0;
+let H = 0;
+let dpr = 1;
+let mouse = { x: -9999, y: -9999 };
+let frame = 0;
+
+// Area chart data: 30 days of volume (trending up)
+const CHART_DAYS = 30;
+const chartData: number[] = Array.from({ length: CHART_DAYS }, (_, i) => {
+  const base = 2800 + i * 180;
+  return base + (Math.random() - 0.3) * 600;
+});
+
+// Recent completions feed
+const completions: CompletionEntry[] = [];
+for (let i = 0; i < 5; i++) {
+  completions.push({
+    workflow: WORKFLOW_NAMES[Math.floor(Math.random() * WORKFLOW_NAMES.length)]!,
+    tasks: Math.floor(Math.random() * 120) + 10,
+    duration: DURATIONS[Math.floor(Math.random() * DURATIONS.length)]!,
+    timestamp: frame - i * 80,
+  });
+}
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = colEl.getBoundingClientRect();
+  W = rect.width;
+  H = rect.height;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function roundRect(x: number, y: number, w: number, h: number, r: number): void {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function hexToRgb(hex: string): [number, number, number] {
+  return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
+}
+
+// ─── Metric Cards ─────────────────────────────────────────────────────────────
+
+function drawMetricCards(x: number, y: number, totalW: number): void {
+  const cardW = (totalW - 12) / 4;
+  const cardH = 68;
+
+  for (let i = 0; i < METRICS.length; i++) {
+    const m = METRICS[i]!;
+    const [r, g, b] = hexToRgb(m.color);
+    const cx = x + i * (cardW + 4);
+
+    roundRect(cx, y, cardW, cardH, 8);
+    ctx.fillStyle = m.hovered ? `rgba(${r},${g},${b},0.1)` : 'rgba(10,8,28,0.9)';
+    ctx.fill();
+    ctx.strokeStyle = m.hovered ? `rgba(${r},${g},${b},0.5)` : 'rgba(255,255,255,0.07)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Label
+    ctx.font = '500 8px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.fillText(m.label.toUpperCase(), cx + 10, y + 10);
+
+    // Value
+    ctx.font = '700 18px -apple-system, sans-serif';
+    ctx.fillStyle = m.color;
+    ctx.fillText(m.displayValue, cx + 10, y + 24);
+
+    // Delta
+    ctx.font = '400 8px -apple-system, sans-serif';
+    ctx.fillStyle = m.deltaPositive ? 'rgba(34,197,94,0.8)' : 'rgba(239,68,68,0.8)';
+    ctx.fillText(m.delta, cx + 10, y + 52);
+
+    // Hover detail
+    if (m.hovered) {
+      const tipW = 180;
+      const tipX = Math.min(cx + cardW / 2 - tipW / 2, W - tipW - 4);
+      const tipY = y + cardH + 6;
+      roundRect(Math.max(4, tipX), tipY, tipW, 24, 5);
+      ctx.fillStyle = 'rgba(6,7,18,0.97)';
+      ctx.fill();
+      ctx.strokeStyle = `rgba(${r},${g},${b},0.4)`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.font = '400 8.5px -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.fillText(m.detail, Math.max(4, tipX) + 8, tipY + 12);
+    }
+  }
+}
+
+// ─── Area Chart ───────────────────────────────────────────────────────────────
+
+function drawAreaChart(x: number, y: number, w: number, h: number): void {
+  const max = Math.max(...chartData) * 1.1;
+  const [r, g, b] = hexToRgb(INDIGO);
+
+  // Grid lines
+  for (let i = 0; i <= 4; i++) {
+    const gy = y + h - (i / 4) * h;
+    ctx.beginPath();
+    ctx.moveTo(x, gy);
+    ctx.lineTo(x + w, gy);
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.font = '400 7.5px -apple-system, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.fillText(Math.round((max * i / 4) / 1000) + 'k', x - 4, gy);
+  }
+
+  // Area
+  ctx.beginPath();
+  ctx.moveTo(x, y + h);
+  for (let i = 0; i < chartData.length; i++) {
+    const px = x + (i / (chartData.length - 1)) * w;
+    const py = y + h - (chartData[i]! / max) * h;
+    if (i === 0) ctx.lineTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.lineTo(x + w, y + h);
+  ctx.closePath();
+  const aGrd = ctx.createLinearGradient(0, y, 0, y + h);
+  aGrd.addColorStop(0, `rgba(${r},${g},${b},0.3)`);
+  aGrd.addColorStop(1, `rgba(${r},${g},${b},0.02)`);
+  ctx.fillStyle = aGrd;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  for (let i = 0; i < chartData.length; i++) {
+    const px = x + (i / (chartData.length - 1)) * w;
+    const py = y + h - (chartData[i]! / max) * h;
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.strokeStyle = `rgba(${r},${g},${b},0.9)`;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // X labels
+  const dayLabels = ['30d ago', '20d', '10d', 'Today'];
+  for (let i = 0; i < dayLabels.length; i++) {
+    const px = x + (i / (dayLabels.length - 1)) * w;
+    ctx.font = '400 7.5px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.fillText(dayLabels[i]!, px, y + h + 4);
+  }
+}
+
+// ─── Breakdown bars ───────────────────────────────────────────────────────────
+
+function drawBreakdown(x: number, y: number, w: number): void {
+  ctx.font = '600 8px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.fillText('BY WORKFLOW TYPE', x, y);
+  y += 14;
+
+  for (const row of BREAKDOWN) {
+    const [r, g, b] = hexToRgb(row.color);
+
+    ctx.font = '400 9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.65)';
+    ctx.fillText(row.label, x, y + 1);
+
+    ctx.font = '600 9px -apple-system, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillStyle = row.color;
+    ctx.fillText(row.pct + '%', x + w, y + 1);
+    ctx.textAlign = 'left';
+
+    const barY = y + 13;
+    const barH = 5;
+    roundRect(x, barY, w, barH, 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.06)';
+    ctx.fill();
+
+    if (row.pct > 0) {
+      roundRect(x, barY, w * (row.pct / 100), barH, 2);
+      const bGrd = ctx.createLinearGradient(x, 0, x + w * (row.pct / 100), 0);
+      bGrd.addColorStop(0, `rgba(${r},${g},${b},0.5)`);
+      bGrd.addColorStop(1, `rgba(${r},${g},${b},1)`);
+      ctx.fillStyle = bGrd;
+      ctx.fill();
+    }
+
+    y += 26;
+  }
+}
+
+// ─── Efficiency comparison ────────────────────────────────────────────────────
+
+function drawEfficiency(x: number, y: number, w: number): void {
+  ctx.font = '600 8px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.fillText('MANUAL VS AUTOMATED', x, y);
+  y += 14;
+
+  const pairs: [string, number, number][] = [
+    ['Lead scoring',  420, 3],
+    ['Data sync',     180, 8],
+    ['Notifications', 60,  1],
+  ];
+
+  for (const [label, manualS, autoS] of pairs) {
+    const maxS = manualS * 1.1;
+    const barH = 6;
+    const barW = w - 80;
+
+    ctx.font = '400 8.5px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fillText(label, x, y);
+    y += 12;
+
+    // Manual bar (grey)
+    roundRect(x, y, barW, barH, 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.06)';
+    ctx.fill();
+    roundRect(x, y, barW, barH, 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.fill();
+    ctx.font = '400 7.5px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.textAlign = 'right';
+    ctx.fillText(manualS + 's', x + barW + 40, y + 3);
+    ctx.textAlign = 'left';
+    y += 10;
+
+    // Auto bar (indigo)
+    roundRect(x, y, barW, barH, 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.fill();
+    const autoPct = autoS / maxS;
+    roundRect(x, y, barW * autoPct, barH, 2);
+    ctx.fillStyle = INDIGO;
+    ctx.fill();
+    ctx.font = '600 7.5px -apple-system, sans-serif';
+    ctx.fillStyle = '#818cf8';
+    ctx.textAlign = 'right';
+    ctx.fillText(autoS + 's', x + barW + 40, y + 3);
+    ctx.textAlign = 'left';
+    y += 18;
+  }
+}
+
+// ─── Recent completions ───────────────────────────────────────────────────────
+
+function drawCompletions(x: number, y: number, w: number): void {
+  ctx.font = '600 8px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.fillText('RECENT COMPLETIONS', x, y);
+  y += 12;
+
+  for (let i = 0; i < Math.min(4, completions.length); i++) {
+    const c = completions[i]!;
+    const rowH = 20;
+    const alpha = i === 0 ? 1 : 0.7 - i * 0.12;
+
+    // Dot
+    ctx.beginPath();
+    ctx.arc(x + 5, y + rowH / 2, 3, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${INDIGO_RGB},${alpha})`;
+    ctx.fill();
+
+    ctx.font = `${i === 0 ? 500 : 400} 9px -apple-system, sans-serif`;
+    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+    ctx.fillText(c.workflow, x + 14, y + 5);
+
+    ctx.font = '400 8px -apple-system, sans-serif';
+    ctx.fillStyle = `rgba(255,255,255,${alpha * 0.4})`;
+    ctx.textAlign = 'right';
+    ctx.fillText(`${c.tasks} tasks · ${c.duration}`, x + w, y + 6);
+    ctx.textAlign = 'left';
+
+    y += rowH;
+  }
+}
+
+// ─── Update ───────────────────────────────────────────────────────────────────
+
+let chartUpdateFrame = 0;
+
+function update(): void {
+  // Slowly scroll chart data
+  if (frame - chartUpdateFrame > 120) {
+    chartUpdateFrame = frame;
+    chartData.push(chartData[chartData.length - 1]! + (Math.random() - 0.3) * 400 + 60);
+    chartData.shift();
+  }
+
+  // Add completion entries
+  if (frame % 150 === 0) {
+    completions.unshift({
+      workflow: WORKFLOW_NAMES[Math.floor(Math.random() * WORKFLOW_NAMES.length)]!,
+      tasks: Math.floor(Math.random() * 120) + 10,
+      duration: DURATIONS[Math.floor(Math.random() * DURATIONS.length)]!,
+      timestamp: frame,
+    });
+    if (completions.length > 6) completions.pop();
+
+    // Tick tasks completed
+    METRICS[1]!.value += Math.floor(Math.random() * 30) + 5;
+    METRICS[1]!.displayValue = METRICS[1]!.value.toLocaleString();
+  }
+}
+
+// ─── Main Loop ────────────────────────────────────────────────────────────────
+
+function tick(): void {
+  frame++;
+  ctx.clearRect(0, 0, W, H);
+
+  update();
+
+  const rect = canvas.getBoundingClientRect();
+  const mx = mouse.x - rect.left;
+  const my = mouse.y - rect.top;
+
+  const pad = 12;
+  const totalW = W - pad * 2;
+
+  // ── Metric cards (top)
+  const cardH = 68;
+  const cardW = (totalW - 12) / 4;
+
+  for (let i = 0; i < METRICS.length; i++) {
+    const cx = pad + i * (cardW + 4);
+    METRICS[i]!.hovered = mx >= cx && mx <= cx + cardW && my >= 8 && my <= 8 + cardH;
+  }
+  drawMetricCards(pad, 8, totalW);
+
+  // ── Area chart
+  const chartY = 8 + cardH + 16;
+  const chartH = H * 0.28;
+  const chartW = totalW * 0.62;
+
+  ctx.font = '600 8px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.fillText('AUTOMATION VOLUME — LAST 30 DAYS', pad + 28, chartY);
+
+  drawAreaChart(pad + 28, chartY + 14, chartW - 28, chartH - 14);
+
+  // ── Breakdown (right of chart)
+  const brkX = pad + chartW + 16;
+  const brkW = totalW - chartW - 16;
+  drawBreakdown(brkX, chartY, brkW);
+
+  // ── Efficiency (below chart left)
+  const effY = chartY + chartH + 16;
+  const effW = totalW * 0.44;
+  drawEfficiency(pad, effY, effW);
+
+  // ── Recent completions (below chart right)
+  const cmpX = pad + effW + 16;
+  const cmpW = totalW - effW - 16;
+  drawCompletions(cmpX, effY, cmpW);
+
+  requestAnimationFrame(tick);
+}
+
+// ─── Events ───────────────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+canvas.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+const ro = new ResizeObserver(() => resize());
+ro.observe(colEl);
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+resize();
+tick();
+</script>

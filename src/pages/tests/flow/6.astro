@@ -1,0 +1,525 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloFlow — Decision Engine | Pello" description="PelloFlow routes every lead, task, and event through intelligent decision trees — automatically. Watch your business logic execute in real time, branching and acting without human intervention.">
+  <Header />
+  <main id="main-content">
+    <section class="flow-section" aria-labelledby="flow-headline">
+      <div class="flow-layout">
+        <div class="flow-text">
+          <span class="flow-badge">PelloFlow</span>
+          <h1 id="flow-headline">Every Decision.<br>Automated.</h1>
+          <p>PelloFlow executes your business logic in real time — scoring leads, routing tasks, and triggering actions across your entire stack without a single manual step.</p>
+          <ul class="flow-pills" role="list">
+            <li>Custom AI agents</li>
+            <li>End-to-end automation</li>
+            <li>API & webhook integration</li>
+            <li>Ongoing maintenance</li>
+          </ul>
+        </div>
+        <div class="flow-canvas-col">
+          <canvas id="flow-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .flow-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .flow-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .flow-layout { grid-template-columns: 1fr; } }
+  .flow-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .flow-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(79,70,229,0.12); border: 1px solid rgba(79,70,229,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #818cf8; width: fit-content; }
+  .flow-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .flow-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .flow-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .flow-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .flow-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #flow-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: crosshair; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface TreeNode {
+  id: string;
+  label: string;
+  type: 'root' | 'decision' | 'action';
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  rule?: string;
+  children: Array<{ nodeId: string; label: string; yes: boolean }>;
+  hovered: boolean;
+  glowAlpha: number;
+}
+
+interface TravelDot {
+  nodeId: string;
+  nextNodeId: string | null;
+  progress: number; // 0..1 along edge
+  speed: number;
+  color: string;
+  alpha: number;
+  waiting: number; // frames to wait at node before choosing next
+}
+
+// ─── Data ─────────────────────────────────────────────────────────────────────
+
+const INDIGO = '#4f46e5';
+const INDIGO_RGB = '79,70,229';
+const GREEN = '#22c55e';
+const RED = '#ef4444';
+const ACTION_COLOR = '#1e1b4b';
+
+const NODE_DEFS: Omit<TreeNode, 'x' | 'y' | 'w' | 'h' | 'hovered' | 'glowAlpha'>[] = [
+  { id: 'root', label: 'New Lead Arrives', type: 'root', rule: 'Trigger: CRM contact.created', children: [{ nodeId: 'd1', label: '', yes: true }] },
+  { id: 'd1', label: 'Score > 80?', type: 'decision', rule: 'IF lead_score > 80', children: [{ nodeId: 'd2', label: 'YES', yes: true }, { nodeId: 'a3', label: 'NO', yes: false }] },
+  { id: 'd2', label: 'Enterprise?', type: 'decision', rule: 'IF company_size > 500', children: [{ nodeId: 'a1', label: 'YES', yes: true }, { nodeId: 'd3', label: 'NO', yes: false }] },
+  { id: 'd3', label: 'Budget > $10k?', type: 'decision', rule: 'IF budget_range = "10k+"', children: [{ nodeId: 'a2', label: 'YES', yes: true }, { nodeId: 'a4', label: 'NO', yes: false }] },
+  { id: 'a1', label: 'Assign VP Sales', type: 'action', rule: 'Action: assign_owner(vp_sales)', children: [] },
+  { id: 'a2', label: 'Create Opportunity', type: 'action', rule: 'Action: crm.create_deal()', children: [] },
+  { id: 'a3', label: 'Send Drip Sequence', type: 'action', rule: 'Action: email.enroll("nurture-30d")', children: [] },
+  { id: 'a4', label: 'Self-serve Flow', type: 'action', rule: 'Action: assign_owner("self-serve")', children: [] },
+  { id: 'a5', label: 'Flag for Review', type: 'action', rule: 'Action: slack.notify("#ops-review")', children: [] },
+];
+
+// Layout positions (relative, 0..1) — will be scaled to canvas
+const LAYOUT: Record<string, [number, number]> = {
+  root: [0.5, 0.08],
+  d1:   [0.5, 0.26],
+  d2:   [0.28, 0.44],
+  a3:   [0.72, 0.44],
+  a1:   [0.14, 0.64],
+  d3:   [0.42, 0.64],
+  a4:   [0.72, 0.64],
+  a2:   [0.3, 0.82],
+  a5:   [0.54, 0.82],
+};
+
+// ─── Canvas Setup ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('flow-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const col = canvas.parentElement as HTMLElement;
+
+let W = 0;
+let H = 0;
+let dpr = 1;
+let mouse = { x: -9999, y: -9999 };
+let nodes: TreeNode[] = [];
+let dots: TravelDot[] = [];
+let frame = 0;
+let hoveredNode: TreeNode | null = null;
+
+function buildNodes(): void {
+  nodes = NODE_DEFS.map(def => {
+    const [rx, ry] = LAYOUT[def.id]!;
+    const isDecision = def.type === 'decision';
+    const isRoot = def.type === 'root';
+    const w = isRoot ? 160 : isDecision ? 130 : 148;
+    const h = isRoot ? 36 : isDecision ? 36 : 32;
+    return {
+      ...def,
+      x: rx * W - w / 2,
+      y: ry * H - h / 2,
+      w,
+      h,
+      hovered: false,
+      glowAlpha: 0,
+    };
+  });
+}
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = col.getBoundingClientRect();
+  W = rect.width;
+  H = rect.height;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+  buildNodes();
+}
+
+// ─── Node lookup ──────────────────────────────────────────────────────────────
+
+function getNode(id: string): TreeNode | undefined {
+  return nodes.find(n => n.id === id);
+}
+
+// ─── Draw helpers ─────────────────────────────────────────────────────────────
+
+function roundRect(x: number, y: number, w: number, h: number, r: number): void {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function diamond(cx: number, cy: number, hw: number, hh: number): void {
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - hh);
+  ctx.lineTo(cx + hw, cy);
+  ctx.lineTo(cx, cy + hh);
+  ctx.lineTo(cx - hw, cy);
+  ctx.closePath();
+}
+
+function getNodeCenter(n: TreeNode): [number, number] {
+  return [n.x + n.w / 2, n.y + n.h / 2];
+}
+
+function edgePath(from: TreeNode, to: TreeNode): Path2D {
+  const [fx, fy] = getNodeCenter(from);
+  const [tx, ty] = getNodeCenter(to);
+  const cp1y = fy + (ty - fy) * 0.5;
+  const p = new Path2D();
+  p.moveTo(fx, fy + from.h / 2);
+  p.bezierCurveTo(fx, cp1y, tx, cp1y, tx, ty - to.h / 2);
+  return p;
+}
+
+function pointOnBezier(
+  x0: number, y0: number,
+  x1: number, y1: number,
+  x2: number, y2: number,
+  x3: number, y3: number,
+  t: number
+): [number, number] {
+  const mt = 1 - t;
+  const x = mt*mt*mt*x0 + 3*mt*mt*t*x1 + 3*mt*t*t*x2 + t*t*t*x3;
+  const y = mt*mt*mt*y0 + 3*mt*mt*t*y1 + 3*mt*t*t*y2 + t*t*t*y3;
+  return [x, y];
+}
+
+// ─── Draw Edges ───────────────────────────────────────────────────────────────
+
+function drawEdges(): void {
+  for (const node of nodes) {
+    for (const child of node.children) {
+      const toNode = getNode(child.nodeId);
+      if (!toNode) continue;
+      const [fx, fy] = getNodeCenter(node);
+      const [tx, ty] = getNodeCenter(toNode);
+      const cp1y = fy + (ty - fy) * 0.5;
+
+      ctx.beginPath();
+      ctx.moveTo(fx, fy + node.h / 2);
+      ctx.bezierCurveTo(fx, cp1y, tx, cp1y, tx, ty - toNode.h / 2);
+      ctx.strokeStyle = node.hovered || toNode.hovered
+        ? `rgba(${INDIGO_RGB},0.6)`
+        : 'rgba(255,255,255,0.1)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Edge label (YES/NO)
+      if (child.label) {
+        const [lx, ly] = pointOnBezier(fx, fy + node.h / 2, fx, cp1y, tx, cp1y, tx, ty - toNode.h / 2, 0.35);
+        ctx.font = '600 9px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const col2 = child.yes ? GREEN : '#f97316';
+        ctx.fillStyle = col2;
+        ctx.fillText(child.label, lx + (child.yes ? -10 : 10), ly);
+      }
+    }
+  }
+}
+
+// ─── Draw Nodes ───────────────────────────────────────────────────────────────
+
+function drawNode(n: TreeNode): void {
+  const cx = n.x + n.w / 2;
+  const cy = n.y + n.h / 2;
+
+  if (n.glowAlpha > 0.01) {
+    const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, 80);
+    grd.addColorStop(0, `rgba(${INDIGO_RGB},${n.glowAlpha * 0.25})`);
+    grd.addColorStop(1, `rgba(${INDIGO_RGB},0)`);
+    ctx.fillStyle = grd;
+    ctx.fillRect(cx - 80, cy - 80, 160, 160);
+  }
+
+  if (n.type === 'root') {
+    roundRect(n.x, n.y, n.w, n.h, 18);
+    ctx.fillStyle = INDIGO;
+    ctx.fill();
+    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText(n.label, cx, cy);
+  } else if (n.type === 'decision') {
+    const hw = n.w / 2 + 4;
+    const hh = n.h / 2 + 2;
+    diamond(cx, cy, hw, hh);
+    ctx.fillStyle = n.hovered ? 'rgba(79,70,229,0.3)' : 'rgba(79,70,229,0.15)';
+    ctx.fill();
+    ctx.strokeStyle = n.hovered ? `rgba(${INDIGO_RGB},0.9)` : `rgba(${INDIGO_RGB},0.5)`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.font = '600 10px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = n.hovered ? '#fff' : 'rgba(255,255,255,0.9)';
+    ctx.fillText(n.label, cx, cy);
+  } else {
+    // action node
+    roundRect(n.x, n.y, n.w, n.h, 6);
+    ctx.fillStyle = n.hovered ? 'rgba(30,27,75,0.95)' : 'rgba(15,13,40,0.9)';
+    ctx.fill();
+    ctx.strokeStyle = n.hovered ? 'rgba(129,140,248,0.7)' : 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // left accent
+    ctx.beginPath();
+    ctx.moveTo(n.x, n.y + 6);
+    ctx.lineTo(n.x, n.y + n.h - 6);
+    ctx.strokeStyle = `rgba(${INDIGO_RGB},0.8)`;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    ctx.font = '500 10px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = n.hovered ? '#fff' : 'rgba(255,255,255,0.85)';
+    ctx.fillText(n.label, n.x + 10, cy);
+  }
+}
+
+// ─── Tooltip ─────────────────────────────────────────────────────────────────
+
+function drawTooltip(n: TreeNode): void {
+  if (!n.rule) return;
+  const cx = n.x + n.w / 2;
+  const ty = n.y - 14;
+  const pad = 8;
+  ctx.font = '500 9.5px "SF Mono", "Consolas", monospace';
+  const tw = ctx.measureText(n.rule).width + pad * 2;
+  const th = 22;
+  const tx = Math.max(4, Math.min(W - tw - 4, cx - tw / 2));
+
+  roundRect(tx, ty - th, tw, th, 5);
+  ctx.fillStyle = 'rgba(10,8,30,0.95)';
+  ctx.fill();
+  ctx.strokeStyle = `rgba(${INDIGO_RGB},0.5)`;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = '#818cf8';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(n.rule, tx + pad, ty - th / 2);
+}
+
+// ─── Stats Panel ──────────────────────────────────────────────────────────────
+
+let decisionsPerHour = 1240;
+let framesSinceUpdate = 0;
+
+function drawStats(): void {
+  framesSinceUpdate++;
+  if (framesSinceUpdate % 90 === 0) {
+    decisionsPerHour += Math.floor(Math.random() * 7) - 3;
+    decisionsPerHour = Math.max(1200, Math.min(1300, decisionsPerHour));
+  }
+
+  const px = 12;
+  const py = H - 62;
+  const pw = 200;
+  const ph = 50;
+
+  roundRect(px, py, pw, ph, 8);
+  ctx.fillStyle = 'rgba(6,7,18,0.88)';
+  ctx.fill();
+  ctx.strokeStyle = `rgba(${INDIGO_RGB},0.25)`;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+
+  ctx.font = '700 18px -apple-system, sans-serif';
+  ctx.fillStyle = '#818cf8';
+  ctx.fillText(decisionsPerHour.toLocaleString(), px + 10, py + 8);
+  ctx.font = '400 9px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.fillText('DECISIONS / HOUR', px + 10, py + 30);
+
+  ctx.font = '700 18px -apple-system, sans-serif';
+  ctx.fillStyle = '#818cf8';
+  ctx.fillText('4', px + 120, py + 8);
+  ctx.font = '400 9px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.fillText('AVG PATH LENGTH', px + 120, py + 30);
+}
+
+// ─── Dots ─────────────────────────────────────────────────────────────────────
+
+function spawnDot(): void {
+  if (nodes.length === 0) return;
+  dots.push({
+    nodeId: 'root',
+    nextNodeId: null,
+    progress: 0,
+    speed: 0.008 + Math.random() * 0.006,
+    color: INDIGO,
+    alpha: 0.9,
+    waiting: 30 + Math.floor(Math.random() * 40),
+  });
+}
+
+function updateDots(): void {
+  for (let i = dots.length - 1; i >= 0; i--) {
+    const dot = dots[i]!;
+    const current = getNode(dot.nodeId);
+    if (!current) { dots.splice(i, 1); continue; }
+
+    if (dot.waiting > 0) {
+      dot.waiting--;
+      if (dot.waiting === 0 && current.children.length > 0) {
+        // Choose next edge
+        const child = current.children[Math.floor(Math.random() * current.children.length)]!;
+        dot.nextNodeId = child.nodeId;
+        dot.progress = 0;
+        dot.color = child.yes ? GREEN : '#f97316';
+      } else if (dot.waiting === 0 && current.children.length === 0) {
+        dots.splice(i, 1);
+        continue;
+      }
+      continue;
+    }
+
+    if (!dot.nextNodeId) continue;
+    dot.progress += dot.speed;
+    if (dot.progress >= 1) {
+      dot.nodeId = dot.nextNodeId;
+      dot.nextNodeId = null;
+      dot.progress = 0;
+      dot.waiting = 20 + Math.floor(Math.random() * 30);
+    }
+  }
+
+  // Spawn new dots periodically
+  if (frame % 80 === 0 && dots.length < 8) spawnDot();
+}
+
+function drawDots(): void {
+  for (const dot of dots) {
+    const current = getNode(dot.nodeId);
+    if (!current) continue;
+
+    let px: number, py: number;
+
+    if (!dot.nextNodeId || dot.waiting > 0) {
+      // At node
+      [px, py] = getNodeCenter(current);
+    } else {
+      const next = getNode(dot.nextNodeId);
+      if (!next) continue;
+      const [fx, fy] = getNodeCenter(current);
+      const [tx, ty] = getNodeCenter(next);
+      const cp1y = fy + (ty - fy) * 0.5;
+      const startY = fy + current.h / 2;
+      const endY = ty - next.h / 2;
+      [px, py] = pointOnBezier(fx, startY, fx, cp1y, tx, cp1y, tx, endY, dot.progress);
+    }
+
+    // Dot glow
+    const grd = ctx.createRadialGradient(px, py, 0, px, py, 8);
+    const [r2, g2, b2] = dot.color === GREEN ? [34, 197, 94] : dot.color === INDIGO ? [79, 70, 229] : [249, 115, 22];
+    grd.addColorStop(0, `rgba(${r2},${g2},${b2},0.4)`);
+    grd.addColorStop(1, `rgba(${r2},${g2},${b2},0)`);
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(px, py, 8, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(px, py, 3, 0, Math.PI * 2);
+    ctx.fillStyle = dot.color;
+    ctx.fill();
+  }
+}
+
+// ─── Main Loop ────────────────────────────────────────────────────────────────
+
+function tick(): void {
+  frame++;
+  ctx.clearRect(0, 0, W, H);
+
+  // Update hover
+  const rect = canvas.getBoundingClientRect();
+  const mx = mouse.x - rect.left;
+  const my = mouse.y - rect.top;
+  hoveredNode = null;
+
+  for (const n of nodes) {
+    const cx = n.x + n.w / 2;
+    const cy = n.y + n.h / 2;
+    let hit = false;
+    if (n.type === 'decision') {
+      const hw = n.w / 2 + 4;
+      const hh = n.h / 2 + 2;
+      const dx = Math.abs(mx - cx) / hw;
+      const dy = Math.abs(my - cy) / hh;
+      hit = dx + dy <= 1;
+    } else {
+      hit = mx >= n.x - 4 && mx <= n.x + n.w + 4 && my >= n.y - 4 && my <= n.y + n.h + 4;
+    }
+    n.hovered = hit;
+    n.glowAlpha += (hit ? 1 : 0 - n.glowAlpha) * 0.1;
+    if (hit) hoveredNode = n;
+  }
+
+  drawEdges();
+  updateDots();
+  drawDots();
+  for (const n of nodes) drawNode(n);
+  if (hoveredNode) drawTooltip(hoveredNode);
+  drawStats();
+
+  requestAnimationFrame(tick);
+}
+
+// ─── Events ───────────────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+});
+
+canvas.addEventListener('mouseleave', () => {
+  mouse.x = -9999;
+  mouse.y = -9999;
+});
+
+const ro = new ResizeObserver(() => resize());
+ro.observe(col);
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+resize();
+spawnDot();
+spawnDot();
+tick();
+</script>
