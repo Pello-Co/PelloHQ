@@ -1,0 +1,398 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloFlow — Agent Monitor | Pello" description="Monitor your AI agents in real-time. Track uptime, task throughput, response times, and live activity streams across all your automation agents.">
+  <Header />
+  <main id="main-content">
+    <section class="flow-section" aria-labelledby="flow-headline">
+      <div class="flow-layout">
+        <div class="flow-text">
+          <span class="flow-badge">PelloFlow</span>
+          <h1 id="flow-headline">AI Agents.<br/>Always Working.</h1>
+          <p>Deploy intelligent agents that run 24/7 — routing leads, enriching data, triaging support. Monitor every agent's health, throughput, and activity in real time.</p>
+          <ul class="flow-pills" role="list">
+            <li>Custom AI agents</li>
+            <li>End-to-end automation</li>
+            <li>API &amp; webhook integration</li>
+            <li>Ongoing maintenance</li>
+          </ul>
+        </div>
+        <div class="flow-canvas-col">
+          <canvas id="flow-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .flow-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .flow-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .flow-layout { grid-template-columns: 1fr; } }
+  .flow-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .flow-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(79,70,229,0.12); border: 1px solid rgba(79,70,229,0.35); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #818cf8; width: fit-content; }
+  .flow-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .flow-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .flow-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .flow-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .flow-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #flow-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: default; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Agent {
+  id: string;
+  name: string;
+  version: string;
+  status: 'active' | 'idle' | 'error';
+  uptime: string;
+  tasks: number;
+  tasksDelta: number;
+  avgMs: number;
+  lastError: string;
+  cpuPct: number;
+  memPct: number;
+  color: string;
+  x: number; y: number; w: number; h: number;
+  alpha: number;
+  expanded: boolean;
+}
+
+interface TimelineEvent {
+  ts: string;
+  agent: string;
+  msg: string;
+  color: string;
+  y: number;
+  alpha: number;
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const ACCENT = '#4f46e5';
+const ACCENT_RGB = '79,70,229';
+
+const AGENT_DEFS = [
+  { id: 'router',    name: 'Lead Router',   version: 'v2.1', status: 'active' as const,  uptime: '99.98%', tasks: 4521, avgMs: 89,  lastError: 'none',         cpuPct: 42, memPct: 38, color: '#10b981' },
+  { id: 'onboard',   name: 'Onboarding Bot',version: 'v1.4', status: 'active' as const,  uptime: '99.91%', tasks: 1842, avgMs: 340, lastError: '2h ago',        cpuPct: 28, memPct: 54, color: ACCENT },
+  { id: 'enricher',  name: 'Data Enricher', version: 'v3.0', status: 'active' as const,  uptime: '100%',   tasks: 9283, avgMs: 210, lastError: 'none',         cpuPct: 65, memPct: 71, color: '#f59e0b' },
+  { id: 'triage',    name: 'Support Triage',version: 'v1.9', status: 'idle' as const,    uptime: '99.82%', tasks: 2104, avgMs: 55,  lastError: '30m ago',       cpuPct: 5,  memPct: 22, color: '#06b6d4' },
+];
+
+const EVENT_TEMPLATES = [
+  (a:string,n:number) => `${a} processed #${n} → Salesforce`,
+  (a:string,n:number) => `${a} sent welcome seq to user${n}@co.com`,
+  (a:string,n:number) => `${a} enriched lead #${n} via Clearbit`,
+  (a:string,n:number) => `${a} routed ticket #${n} to Tier-2`,
+  (a:string,n:number) => `${a} classified intent: demo_request (#${n})`,
+  (a:string,n:number) => `${a} created HubSpot contact #${n}`,
+];
+
+const AGENT_NAMES = ['Lead Router', 'Onboarding Bot', 'Data Enricher', 'Support Triage'];
+const AGENT_COLORS = ['#10b981', ACCENT, '#f59e0b', '#06b6d4'];
+
+// ─── Canvas Setup ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('flow-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const col = canvas.parentElement as HTMLElement;
+
+let W = 0, H = 0, dpr = 1;
+let mouse = { x: -9999, y: -9999 };
+let frame = 0;
+
+const agents: Agent[] = [];
+const timeline: TimelineEvent[] = [];
+let timelineScrollY = 0;
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = col.getBoundingClientRect();
+  W = rect.width; H = rect.height;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+  layoutAgents();
+}
+
+function layoutAgents(): void {
+  const cols = 2;
+  const pad = 16;
+  const aw = (W * 0.58 - pad * (cols+1)) / cols;
+  const ah = 110;
+  agents.length = 0;
+  AGENT_DEFS.forEach((def, i) => {
+    const col2 = i % cols;
+    const row = Math.floor(i / cols);
+    agents.push({
+      ...def,
+      x: pad + col2*(aw+pad),
+      y: pad + row*(ah+pad),
+      w: aw, h: ah,
+      alpha: 0,
+      expanded: false,
+    });
+  });
+}
+
+// ─── Drawing ──────────────────────────────────────────────────────────────────
+
+function roundRect(c: CanvasRenderingContext2D, x:number,y:number,w:number,h:number,r:number): void {
+  c.beginPath();
+  c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.quadraticCurveTo(x+w,y,x+w,y+r);
+  c.lineTo(x+w,y+h-r); c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  c.lineTo(x+r,y+h); c.quadraticCurveTo(x,y+h,x,y+h-r);
+  c.lineTo(x,y+r); c.quadraticCurveTo(x,y,x+r,y); c.closePath();
+}
+
+function drawGauge(x:number, y:number, w:number, pct:number, color:string, label:string): void {
+  const h = 4;
+  // Track
+  roundRect(ctx, x, y, w, h, 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.08)';
+  ctx.fill();
+  // Fill
+  if (pct > 0) {
+    roundRect(ctx, x, y, w*(pct/100), h, 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+  ctx.font = '400 8px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(`${label} ${pct}%`, x, y-6);
+}
+
+function drawAgentCard(agent: Agent, hovered: boolean): void {
+  if (agent.alpha < 0.01) return;
+  ctx.save();
+  ctx.globalAlpha = agent.alpha;
+
+  const rgb = [parseInt(agent.color.slice(1,3),16), parseInt(agent.color.slice(3,5),16), parseInt(agent.color.slice(5,7),16)];
+
+  // Background
+  roundRect(ctx, agent.x, agent.y, agent.w, agent.h, 10);
+  ctx.fillStyle = hovered ? 'rgba(14,15,30,0.98)' : 'rgba(10,11,24,0.95)';
+  ctx.fill();
+  ctx.strokeStyle = hovered ? agent.color : `rgba(${rgb.join(',')},0.25)`;
+  ctx.lineWidth = hovered ? 1.5 : 1;
+  ctx.stroke();
+
+  // Top accent bar
+  roundRect(ctx, agent.x, agent.y, agent.w, 3, 2);
+  ctx.fillStyle = agent.color;
+  ctx.fill();
+
+  // Status dot
+  const pulse = agent.status === 'active' ? 0.7 + 0.3*Math.sin(frame*0.1) : 1;
+  const statusColor = agent.status === 'active' ? '#10b981' : agent.status === 'error' ? '#ef4444' : '#6b7280';
+  ctx.beginPath();
+  ctx.arc(agent.x+12, agent.y+16, 4*pulse, 0, Math.PI*2);
+  ctx.fillStyle = statusColor;
+  ctx.fill();
+
+  // Agent name
+  ctx.font = '600 11px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(agent.name, agent.x+22, agent.y+16);
+
+  // Version badge
+  const vw = ctx.measureText(agent.version).width + 10;
+  roundRect(ctx, agent.x+agent.w-vw-8, agent.y+9, vw, 14, 3);
+  ctx.fillStyle = `rgba(${rgb.join(',')},0.15)`;
+  ctx.fill();
+  ctx.font = '500 8px monospace';
+  ctx.fillStyle = agent.color;
+  ctx.fillText(agent.version, agent.x+agent.w-vw-3, agent.y+16);
+
+  // Stats row
+  const stats = [
+    { label: 'UPTIME', value: agent.uptime },
+    { label: 'TASKS', value: agent.tasks.toLocaleString() },
+    { label: 'AVG', value: `${agent.avgMs}ms` },
+  ];
+  const sw = agent.w / 3;
+  stats.forEach((s, i) => {
+    const sx = agent.x + i*sw + sw/2;
+    ctx.font = '500 7.5px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.textAlign = 'center';
+    ctx.fillText(s.label, sx, agent.y+32);
+    ctx.font = '600 10px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fillText(s.value, sx, agent.y+44);
+  });
+  ctx.textAlign = 'left';
+
+  // Gauges
+  drawGauge(agent.x+8, agent.y+68, (agent.w-16)/2-4, agent.cpuPct, agent.color, 'CPU');
+  drawGauge(agent.x+8+(agent.w-16)/2, agent.y+68, (agent.w-16)/2-4, agent.memPct, '#818cf8', 'MEM');
+
+  // Last error
+  ctx.font = '400 8px -apple-system, sans-serif';
+  ctx.fillStyle = agent.lastError === 'none' ? 'rgba(16,185,129,0.6)' : 'rgba(245,158,11,0.7)';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(`Last err: ${agent.lastError}`, agent.x+8, agent.y+agent.h-6);
+
+  ctx.restore();
+}
+
+function drawTimeline(): void {
+  const tx = W * 0.62;
+  const tw = W - tx - 8;
+  const ty = 8;
+
+  ctx.save();
+
+  // Panel background
+  roundRect(ctx, tx, ty, tw, H-16, 10);
+  ctx.fillStyle = 'rgba(8,9,20,0.9)';
+  ctx.fill();
+  ctx.strokeStyle = `rgba(${ACCENT_RGB},0.2)`;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Header
+  ctx.font = '600 9px -apple-system, sans-serif';
+  ctx.fillStyle = `rgba(${ACCENT_RGB},0.9)`;
+  ctx.textBaseline = 'middle';
+  ctx.fillText('LIVE ACTIVITY', tx+10, ty+14);
+
+  // Green dot
+  const gPulse = 0.6 + 0.4*Math.sin(frame*0.12);
+  ctx.beginPath();
+  ctx.arc(tx+tw-14, ty+14, 4*gPulse, 0, Math.PI*2);
+  ctx.fillStyle = '#10b981';
+  ctx.fill();
+
+  // Divider
+  ctx.beginPath();
+  ctx.moveTo(tx+6, ty+26); ctx.lineTo(tx+tw-6, ty+26);
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Clip to timeline area
+  ctx.beginPath();
+  ctx.rect(tx, ty+28, tw, H-16-28);
+  ctx.clip();
+
+  // Events
+  const evH = 38;
+  timeline.forEach((ev, i) => {
+    const ey = ty+30 + i*evH + timelineScrollY;
+    if (ey > H || ey < ty+24) return;
+
+    ctx.globalAlpha = ev.alpha * Math.min(1, Math.max(0, (ey - ty-28) / 30));
+
+    const rgb = [parseInt(ev.color.slice(1,3),16), parseInt(ev.color.slice(3,5),16), parseInt(ev.color.slice(5,7),16)];
+
+    // Left border
+    ctx.beginPath();
+    ctx.moveTo(tx+6, ey+2); ctx.lineTo(tx+6, ey+evH-4);
+    ctx.strokeStyle = ev.color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.font = '500 7.5px monospace';
+    ctx.fillStyle = `rgba(${rgb.join(',')},0.7)`;
+    ctx.textBaseline = 'top';
+    ctx.fillText(ev.ts, tx+14, ey+3);
+
+    ctx.font = '400 9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    // Truncate if needed
+    let msg = ev.msg;
+    const maxW = tw - 24;
+    while (ctx.measureText(msg).width > maxW && msg.length > 10) msg = msg.slice(0,-1);
+    if (msg !== ev.msg) msg += '…';
+    ctx.fillText(msg, tx+14, ey+16);
+  });
+
+  ctx.restore();
+}
+
+// ─── Animation Loop ───────────────────────────────────────────────────────────
+
+let eventSeq = 4521;
+let lastEvent = 0;
+
+function tick(): void {
+  frame++;
+  ctx.clearRect(0, 0, W, H);
+
+  const rect = canvas.getBoundingClientRect();
+  const mx = mouse.x - rect.left, my = mouse.y - rect.top;
+
+  // Fade in agents
+  agents.forEach((agent, i) => {
+    const target = frame > i*20 ? 1 : 0;
+    agent.alpha += (target - agent.alpha) * 0.06;
+  });
+
+  // Tick agent counters
+  if (frame % 8 === 0) {
+    const idx = Math.floor(Math.random() * agents.length);
+    if (agents[idx] && agents[idx]!.status === 'active') agents[idx]!.tasks++;
+  }
+
+  // Scroll timeline
+  timelineScrollY -= 0.4;
+
+  // Spawn events
+  if (frame - lastEvent > 55) {
+    lastEvent = frame;
+    const agentIdx = Math.floor(Math.random()*AGENT_NAMES.length);
+    const tmpl = EVENT_TEMPLATES[Math.floor(Math.random()*EVENT_TEMPLATES.length)]!;
+    const now = new Date();
+    const ts = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+    timeline.unshift({
+      ts,
+      agent: AGENT_NAMES[agentIdx]!,
+      msg: tmpl(AGENT_NAMES[agentIdx]!, eventSeq++),
+      color: AGENT_COLORS[agentIdx]!,
+      y: 0,
+      alpha: 0,
+    });
+    timelineScrollY = 0;
+    if (timeline.length > 20) timeline.pop();
+  }
+
+  // Fade in new events
+  if (timeline[0]) timeline[0].alpha = Math.min(1, timeline[0].alpha + 0.08);
+
+  // Find hovered agent
+  let hovered: Agent | null = null;
+  for (const ag of agents) {
+    if (mx >= ag.x && mx <= ag.x+ag.w && my >= ag.y && my <= ag.y+ag.h) { hovered = ag; break; }
+  }
+
+  // Draw
+  for (const agent of agents) drawAgentCard(agent, hovered === agent);
+  drawTimeline();
+
+  requestAnimationFrame(tick);
+}
+
+// ─── Events ───────────────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+canvas.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+
+const ro = new ResizeObserver(() => resize());
+ro.observe(col);
+
+resize();
+tick();
+</script>

@@ -1,0 +1,377 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloFlow — Automation Timeline | Pello" description="Watch your automation events stream in real time. Every lead routed, email sent, and data enriched — visible, measurable, and fully logged.">
+  <Header />
+  <main id="main-content">
+    <section class="flow-section" aria-labelledby="flow-headline">
+      <div class="flow-layout">
+        <div class="flow-text">
+          <span class="flow-badge">PelloFlow</span>
+          <h1 id="flow-headline">Every Action.<br/>Fully Visible.</h1>
+          <p>Watch every automation event as it happens — leads routed, emails sent, data enriched, tickets created. Full audit trail, zero black boxes.</p>
+          <ul class="flow-pills" role="list">
+            <li>Custom AI agents</li>
+            <li>End-to-end automation</li>
+            <li>API &amp; webhook integration</li>
+            <li>Ongoing maintenance</li>
+          </ul>
+        </div>
+        <div class="flow-canvas-col">
+          <canvas id="flow-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .flow-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .flow-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .flow-layout { grid-template-columns: 1fr; } }
+  .flow-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .flow-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(79,70,229,0.12); border: 1px solid rgba(79,70,229,0.35); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #818cf8; width: fit-content; }
+  .flow-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .flow-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .flow-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .flow-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .flow-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #flow-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: default; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface AutoEvent {
+  id: number;
+  ts: string;
+  type: string;
+  typeColor: string;
+  source: string;
+  target: string;
+  status: 'completed' | 'processing' | 'queued';
+  latencyMs: number;
+  payload: string[];
+  y: number;           // current y position
+  targetY: number;
+  alpha: number;
+  expandedAlpha: number;
+  hovered: boolean;
+  progressPct: number; // for processing
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const ACCENT = '#4f46e5';
+const ACCENT_RGB = '79,70,229';
+
+const EVENT_TYPES = [
+  { type: 'lead_routed',    color: '#10b981' },
+  { type: 'email_sent',     color: '#06b6d4' },
+  { type: 'data_enriched',  color: ACCENT },
+  { type: 'ticket_created', color: '#f59e0b' },
+  { type: 'contact_synced', color: '#8b5cf6' },
+  { type: 'payment_logged', color: '#ec4899' },
+];
+
+const SOURCES = ['Salesforce', 'HubSpot', 'Typeform', 'Stripe', 'Zendesk', 'Shopify', 'Webhook'];
+const TARGETS = ['Salesforce', 'HubSpot', 'Slack #hot-leads', 'Clearbit', 'PostgreSQL', 'Gmail', 'Twilio'];
+
+const PAYLOADS: string[][] = [
+  ['lead_id: "ld_8a2f9c"', 'score: 94', 'region: "EMEA"', 'intent: "demo"'],
+  ['contact_id: "ct_5b1e"', 'email: "ceo@acme.co"', 'company: "Acme Corp"'],
+  ['event: "payment.succeeded"', 'amount: 2400', 'currency: "USD"'],
+  ['ticket_id: "tkt_3321"', 'priority: "high"', 'assigned_to: "tier2"'],
+  ['enrichment: "complete"', 'fields_added: 12', 'confidence: 0.97'],
+];
+
+// ─── Canvas Setup ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('flow-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const parentEl = canvas.parentElement as HTMLElement;
+
+let W = 0, H = 0, dpr = 1;
+let mouse = { x: -9999, y: -9999 };
+let frame = 0;
+
+const events: AutoEvent[] = [];
+let nextId = 1;
+let lastSpawn = 0;
+let totalEvents = 12847;
+let successRate = 99.4;
+const HEADER_H = 48;
+const EVENT_H = 52;
+const EVENT_GAP = 6;
+const EVENT_STEP = EVENT_H + EVENT_GAP;
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = parentEl.getBoundingClientRect();
+  W = rect.width; H = rect.height;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+}
+
+function makeEvent(): AutoEvent {
+  const typeDef = EVENT_TYPES[Math.floor(Math.random()*EVENT_TYPES.length)]!;
+  const status = Math.random() < 0.08 ? 'processing' : Math.random() < 0.03 ? 'queued' : 'completed';
+  const now = new Date();
+  const ts = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}.${(now.getMilliseconds()).toString().padStart(3,'0')}`;
+  return {
+    id: nextId++,
+    ts,
+    type: typeDef.type,
+    typeColor: typeDef.color,
+    source: SOURCES[Math.floor(Math.random()*SOURCES.length)]!,
+    target: TARGETS[Math.floor(Math.random()*TARGETS.length)]!,
+    status,
+    latencyMs: 20 + Math.floor(Math.random()*280),
+    payload: PAYLOADS[Math.floor(Math.random()*PAYLOADS.length)]!,
+    y: HEADER_H + 4,
+    targetY: HEADER_H + 4,
+    alpha: 0,
+    expandedAlpha: 0,
+    hovered: false,
+    progressPct: status === 'processing' ? Math.random()*0.6 : 0,
+  };
+}
+
+// ─── Drawing ──────────────────────────────────────────────────────────────────
+
+function roundRect(c: CanvasRenderingContext2D, x:number,y:number,w:number,h:number,r:number): void {
+  c.beginPath();
+  c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.quadraticCurveTo(x+w,y,x+w,y+r);
+  c.lineTo(x+w,y+h-r); c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  c.lineTo(x+r,y+h); c.quadraticCurveTo(x,y+h,x,y+h-r);
+  c.lineTo(x,y+r); c.quadraticCurveTo(x,y,x+r,y); c.closePath();
+}
+
+function hexToRgb(hex: string): [number,number,number] {
+  return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
+}
+
+function drawHeader(): void {
+  // Header bar
+  roundRect(ctx, 4, 4, W-8, HEADER_H-8, 8);
+  ctx.fillStyle = 'rgba(8,9,20,0.95)';
+  ctx.fill();
+  ctx.strokeStyle = `rgba(${ACCENT_RGB},0.2)`;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  const metrics = [
+    { label: 'Events Today', value: totalEvents.toLocaleString() },
+    { label: 'Success Rate', value: `${successRate.toFixed(1)}%` },
+    { label: 'Avg Latency',  value: '89ms' },
+  ];
+
+  const mw = (W-8) / 3;
+  metrics.forEach((m, i) => {
+    const mx = 4 + i*mw + mw/2;
+    ctx.font = '400 7.5px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(m.label.toUpperCase(), mx, 14);
+    ctx.font = '600 13px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.fillText(m.value, mx, 30);
+  });
+
+  // Live dot
+  const pulse = 0.6+0.4*Math.sin(frame*0.14);
+  ctx.beginPath();
+  ctx.arc(W-14, 20, 4*pulse, 0, Math.PI*2);
+  ctx.fillStyle = '#10b981';
+  ctx.fill();
+
+  ctx.textAlign = 'left';
+}
+
+function drawEvent(ev: AutoEvent): void {
+  if (ev.alpha < 0.01 || ev.y > H + EVENT_H) return;
+
+  const ex = 4, ey = ev.y;
+  const ew = W-8;
+
+  // Fade out near top
+  const fadeTop = Math.max(0, Math.min(1, (ey - HEADER_H - 4) / 24));
+  ctx.save();
+  ctx.globalAlpha = ev.alpha * fadeTop;
+
+  const rgb = hexToRgb(ev.typeColor);
+
+  // Card background
+  roundRect(ctx, ex, ey, ew, EVENT_H, 6);
+  ctx.fillStyle = ev.hovered ? 'rgba(14,15,30,0.98)' : 'rgba(10,11,24,0.92)';
+  ctx.fill();
+  ctx.strokeStyle = ev.hovered ? `rgba(${rgb.join(',')},0.5)` : 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Left type border
+  ctx.beginPath();
+  ctx.moveTo(ex, ey+6); ctx.lineTo(ex, ey+EVENT_H-6);
+  ctx.strokeStyle = ev.typeColor;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Timestamp
+  ctx.font = '400 7.5px monospace';
+  ctx.fillStyle = `rgba(${rgb.join(',')},0.65)`;
+  ctx.textBaseline = 'top';
+  ctx.fillText(ev.ts, ex+10, ey+6);
+
+  // Status icon
+  const statusStr = ev.status === 'completed' ? '✓' : ev.status === 'processing' ? '↻' : '⏳';
+  const statusColor = ev.status === 'completed' ? '#10b981' : ev.status === 'processing' ? '#f59e0b' : '#6b7280';
+  ctx.font = '500 10px sans-serif';
+  ctx.fillStyle = statusColor;
+  ctx.fillText(statusStr, ex+ew-24, ey+6);
+
+  // Event type badge
+  const typeW = ctx.measureText(ev.type).width + 12;
+  roundRect(ctx, ex+10, ey+18, typeW, 14, 3);
+  ctx.fillStyle = `rgba(${rgb.join(',')},0.12)`;
+  ctx.fill();
+  ctx.font = '500 8px monospace';
+  ctx.fillStyle = ev.typeColor;
+  ctx.fillText(ev.type, ex+16, ey+25);
+
+  // Source → Target
+  ctx.font = '400 9px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  const flowStr = `${ev.source}  →  ${ev.target}`;
+  ctx.fillText(flowStr, ex+10+typeW+8, ey+25);
+
+  // Latency
+  ctx.font = '400 8px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.textAlign = 'right';
+  ctx.fillText(`${ev.latencyMs}ms`, ex+ew-30, ey+25);
+  ctx.textAlign = 'left';
+
+  // Processing progress bar
+  if (ev.status === 'processing') {
+    const bx = ex+10, by = ey+EVENT_H-10, bw = ew-20, bh = 3;
+    roundRect(ctx, bx, by, bw, bh, 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.07)';
+    ctx.fill();
+    const prog = ev.progressPct + 0.15*Math.sin(frame*0.05);
+    roundRect(ctx, bx, by, bw*Math.min(1,Math.max(0,prog)), bh, 2);
+    ctx.fillStyle = '#f59e0b';
+    ctx.fill();
+  }
+
+  // Hover: show payload
+  if (ev.hovered && ev.expandedAlpha > 0.01) {
+    ctx.globalAlpha = ev.alpha * fadeTop * ev.expandedAlpha;
+    // Payload tooltip above card
+    const ph = ev.payload.length*13 + 14;
+    const py = ey - ph - 6;
+    if (py > HEADER_H) {
+      roundRect(ctx, ex, py, ew, ph, 6);
+      ctx.fillStyle = 'rgba(6,7,16,0.97)';
+      ctx.fill();
+      ctx.strokeStyle = `rgba(${rgb.join(',')},0.3)`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.font = '600 7.5px monospace';
+      ctx.fillStyle = `rgba(${rgb.join(',')},0.7)`;
+      ctx.fillText('PAYLOAD', ex+8, py+8);
+
+      ev.payload.forEach((line, i) => {
+        ctx.font = '400 8.5px monospace';
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.fillText(line, ex+8, py+20+i*13);
+      });
+    }
+  }
+
+  ctx.restore();
+}
+
+// ─── Animation Loop ───────────────────────────────────────────────────────────
+
+function tick(): void {
+  frame++;
+  ctx.clearRect(0, 0, W, H);
+
+  const rect = canvas.getBoundingClientRect();
+  const mx = mouse.x - rect.left, my = mouse.y - rect.top;
+
+  // Spawn new events
+  const spawnInterval = 55;
+  if (frame - lastSpawn > spawnInterval) {
+    lastSpawn = frame;
+    const ev = makeEvent();
+    events.unshift(ev);
+    totalEvents++;
+    if (events.length > 18) events.pop();
+  }
+
+  // Layout target positions (scrolling down as new arrive at top)
+  events.forEach((ev, i) => {
+    ev.targetY = HEADER_H + 4 + i * EVENT_STEP;
+  });
+
+  // Update events
+  for (const ev of events) {
+    ev.y += (ev.targetY - ev.y) * 0.12;
+    ev.alpha = Math.min(1, ev.alpha + 0.07);
+
+    // Hovered
+    const isHov = mx >= 4 && mx <= W-4 && my >= ev.y && my <= ev.y+EVENT_H;
+    ev.hovered = isHov;
+    ev.expandedAlpha += (isHov ? 1 : 0 - ev.expandedAlpha) * 0.12;
+
+    // Processing progress
+    if (ev.status === 'processing') {
+      ev.progressPct = Math.min(0.95, ev.progressPct + 0.002);
+    }
+  }
+
+  drawHeader();
+
+  // Clip to below header
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, HEADER_H + 2, W, H - HEADER_H - 2);
+  ctx.clip();
+
+  // Draw non-hovered first
+  for (const ev of events) {
+    if (!ev.hovered) drawEvent(ev);
+  }
+  // Hovered on top
+  for (const ev of events) {
+    if (ev.hovered) drawEvent(ev);
+  }
+
+  ctx.restore();
+
+  requestAnimationFrame(tick);
+}
+
+// ─── Events ───────────────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+canvas.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+
+const ro = new ResizeObserver(() => resize());
+ro.observe(parentEl);
+
+resize();
+tick();
+</script>
