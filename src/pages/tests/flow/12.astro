@@ -1,0 +1,942 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloFlow — Error Recovery | Pello" description="Intelligent error recovery, retry strategies, and circuit breaker management for your automated workflows.">
+  <Header />
+  <main id="main-content">
+    <section class="flow-section" aria-labelledby="flow-headline">
+      <div class="flow-layout">
+        <div class="flow-text">
+          <span class="flow-badge">PelloFlow</span>
+          <h1 id="flow-headline">Error Recovery</h1>
+          <p>Automatically detect, retry, and recover from workflow failures. Exponential backoff, circuit breakers, and zero data loss — your automations stay resilient even when third-party APIs go down.</p>
+          <ul class="flow-pills" role="list">
+            <li>Custom AI agents</li>
+            <li>End-to-end automation</li>
+            <li>API &amp; webhook integration</li>
+            <li>Ongoing maintenance</li>
+          </ul>
+        </div>
+        <div class="flow-canvas-col">
+          <canvas id="flow-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .flow-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .flow-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .flow-layout { grid-template-columns: 1fr; } }
+  .flow-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .flow-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(79,70,229,0.12); border: 1px solid rgba(79,70,229,0.35); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #818cf8; width: fit-content; }
+  .flow-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .flow-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .flow-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .flow-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .flow-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #flow-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: default; }
+</style>
+
+<script>
+interface ErrorRow {
+  id: number;
+  workflowName: string;
+  errorMessage: string;
+  occurrenceCount: number;
+  firstSeen: string;
+  lastSeen: string;
+  retryStatus: 'Recovering' | 'Retrying' | 'Failed';
+  rect: DOMRect | null;
+}
+
+interface RetryAttempt {
+  label: string;
+  delay: string;
+  succeeded: boolean;
+  current: boolean;
+}
+
+interface CircuitBreaker {
+  service: string;
+  status: 'CLOSED' | 'HALF-OPEN' | 'OPEN';
+}
+
+interface SparklinePoint {
+  value: number;
+  x: number;
+  y: number;
+}
+
+interface PopoverState {
+  visible: boolean;
+  rowIndex: number;
+  x: number;
+  y: number;
+  alpha: number;
+}
+
+interface CanvasRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+const canvas = document.getElementById('flow-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+
+// Brand colors
+const COLOR_BRAND   = '#4f46e5';
+const COLOR_BRAND_L = '#818cf8';
+const COLOR_ERROR   = '#ef4444';
+const COLOR_WARN    = '#f59e0b';
+const COLOR_SUCCESS = '#22c55e';
+const COLOR_BG      = '#060712';
+const COLOR_SURFACE = 'rgba(255,255,255,0.04)';
+const COLOR_BORDER  = 'rgba(255,255,255,0.08)';
+const COLOR_TEXT    = 'rgba(255,255,255,0.9)';
+const COLOR_MUTED   = 'rgba(255,255,255,0.45)';
+const COLOR_DIM     = 'rgba(255,255,255,0.25)';
+
+// State
+let animFrame = 0;
+let tick = 0;
+let dpr = window.devicePixelRatio || 1;
+let W = 0;
+let H = 0;
+
+const popover: PopoverState = { visible: false, rowIndex: -1, x: 0, y: 0, alpha: 0 };
+const errorRowRects: CanvasRect[] = [];
+const pulsePhase = { val: 0 };
+
+const errorRows: ErrorRow[] = [
+  {
+    id: 1,
+    workflowName: 'CRM Sync → Salesforce',
+    errorMessage: 'INVALID_SESSION_ID: Session expired',
+    occurrenceCount: 42,
+    firstSeen: '2d ago',
+    lastSeen: '3m ago',
+    retryStatus: 'Recovering',
+    rect: null,
+  },
+  {
+    id: 2,
+    workflowName: 'Payment Capture → Stripe',
+    errorMessage: 'rate_limit_exceeded: Too many requests',
+    occurrenceCount: 17,
+    firstSeen: '6h ago',
+    lastSeen: '1m ago',
+    retryStatus: 'Retrying',
+    rect: null,
+  },
+  {
+    id: 3,
+    workflowName: 'Lead Enrich → Apollo.io',
+    errorMessage: 'ConnectionTimeout: read ETIMEDOUT',
+    occurrenceCount: 8,
+    firstSeen: '1d ago',
+    lastSeen: '12m ago',
+    retryStatus: 'Retrying',
+    rect: null,
+  },
+  {
+    id: 4,
+    workflowName: 'Email Seq → SendGrid',
+    errorMessage: '403 Forbidden: IP address blocked',
+    occurrenceCount: 3,
+    firstSeen: '4h ago',
+    lastSeen: '47m ago',
+    retryStatus: 'Failed',
+    rect: null,
+  },
+];
+
+const retryAttempts: RetryAttempt[] = [
+  { label: '1st', delay: '1s',  succeeded: true,  current: false },
+  { label: '2nd', delay: '2s',  succeeded: true,  current: false },
+  { label: '3rd', delay: '4s',  succeeded: true,  current: false },
+  { label: '4th', delay: '8s',  succeeded: false, current: true  },
+  { label: '5th', delay: '16s', succeeded: false, current: false },
+];
+
+const circuitBreakers: CircuitBreaker[] = [
+  { service: 'Salesforce', status: 'CLOSED'    },
+  { service: 'Stripe',     status: 'HALF-OPEN' },
+  { service: 'HubSpot',    status: 'CLOSED'    },
+];
+
+const sparklineData: number[] = [89, 72, 61, 48, 37, 26, 14];
+
+const stackTraces: string[][] = [
+  [
+    'Error: INVALID_SESSION_ID',
+    '  at SalesforceConnector.refresh (:87)',
+    '  at RetryHandler.execute (:34)',
+    '  at WorkflowRunner.step (:201)',
+    '  at async Pipeline.run (:445)',
+  ],
+  [
+    'Error: rate_limit_exceeded',
+    '  at StripeClient.request (:112)',
+    '  at PaymentCapture.charge (:56)',
+    '  at RetryHandler.execute (:34)',
+    '  at async Pipeline.run (:445)',
+  ],
+  [
+    'Error: ConnectionTimeout',
+    '  at ApolloConnector.enrich (:73)',
+    '  at LeadEnricher.process (:29)',
+    '  at RetryHandler.execute (:34)',
+    '  at async Pipeline.run (:445)',
+  ],
+  [
+    'Error: 403 Forbidden',
+    '  at SendGridClient.send (:98)',
+    '  at EmailSequence.dispatch (:143)',
+    '  at RetryHandler.execute (:34)',
+    '  at async Pipeline.run (:445)',
+  ],
+];
+
+function resize(): void {
+  const col = canvas.parentElement!;
+  const rect = col.getBoundingClientRect();
+  W = rect.width;
+  H = Math.max(rect.height, 560);
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+}
+
+function roundRect(
+  x: number, y: number, w: number, h: number, r: number
+): void {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function truncateText(text: string, maxW: number, font: string): string {
+  ctx.font = font;
+  if (ctx.measureText(text).width <= maxW) return text;
+  let lo = 0, hi = text.length;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (ctx.measureText(text.slice(0, mid) + '…').width <= maxW) lo = mid;
+    else hi = mid - 1;
+  }
+  return text.slice(0, lo) + '…';
+}
+
+function statusColor(status: 'Recovering' | 'Retrying' | 'Failed'): string {
+  if (status === 'Recovering') return COLOR_SUCCESS;
+  if (status === 'Retrying')   return COLOR_WARN;
+  return COLOR_ERROR;
+}
+
+function cbColor(status: 'CLOSED' | 'HALF-OPEN' | 'OPEN'): string {
+  if (status === 'CLOSED')    return COLOR_SUCCESS;
+  if (status === 'HALF-OPEN') return COLOR_WARN;
+  return COLOR_ERROR;
+}
+
+// ─── Section: Error List ────────────────────────────────────────────────────
+
+function drawSectionLabel(x: number, y: number, label: string): void {
+  ctx.font = '600 10px -apple-system, sans-serif';
+  ctx.fillStyle = COLOR_BRAND_L;
+  ctx.letterSpacing = '0.08em';
+  ctx.fillText(label.toUpperCase(), x, y);
+  ctx.letterSpacing = '0px';
+}
+
+function drawErrorList(x: number, y: number, w: number): number {
+  drawSectionLabel(x, y, 'Recent Errors');
+  y += 14;
+
+  const rowH = 54;
+  const gap  = 6;
+
+  errorRowRects.length = 0;
+
+  for (let i = 0; i < errorRows.length; i++) {
+    const row = errorRows[i];
+    const ry = y + i * (rowH + gap);
+    const isHovered = popover.visible && popover.rowIndex === i;
+
+    // Background
+    ctx.save();
+    roundRect(x, ry, w, rowH, 8);
+    ctx.fillStyle = isHovered
+      ? 'rgba(79,70,229,0.1)'
+      : COLOR_SURFACE;
+    ctx.fill();
+    ctx.strokeStyle = isHovered
+      ? 'rgba(79,70,229,0.4)'
+      : COLOR_BORDER;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
+
+    // Left accent bar
+    const sc = statusColor(row.retryStatus);
+    ctx.save();
+    roundRect(x, ry, 3, rowH, 2);
+    ctx.fillStyle = sc;
+    ctx.fill();
+    ctx.restore();
+
+    const innerX = x + 14;
+    const innerW = w - 14 - 12;
+
+    // Workflow name
+    ctx.font = '600 12px -apple-system, sans-serif';
+    ctx.fillStyle = COLOR_TEXT;
+    const nameW = innerW * 0.42;
+    const name  = truncateText(row.workflowName, nameW, '600 12px -apple-system, sans-serif');
+    ctx.fillText(name, innerX, ry + 17);
+
+    // Error message
+    ctx.font = '400 11px "SF Mono", "Fira Code", monospace';
+    ctx.fillStyle = 'rgba(239,68,68,0.85)';
+    const errW = innerW * 0.42;
+    const err  = truncateText(row.errorMessage, errW, '400 11px monospace');
+    ctx.fillText(err, innerX, ry + 33);
+
+    // Occurrence badge
+    const badgeX = x + w - 12 - 80;
+    const badgeY = ry + 10;
+    const badgeW = 36;
+    const badgeH = 18;
+    ctx.save();
+    roundRect(badgeX, badgeY, badgeW, badgeH, 9);
+    ctx.fillStyle = 'rgba(239,68,68,0.15)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(239,68,68,0.3)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
+    ctx.font = '700 10px -apple-system, sans-serif';
+    ctx.fillStyle = COLOR_ERROR;
+    ctx.textAlign = 'center';
+    ctx.fillText(String(row.occurrenceCount), badgeX + badgeW / 2, badgeY + 12);
+    ctx.textAlign = 'left';
+
+    // Timestamps
+    ctx.font = '400 10px -apple-system, sans-serif';
+    ctx.fillStyle = COLOR_DIM;
+    ctx.fillText(`${row.firstSeen} – ${row.lastSeen}`, innerX, ry + 48);
+
+    // Retry status chip
+    const chipX = x + w - 12 - 76;
+    const chipY = ry + 32;
+    const chipW = 76;
+    const chipH = 18;
+    const chipCol = statusColor(row.retryStatus);
+    ctx.save();
+    roundRect(chipX, chipY, chipW, chipH, 9);
+    ctx.fillStyle = chipCol + '22';
+    ctx.fill();
+    ctx.strokeStyle = chipCol + '55';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
+    // Dot
+    const dotPulse = row.retryStatus === 'Retrying'
+      ? 0.5 + 0.5 * Math.sin(pulsePhase.val * 4 + i * 1.2)
+      : 1;
+    ctx.save();
+    ctx.globalAlpha = dotPulse;
+    ctx.beginPath();
+    ctx.arc(chipX + 9, chipY + 9, 3, 0, Math.PI * 2);
+    ctx.fillStyle = chipCol;
+    ctx.fill();
+    ctx.restore();
+    ctx.font = '600 9.5px -apple-system, sans-serif';
+    ctx.fillStyle = chipCol;
+    ctx.fillText(row.retryStatus, chipX + 16, chipY + 12.5);
+
+    // Store rect for hover detection
+    errorRowRects.push({ x, y: ry, w, h: rowH });
+  }
+
+  return y + errorRows.length * (rowH + gap);
+}
+
+// ─── Section: Retry Strategy Visualizer ────────────────────────────────────
+
+function drawRetryStrategy(x: number, y: number, w: number, h: number): void {
+  // Panel
+  ctx.save();
+  roundRect(x, y, w, h, 10);
+  ctx.fillStyle = COLOR_SURFACE;
+  ctx.fill();
+  ctx.strokeStyle = COLOR_BORDER;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.restore();
+
+  const px = x + 16;
+  const py = y + 16;
+  const pw = w - 32;
+
+  drawSectionLabel(px, py, 'Retry Strategy');
+  ctx.font = '400 10px -apple-system, sans-serif';
+  ctx.fillStyle = COLOR_MUTED;
+  ctx.fillText('Exponential backoff', px + 90, py);
+
+  const lineY   = y + h / 2 + 8;
+  const markerR = 8;
+  const attempts = retryAttempts;
+  const segW = pw / (attempts.length - 1);
+
+  // Connecting line
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(px, lineY);
+  ctx.lineTo(px + pw, lineY);
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.restore();
+
+  // Draw line segments between succeeded nodes
+  for (let i = 0; i < attempts.length - 1; i++) {
+    const a = attempts[i];
+    const b = attempts[i + 1];
+    if (a.succeeded && b.succeeded) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(px + i * segW + markerR, lineY);
+      ctx.lineTo(px + (i + 1) * segW - markerR, lineY);
+      ctx.strokeStyle = COLOR_SUCCESS;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  for (let i = 0; i < attempts.length; i++) {
+    const att  = attempts[i];
+    const cx2  = px + i * segW;
+    const col  = att.succeeded ? COLOR_SUCCESS : att.current ? COLOR_WARN : 'rgba(255,255,255,0.15)';
+
+    // Pulse ring on current
+    if (att.current) {
+      const pulseR = markerR + 4 + 4 * Math.sin(pulsePhase.val * 3);
+      const alpha  = 0.15 + 0.2 * Math.sin(pulsePhase.val * 3);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx2, lineY, pulseR, 0, Math.PI * 2);
+      ctx.strokeStyle = COLOR_WARN;
+      ctx.globalAlpha = alpha;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Marker circle
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx2, lineY, markerR, 0, Math.PI * 2);
+    ctx.fillStyle = att.succeeded ? col + 'cc' : att.current ? col + '33' : col;
+    ctx.fill();
+    ctx.strokeStyle = col;
+    ctx.lineWidth = att.current ? 2 : 1.5;
+    ctx.stroke();
+    ctx.restore();
+
+    // Check mark for succeeded
+    if (att.succeeded) {
+      ctx.save();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(cx2 - 3, lineY);
+      ctx.lineTo(cx2 - 1, lineY + 2.5);
+      ctx.lineTo(cx2 + 3.5, lineY - 3);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Delay label below
+    ctx.font = '600 10px -apple-system, sans-serif';
+    ctx.fillStyle = att.succeeded ? COLOR_SUCCESS : att.current ? COLOR_WARN : COLOR_DIM;
+    ctx.textAlign = 'center';
+    ctx.fillText(att.delay, cx2, lineY + 22);
+
+    // Attempt label above
+    ctx.font = '400 9px -apple-system, sans-serif';
+    ctx.fillStyle = COLOR_DIM;
+    ctx.fillText(att.label, cx2, lineY - 16);
+    ctx.textAlign = 'left';
+  }
+}
+
+// ─── Section: Circuit Breaker Status ────────────────────────────────────────
+
+function drawCircuitBreakerIcon(
+  cx2: number, cy: number, color: string, isHalfOpen: boolean
+): void {
+  const nodeR = 4;
+  ctx.save();
+
+  // Left node
+  ctx.beginPath();
+  ctx.arc(cx2 - 12, cy, nodeR, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+
+  // Right node
+  ctx.beginPath();
+  ctx.arc(cx2 + 12, cy, nodeR, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+
+  // Connector
+  if (isHalfOpen) {
+    // Broken line with gap
+    ctx.beginPath();
+    ctx.moveTo(cx2 - 8, cy);
+    ctx.lineTo(cx2 - 3, cy);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx2 + 3, cy);
+    ctx.lineTo(cx2 + 8, cy);
+    ctx.stroke();
+    // Arrow gap indicator
+    ctx.font = '10px sans-serif';
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center';
+    ctx.fillText('~', cx2, cy + 4);
+    ctx.textAlign = 'left';
+  } else {
+    ctx.beginPath();
+    ctx.moveTo(cx2 - 8, cy);
+    ctx.lineTo(cx2 + 8, cy);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawCircuitBreakers(x: number, y: number, w: number, h: number): void {
+  ctx.save();
+  roundRect(x, y, w, h, 10);
+  ctx.fillStyle = COLOR_SURFACE;
+  ctx.fill();
+  ctx.strokeStyle = COLOR_BORDER;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.restore();
+
+  const px = x + 16;
+  const py = y + 16;
+
+  drawSectionLabel(px, py, 'Circuit Breakers');
+
+  const rowH = (h - py - y - 20) / circuitBreakers.length;
+
+  for (let i = 0; i < circuitBreakers.length; i++) {
+    const cb   = circuitBreakers[i];
+    const ry   = py + 14 + i * rowH;
+    const col  = cbColor(cb.status);
+    const isHO = cb.status === 'HALF-OPEN';
+
+    // Row separator
+    if (i > 0) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(px, ry - 4);
+      ctx.lineTo(x + w - 16, ry - 4);
+      ctx.strokeStyle = COLOR_BORDER;
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Icon
+    drawCircuitBreakerIcon(px + 16, ry + 12, col, isHO);
+
+    // Service name
+    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.fillStyle = COLOR_TEXT;
+    ctx.fillText(cb.service, px + 40, ry + 9);
+
+    // Status badge
+    const badgeX = x + w - 16 - 72;
+    const badgeY = ry + 2;
+    const badgeW = 72;
+    const badgeH = 18;
+    ctx.save();
+    roundRect(badgeX, badgeY, badgeW, badgeH, 9);
+    ctx.fillStyle = col + '22';
+    ctx.fill();
+    ctx.strokeStyle = col + '55';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
+    ctx.font = '700 9px -apple-system, sans-serif';
+    ctx.fillStyle = col;
+    ctx.textAlign = 'center';
+    ctx.fillText(cb.status, badgeX + badgeW / 2, badgeY + 12);
+    ctx.textAlign = 'left';
+
+    // Uptime
+    ctx.font = '400 10px -apple-system, sans-serif';
+    ctx.fillStyle = COLOR_MUTED;
+    const uptime = cb.status === 'CLOSED'
+      ? '99.9% uptime'
+      : cb.status === 'HALF-OPEN'
+      ? 'Probing…'
+      : 'Circuit open';
+    ctx.fillText(uptime, px + 40, ry + 22);
+  }
+}
+
+// ─── Section: Recovery Metrics ──────────────────────────────────────────────
+
+function drawSparkline(
+  x: number, y: number, w: number, h: number, data: number[]
+): void {
+  if (data.length < 2) return;
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  const step = w / (data.length - 1);
+
+  const points: SparklinePoint[] = data.map((v, i) => ({
+    value: v,
+    x: x + i * step,
+    y: y + h - ((v - min) / range) * h,
+  }));
+
+  // Fill gradient
+  ctx.save();
+  const grad = ctx.createLinearGradient(x, y, x, y + h);
+  grad.addColorStop(0, 'rgba(34,197,94,0.25)');
+  grad.addColorStop(1, 'rgba(34,197,94,0.0)');
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, y + h);
+  ctx.lineTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i - 1];
+    const curr = points[i];
+    const cpX  = (prev.x + curr.x) / 2;
+    ctx.bezierCurveTo(cpX, prev.y, cpX, curr.y, curr.x, curr.y);
+  }
+  ctx.lineTo(points[points.length - 1].x, y + h);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.restore();
+
+  // Stroke line
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i - 1];
+    const curr = points[i];
+    const cpX  = (prev.x + curr.x) / 2;
+    ctx.bezierCurveTo(cpX, prev.y, cpX, curr.y, curr.x, curr.y);
+  }
+  ctx.strokeStyle = COLOR_SUCCESS;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.restore();
+
+  // Endpoint dot
+  const last = points[points.length - 1];
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(last.x, last.y, 3, 0, Math.PI * 2);
+  ctx.fillStyle = COLOR_SUCCESS;
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawMetricCard(
+  x: number, y: number, w: number, h: number,
+  value: string, label: string, valueColor: string,
+  sparkline?: number[]
+): void {
+  ctx.save();
+  roundRect(x, y, w, h, 10);
+  ctx.fillStyle = COLOR_SURFACE;
+  ctx.fill();
+  ctx.strokeStyle = COLOR_BORDER;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.restore();
+
+  const cx2 = x + w / 2;
+  ctx.font = '700 18px -apple-system, sans-serif';
+  ctx.fillStyle = valueColor;
+  ctx.textAlign = 'center';
+  ctx.fillText(value, cx2, y + 28);
+
+  ctx.font = '400 10px -apple-system, sans-serif';
+  ctx.fillStyle = COLOR_MUTED;
+  ctx.fillText(label, cx2, y + 44);
+  ctx.textAlign = 'left';
+
+  if (sparkline) {
+    drawSparkline(x + 10, y + 52, w - 20, 28, sparkline);
+    // Day labels
+    const days = ['7d', '6d', '5d', '4d', '3d', '2d', '1d'];
+    ctx.font = '400 8px -apple-system, sans-serif';
+    ctx.fillStyle = COLOR_DIM;
+    ctx.textAlign = 'center';
+    const step = (w - 20) / (days.length - 1);
+    days.forEach((d, i) => {
+      ctx.fillText(d, x + 10 + i * step, y + 52 + 28 + 10);
+    });
+    ctx.textAlign = 'left';
+  }
+}
+
+function drawRecoveryMetrics(x: number, y: number, w: number): void {
+  drawSectionLabel(x, y, 'Recovery Metrics');
+  y += 14;
+
+  const cardW = (w - 16) / 3;
+  const cardH = 90;
+
+  drawMetricCard(
+    x, y, cardW, cardH,
+    '94.2%', 'Auto-recovered',
+    COLOR_SUCCESS
+  );
+  drawMetricCard(
+    x + cardW + 8, y, cardW, cardH,
+    '5.8%', 'Manual intervention',
+    COLOR_WARN
+  );
+  drawMetricCard(
+    x + (cardW + 8) * 2, y, cardW, cardH,
+    '0%', 'Data loss',
+    COLOR_SUCCESS
+  );
+
+  // Sparkline panel below
+  const spY = y + cardH + 10;
+  const spH = 80;
+  ctx.save();
+  roundRect(x, spY, w, spH, 10);
+  ctx.fillStyle = COLOR_SURFACE;
+  ctx.fill();
+  ctx.strokeStyle = COLOR_BORDER;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.font = '600 10px -apple-system, sans-serif';
+  ctx.fillStyle = COLOR_MUTED;
+  ctx.fillText('Error frequency — last 7 days', x + 12, spY + 14);
+
+  // Trending down label
+  ctx.font = '600 11px -apple-system, sans-serif';
+  ctx.fillStyle = COLOR_SUCCESS;
+  ctx.textAlign = 'right';
+  ctx.fillText('↓ 84% this week', x + w - 12, spY + 14);
+  ctx.textAlign = 'left';
+
+  drawSparkline(x + 12, spY + 20, w - 24, 40, sparklineData);
+
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  ctx.font = '400 9px -apple-system, sans-serif';
+  ctx.fillStyle = COLOR_DIM;
+  const dayStep = (w - 24) / (days.length - 1);
+  ctx.textAlign = 'center';
+  days.forEach((d, i) => {
+    ctx.fillText(d, x + 12 + i * dayStep, spY + 70);
+  });
+  ctx.textAlign = 'left';
+}
+
+// ─── Popover: Stack Trace ────────────────────────────────────────────────────
+
+function drawPopover(): void {
+  if (!popover.visible && popover.alpha <= 0) return;
+
+  const idx   = popover.rowIndex;
+  const lines = stackTraces[idx] ?? [];
+  const pw    = 280;
+  const ph    = 24 + lines.length * 16 + 10;
+  let   px    = popover.x - pw / 2;
+  let   py    = popover.y - ph - 12;
+
+  // Clamp to canvas
+  if (px < 8) px = 8;
+  if (px + pw > W - 8) px = W - pw - 8;
+  if (py < 8) py = 8;
+
+  ctx.save();
+  ctx.globalAlpha = popover.alpha;
+
+  roundRect(px, py, pw, ph, 8);
+  ctx.fillStyle = '#0d1129';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(79,70,229,0.5)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Title bar
+  roundRect(px, py, pw, 22, 8);
+  ctx.fillStyle = 'rgba(79,70,229,0.2)';
+  ctx.fill();
+
+  ctx.font = '600 10px -apple-system, sans-serif';
+  ctx.fillStyle = COLOR_BRAND_L;
+  ctx.fillText('Stack Trace', px + 10, py + 14);
+
+  ctx.font = '400 10px "SF Mono", "Fira Code", monospace';
+  ctx.fillStyle = 'rgba(239,68,68,0.9)';
+  ctx.fillText(lines[0] ?? '', px + 10, py + 24 + 14);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  for (let i = 1; i < lines.length; i++) {
+    ctx.fillText(lines[i] ?? '', px + 10, py + 24 + 14 + i * 16);
+  }
+
+  // Arrow
+  ctx.beginPath();
+  ctx.moveTo(popover.x - 6, py + ph);
+  ctx.lineTo(popover.x + 6, py + ph);
+  ctx.lineTo(popover.x, py + ph + 8);
+  ctx.closePath();
+  ctx.fillStyle = '#0d1129';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(79,70,229,0.5)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+// ─── Main Draw ───────────────────────────────────────────────────────────────
+
+function draw(): void {
+  ctx.clearRect(0, 0, W, H);
+
+  const pad   = 20;
+  const inner = W - pad * 2;
+  let   cy    = pad;
+
+  // Top: Error list
+  const afterErrors = drawErrorList(pad, cy, inner);
+  cy = afterErrors + 18;
+
+  // Middle: two panels
+  const midH   = 150;
+  const halfW  = (inner - 12) / 2;
+  drawRetryStrategy(pad, cy, halfW, midH);
+  drawCircuitBreakers(pad + halfW + 12, cy, halfW, midH);
+  cy += midH + 18;
+
+  // Bottom: metrics
+  drawRecoveryMetrics(pad, cy, inner);
+
+  // Popover on top
+  drawPopover();
+}
+
+// ─── Animation Loop ──────────────────────────────────────────────────────────
+
+function loop(): void {
+  tick++;
+  pulsePhase.val += 0.016;
+
+  // Animate popover alpha
+  if (popover.visible) {
+    popover.alpha = Math.min(1, popover.alpha + 0.08);
+  } else {
+    popover.alpha = Math.max(0, popover.alpha - 0.08);
+  }
+
+  draw();
+  animFrame = requestAnimationFrame(loop);
+}
+
+// ─── Input ───────────────────────────────────────────────────────────────────
+
+function getCanvasPos(e: MouseEvent): { x: number; y: number } {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (e.clientX - rect.left),
+    y: (e.clientY - rect.top),
+  };
+}
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => {
+  const { x, y } = getCanvasPos(e);
+
+  let hit = false;
+  for (let i = 0; i < errorRowRects.length; i++) {
+    const r = errorRowRects[i];
+    if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) {
+      hit = true;
+      if (!popover.visible || popover.rowIndex !== i) {
+        popover.visible  = true;
+        popover.rowIndex = i;
+        popover.alpha    = 0;
+      }
+      popover.x = r.x + r.w / 2;
+      popover.y = r.y;
+      canvas.style.cursor = 'pointer';
+      break;
+    }
+  }
+
+  if (!hit) {
+    popover.visible = false;
+    canvas.style.cursor = 'default';
+  }
+});
+
+canvas.addEventListener('mouseleave', () => {
+  popover.visible = false;
+  canvas.style.cursor = 'default';
+});
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+function init(): void {
+  resize();
+  loop();
+}
+
+window.addEventListener('resize', () => {
+  cancelAnimationFrame(animFrame);
+  dpr = window.devicePixelRatio || 1;
+  resize();
+  loop();
+});
+
+init();
+</script>

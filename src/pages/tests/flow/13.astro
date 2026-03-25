@@ -1,0 +1,1019 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloFlow — Data Pipeline | Pello" description="PelloFlow automates your entire data pipeline — extract from any source, transform with AI-powered cleaning and enrichment, load to your warehouse, CRM, or cache. Custom AI agents, end-to-end automation, no code required.">
+  <Header />
+  <main id="main-content">
+    <section class="flow-section" aria-labelledby="flow-headline">
+      <div class="flow-layout">
+        <div class="flow-text">
+          <span class="flow-badge">PelloFlow</span>
+          <h1 id="flow-headline">Data pipeline,<br />fully automated.</h1>
+          <p>Extract from any source, transform with AI-powered logic, and load to your warehouse — all without writing a single line of ETL code.</p>
+          <ul class="flow-pills" role="list">
+            <li>Custom AI agents</li>
+            <li>End-to-end automation</li>
+            <li>API &amp; webhook integration</li>
+            <li>Ongoing maintenance</li>
+          </ul>
+        </div>
+        <div class="flow-canvas-col">
+          <canvas id="flow-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .flow-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .flow-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .flow-layout { grid-template-columns: 1fr; } }
+  .flow-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .flow-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(79,70,229,0.12); border: 1px solid rgba(79,70,229,0.35); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #818cf8; width: fit-content; }
+  .flow-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .flow-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .flow-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .flow-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .flow-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #flow-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: default; }
+</style>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// PelloFlow — Data Pipeline Canvas (13.astro)
+// Canvas 2D, TypeScript, no external deps, 60 fps
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface Vec2 { x: number; y: number; }
+
+interface PipelineCard {
+  label: string;
+  sub: string;
+  dotColor: string;
+  throughput?: number;   // rec/s — used by Extract cards
+  progress?: number;     // 0–1 — used by Transform cards
+  icon?: string;         // emoji or short string — used by Load cards
+  stage: 'extract' | 'transform' | 'load';
+  cardIndex: number;
+  // layout (set each frame)
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  hovered: boolean;
+  hoverAlpha: number;    // 0–1, eased
+}
+
+interface Particle {
+  x: number;
+  y: number;
+  fromX: number;
+  fromY: number;
+  toX: number;
+  toY: number;
+  progress: number;  // 0–1
+  speed: number;
+  color: string;
+  alpha: number;
+  radius: number;
+  lane: number;      // which arrow lane (0–2)
+  segment: 0 | 1;   // 0 = extract→transform, 1 = transform→load
+}
+
+interface QualityBar {
+  label: string;
+  value: number;     // 0–1
+  color: string;
+  displayPct: string;
+}
+
+interface ThroughputSample {
+  value: number;
+  time: number;
+}
+
+// ─── Schema preview fields shown on hover ────────────────────────────────────
+const SCHEMA_MAPS: Record<string, Array<[string, string]>> = {
+  'REST API':       [['source_id','record_id'],['created_at','timestamp'],['payload.email','email'],['payload.name','full_name']],
+  'PostgreSQL DB':  [['row_id','record_id'],['inserted_ts','timestamp'],['user_email','email'],['company_name','org']],
+  'CSV Upload':     [['Column A','record_id'],['Column B','timestamp'],['Column C','email'],['Column D','full_name']],
+  'Clean nulls':    [['null → ""','empty string'],['NaN → 0','zero fill'],['undefined','stripped']],
+  'Validate schema':[['email','regex /^[^@]+@[^@]+$/'],['timestamp','ISO 8601'],['record_id','uuid v4']],
+  'Enrich company': [['email domain','→ company'],['company','→ industry'],['company','→ employee_count']],
+  'Data Warehouse': [['record_id','VARCHAR PK'],['timestamp','TIMESTAMPTZ'],['email','VARCHAR'],['org','VARCHAR']],
+  'CRM Sync':       [['record_id','SF External ID'],['full_name','Contact Name'],['email','Contact Email']],
+  'Redis Cache':    [['record_id','key prefix: rec:'],['email','key prefix: email:'],['TTL','3600s']],
+};
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function lerp(a: number, b: number, t: number): number { return a + (b - a) * t; }
+function clamp(v: number, lo: number, hi: number): number { return Math.max(lo, Math.min(hi, v)); }
+function easeInOut(t: number): number { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+
+function roundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number, w: number, h: number, r: number
+): void {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// ─── Canvas bootstrap ────────────────────────────────────────────────────────
+const canvas = document.getElementById('flow-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+
+let W = 0;
+let H = 0;
+let mouseX = 0;
+let mouseY = 0;
+let animFrame = 0;
+let startTime = performance.now();
+
+function resize(): void {
+  const rect = canvas.parentElement!.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = rect.width;
+  H = rect.height || 560;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+}
+
+window.addEventListener('resize', () => { resize(); });
+resize();
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => {
+  const rect = canvas.getBoundingClientRect();
+  mouseX = e.clientX - rect.left;
+  mouseY = e.clientY - rect.top;
+});
+canvas.addEventListener('mouseleave', () => {
+  mouseX = -9999;
+  mouseY = -9999;
+});
+
+// ─── Pipeline card definitions ────────────────────────────────────────────────
+const CARDS: PipelineCard[] = [
+  // EXTRACT
+  { label: 'REST API',      sub: '12.4k rec/s', dotColor: '#60a5fa', throughput: 12400, stage: 'extract',   cardIndex: 0, x:0,y:0,w:0,h:0, hovered:false, hoverAlpha:0 },
+  { label: 'PostgreSQL DB', sub: '8.2k rec/s',  dotColor: '#34d399', throughput:  8200, stage: 'extract',   cardIndex: 1, x:0,y:0,w:0,h:0, hovered:false, hoverAlpha:0 },
+  { label: 'CSV Upload',    sub: '3.1k rec/s',  dotColor: '#fbbf24', throughput:  3100, stage: 'extract',   cardIndex: 2, x:0,y:0,w:0,h:0, hovered:false, hoverAlpha:0 },
+  // TRANSFORM
+  { label: 'Clean nulls',     sub: 'removes empty fields', dotColor: '#a78bfa', progress: 0.87, stage: 'transform', cardIndex: 0, x:0,y:0,w:0,h:0, hovered:false, hoverAlpha:0 },
+  { label: 'Validate schema', sub: 'type checking',        dotColor: '#818cf8', progress: 0.94, stage: 'transform', cardIndex: 1, x:0,y:0,w:0,h:0, hovered:false, hoverAlpha:0 },
+  { label: 'Enrich company',  sub: 'API lookup',           dotColor: '#c4b5fd', progress: 0.71, stage: 'transform', cardIndex: 2, x:0,y:0,w:0,h:0, hovered:false, hoverAlpha:0 },
+  // LOAD
+  { label: 'Data Warehouse', sub: 'writing',     dotColor: '#38bdf8', icon: '❄', stage: 'load', cardIndex: 0, x:0,y:0,w:0,h:0, hovered:false, hoverAlpha:0 },
+  { label: 'CRM Sync',       sub: 'syncing',     dotColor: '#4ade80', icon: '☁', stage: 'load', cardIndex: 1, x:0,y:0,w:0,h:0, hovered:false, hoverAlpha:0 },
+  { label: 'Redis Cache',    sub: 'fast writes',  dotColor: '#f87171', icon: '⚡', stage: 'load', cardIndex: 2, x:0,y:0,w:0,h:0, hovered:false, hoverAlpha:0 },
+];
+
+// ─── Quality bars ─────────────────────────────────────────────────────────────
+const QUALITY: QualityBar[] = [
+  { label: 'Valid',    value: 0.992, color: '#34d399', displayPct: '99.2%' },
+  { label: 'Cleaned',  value: 0.031, color: '#fbbf24', displayPct: '3.1%'  },
+  { label: 'Rejected', value: 0.007, color: '#f87171', displayPct: '0.7%'  },
+];
+
+// ─── Throughput history (sparkline) ──────────────────────────────────────────
+const THROUGHPUT_HISTORY: ThroughputSample[] = [];
+const MAX_SAMPLES = 40;
+let lastSampleTime = 0;
+
+function seedThroughput(): void {
+  const base = 23700;
+  for (let i = 0; i < MAX_SAMPLES; i++) {
+    THROUGHPUT_HISTORY.push({ value: base + Math.sin(i * 0.4) * 1800 + Math.random() * 600 - 300, time: i });
+  }
+}
+seedThroughput();
+
+// ─── Particles ────────────────────────────────────────────────────────────────
+const PARTICLES: Particle[] = [];
+const PARTICLE_COLORS_ET = ['#818cf8','#a78bfa','#60a5fa','#c4b5fd'];
+const PARTICLE_COLORS_TL = ['#818cf8','#38bdf8','#4ade80','#f87171'];
+
+function spawnParticle(segment: 0 | 1, lane: number): void {
+  const color = segment === 0
+    ? PARTICLE_COLORS_ET[Math.floor(Math.random() * PARTICLE_COLORS_ET.length)]
+    : PARTICLE_COLORS_TL[Math.floor(Math.random() * PARTICLE_COLORS_TL.length)];
+  PARTICLES.push({
+    x: 0, y: 0,
+    fromX: 0, fromY: 0,
+    toX: 0, toY: 0,
+    progress: Math.random() * 0.3,
+    speed: 0.004 + Math.random() * 0.004,
+    color,
+    alpha: 0.85 + Math.random() * 0.15,
+    radius: 2 + Math.random() * 1.5,
+    lane,
+    segment,
+  });
+}
+
+function initParticles(): void {
+  PARTICLES.length = 0;
+  for (let seg = 0; seg < 2; seg++) {
+    for (let lane = 0; lane < 3; lane++) {
+      const count = 3 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < count; i++) spawnParticle(seg as 0 | 1, lane);
+    }
+  }
+}
+initParticles();
+
+// ─── Layout calculation ───────────────────────────────────────────────────────
+interface ColumnLayout {
+  x: number;
+  headerY: number;
+  cardsStartY: number;
+  cardW: number;
+  cardH: number;
+  cardGap: number;
+}
+
+interface ArrowLane {
+  fromX: number;
+  toX: number;
+  ys: number[];   // y per lane index
+}
+
+let colLayouts: ColumnLayout[] = [];
+let arrowLanes: ArrowLane[] = [];
+let bottomPanelY = 0;
+let bottomPanelH = 0;
+let canvasContentH = 0;
+
+const STAGE_COLORS: Record<string, string> = {
+  extract:   '#60a5fa',
+  transform: '#818cf8',
+  load:      '#38bdf8',
+};
+
+function computeLayout(): void {
+  const PAD = 16;
+  const topPad = 24;
+  const colCount = 3;
+  const arrowZoneW = W > 500 ? 48 : 32;
+  const totalArrowW = arrowZoneW * 2;
+  const availW = W - PAD * 2 - totalArrowW;
+  const colW = Math.floor(availW / colCount);
+  const cardW = colW - 12;
+  const cardH = W < 500 ? 64 : 72;
+  const cardGap = 10;
+  const headerH = 36;
+  const cardsBlockH = 3 * cardH + 2 * cardGap;
+  const colH = headerH + 12 + cardsBlockH;
+
+  // bottom panel
+  const qualityBarH = W < 500 ? 90 : 100;
+  const sparkH = W < 500 ? 60 : 72;
+  bottomPanelH = qualityBarH + sparkH + 32;
+
+  canvasContentH = topPad + colH + 24 + bottomPanelH + 24;
+
+  // Resize canvas height if needed
+  const targetH = Math.max(560, canvasContentH);
+  if (Math.abs(H - targetH) > 4) {
+    H = targetH;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // update parent min-height
+    const parent = canvas.parentElement as HTMLElement;
+    if (parent) parent.style.minHeight = H + 'px';
+  }
+
+  colLayouts = [];
+  for (let i = 0; i < 3; i++) {
+    const colX = PAD + i * (colW + arrowZoneW);
+    colLayouts.push({
+      x: colX,
+      headerY: topPad,
+      cardsStartY: topPad + headerH + 12,
+      cardW,
+      cardH,
+      cardGap,
+    });
+  }
+
+  // arrow lanes: 3 lanes per segment, y positions = center of each card
+  arrowLanes = [];
+  for (let seg = 0; seg < 2; seg++) {
+    const fromCol = colLayouts[seg];
+    const toCol = colLayouts[seg + 1];
+    const fromX = fromCol.x + fromCol.cardW + 12;
+    const toX = toCol.x;
+    const ys: number[] = [0, 1, 2].map(i =>
+      fromCol.cardsStartY + i * (fromCol.cardH + fromCol.cardGap) + fromCol.cardH / 2
+    );
+    arrowLanes.push({ fromX, toX, ys });
+  }
+
+  bottomPanelY = topPad + colH + 24;
+
+  // assign layout to cards
+  CARDS.forEach(card => {
+    const stageIndex = card.stage === 'extract' ? 0 : card.stage === 'transform' ? 1 : 2;
+    const col = colLayouts[stageIndex];
+    card.x = col.x;
+    card.y = col.cardsStartY + card.cardIndex * (col.cardH + col.cardGap);
+    card.w = col.cardW;
+    card.h = col.cardH;
+  });
+}
+
+// ─── Drawing helpers ──────────────────────────────────────────────────────────
+
+function drawColumnHeader(
+  label: string,
+  count: string,
+  x: number,
+  y: number,
+  w: number,
+  color: string
+): void {
+  // background pill
+  roundRect(ctx, x, y, w, 28, 6);
+  ctx.fillStyle = `${color}18`;
+  ctx.fill();
+  ctx.strokeStyle = `${color}40`;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // label
+  ctx.fillStyle = color;
+  ctx.font = `600 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label.toUpperCase(), x + 10, y + 14);
+
+  // count badge
+  ctx.fillStyle = `${color}30`;
+  const badgeW = 28;
+  roundRect(ctx, x + w - badgeW - 6, y + 5, badgeW, 18, 4);
+  ctx.fill();
+  ctx.fillStyle = color;
+  ctx.font = `700 10px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText(count, x + w - badgeW / 2 - 6, y + 14);
+}
+
+function drawExtractCard(card: PipelineCard, t: number): void {
+  const { x, y, w, h, hoverAlpha, dotColor } = card;
+
+  // card bg
+  roundRect(ctx, x, y, w, h, 8);
+  ctx.fillStyle = `rgba(15,17,35,${0.85 + hoverAlpha * 0.1})`;
+  ctx.fill();
+  ctx.strokeStyle = hoverAlpha > 0.01
+    ? `rgba(129,140,248,${0.25 + hoverAlpha * 0.4})`
+    : 'rgba(255,255,255,0.09)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // glow on hover
+  if (hoverAlpha > 0.01) {
+    roundRect(ctx, x - 1, y - 1, w + 2, h + 2, 9);
+    const g = ctx.createLinearGradient(x, y, x + w, y + h);
+    g.addColorStop(0, `rgba(129,140,248,${hoverAlpha * 0.12})`);
+    g.addColorStop(1, `rgba(79,70,229,${hoverAlpha * 0.06})`);
+    ctx.fillStyle = g;
+    ctx.fill();
+  }
+
+  // status dot (animated pulse)
+  const pulse = 0.65 + 0.35 * Math.sin(t * 3 + card.cardIndex * 1.2);
+  ctx.beginPath();
+  ctx.arc(x + 14, y + h / 2, 5 * pulse, 0, Math.PI * 2);
+  ctx.fillStyle = `${dotColor}30`;
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x + 14, y + h / 2, 3.5, 0, Math.PI * 2);
+  ctx.fillStyle = dotColor;
+  ctx.fill();
+
+  // label
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.font = `600 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(card.label, x + 26, y + 14);
+
+  // throughput — animate slight shimmer
+  const animVal = (card.throughput ?? 0) + Math.sin(t * 2 + card.cardIndex) * 80;
+  const formatted = (animVal / 1000).toFixed(1) + 'k rec/s';
+  ctx.fillStyle = `${dotColor}cc`;
+  ctx.font = `500 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(formatted, x + 26, y + h - 14);
+
+  // mini spark bars (3 mini bars showing live activity)
+  const barCount = 5;
+  const barW = 3;
+  const barMaxH = 14;
+  const barsX = x + w - barCount * (barW + 2) - 12;
+  const barsY = y + h / 2;
+  for (let b = 0; b < barCount; b++) {
+    const bh = barMaxH * (0.3 + 0.7 * Math.abs(Math.sin(t * 4 + b * 0.8 + card.cardIndex)));
+    ctx.fillStyle = `${dotColor}80`;
+    ctx.fillRect(barsX + b * (barW + 2), barsY - bh / 2, barW, bh);
+  }
+
+  // hover schema preview
+  if (hoverAlpha > 0.05) {
+    drawSchemaPreview(card, hoverAlpha);
+  }
+}
+
+function drawTransformCard(card: PipelineCard, t: number): void {
+  const { x, y, w, h, hoverAlpha, dotColor } = card;
+  const progress = card.progress ?? 0.8;
+
+  roundRect(ctx, x, y, w, h, 8);
+  ctx.fillStyle = `rgba(15,17,35,${0.85 + hoverAlpha * 0.1})`;
+  ctx.fill();
+  ctx.strokeStyle = hoverAlpha > 0.01
+    ? `rgba(167,139,250,${0.25 + hoverAlpha * 0.4})`
+    : 'rgba(255,255,255,0.09)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  if (hoverAlpha > 0.01) {
+    roundRect(ctx, x - 1, y - 1, w + 2, h + 2, 9);
+    const g = ctx.createLinearGradient(x, y, x + w, y + h);
+    g.addColorStop(0, `rgba(167,139,250,${hoverAlpha * 0.12})`);
+    g.addColorStop(1, `rgba(124,58,237,${hoverAlpha * 0.06})`);
+    ctx.fillStyle = g;
+    ctx.fill();
+  }
+
+  // icon — gear-like dot
+  ctx.beginPath();
+  ctx.arc(x + 14, y + h / 2 - 2, 4, 0, Math.PI * 2);
+  ctx.fillStyle = `${dotColor}40`;
+  ctx.fill();
+  ctx.strokeStyle = dotColor;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // label
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.font = `600 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(card.label, x + 26, y + 10);
+
+  // sub
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.font = `400 10px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+  ctx.fillText(card.sub, x + 26, y + 26);
+
+  // progress bar
+  const barY = y + h - 18;
+  const barH = 5;
+  const barX = x + 12;
+  const barW2 = w - 24;
+  // track
+  roundRect(ctx, barX, barY, barW2, barH, 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.08)';
+  ctx.fill();
+  // animated fill — slight oscillation around target
+  const animProg = clamp(progress + Math.sin(t * 1.5 + card.cardIndex) * 0.015, 0, 1);
+  roundRect(ctx, barX, barY, barW2 * animProg, barH, 2);
+  const barGrad = ctx.createLinearGradient(barX, 0, barX + barW2, 0);
+  barGrad.addColorStop(0, `${dotColor}aa`);
+  barGrad.addColorStop(1, dotColor);
+  ctx.fillStyle = barGrad;
+  ctx.fill();
+
+  // pct label
+  ctx.fillStyle = dotColor;
+  ctx.font = `600 10px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(Math.round(animProg * 100) + '%', x + w - 10, barY + barH / 2);
+
+  if (hoverAlpha > 0.05) {
+    drawSchemaPreview(card, hoverAlpha);
+  }
+}
+
+function drawLoadCard(card: PipelineCard, t: number): void {
+  const { x, y, w, h, hoverAlpha, dotColor } = card;
+
+  roundRect(ctx, x, y, w, h, 8);
+  ctx.fillStyle = `rgba(15,17,35,${0.85 + hoverAlpha * 0.1})`;
+  ctx.fill();
+  ctx.strokeStyle = hoverAlpha > 0.01
+    ? `rgba(56,189,248,${0.25 + hoverAlpha * 0.4})`
+    : 'rgba(255,255,255,0.09)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  if (hoverAlpha > 0.01) {
+    roundRect(ctx, x - 1, y - 1, w + 2, h + 2, 9);
+    const g = ctx.createLinearGradient(x, y, x + w, y + h);
+    g.addColorStop(0, `rgba(56,189,248,${hoverAlpha * 0.12})`);
+    g.addColorStop(1, `rgba(79,70,229,${hoverAlpha * 0.06})`);
+    ctx.fillStyle = g;
+    ctx.fill();
+  }
+
+  // icon
+  ctx.font = `14px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(card.icon ?? '●', x + 14, y + h / 2);
+
+  // label
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.font = `600 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(card.label, x + 28, y + 12);
+
+  // status chip
+  const chipColor = card.cardIndex === 2 ? '#f87171' : card.cardIndex === 1 ? '#4ade80' : '#38bdf8';
+  const chipLabel = card.sub;
+  const chipX = x + 28;
+  const chipY = y + h - 22;
+  const chipW = ctx.measureText(chipLabel).width + 16;
+  roundRect(ctx, chipX, chipY, chipW, 14, 3);
+  ctx.fillStyle = `${chipColor}20`;
+  ctx.fill();
+  ctx.fillStyle = chipColor;
+  ctx.font = `500 9px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(chipLabel.toUpperCase(), chipX + chipW / 2, chipY + 7);
+
+  // write indicator — animated dots
+  const dotSpacing = 7;
+  const numDots = 3;
+  const dotsX = x + w - numDots * dotSpacing - 10;
+  const dotsY = y + h / 2;
+  for (let d = 0; d < numDots; d++) {
+    const phase = (t * 3 + d * 0.5) % (Math.PI * 2);
+    const alpha = 0.3 + 0.7 * Math.max(0, Math.sin(phase));
+    ctx.beginPath();
+    ctx.arc(dotsX + d * dotSpacing, dotsY, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = `${dotColor}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
+    ctx.fill();
+  }
+
+  if (hoverAlpha > 0.05) {
+    drawSchemaPreview(card, hoverAlpha);
+  }
+}
+
+function drawSchemaPreview(card: PipelineCard, alpha: number): void {
+  const fields = SCHEMA_MAPS[card.label] ?? [];
+  if (!fields.length) return;
+
+  const previewW = Math.min(card.w, 200);
+  const lineH = 18;
+  const padX = 10;
+  const padY = 8;
+  const previewH = fields.length * lineH + padY * 2;
+
+  // position: above card if near bottom, else below
+  let previewY = card.y - previewH - 8;
+  if (previewY < 4) previewY = card.y + card.h + 8;
+  let previewX = card.x + card.w / 2 - previewW / 2;
+  previewX = clamp(previewX, 4, W - previewW - 4);
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  roundRect(ctx, previewX, previewY, previewW, previewH, 8);
+  ctx.fillStyle = 'rgba(10,10,22,0.97)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(129,140,248,0.4)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // title bar
+  ctx.fillStyle = 'rgba(79,70,229,0.2)';
+  roundRect(ctx, previewX, previewY, previewW, 20, 8);
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(167,139,250,0.9)';
+  ctx.font = `600 9px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('FIELD MAPPING', previewX + padX, previewY + 10);
+
+  // rows
+  fields.forEach(([src, dst], i) => {
+    const rowY = previewY + padY + 20 + i * lineH;
+    ctx.fillStyle = 'rgba(96,165,250,0.8)';
+    ctx.font = `400 9px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(src, previewX + padX, rowY + lineH / 2);
+
+    // arrow
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.fillText('→', previewX + previewW / 2 - 4, rowY + lineH / 2);
+
+    ctx.fillStyle = 'rgba(167,139,250,0.85)';
+    ctx.textAlign = 'right';
+    ctx.fillText(dst, previewX + previewW - padX, rowY + lineH / 2);
+  });
+
+  ctx.restore();
+}
+
+// ─── Arrow / connector drawing ────────────────────────────────────────────────
+function drawArrow(
+  fromX: number, fromY: number,
+  toX: number, toY: number,
+  color: string,
+  alpha: number
+): void {
+  const midX = (fromX + toX) / 2;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 5]);
+  ctx.beginPath();
+  ctx.moveTo(fromX, fromY);
+  ctx.bezierCurveTo(midX, fromY, midX, toY, toX, toY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // arrowhead
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(toX, toY);
+  ctx.lineTo(toX - 5, toY - 3);
+  ctx.lineTo(toX - 5, toY + 3);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function updateAndDrawParticles(t: number): void {
+  // spawn if too few
+  for (let seg = 0; seg < 2; seg++) {
+    for (let lane = 0; lane < 3; lane++) {
+      const count = PARTICLES.filter(p => p.segment === seg && p.lane === lane).length;
+      if (count < 4) spawnParticle(seg as 0 | 1, lane);
+    }
+  }
+
+  const toRemove: number[] = [];
+  PARTICLES.forEach((p, idx) => {
+    p.progress += p.speed;
+    if (p.progress > 1) {
+      toRemove.push(idx);
+      return;
+    }
+
+    const al = arrowLanes[p.segment];
+    if (!al) return;
+    const fromY = al.ys[p.lane] ?? 0;
+    const toY = al.ys[p.lane] ?? 0;
+    const fromX = al.fromX;
+    const toX = al.toX;
+    const midX = (fromX + toX) / 2;
+
+    // bezier position
+    const bt = easeInOut(p.progress);
+    const bx = (1-bt)*(1-bt)*fromX + 2*(1-bt)*bt*midX + bt*bt*toX;
+    // Y: stays mostly on lane y since from/to same y — slight arc
+    const controlY = fromY - 5;
+    const by = (1-bt)*(1-bt)*fromY + 2*(1-bt)*bt*controlY + bt*bt*toY;
+
+    p.x = bx;
+    p.y = by;
+
+    // draw
+    const fadeIn = Math.min(p.progress * 5, 1);
+    const fadeOut = Math.min((1 - p.progress) * 5, 1);
+    const alpha = p.alpha * fadeIn * fadeOut;
+
+    // trail
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+    ctx.fillStyle = p.color + Math.round(alpha * 255).toString(16).padStart(2, '0');
+    ctx.fill();
+
+    // glow
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.radius * 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = p.color + Math.round(alpha * 0.3 * 255).toString(16).padStart(2, '0');
+    ctx.fill();
+  });
+
+  // remove expired (reverse order)
+  for (let i = toRemove.length - 1; i >= 0; i--) {
+    PARTICLES.splice(toRemove[i], 1);
+  }
+}
+
+// ─── Quality bars panel ────────────────────────────────────────────────────────
+function drawQualityBars(y: number): void {
+  const panelW = W - 32;
+  const panelX = 16;
+  const barH = 6;
+  const rowH = 22;
+  const labelW = 60;
+  const pctW = 42;
+  const barAreaW = panelW - labelW - pctW - 8;
+  const barX = panelX + labelW;
+
+  // section label
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.font = `600 9px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('DATA QUALITY', panelX, y);
+
+  QUALITY.forEach((q, i) => {
+    const rowY = y + 14 + i * rowH;
+
+    // label
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.font = `400 10px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(q.label, panelX, rowY + barH / 2);
+
+    // track
+    roundRect(ctx, barX, rowY, barAreaW, barH, 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.07)';
+    ctx.fill();
+
+    // fill
+    const fillW = barAreaW * q.value;
+    if (fillW > 0) {
+      roundRect(ctx, barX, rowY, fillW, barH, 2);
+      const bg = ctx.createLinearGradient(barX, 0, barX + fillW, 0);
+      bg.addColorStop(0, q.color + '80');
+      bg.addColorStop(1, q.color);
+      ctx.fillStyle = bg;
+      ctx.fill();
+    }
+
+    // pct
+    ctx.fillStyle = q.color;
+    ctx.font = `600 10px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(q.displayPct, panelX + panelW, rowY + barH / 2);
+  });
+}
+
+// ─── Throughput sparkline ─────────────────────────────────────────────────────
+function updateThroughputSamples(t: number): void {
+  if (t - lastSampleTime > 0.5) {
+    lastSampleTime = t;
+    const last = THROUGHPUT_HISTORY[THROUGHPUT_HISTORY.length - 1]?.value ?? 23700;
+    const next = clamp(last + (Math.random() - 0.42) * 1200, 18000, 30000);
+    THROUGHPUT_HISTORY.push({ value: next, time: t });
+    if (THROUGHPUT_HISTORY.length > MAX_SAMPLES) THROUGHPUT_HISTORY.shift();
+  }
+}
+
+function drawSparkline(y: number, h: number): void {
+  const panelX = 16;
+  const panelW = W - 32;
+
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.font = `600 9px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('THROUGHPUT (rec/s)', panelX, y);
+
+  const chartY = y + 14;
+  const chartH = h - 14;
+  const chartW = panelW;
+
+  const vals = THROUGHPUT_HISTORY.map(s => s.value);
+  const minV = Math.min(...vals) * 0.95;
+  const maxV = Math.max(...vals) * 1.05;
+  const range = maxV - minV || 1;
+
+  // grid lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 4]);
+  for (let g = 0; g <= 2; g++) {
+    const gy = chartY + chartH * (g / 2);
+    ctx.beginPath();
+    ctx.moveTo(panelX, gy);
+    ctx.lineTo(panelX + chartW, gy);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  if (vals.length < 2) return;
+
+  const stepX = chartW / (vals.length - 1);
+
+  // fill
+  ctx.beginPath();
+  ctx.moveTo(panelX, chartY + chartH);
+  vals.forEach((v, i) => {
+    const px = panelX + i * stepX;
+    const py = chartY + chartH - ((v - minV) / range) * chartH;
+    if (i === 0) ctx.lineTo(px, py);
+    else ctx.lineTo(px, py);
+  });
+  ctx.lineTo(panelX + (vals.length - 1) * stepX, chartY + chartH);
+  ctx.closePath();
+  const fillGrad = ctx.createLinearGradient(0, chartY, 0, chartY + chartH);
+  fillGrad.addColorStop(0, 'rgba(79,70,229,0.25)');
+  fillGrad.addColorStop(1, 'rgba(79,70,229,0)');
+  ctx.fillStyle = fillGrad;
+  ctx.fill();
+
+  // line
+  ctx.beginPath();
+  vals.forEach((v, i) => {
+    const px = panelX + i * stepX;
+    const py = chartY + chartH - ((v - minV) / range) * chartH;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  });
+  ctx.strokeStyle = '#818cf8';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // current value label
+  const lastV = vals[vals.length - 1];
+  const lastX = panelX + (vals.length - 1) * stepX;
+  const lastY = chartY + chartH - ((lastV - minV) / range) * chartH;
+
+  ctx.beginPath();
+  ctx.arc(lastX, lastY, 3, 0, Math.PI * 2);
+  ctx.fillStyle = '#818cf8';
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.font = `600 10px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.fillText((lastV / 1000).toFixed(1) + 'k', panelX + chartW, chartY);
+}
+
+// ─── Hit testing ──────────────────────────────────────────────────────────────
+function hitTest(): void {
+  CARDS.forEach(card => {
+    const hit =
+      mouseX >= card.x &&
+      mouseX <= card.x + card.w &&
+      mouseY >= card.y &&
+      mouseY <= card.y + card.h;
+    card.hovered = hit;
+    if (hit) {
+      card.hoverAlpha = clamp(card.hoverAlpha + 0.08, 0, 1);
+      canvas.style.cursor = 'pointer';
+    } else {
+      card.hoverAlpha = clamp(card.hoverAlpha - 0.05, 0, 1);
+    }
+  });
+
+  const anyHovered = CARDS.some(c => c.hovered);
+  if (!anyHovered) canvas.style.cursor = 'default';
+}
+
+// ─── Background ───────────────────────────────────────────────────────────────
+function drawBackground(): void {
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, W, H);
+
+  // subtle grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.025)';
+  ctx.lineWidth = 1;
+  const gridSize = 40;
+  for (let gx = 0; gx < W; gx += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(gx, 0);
+    ctx.lineTo(gx, H);
+    ctx.stroke();
+  }
+  for (let gy = 0; gy < H; gy += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(0, gy);
+    ctx.lineTo(W, gy);
+    ctx.stroke();
+  }
+}
+
+// ─── Stage column background panels ──────────────────────────────────────────
+function drawColumnPanel(colIdx: number): void {
+  const col = colLayouts[colIdx];
+  if (!col) return;
+  const stages: Array<'extract' | 'transform' | 'load'> = ['extract', 'transform', 'load'];
+  const color = STAGE_COLORS[stages[colIdx]];
+  const panH = col.cardH * 3 + col.cardGap * 2 + 48;
+  const panY = col.headerY;
+  roundRect(ctx, col.x - 6, panY, col.cardW + 12, panH, 10);
+  ctx.fillStyle = `${color}06`;
+  ctx.fill();
+  ctx.strokeStyle = `${color}14`;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+// ─── Main render loop ─────────────────────────────────────────────────────────
+function render(): void {
+  const now = performance.now();
+  const t = (now - startTime) / 1000;
+
+  // recalculate layout every frame (cheap, handles resize)
+  computeLayout();
+  hitTest();
+  updateThroughputSamples(t);
+
+  drawBackground();
+
+  // column panels
+  for (let i = 0; i < 3; i++) drawColumnPanel(i);
+
+  // column headers
+  const stages = ['extract','transform','load'] as const;
+  const stageCounts = ['3 sources','3 ops','3 targets'];
+  for (let i = 0; i < 3; i++) {
+    const col = colLayouts[i];
+    if (!col) continue;
+    drawColumnHeader(
+      stages[i], stageCounts[i],
+      col.x, col.headerY,
+      col.cardW, STAGE_COLORS[stages[i]]
+    );
+  }
+
+  // arrows between stages
+  for (let seg = 0; seg < 2; seg++) {
+    const al = arrowLanes[seg];
+    if (!al) continue;
+    al.ys.forEach((y, laneIdx) => {
+      const arrowColor = seg === 0 ? '#818cf8' : '#38bdf8';
+      drawArrow(al.fromX, y, al.toX, y, arrowColor, 0.35);
+    });
+  }
+
+  // particles (draw before cards so cards appear on top)
+  updateAndDrawParticles(t);
+
+  // cards
+  CARDS.forEach(card => {
+    if (card.stage === 'extract') drawExtractCard(card, t);
+    else if (card.stage === 'transform') drawTransformCard(card, t);
+    else drawLoadCard(card, t);
+  });
+
+  // bottom panel divider
+  const divY = bottomPanelY - 10;
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 6]);
+  ctx.beginPath();
+  ctx.moveTo(16, divY);
+  ctx.lineTo(W - 16, divY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // quality bars
+  const qualityH = W < 500 ? 90 : 100;
+  const sparkH = W < 500 ? 60 : 72;
+  drawQualityBars(bottomPanelY);
+  drawSparkline(bottomPanelY + qualityH, sparkH);
+
+  animFrame = requestAnimationFrame(render);
+}
+
+// kick off
+requestAnimationFrame(render);
+
+// cleanup on page unload
+window.addEventListener('unload', () => {
+  cancelAnimationFrame(animFrame);
+});
+</script>

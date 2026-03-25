@@ -1,0 +1,819 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloFlow — Trigger Configuration | Pello" description="Configure automation triggers with webhooks, schedules, email, database changes, file uploads, and Slack messages. PelloFlow's visual trigger canvas.">
+  <Header />
+  <main id="main-content">
+    <section class="flow-section" aria-labelledby="flow-headline">
+      <div class="flow-layout">
+        <div class="flow-text">
+          <span class="flow-badge">PelloFlow</span>
+          <h1 id="flow-headline">Trigger Configuration</h1>
+          <p>Define exactly when your automations fire. Choose from webhooks, schedules, database events, and more — then layer in filters and conditions to target only what matters.</p>
+          <ul class="flow-pills" role="list">
+            <li>Custom AI agents</li>
+            <li>End-to-end automation</li>
+            <li>API &amp; webhook integration</li>
+            <li>Ongoing maintenance</li>
+          </ul>
+        </div>
+        <div class="flow-canvas-col">
+          <canvas id="flow-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .flow-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .flow-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .flow-layout { grid-template-columns: 1fr; } }
+  .flow-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .flow-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(79,70,229,0.12); border: 1px solid rgba(79,70,229,0.35); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #818cf8; width: fit-content; }
+  .flow-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .flow-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .flow-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .flow-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .flow-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #flow-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: default; }
+</style>
+
+<script>
+interface TriggerSource {
+  id: string;
+  label: string;
+  icon: string;
+  statusColor: string;
+  active: boolean;
+  executionTimes: string[];
+  pulsePhase: number;
+}
+
+interface CronPreviewTime {
+  time: string;
+  label: string;
+}
+
+interface FilterCondition {
+  field: string;
+  operator: string;
+  value: string;
+}
+
+interface CanvasState {
+  hoveredTrigger: number | null;
+  selectedTrigger: number;
+  pulseTime: number;
+  popoverOpacity: number;
+  popoverTarget: number | null;
+  popoverY: number;
+  animFrame: number;
+  dpr: number;
+  width: number;
+  height: number;
+}
+
+const canvas = document.getElementById('flow-canvas') as HTMLCanvasElement;
+if (!canvas) throw new Error('Canvas not found');
+const ctx = canvas.getContext('2d')!;
+
+const triggers: TriggerSource[] = [
+  {
+    id: 'webhook',
+    label: 'Webhook received',
+    icon: '⚡',
+    statusColor: '#22c55e',
+    active: false,
+    executionTimes: ['2 min ago', '17 min ago', '32 min ago', '1h 2m ago', '1h 47m ago'],
+    pulsePhase: 0.0,
+  },
+  {
+    id: 'schedule',
+    label: 'Schedule (cron)',
+    icon: '🕐',
+    statusColor: '#4f46e5',
+    active: true,
+    executionTimes: ['15 min ago', '30 min ago', '45 min ago', '1h ago', '1h 15m ago'],
+    pulsePhase: 0.3,
+  },
+  {
+    id: 'email',
+    label: 'Email received',
+    icon: '✉',
+    statusColor: '#f59e0b',
+    active: false,
+    executionTimes: ['5 min ago', '38 min ago', '1h 12m ago', '2h 5m ago', '3h 20m ago'],
+    pulsePhase: 0.6,
+  },
+  {
+    id: 'database',
+    label: 'Database change',
+    icon: '🗄',
+    statusColor: '#06b6d4',
+    active: false,
+    executionTimes: ['1 min ago', '4 min ago', '9 min ago', '22 min ago', '41 min ago'],
+    pulsePhase: 0.15,
+  },
+  {
+    id: 'file',
+    label: 'File uploaded',
+    icon: '📁',
+    statusColor: '#a78bfa',
+    active: false,
+    executionTimes: ['28 min ago', '1h 3m ago', '2h 15m ago', '4h 50m ago', '6h 12m ago'],
+    pulsePhase: 0.45,
+  },
+  {
+    id: 'slack',
+    label: 'Slack message',
+    icon: '#',
+    statusColor: '#f87171',
+    active: false,
+    executionTimes: ['3 min ago', '11 min ago', '25 min ago', '52 min ago', '1h 30m ago'],
+    pulsePhase: 0.75,
+  },
+];
+
+const cronTimes: CronPreviewTime[] = [
+  { time: '14:15', label: 'Next' },
+  { time: '14:30', label: '+15m' },
+  { time: '14:45', label: '+30m' },
+  { time: '15:00', label: '+45m' },
+  { time: '15:15', label: '+1h' },
+];
+
+const filterConditions: FilterCondition[] = [
+  { field: 'method', operator: 'equals', value: 'POST' },
+  { field: 'body.event', operator: 'contains', value: 'created' },
+];
+
+const state: CanvasState = {
+  hoveredTrigger: null,
+  selectedTrigger: 1,
+  pulseTime: 0,
+  popoverOpacity: 0,
+  popoverTarget: null,
+  popoverY: 0,
+  animFrame: 0,
+  dpr: Math.min(window.devicePixelRatio || 1, 2),
+  width: 0,
+  height: 0,
+};
+
+function resize(): void {
+  const rect = canvas.parentElement!.getBoundingClientRect();
+  state.width = rect.width;
+  state.height = Math.max(rect.height, 560);
+  canvas.width = state.width * state.dpr;
+  canvas.height = state.height * state.dpr;
+  canvas.style.width = state.width + 'px';
+  canvas.style.height = state.height + 'px';
+  ctx.scale(state.dpr, state.dpr);
+}
+
+function roundRect(
+  x: number, y: number, w: number, h: number, r: number
+): void {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function drawTriggerList(
+  x: number, y: number, w: number, t: number
+): void {
+  const rowH = 52;
+  const gap = 6;
+
+  // Panel background
+  roundRect(x, y, w, triggers.length * (rowH + gap) + 16, 12);
+  ctx.fillStyle = 'rgba(255,255,255,0.03)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Section label
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.font = '600 10px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('TRIGGER SOURCE', x + 14, y + 14);
+
+  triggers.forEach((trig, i) => {
+    const ry = y + 24 + i * (rowH + gap);
+    const selected = i === state.selectedTrigger;
+    const hovered = i === state.hoveredTrigger;
+
+    // Row background
+    roundRect(x + 8, ry, w - 16, rowH, 8);
+    if (selected) {
+      ctx.fillStyle = 'rgba(79,70,229,0.18)';
+    } else if (hovered) {
+      ctx.fillStyle = 'rgba(255,255,255,0.06)';
+    } else {
+      ctx.fillStyle = 'rgba(255,255,255,0.03)';
+    }
+    ctx.fill();
+
+    if (selected) {
+      ctx.strokeStyle = 'rgba(79,70,229,0.6)';
+      ctx.lineWidth = 1.5;
+    } else {
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.lineWidth = 1;
+    }
+    ctx.stroke();
+
+    // Icon box
+    roundRect(x + 18, ry + 11, 30, 30, 6);
+    ctx.fillStyle = selected
+      ? 'rgba(79,70,229,0.25)'
+      : 'rgba(255,255,255,0.07)';
+    ctx.fill();
+
+    ctx.fillStyle = selected ? '#a5b4fc' : 'rgba(255,255,255,0.55)';
+    ctx.font = trig.icon === '#' ? 'bold 16px monospace' : '14px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(trig.icon, x + 18 + 15, ry + 11 + 15);
+
+    // Label
+    ctx.fillStyle = selected ? '#fff' : 'rgba(255,255,255,0.8)';
+    ctx.font = `${selected ? '600' : '400'} 13px -apple-system, sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(trig.label, x + 56, ry + 28);
+
+    // Active badge
+    if (selected) {
+      const badgeX = x + w - 16 - 52;
+      roundRect(badgeX, ry + 17, 44, 18, 9);
+      ctx.fillStyle = 'rgba(79,70,229,0.3)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(79,70,229,0.5)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = '#818cf8';
+      ctx.font = '600 10px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('ACTIVE', badgeX + 22, ry + 30);
+    }
+
+    // Pulsing status dot
+    const dotX = x + w - 24;
+    const dotY = ry + rowH / 2;
+    const pulse = (Math.sin(t * 2.5 + trig.pulsePhase * Math.PI * 2) + 1) / 2;
+    const outerR = 5 + pulse * 3.5;
+
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, outerR, 0, Math.PI * 2);
+    const grad = ctx.createRadialGradient(dotX, dotY, 0, dotX, dotY, outerR);
+    grad.addColorStop(0, trig.statusColor + '55');
+    grad.addColorStop(1, trig.statusColor + '00');
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, 4, 0, Math.PI * 2);
+    ctx.fillStyle = trig.statusColor;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, 2, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.globalAlpha = 0.7;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  });
+}
+
+function drawConfigPanel(
+  x: number, y: number, w: number, t: number
+): void {
+  const panelH = state.height - y - 20;
+
+  // Main panel
+  roundRect(x, y, w, panelH, 12);
+  ctx.fillStyle = 'rgba(255,255,255,0.03)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(79,70,229,0.3)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Panel header
+  roundRect(x, y, w, 44, 12);
+  ctx.fillStyle = 'rgba(79,70,229,0.12)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(79,70,229,0.3)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Fix bottom of header to be flat
+  ctx.fillStyle = 'rgba(79,70,229,0.12)';
+  ctx.fillRect(x + 1, y + 22, w - 2, 22);
+
+  ctx.fillStyle = '#818cf8';
+  ctx.font = '600 12px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('Schedule (cron)  —  Configuration', x + 14, y + 22);
+
+  let cy = y + 58;
+
+  // CRON EXPRESSION
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.font = '600 10px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('CRON EXPRESSION', x + 14, cy);
+  cy += 14;
+
+  roundRect(x + 12, cy, w - 24, 36, 8);
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(79,70,229,0.4)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = '#a5b4fc';
+  ctx.font = '600 15px "SF Mono", "Fira Mono", monospace';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('0  */15  *  *  *', x + 22, cy + 18);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.font = '12px -apple-system, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText('Every 15 min', x + w - 22, cy + 18);
+  cy += 50;
+
+  // NEXT RUNS TIMELINE
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.font = '600 10px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('NEXT 5 RUNS', x + 14, cy);
+  cy += 14;
+
+  const timelineW = w - 28;
+  const nodeSpacing = timelineW / 4;
+
+  // Timeline track
+  ctx.beginPath();
+  ctx.moveTo(x + 14, cy + 12);
+  ctx.lineTo(x + 14 + timelineW, cy + 12);
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Animated progress line
+  const progress = (Math.sin(t * 0.4) + 1) / 2;
+  ctx.beginPath();
+  ctx.moveTo(x + 14, cy + 12);
+  ctx.lineTo(x + 14 + timelineW * progress * 0.35, cy + 12);
+  ctx.strokeStyle = '#4f46e5';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  cronTimes.forEach((ct, i) => {
+    const nx = x + 14 + i * nodeSpacing;
+    const isFirst = i === 0;
+
+    ctx.beginPath();
+    ctx.arc(nx, cy + 12, isFirst ? 6 : 4, 0, Math.PI * 2);
+    if (isFirst) {
+      const pulseR = 6 + (Math.sin(t * 2.8) + 1) * 3;
+      const grd = ctx.createRadialGradient(nx, cy + 12, 0, nx, cy + 12, pulseR);
+      grd.addColorStop(0, '#4f46e5aa');
+      grd.addColorStop(1, '#4f46e500');
+      ctx.beginPath();
+      ctx.arc(nx, cy + 12, pulseR, 0, Math.PI * 2);
+      ctx.fillStyle = grd;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(nx, cy + 12, 6, 0, Math.PI * 2);
+      ctx.fillStyle = '#4f46e5';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(nx, cy + 12, 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#a5b4fc';
+      ctx.fill();
+    } else {
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = isFirst ? '#a5b4fc' : 'rgba(255,255,255,0.6)';
+    ctx.font = `${isFirst ? '600' : '400'} 11px -apple-system, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(ct.time, nx, cy + 30);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '10px -apple-system, sans-serif';
+    ctx.fillText(ct.label, nx, cy + 42);
+  });
+  cy += 58;
+
+  // WEBHOOK ENDPOINT
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.font = '600 10px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('ENDPOINT URL', x + 14, cy);
+  cy += 14;
+
+  roundRect(x + 12, cy, w - 24, 34, 8);
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.font = '11px "SF Mono", monospace';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('https://hooks.pello.co/t/sch_7x2k9p', x + 20, cy + 17);
+
+  // Copy button
+  roundRect(x + w - 60, cy + 7, 46, 20, 5);
+  ctx.fillStyle = 'rgba(79,70,229,0.25)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(79,70,229,0.5)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.fillStyle = '#818cf8';
+  ctx.font = '600 10px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('COPY', x + w - 37, cy + 17);
+  cy += 48;
+
+  // FILTER CONDITIONS
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.font = '600 10px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('FILTER CONDITIONS', x + 14, cy);
+  cy += 14;
+
+  filterConditions.forEach((cond, i) => {
+    if (i > 0) {
+      // AND chip
+      roundRect(x + 20, cy, 32, 18, 9);
+      ctx.fillStyle = 'rgba(6,182,212,0.15)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(6,182,212,0.4)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = '#22d3ee';
+      ctx.font = '600 9px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('AND', x + 36, cy + 9);
+      cy += 24;
+    }
+
+    roundRect(x + 12, cy, w - 24, 32, 8);
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Field
+    roundRect(x + 16, cy + 6, 66, 20, 5);
+    ctx.fillStyle = 'rgba(79,70,229,0.2)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(79,70,229,0.35)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = '#a5b4fc';
+    ctx.font = '11px "SF Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(cond.field, x + 16 + 33, cy + 16);
+
+    // Operator
+    roundRect(x + 88, cy + 6, 62, 20, 5);
+    ctx.fillStyle = 'rgba(255,255,255,0.07)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(cond.operator, x + 88 + 31, cy + 16);
+
+    // Value
+    roundRect(x + 156, cy + 6, w - 172, 20, 5);
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = '#86efac';
+    ctx.font = '11px "SF Mono", monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`"${cond.value}"`, x + 162, cy + 16);
+    cy += 40;
+  });
+
+  // OR logic chip
+  roundRect(x + 20, cy, 28, 18, 9);
+  ctx.fillStyle = 'rgba(245,158,11,0.15)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(245,158,11,0.4)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.fillStyle = '#fbbf24';
+  ctx.font = '600 9px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('OR', x + 34, cy + 9);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.font = '11px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('+ Add condition', x + 56, cy + 9);
+  cy += 34;
+
+  // TEST PANEL
+  const testPanelH = panelH - (cy - y) - 14;
+  if (testPanelH > 60) {
+    roundRect(x + 12, cy, w - 24, testPanelH, 8);
+    const testGrad = ctx.createLinearGradient(x + 12, cy, x + 12, cy + testPanelH);
+    testGrad.addColorStop(0, 'rgba(79,70,229,0.08)');
+    testGrad.addColorStop(1, 'rgba(79,70,229,0.04)');
+    ctx.fillStyle = testGrad;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(79,70,229,0.2)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    const midCy = cy + testPanelH / 2;
+
+    // Live indicator dot
+    const livePulse = (Math.sin(t * 3 + 1.2) + 1) / 2;
+    const liveR = 4 + livePulse * 2.5;
+    ctx.beginPath();
+    ctx.arc(x + 26, midCy - 10, liveR, 0, Math.PI * 2);
+    const liveGrd = ctx.createRadialGradient(x + 26, midCy - 10, 0, x + 26, midCy - 10, liveR);
+    liveGrd.addColorStop(0, '#22c55e88');
+    liveGrd.addColorStop(1, '#22c55e00');
+    ctx.fillStyle = liveGrd;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x + 26, midCy - 10, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#22c55e';
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = '12px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Last triggered:', x + 36, midCy - 10);
+    ctx.fillStyle = '#fff';
+    ctx.font = '600 12px -apple-system, sans-serif';
+    ctx.fillText('2 min ago', x + 36 + 88, midCy - 10);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Trigger count today:', x + 36, midCy + 10);
+    ctx.fillStyle = '#818cf8';
+    ctx.font = '600 12px -apple-system, sans-serif';
+    ctx.fillText('142', x + 36 + 112, midCy + 10);
+  }
+}
+
+function drawPopover(
+  x: number, y: number, w: number, triggerIndex: number, opacity: number
+): void {
+  if (opacity <= 0) return;
+
+  const trig = triggers[triggerIndex];
+  const popH = 130;
+  const popW = w - 20;
+  const px = x + 10;
+
+  ctx.globalAlpha = opacity;
+
+  roundRect(px, y - popH - 8, popW, popH, 10);
+  ctx.fillStyle = '#0d1025';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(79,70,229,0.5)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Arrow
+  ctx.beginPath();
+  ctx.moveTo(px + popW / 2 - 7, y - 8);
+  ctx.lineTo(px + popW / 2, y);
+  ctx.lineTo(px + popW / 2 + 7, y - 8);
+  ctx.closePath();
+  ctx.fillStyle = '#0d1025';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(79,70,229,0.5)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.fillStyle = '#818cf8';
+  ctx.font = '600 10px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('RECENT EXECUTIONS', px + 12, y - popH - 8 + 18);
+
+  trig.executionTimes.forEach((et, i) => {
+    const ey = y - popH - 8 + 28 + i * 19;
+
+    // Dot
+    ctx.beginPath();
+    ctx.arc(px + 18, ey + 4, 3, 0, Math.PI * 2);
+    ctx.fillStyle = trig.statusColor;
+    ctx.fill();
+
+    // Check mark
+    ctx.strokeStyle = '#22c55e';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(px + 30, ey + 2);
+    ctx.lineTo(px + 33, ey + 6);
+    ctx.lineTo(px + 38, ey);
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(et, px + 44, ey + 7);
+
+    ctx.fillStyle = 'rgba(34,197,94,0.8)';
+    ctx.font = '10px -apple-system, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('✓ Success', px + popW - 12, ey + 7);
+  });
+
+  ctx.globalAlpha = 1;
+}
+
+function getRowBounds(
+  listX: number, listY: number, index: number
+): { top: number; bottom: number } {
+  const rowH = 52;
+  const gap = 6;
+  const top = listY + 24 + index * (rowH + gap);
+  return { top, bottom: top + rowH };
+}
+
+function draw(t: number): void {
+  const W = state.width;
+  const H = state.height;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Background gradient
+  const bgGrad = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H) * 0.8);
+  bgGrad.addColorStop(0, '#0d1025');
+  bgGrad.addColorStop(1, '#060712');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle grid
+  ctx.strokeStyle = 'rgba(79,70,229,0.05)';
+  ctx.lineWidth = 1;
+  const gridSize = 40;
+  for (let gx = 0; gx < W; gx += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(gx, 0);
+    ctx.lineTo(gx, H);
+    ctx.stroke();
+  }
+  for (let gy = 0; gy < H; gy += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(0, gy);
+    ctx.lineTo(W, gy);
+    ctx.stroke();
+  }
+
+  const padding = 16;
+  const listW = Math.min(W * 0.42, 280);
+  const listX = padding;
+  const listY = padding + 8;
+  const configX = listX + listW + 14;
+  const configW = W - configX - padding;
+
+  drawTriggerList(listX, listY, listW, t);
+  if (configW > 80) {
+    drawConfigPanel(configX, listY, configW, t);
+  }
+
+  // Popover
+  if (state.hoveredTrigger !== null && state.popoverOpacity > 0) {
+    const bounds = getRowBounds(listX, listY, state.hoveredTrigger);
+    drawPopover(listX, bounds.top, listW, state.hoveredTrigger, state.popoverOpacity);
+  }
+}
+
+function animate(timestamp: number): void {
+  state.pulseTime = timestamp / 1000;
+  const t = state.pulseTime;
+
+  // Animate popover opacity
+  if (state.hoveredTrigger !== null && state.popoverTarget === state.hoveredTrigger) {
+    state.popoverOpacity = Math.min(1, state.popoverOpacity + 0.08);
+  } else {
+    state.popoverOpacity = Math.max(0, state.popoverOpacity - 0.1);
+    if (state.popoverOpacity === 0) {
+      state.popoverTarget = state.hoveredTrigger;
+    }
+  }
+
+  draw(t);
+  state.animFrame = requestAnimationFrame(animate);
+}
+
+function getCanvasPos(e: MouseEvent): { x: number; y: number } {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (e.clientX - rect.left),
+    y: (e.clientY - rect.top),
+  };
+}
+
+function getTriggerAtPos(mx: number, my: number): number | null {
+  const padding = 16;
+  const listW = Math.min(state.width * 0.42, 280);
+  const listX = padding;
+  const listY = padding + 8;
+  const rowH = 52;
+  const gap = 6;
+
+  for (let i = 0; i < triggers.length; i++) {
+    const ry = listY + 24 + i * (rowH + gap);
+    if (mx >= listX + 8 && mx <= listX + listW - 8 &&
+        my >= ry && my <= ry + rowH) {
+      return i;
+    }
+  }
+  return null;
+}
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => {
+  const { x, y } = getCanvasPos(e);
+  const hit = getTriggerAtPos(x, y);
+  if (hit !== state.hoveredTrigger) {
+    if (hit !== null && state.hoveredTrigger === null) {
+      state.popoverTarget = hit;
+      state.popoverOpacity = 0;
+    }
+    state.hoveredTrigger = hit;
+  }
+  canvas.style.cursor = hit !== null ? 'pointer' : 'default';
+});
+
+canvas.addEventListener('mouseleave', () => {
+  state.hoveredTrigger = null;
+  canvas.style.cursor = 'default';
+});
+
+canvas.addEventListener('click', (e: MouseEvent) => {
+  const { x, y } = getCanvasPos(e);
+  const hit = getTriggerAtPos(x, y);
+  if (hit !== null) {
+    state.selectedTrigger = hit;
+  }
+});
+
+window.addEventListener('resize', () => {
+  cancelAnimationFrame(state.animFrame);
+  resize();
+  state.animFrame = requestAnimationFrame(animate);
+});
+
+resize();
+state.animFrame = requestAnimationFrame(animate);
+</script>
