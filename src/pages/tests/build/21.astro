@@ -495,20 +495,20 @@ function draw(): void {
   const pad = 12;
   const halfW = (W - pad * 3) / 2;
   const topH = 110;
-  const statusH = 68;
-  const epH = Math.min(160, H - topH * 2 - statusH - pad * 5);
-  const feedH = H - topH - statusH - epH - pad * 4;
+  const midH = 68;
+  const botH = Math.max(120, H - topH - midH - pad * 4);
 
   // Row 1: req volume | latency
   drawReqVolume(pad, pad, halfW, topH);
   drawLatency(pad * 2 + halfW, pad, halfW, topH);
 
-  // Row 2: status codes | live feed (tall)
-  drawStatusCodes(pad, pad * 2 + topH, halfW, statusH);
-  drawLiveFeed(pad * 2 + halfW, pad * 2 + topH, halfW, statusH + epH + pad);
+  // Row 2: status codes (full width)
+  drawStatusCodes(pad, pad * 2 + topH, W - pad * 2, midH);
 
-  // Row 3: endpoints
-  drawEndpoints(pad, pad * 3 + topH + statusH, W - pad * 2, epH);
+  // Row 3: endpoints (left) | live feed (right)
+  const row3Y = pad * 3 + topH + midH;
+  drawEndpoints(pad, row3Y, halfW, botH);
+  drawLiveFeed(pad * 2 + halfW, row3Y, halfW, botH);
 }
 
 // ─── Loop ─────────────────────────────────────────────────────────────────────
