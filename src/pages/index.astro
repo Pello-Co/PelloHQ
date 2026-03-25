@@ -2403,21 +2403,21 @@ custom code.</h2>
 
   // ── Product 5: Ads Equalizer Bars ────────────────────────────────────────
   function initMatrix(w: number, h: number) {
-    const colW = 14;
+    const colW = 7;
     const cols = Math.ceil(w / colW);
     const drops: number[] = [];
     const speeds: number[] = [];
     const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン01{}()[];:<>=+-*/&|!?#$%@^~`const function return async await import export class interface type let var if else for while switch case break new this true false null undefined void delete typeof instanceof in of do try catch finally throw yields';
     for (let i = 0; i < cols; i++) {
       drops.push(Math.random() * -50);
-      speeds.push(0.3 + Math.random() * 0.8);
+      speeds.push(0.5 + Math.random() * 1.2);
     }
     return { drops, speeds, chars, colW, cols };
   }
   function drawMatrix(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
     const [r,g,b]=PV_RGB[5];
     const st = state as { drops: number[]; speeds: number[]; chars: string; colW: number; cols: number };
-    const fontSize = 11;
+    const fontSize = 9;
     ctx.font = `${fontSize}px "SF Mono", "Fira Code", monospace`;
 
     for (let i = 0; i < st.cols; i++) {
@@ -2425,7 +2425,7 @@ custom code.</h2>
       st.drops[i] += st.speeds[i];
 
       // Draw trail of characters
-      const trailLen = 18;
+      const trailLen = 25;
       for (let j = 0; j < trailLen; j++) {
         const y = (st.drops[i] - j) * fontSize;
         if (y < 0 || y > h) continue;
@@ -2460,7 +2460,7 @@ custom code.</h2>
       // Reset when off screen
       if (st.drops[i] * fontSize > h + trailLen * fontSize) {
         st.drops[i] = Math.random() * -10;
-        st.speeds[i] = 0.3 + Math.random() * 0.8;
+        st.speeds[i] = 0.5 + Math.random() * 1.2;
       }
     }
   }
