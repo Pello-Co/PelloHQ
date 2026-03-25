@@ -1,0 +1,567 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="PelloAds — Design 20" description="PelloAds test design 20">
+  <div style="min-height:100vh;background:#060712;display:flex;flex-direction:column;align-items:center;padding:2rem;">
+    <h1 style="color:#7c3aed;font:700 1.5rem/1.3 -apple-system,sans-serif;margin-bottom:0.5rem;letter-spacing:-0.02em;">PelloAds</h1>
+    <p style="color:rgba(255,255,255,0.5);font:400 0.85rem/1.4 -apple-system,sans-serif;margin-bottom:1.5rem;">Design 20 — Revenue Attribution Flow</p>
+    <canvas id="ads-canvas-20" style="width:100%;max-width:900px;border-radius:12px;cursor:crosshair;"></canvas>
+  </div>
+</Layout>
+
+<script>
+const canvas = document.getElementById('ads-canvas-20') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const dpr = window.devicePixelRatio || 1;
+
+const W = 900, H = 580;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+canvas.style.height = H + 'px';
+ctx.scale(dpr, dpr);
+
+// --- Data ---
+const sources = [
+  { name: 'Google Search',    spend: '$8,400', spendVal: 8400, color: '#4285f4' },
+  { name: 'Meta Feed',        spend: '$6,200', spendVal: 6200, color: '#60a5fa' },
+  { name: 'TikTok Video',     spend: '$3,100', spendVal: 3100, color: '#f43f5e' },
+  { name: 'LinkedIn',         spend: '$2,800', spendVal: 2800, color: '#38bdf8' },
+  { name: 'Display Network',  spend: '$1,400', spendVal: 1400, color: '#a78bfa' },
+];
+
+const touchpoints = [
+  { name: 'First Touch',  conv: 218, weight: [0.60, 0.15, 0.00] }, // [linear, first, last]
+  { name: 'Assist',       conv: 847, weight: [0.33, 0.15, 0.00] },
+  { name: 'Last Touch',   conv: 459, weight: [0.07, 0.70, 1.00] },
+];
+
+const outcomes = [
+  { name: 'Demo Booked',     convs: 234,  revenue: 42120,  color: '#10b981' },
+  { name: 'Trial Started',   convs: 891,  revenue: 89100,  color: '#7c3aed' },
+  { name: 'Paid Conversion', convs: 312,  revenue: 156000, color: '#f59e0b' },
+  { name: 'Upsell',          convs: 87,   revenue: 52200,  color: '#10b981' },
+];
+
+const models = ['First Touch', 'Linear', 'Last Touch', 'Data-Driven'];
+// Attribution weights per model (per touchpoint)
+const modelWeights: number[][] = [
+  [1.00, 0.00, 0.00],  // First Touch
+  [0.33, 0.34, 0.33],  // Linear
+  [0.00, 0.00, 1.00],  // Last Touch
+  [0.45, 0.20, 0.35],  // Data-Driven
+];
+
+let activeModel = 3; // Data-Driven default
+let modelWeightsCur = [...modelWeights[activeModel]];
+let modelWeightsTgt = [...modelWeights[activeModel]];
+
+// Layout
+const leftColX = 20, leftColW = 155;
+const centreColX = leftColX + leftColW + 30, centreColW = 200;
+const rightColX = centreColX + centreColW + 30, rightColW = 155;
+const contentTop = 20;
+const contentH = H - 90; // leave room for pills at bottom
+
+// Node positions
+const sourceSpacing = (contentH - 30) / sources.length;
+const sourceNodes = sources.map((_, i) => ({
+  x: leftColX + leftColW - 10,
+  y: contentTop + 20 + i * sourceSpacing + sourceSpacing / 2,
+}));
+
+const tpSpacing = (contentH - 30) / touchpoints.length;
+const tpNodes = touchpoints.map((_, i) => ({
+  x: centreColX + centreColW / 2,
+  y: contentTop + 60 + i * tpSpacing + tpSpacing / 2,
+}));
+
+const outSpacing = (contentH - 30) / outcomes.length;
+const outNodes = outcomes.map((_, i) => ({
+  x: rightColX + 10,
+  y: contentTop + 30 + i * outSpacing + outSpacing / 2,
+}));
+
+// Connection map: source -> touchpoint -> outcome (simplified all-to-all with weight)
+// Particles per connection
+interface Particle {
+  t: number;     // 0..1 along path
+  speed: number;
+  pathIdx: number; // 0 = src->tp, 1 = tp->out
+  srcIdx: number;
+  tpIdx: number;
+  outIdx: number;
+  phase: 'left' | 'right';
+}
+
+const particles: Particle[] = [];
+
+// Initialise particles
+function initParticles() {
+  particles.length = 0;
+  sources.forEach((src, si) => {
+    const count = Math.max(1, Math.round(src.spendVal / 1500));
+    touchpoints.forEach((_, ti) => {
+      for (let p = 0; p < count; p++) {
+        particles.push({
+          t: Math.random(),
+          speed: 0.18 + Math.random() * 0.12,
+          pathIdx: 0,
+          srcIdx: si,
+          tpIdx: ti,
+          outIdx: Math.floor(Math.random() * outcomes.length),
+          phase: 'left',
+        });
+      }
+    });
+    // Right-side particles
+    outcomes.forEach((_, oi) => {
+      for (let p = 0; p < 2; p++) {
+        particles.push({
+          t: Math.random(),
+          speed: 0.20 + Math.random() * 0.10,
+          pathIdx: 1,
+          srcIdx: si,
+          tpIdx: Math.floor(Math.random() * touchpoints.length),
+          outIdx: oi,
+          phase: 'right',
+        });
+      }
+    });
+  });
+}
+initParticles();
+
+// Hover state
+let hoveredSource = -1;
+let hoveredOutcome = -1;
+let mouseX = 0, mouseY = 0;
+
+// Animation
+let lastTs = 0;
+let t = 0;
+
+function easeInOut(t: number) { return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; }
+
+function getBezierPoint(p0: {x:number,y:number}, p1: {x:number,y:number}, p2: {x:number,y:number}, p3: {x:number,y:number}, t: number) {
+  const u = 1 - t;
+  return {
+    x: u*u*u*p0.x + 3*u*u*t*p1.x + 3*u*t*t*p2.x + t*t*t*p3.x,
+    y: u*u*u*p0.y + 3*u*u*t*p1.y + 3*u*t*t*p2.y + t*t*t*p3.y,
+  };
+}
+
+function drawRR(x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function hexAlpha(hex: string, a: number): string {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function lerp(a: number, b: number, t: number) { return a + (b - a) * t; }
+
+// Get bezier control points for source -> touchpoint
+function getSrcTpBez(si: number, ti: number) {
+  const s = sourceNodes[si];
+  const tp = tpNodes[ti];
+  const cpX = (s.x + tp.x) / 2;
+  return {
+    p0: s,
+    p1: { x: cpX, y: s.y },
+    p2: { x: cpX, y: tp.y },
+    p3: tp,
+  };
+}
+
+// Get bezier control points for touchpoint -> outcome
+function getTpOutBez(ti: number, oi: number) {
+  const tp = tpNodes[ti];
+  const out = outNodes[oi];
+  const cpX = (tp.x + out.x) / 2;
+  return {
+    p0: tp,
+    p1: { x: cpX, y: tp.y },
+    p2: { x: cpX, y: out.y },
+    p3: out,
+  };
+}
+
+function draw(ts: number) {
+  const dt = Math.min((ts - lastTs) / 1000, 0.05);
+  lastTs = ts;
+  t += dt;
+
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, W, H);
+
+  // Lerp model weights
+  modelWeightsCur = modelWeightsCur.map((v, i) => lerp(v, modelWeightsTgt[i], dt * 4));
+
+  // --- CONNECTION LINES ---
+  // Left side: src -> tp
+  sources.forEach((src, si) => {
+    const isHovSrc = hoveredSource === si;
+    touchpoints.forEach((_, ti) => {
+      const weight = modelWeightsCur[ti];
+      const bez = getSrcTpBez(si, ti);
+      const lineW = lerp(0.5, 2.5, weight) * (isHovSrc ? 2 : 1);
+      const alpha = lerp(0.05, 0.25, weight) * (isHovSrc ? 2.5 : 1);
+
+      ctx.beginPath();
+      ctx.moveTo(bez.p0.x, bez.p0.y);
+      ctx.bezierCurveTo(bez.p1.x, bez.p1.y, bez.p2.x, bez.p2.y, bez.p3.x, bez.p3.y);
+      const grad = ctx.createLinearGradient(bez.p0.x, bez.p0.y, bez.p3.x, bez.p3.y);
+      grad.addColorStop(0, hexAlpha(src.color, alpha));
+      grad.addColorStop(1, hexAlpha('#7c3aed', alpha * 0.8));
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = lineW;
+      ctx.stroke();
+    });
+  });
+
+  // Right side: tp -> outcome
+  touchpoints.forEach((_, ti) => {
+    outcomes.forEach((out, oi) => {
+      const isHovOut = hoveredOutcome === oi;
+      const weight = modelWeightsCur[ti];
+      const bez = getTpOutBez(ti, oi);
+      const lineW = lerp(0.3, 2.0, weight) * (isHovOut ? 2 : 1);
+      const alpha = lerp(0.05, 0.2, weight) * (isHovOut ? 2.5 : 1);
+
+      ctx.beginPath();
+      ctx.moveTo(bez.p0.x, bez.p0.y);
+      ctx.bezierCurveTo(bez.p1.x, bez.p1.y, bez.p2.x, bez.p2.y, bez.p3.x, bez.p3.y);
+      const grad = ctx.createLinearGradient(bez.p0.x, bez.p0.y, bez.p3.x, bez.p3.y);
+      grad.addColorStop(0, hexAlpha('#7c3aed', alpha * 0.8));
+      grad.addColorStop(1, hexAlpha('#10b981', alpha));
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = lineW;
+      ctx.stroke();
+    });
+  });
+
+  // --- PARTICLES ---
+  particles.forEach(p => {
+    p.t += p.speed * dt;
+    if (p.t > 1) p.t -= 1;
+
+    let pos: {x:number,y:number};
+    let color: string;
+
+    if (p.phase === 'left') {
+      const bez = getSrcTpBez(p.srcIdx, p.tpIdx);
+      pos = getBezierPoint(bez.p0, bez.p1, bez.p2, bez.p3, p.t);
+      color = sources[p.srcIdx].color;
+    } else {
+      const bez = getTpOutBez(p.tpIdx, p.outIdx);
+      pos = getBezierPoint(bez.p0, bez.p1, bez.p2, bez.p3, p.t);
+      color = '#10b981';
+    }
+
+    const alpha = 0.4 + Math.sin(p.t * Math.PI) * 0.6;
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, 2, 0, Math.PI * 2);
+    ctx.fillStyle = hexAlpha(color, alpha);
+    ctx.fill();
+  });
+
+  // --- LEFT COLUMN: Source nodes ---
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.font = '700 9px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('AD CHANNELS', leftColX, contentTop + 2);
+
+  sources.forEach((src, i) => {
+    const n = sourceNodes[i];
+    const isHov = hoveredSource === i;
+    const nW = leftColW - 14, nH = 46;
+    const nx = leftColX, ny = n.y - nH / 2;
+
+    drawRR(nx, ny, nW, nH, 8);
+    ctx.fillStyle = isHov ? '#161930' : '#0d0f1f';
+    ctx.fill();
+    if (isHov) {
+      ctx.strokeStyle = src.color + '60';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    // Color bar left
+    ctx.fillStyle = src.color;
+    ctx.beginPath();
+    ctx.roundRect(nx, ny, 3, nH, [8, 0, 0, 8]);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.88)';
+    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(src.name, nx + 10, ny + 8);
+    ctx.fillStyle = src.color;
+    ctx.font = '700 11px -apple-system, sans-serif';
+    ctx.fillText(src.spend, nx + 10, ny + 26);
+  });
+
+  // --- CENTRE COLUMN: Touchpoint nodes ---
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.font = '700 9px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('ATTRIBUTION', centreColX + centreColW / 2, contentTop + 2);
+
+  const tpW = 130, tpH = 58;
+  touchpoints.forEach((tp, i) => {
+    const n = tpNodes[i];
+    const nx = n.x - tpW / 2, ny = n.y - tpH / 2;
+    const w = modelWeightsCur[i];
+
+    drawRR(nx, ny, tpW, tpH, 10);
+    ctx.fillStyle = '#0d0f1f';
+    ctx.fill();
+    ctx.strokeStyle = hexAlpha('#7c3aed', 0.2 + w * 0.5);
+    ctx.lineWidth = 1 + w * 1.5;
+    ctx.stroke();
+
+    ctx.fillStyle = '#fff';
+    ctx.font = '700 11px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(tp.name, n.x, ny + 8);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.font = '400 9px -apple-system, sans-serif';
+    ctx.fillText(`${tp.conv} conv`, n.x, ny + 24);
+
+    // Weight bar
+    const wBarX = nx + 10, wBarY = ny + 42, wBarW = tpW - 20, wBarH = 5;
+    drawRR(wBarX, wBarY, wBarW, wBarH, 3);
+    ctx.fillStyle = '#1a1d2e';
+    ctx.fill();
+    if (w > 0.01) {
+      drawRR(wBarX, wBarY, wBarW * w, wBarH, 3);
+      ctx.fillStyle = '#7c3aed';
+      ctx.fill();
+    }
+    ctx.fillStyle = '#7c3aed';
+    ctx.font = '600 8px -apple-system, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${Math.round(w * 100)}%`, nx + tpW - 6, wBarY + wBarH / 2);
+  });
+
+  // Centre stats box
+  const csbX = centreColX + (centreColW - 150) / 2;
+  const csbY = contentTop + 228;
+  drawRR(csbX, csbY, 150, 54, 8);
+  ctx.fillStyle = '#0a0c1a';
+  ctx.fill();
+  ctx.strokeStyle = '#7c3aed30';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.font = '400 8px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('Total Revenue', centreColX + centreColW / 2, csbY + 8);
+  ctx.fillStyle = '#10b981';
+  ctx.font = '700 16px -apple-system, sans-serif';
+  ctx.fillText('$339,420', centreColX + centreColW / 2, csbY + 20);
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.font = '400 8px -apple-system, sans-serif';
+  ctx.fillText('Attributed ROAS: 15.6x', centreColX + centreColW / 2, csbY + 40);
+
+  // --- RIGHT COLUMN: Outcome nodes ---
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.font = '700 9px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('CONVERSIONS', rightColX, contentTop + 2);
+
+  outcomes.forEach((out, i) => {
+    const n = outNodes[i];
+    const isHov = hoveredOutcome === i;
+    const nW = rightColW - 4, nH = 54;
+    const nx = rightColX + 4, ny = n.y - nH / 2;
+
+    drawRR(nx, ny, nW, nH, 8);
+    ctx.fillStyle = isHov ? '#161930' : '#0d0f1f';
+    ctx.fill();
+    // Right color bar
+    ctx.fillStyle = out.color;
+    ctx.beginPath();
+    ctx.roundRect(nx + nW - 3, ny, 3, nH, [0, 8, 8, 0]);
+    ctx.fill();
+    if (isHov) {
+      ctx.strokeStyle = out.color + '60';
+      ctx.lineWidth = 1.5;
+      drawRR(nx, ny, nW, nH, 8);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(out.name, nx + 8, ny + 6);
+
+    ctx.fillStyle = out.color;
+    ctx.font = '700 11px -apple-system, sans-serif';
+    ctx.fillText(`$${(out.revenue / 1000).toFixed(0)}k`, nx + 8, ny + 22);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '400 9px -apple-system, sans-serif';
+    ctx.fillText(`${out.convs} conv`, nx + 8, ny + 38);
+  });
+
+  // --- HOVER TOOLTIP (source) ---
+  if (hoveredSource >= 0) {
+    const src = sources[hoveredSource];
+    const ttW = 160, ttH = 56, ttR = 8;
+    let ttX = sourceNodes[hoveredSource].x + 10;
+    let ttY = sourceNodes[hoveredSource].y - ttH / 2;
+    if (ttX + ttW > W - 10) ttX = sourceNodes[hoveredSource].x - ttW - 10;
+
+    drawRR(ttX, ttY, ttW, ttH, ttR);
+    ctx.fillStyle = '#13152e';
+    ctx.fill();
+    ctx.strokeStyle = src.color + '80';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = src.color;
+    ctx.font = '700 12px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(src.name, ttX + 10, ttY + 8);
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.fillText(`Spend: ${src.spend}`, ttX + 10, ttY + 28);
+  }
+
+  // --- HOVER TOOLTIP (outcome) ---
+  if (hoveredOutcome >= 0) {
+    const out = outcomes[hoveredOutcome];
+    const n = outNodes[hoveredOutcome];
+    const ttW = 160, ttH = 70, ttR = 8;
+    let ttX = n.x - ttW - 10;
+    let ttY = n.y - ttH / 2;
+    if (ttX < 8) ttX = n.x + 20;
+
+    drawRR(ttX, ttY, ttW, ttH, ttR);
+    ctx.fillStyle = '#13152e';
+    ctx.fill();
+    ctx.strokeStyle = out.color + '80';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = out.color;
+    ctx.font = '700 12px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(out.name, ttX + 10, ttY + 8);
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.fillText(`Revenue: $${out.revenue.toLocaleString()}`, ttX + 10, ttY + 28);
+    ctx.fillText(`Conversions: ${out.convs}`, ttX + 10, ttY + 46);
+  }
+
+  // --- ATTRIBUTION MODEL PILLS ---
+  const pillAreaY = H - 52;
+  const pillTotalW = models.length * 116 + (models.length - 1) * 8;
+  const pillStartX = (W - pillTotalW) / 2;
+
+  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  ctx.font = '400 9px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('ATTRIBUTION MODEL', W / 2, pillAreaY - 14);
+
+  models.forEach((m, i) => {
+    const px = pillStartX + i * 124, py = pillAreaY;
+    const pw = 116, ph = 32, pr = 16;
+    const isActive = i === activeModel;
+
+    drawRR(px, py, pw, ph, pr);
+    ctx.fillStyle = isActive ? '#7c3aed' : '#0d0f1f';
+    ctx.fill();
+    if (!isActive) {
+      ctx.strokeStyle = 'rgba(124,58,237,0.3)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    ctx.fillStyle = isActive ? '#fff' : 'rgba(255,255,255,0.5)';
+    ctx.font = `${isActive ? 600 : 400} 12px -apple-system, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(m, px + pw / 2, py + ph / 2);
+  });
+
+  requestAnimationFrame(draw);
+}
+
+lastTs = performance.now();
+requestAnimationFrame(draw);
+
+// Mouse
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - rect.left) * (W / rect.width);
+  mouseY = (e.clientY - rect.top) * (H / rect.height);
+
+  hoveredSource = -1;
+  hoveredOutcome = -1;
+
+  sources.forEach((_, i) => {
+    const n = sourceNodes[i];
+    const nW = leftColW - 14, nH = 46;
+    if (mouseX >= leftColX && mouseX <= leftColX + nW && mouseY >= n.y - nH / 2 && mouseY <= n.y + nH / 2) {
+      hoveredSource = i;
+    }
+  });
+
+  outcomes.forEach((_, i) => {
+    const n = outNodes[i];
+    const nW = rightColW - 4, nH = 54;
+    if (mouseX >= rightColX + 4 && mouseX <= rightColX + 4 + nW && mouseY >= n.y - nH / 2 && mouseY <= n.y + nH / 2) {
+      hoveredOutcome = i;
+    }
+  });
+});
+
+canvas.addEventListener('mouseleave', () => {
+  hoveredSource = -1;
+  hoveredOutcome = -1;
+});
+
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * (W / rect.width);
+  const my = (e.clientY - rect.top) * (H / rect.height);
+  const pillAreaY = H - 52;
+  const pillTotalW = models.length * 116 + (models.length - 1) * 8;
+  const pillStartX = (W - pillTotalW) / 2;
+
+  models.forEach((_, i) => {
+    const px = pillStartX + i * 124, py = pillAreaY, pw = 116, ph = 32;
+    if (mx >= px && mx <= px + pw && my >= py && my <= py + ph) {
+      activeModel = i;
+      modelWeightsTgt = [...modelWeights[i]];
+    }
+  });
+});
+</script>
