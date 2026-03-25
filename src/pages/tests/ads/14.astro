@@ -1,0 +1,472 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="PelloAds — Design 14" description="PelloAds test design 14">
+  <div style="min-height:100vh;background:#060712;display:flex;flex-direction:column;align-items:center;padding:2rem;">
+    <h1 style="color:#7c3aed;font:700 1.5rem/1.3 -apple-system,sans-serif;margin-bottom:0.5rem;letter-spacing:-0.02em;">PelloAds</h1>
+    <p style="color:rgba(255,255,255,0.5);font:400 0.85rem/1.4 -apple-system,sans-serif;margin-bottom:1.5rem;">Design 14 — Creative Performance Gallery</p>
+    <canvas id="ads-canvas-14" style="width:100%;max-width:900px;border-radius:12px;cursor:crosshair;"></canvas>
+  </div>
+</Layout>
+
+<script>
+const canvas = document.getElementById('ads-canvas-14') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const dpr = window.devicePixelRatio || 1;
+
+const W = 900, H = 560;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+ctx.scale(dpr, dpr);
+
+let mouseX = -1, mouseY = -1;
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - r.left) * (W / r.width);
+  mouseY = (e.clientY - r.top) * (H / r.height);
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
+
+type AdFormat = 'VIDEO' | 'IMAGE' | 'CAROUSEL' | 'TEXT';
+
+interface AdCard {
+  id: number;
+  format: AdFormat;
+  score: number;
+  spend: number;
+  ctr: number;
+  impressions: number;
+  cpc: number;
+  roas: number;
+  conversions: number;
+  accentColor: string;
+  // logical sort position (0–11)
+  rank: number;
+  // current animated x/y
+  x: number;
+  y: number;
+  // target x/y
+  tx: number;
+  ty: number;
+  hoverT: number; // 0–1 hover interpolation
+}
+
+const FORMATS: AdFormat[] = ['VIDEO', 'IMAGE', 'CAROUSEL', 'TEXT'];
+const FORMAT_COLORS: Record<AdFormat, string> = {
+  VIDEO:    '#7c3aed',
+  IMAGE:    '#0ea5e9',
+  CAROUSEL: '#10b981',
+  TEXT:     '#f59e0b',
+};
+
+const SCORES_INIT = [92, 87, 85, 78, 74, 68, 61, 55, 48, 41, 33, 22];
+
+// Grid layout constants
+const HALL_H = 90;       // hall of fame strip height
+const GRID_TOP = HALL_H + 20;
+const GRID_PAD_L = 16;
+const GRID_PAD_R = 16;
+const CARD_COLS = 4;
+const CARD_ROWS = 3;
+const CARD_GAP = 10;
+const CARD_W = Math.floor((W - GRID_PAD_L - GRID_PAD_R - CARD_GAP * (CARD_COLS - 1)) / CARD_COLS);
+const CARD_H = Math.floor((H - GRID_TOP - 12 - CARD_GAP * (CARD_ROWS - 1)) / CARD_ROWS);
+
+function gridPos(rank: number): { x: number; y: number } {
+  const col = rank % CARD_COLS;
+  const row = Math.floor(rank / CARD_COLS);
+  return {
+    x: GRID_PAD_L + col * (CARD_W + CARD_GAP),
+    y: GRID_TOP + row * (CARD_H + CARD_GAP),
+  };
+}
+
+// Build cards
+const cards: AdCard[] = Array.from({ length: 12 }, (_, i) => {
+  const format = FORMATS[i % 4];
+  const score = SCORES_INIT[i];
+  const pos = gridPos(i);
+  return {
+    id: i,
+    format,
+    score,
+    spend: Math.round(1200 + Math.random() * 8800),
+    ctr: parseFloat((0.8 + Math.random() * 4.2).toFixed(2)),
+    impressions: Math.round(12000 + Math.random() * 180000),
+    cpc: parseFloat((0.18 + Math.random() * 2.8).toFixed(2)),
+    roas: parseFloat((1.1 + Math.random() * 5.5).toFixed(1)),
+    conversions: Math.round(40 + Math.random() * 960),
+    accentColor: FORMAT_COLORS[format],
+    rank: i,
+    x: pos.x,
+    y: pos.y,
+    tx: pos.x,
+    ty: pos.y,
+    hoverT: 0,
+  };
+});
+
+// Sort cards by score descending and assign rank
+function resortCards(): void {
+  const sorted = [...cards].sort((a, b) => b.score - a.score);
+  sorted.forEach((card, rank) => {
+    card.rank = rank;
+    const p = gridPos(rank);
+    card.tx = p.x;
+    card.ty = p.y;
+  });
+}
+
+resortCards();
+// Teleport to target on first load
+cards.forEach(c => { c.x = c.tx; c.y = c.ty; });
+
+// Randomise scores every 8 seconds
+setInterval(() => {
+  cards.forEach(c => {
+    c.score = Math.max(5, Math.min(99, c.score + Math.round((Math.random() - 0.5) * 22)));
+  });
+  resortCards();
+}, 8000);
+
+function scoreColor(s: number): string {
+  if (s >= 80) return '#22c55e';
+  if (s >= 50) return '#f59e0b';
+  return '#ef4444';
+}
+
+function fmt(n: number): string {
+  return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
+}
+
+// ── Draw helpers ────────────────────────────────────────────────────────────
+
+function roundRect(x: number, y: number, w: number, h: number, r: number): void {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function drawVideoThumb(x: number, y: number, w: number, h: number, accent: string): void {
+  // Dark gradient bg
+  const grd = ctx.createLinearGradient(x, y, x, y + h);
+  grd.addColorStop(0, 'rgba(124,58,237,0.18)');
+  grd.addColorStop(1, 'rgba(0,0,0,0.4)');
+  ctx.fillStyle = grd;
+  roundRect(x, y, w, h, 6);
+  ctx.fill();
+  // Scan lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for (let ly = y + 4; ly < y + h - 4; ly += 5) {
+    ctx.beginPath(); ctx.moveTo(x + 4, ly); ctx.lineTo(x + w - 4, ly); ctx.stroke();
+  }
+  // Play button
+  const cx = x + w / 2, cy = y + h / 2 - 4;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 13, 0, Math.PI * 2);
+  ctx.fillStyle = `${accent}55`;
+  ctx.fill();
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx - 4, cy - 6);
+  ctx.lineTo(cx + 8, cy);
+  ctx.lineTo(cx - 4, cy + 6);
+  ctx.closePath();
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  // Duration badge
+  ctx.fillStyle = 'rgba(0,0,0,0.7)';
+  roundRect(x + w - 32, y + h - 16, 28, 12, 3);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = '500 8px -apple-system,sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('0:30', x + w - 18, y + h - 7);
+}
+
+function drawImageThumb(x: number, y: number, w: number, h: number, accent: string): void {
+  const grd = ctx.createLinearGradient(x, y, x + w, y + h);
+  grd.addColorStop(0, `${accent}55`);
+  grd.addColorStop(0.5, `${accent}22`);
+  grd.addColorStop(1, 'rgba(14,15,31,0.8)');
+  ctx.fillStyle = grd;
+  roundRect(x, y, w, h, 6);
+  ctx.fill();
+  // Abstract color blocks
+  const bw = (w - 12) * 0.6, bh = h * 0.45;
+  ctx.fillStyle = `${accent}88`;
+  roundRect(x + 6, y + 6, bw, bh, 4);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.12)';
+  roundRect(x + 6 + bw + 4, y + 6, (w - 12) - bw - 4, bh, 4);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.07)';
+  roundRect(x + 6, y + 6 + bh + 4, w - 12, h - bh - 16, 4);
+  ctx.fill();
+}
+
+function drawCarouselThumb(x: number, y: number, w: number, h: number, accent: string): void {
+  const grd = ctx.createLinearGradient(x, y, x, y + h);
+  grd.addColorStop(0, 'rgba(16,185,129,0.12)');
+  grd.addColorStop(1, 'rgba(0,0,0,0.35)');
+  ctx.fillStyle = grd;
+  roundRect(x, y, w, h, 6);
+  ctx.fill();
+  const slices = 4;
+  const sw = Math.floor((w - 12 - (slices - 1) * 4) / slices);
+  const sh = h - 20;
+  const colors = [`${accent}cc`, `${accent}88`, `${accent}55`, `${accent}33`];
+  for (let s = 0; s < slices; s++) {
+    ctx.fillStyle = colors[s];
+    roundRect(x + 6 + s * (sw + 4), y + 8, sw, sh, 3);
+    ctx.fill();
+  }
+  // Dots
+  for (let s = 0; s < slices; s++) {
+    ctx.beginPath();
+    ctx.arc(x + w / 2 - (slices / 2 - 0.5 - s) * 8, y + h - 5, s === 0 ? 3 : 2, 0, Math.PI * 2);
+    ctx.fillStyle = s === 0 ? accent : 'rgba(255,255,255,0.3)';
+    ctx.fill();
+  }
+}
+
+function drawTextThumb(x: number, y: number, w: number, h: number, accent: string): void {
+  const grd = ctx.createLinearGradient(x, y, x, y + h);
+  grd.addColorStop(0, 'rgba(245,158,11,0.1)');
+  grd.addColorStop(1, 'rgba(0,0,0,0.3)');
+  ctx.fillStyle = grd;
+  roundRect(x, y, w, h, 6);
+  ctx.fill();
+  // Simulated text lines
+  const lines = [0.7, 1.0, 0.85, 0.6, 0.9, 0.5];
+  lines.forEach((ratio, li) => {
+    ctx.fillStyle = li === 0 ? `${accent}bb` : `rgba(255,255,255,${0.2 - li * 0.02})`;
+    const lh = li === 0 ? 8 : 5;
+    roundRect(x + 8, y + 8 + li * (lh + 5), (w - 16) * ratio, lh, 2);
+    ctx.fill();
+  });
+}
+
+function drawCard(card: AdCard, t: number): void {
+  const { x, y, hoverT, score, format, spend, ctr, impressions, cpc, roas, conversions, accentColor } = card;
+  const scale = 1 + hoverT * 0.04;
+  const cx = x + CARD_W / 2, cy = y + CARD_H / 2;
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(scale, scale);
+  ctx.translate(-cx, -cy);
+
+  // Card shadow
+  if (hoverT > 0) {
+    ctx.shadowColor = `${accentColor}66`;
+    ctx.shadowBlur = 18 * hoverT;
+  }
+
+  // Card background
+  ctx.fillStyle = '#0d0f1f';
+  roundRect(x, y, CARD_W, CARD_H, 8);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Border
+  ctx.strokeStyle = hoverT > 0.5 ? `${accentColor}88` : 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = hoverT > 0.5 ? 1.5 : 1;
+  roundRect(x, y, CARD_W, CARD_H, 8);
+  ctx.stroke();
+
+  // Thumbnail area
+  const thumbH = CARD_H * 0.48;
+  if (format === 'VIDEO')    drawVideoThumb(x + 4, y + 4, CARD_W - 8, thumbH - 4, accentColor);
+  if (format === 'IMAGE')    drawImageThumb(x + 4, y + 4, CARD_W - 8, thumbH - 4, accentColor);
+  if (format === 'CAROUSEL') drawCarouselThumb(x + 4, y + 4, CARD_W - 8, thumbH - 4, accentColor);
+  if (format === 'TEXT')     drawTextThumb(x + 4, y + 4, CARD_W - 8, thumbH - 4, accentColor);
+
+  const metaY = y + thumbH + 6;
+
+  // Format badge
+  ctx.fillStyle = `${accentColor}28`;
+  roundRect(x + 6, metaY, 52, 14, 3);
+  ctx.fill();
+  ctx.fillStyle = accentColor;
+  ctx.font = '600 8px -apple-system,sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(format, x + 32, metaY + 9.5);
+
+  // Score badge
+  const sc = scoreColor(score);
+  ctx.fillStyle = `${sc}28`;
+  roundRect(x + CARD_W - 36, metaY, 30, 14, 3);
+  ctx.fill();
+  ctx.fillStyle = sc;
+  ctx.font = '700 8px -apple-system,sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(String(score), x + CARD_W - 21, metaY + 9.5);
+
+  const infoY = metaY + 20;
+
+  if (hoverT < 0.5) {
+    // Normal view: spend + CTR
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.font = '600 11px -apple-system,sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`$${fmt(spend)}`, x + 6, infoY + 10);
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '400 9px -apple-system,sans-serif';
+    ctx.fillText('spend', x + 6, infoY + 22);
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.font = '600 11px -apple-system,sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${ctr}%`, x + CARD_W - 6, infoY + 10);
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '400 9px -apple-system,sans-serif';
+    ctx.fillText('CTR', x + CARD_W - 6, infoY + 22);
+  } else {
+    // Hover expanded metrics panel
+    const metrics = [
+      ['Impressions', fmt(impressions)],
+      ['CTR',         `${ctr}%`],
+      ['CPC',         `$${cpc}`],
+      ['ROAS',        `${roas}x`],
+      ['Conversions', String(conversions)],
+      ['Score',       String(score)],
+    ];
+    const colW = (CARD_W - 12) / 2;
+    metrics.forEach(([label, val], mi) => {
+      const col = mi % 2;
+      const row = Math.floor(mi / 2);
+      const mx = x + 6 + col * (colW + 0);
+      const my = infoY + row * 22;
+      ctx.fillStyle = 'rgba(255,255,255,0.38)';
+      ctx.font = '400 8px -apple-system,sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(label, mx, my + 8);
+      ctx.fillStyle = mi === 5 ? scoreColor(score) : 'rgba(255,255,255,0.9)';
+      ctx.font = '600 10px -apple-system,sans-serif';
+      ctx.fillText(val, mx, my + 20);
+    });
+  }
+
+  ctx.restore();
+}
+
+function drawHallOfFame(t: number): void {
+  // Background strip
+  ctx.fillStyle = 'rgba(13,15,31,0.95)';
+  roundRect(0, 0, W, HALL_H, 0);
+  ctx.fill();
+  // Gold gradient border bottom
+  const grad = ctx.createLinearGradient(0, HALL_H - 1, W, HALL_H - 1);
+  grad.addColorStop(0,   'rgba(251,191,36,0)');
+  grad.addColorStop(0.2, 'rgba(251,191,36,0.6)');
+  grad.addColorStop(0.5, 'rgba(251,191,36,0.9)');
+  grad.addColorStop(0.8, 'rgba(251,191,36,0.6)');
+  grad.addColorStop(1,   'rgba(251,191,36,0)');
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, HALL_H - 0.5); ctx.lineTo(W, HALL_H - 0.5); ctx.stroke();
+
+  // Label
+  ctx.fillStyle = '#fbbf24';
+  ctx.font = '700 10px -apple-system,sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('★  HALL OF FAME', 14, 18);
+
+  // Top 3 mini cards
+  const top3 = [...cards].sort((a, b) => b.score - a.score).slice(0, 3);
+  const miniW = 150, miniH = 56, gap = 16;
+  const totalW = miniW * 3 + gap * 2;
+  const startX = (W - totalW) / 2;
+
+  top3.forEach((card, i) => {
+    const mx = startX + i * (miniW + gap);
+    const my = 20;
+
+    // Gold border
+    const alpha = 0.9 - i * 0.2;
+    ctx.strokeStyle = `rgba(251,191,36,${alpha})`;
+    ctx.lineWidth = 1.5;
+    ctx.fillStyle = 'rgba(251,191,36,0.06)';
+    roundRect(mx, my, miniW, miniH, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    // Rank medal
+    const medals = ['🥇', '🥈', '🥉'];
+    ctx.font = '12px -apple-system,sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(medals[i], mx + 6, my + 17);
+
+    // Format + score
+    ctx.fillStyle = FORMAT_COLORS[card.format];
+    ctx.font = '600 9px -apple-system,sans-serif';
+    ctx.fillText(card.format, mx + 26, my + 16);
+
+    ctx.fillStyle = scoreColor(card.score);
+    ctx.font = '700 14px -apple-system,sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(String(card.score), mx + miniW - 6, my + 18);
+
+    // Spend / CTR
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = '500 9px -apple-system,sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`$${fmt(card.spend)} spend`, mx + 6, my + 36);
+    ctx.textAlign = 'right';
+    ctx.fillText(`${card.ctr}% CTR`, mx + miniW - 6, my + 36);
+
+    // Thin score bar
+    const barY = my + miniH - 7;
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    roundRect(mx + 6, barY, miniW - 12, 4, 2);
+    ctx.fill();
+    ctx.fillStyle = scoreColor(card.score);
+    roundRect(mx + 6, barY, (miniW - 12) * (card.score / 100), 4, 2);
+    ctx.fill();
+  });
+}
+
+let lastTime = 0;
+function loop(ts: number): void {
+  const dt = Math.min((ts - lastTime) / 1000, 0.05);
+  lastTime = ts;
+
+  // Lerp card positions
+  const speed = 4;
+  cards.forEach(card => {
+    card.x += (card.tx - card.x) * Math.min(speed * dt, 1);
+    card.y += (card.ty - card.y) * Math.min(speed * dt, 1);
+
+    // Hover detection
+    const hovered = mouseX >= card.x && mouseX <= card.x + CARD_W &&
+                    mouseY >= card.y && mouseY <= card.y + CARD_H;
+    card.hoverT += ((hovered ? 1 : 0) - card.hoverT) * Math.min(8 * dt, 1);
+  });
+
+  // Clear
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, W, H);
+
+  // Draw grid cards (back to front — hovered on top)
+  const sorted = [...cards].sort((a, b) => a.hoverT - b.hoverT);
+  sorted.forEach(card => drawCard(card, ts / 1000));
+
+  // Hall of fame on top
+  drawHallOfFame(ts / 1000);
+
+  requestAnimationFrame(loop);
+}
+
+requestAnimationFrame(ts => { lastTime = ts; requestAnimationFrame(loop); });
+</script>

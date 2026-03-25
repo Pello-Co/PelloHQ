@@ -1,0 +1,589 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="PelloAds — Design 15" description="PelloAds test design 15">
+  <div style="min-height:100vh;background:#060712;display:flex;flex-direction:column;align-items:center;padding:2rem;">
+    <h1 style="color:#7c3aed;font:700 1.5rem/1.3 -apple-system,sans-serif;margin-bottom:0.5rem;letter-spacing:-0.02em;">PelloAds</h1>
+    <p style="color:rgba(255,255,255,0.5);font:400 0.85rem/1.4 -apple-system,sans-serif;margin-bottom:1.5rem;">Design 15 — Geo-Targeting Heatmap</p>
+    <canvas id="ads-canvas-15" style="width:100%;max-width:900px;border-radius:12px;cursor:crosshair;"></canvas>
+  </div>
+</Layout>
+
+<script>
+const canvas = document.getElementById('ads-canvas-15') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const dpr = window.devicePixelRatio || 1;
+
+const W = 900, H = 560;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+ctx.scale(dpr, dpr);
+
+let mouseX = -1, mouseY = -1;
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - r.left) * (W / r.width);
+  mouseY = (e.clientY - r.top) * (H / r.height);
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
+
+// ── Layout constants ─────────────────────────────────────────────────────────
+const SIDE_W = 180;       // right panel width
+const MAP_W  = W - SIDE_W - 1;
+const TICKER_H = 28;
+const MAP_H    = H - TICKER_H;
+const HEX_SIZE = 18;      // hex circumradius
+
+// ── Campaign data ─────────────────────────────────────────────────────────────
+interface Region {
+  name: string;
+  flag: string;
+  spend: number;
+  roas: number;
+  ctr: number;
+  impressions: number;
+  // map anchor (normalised 0–1 within map area)
+  nx: number;
+  ny: number;
+  intensity: number; // 0–1
+  color: string;
+}
+
+const REGIONS: Region[] = [
+  { name: 'United States', flag: '🇺🇸', spend: 8420, roas: 4.2, ctr: 3.8, impressions: 284000, nx: 0.19, ny: 0.37, intensity: 1.0,  color: '#7c3aed' },
+  { name: 'United Kingdom', flag: '🇬🇧', spend: 3180, roas: 3.8, ctr: 3.1, impressions: 118000, nx: 0.47, ny: 0.24, intensity: 0.78, color: '#818cf8' },
+  { name: 'Germany',        flag: '🇩🇪', spend: 2940, roas: 3.1, ctr: 2.7, impressions:  98000, nx: 0.51, ny: 0.26, intensity: 0.72, color: '#a78bfa' },
+  { name: 'Australia',      flag: '🇦🇺', spend: 1860, roas: 2.9, ctr: 2.4, impressions:  67000, nx: 0.79, ny: 0.66, intensity: 0.58, color: '#c4b5fd' },
+  { name: 'Japan',          flag: '🇯🇵', spend: 1420, roas: 2.4, ctr: 2.0, impressions:  52000, nx: 0.83, ny: 0.33, intensity: 0.46, color: '#ddd6fe' },
+];
+
+// ── Hex grid ──────────────────────────────────────────────────────────────────
+const HEX_W = HEX_SIZE * 2;
+const HEX_H = Math.sqrt(3) * HEX_SIZE;
+const HEX_COL_STEP = HEX_W * 0.75;
+const HEX_ROW_STEP = HEX_H;
+
+interface HexCell {
+  col: number;
+  row: number;
+  cx: number;   // center x in map coords
+  cy: number;
+  intensity: number; // computed from region proximity
+  hoveredRegion: Region | null;
+}
+
+const hexCells: HexCell[] = [];
+
+// Generate hex grid covering the map area
+const numCols = Math.ceil(MAP_W / HEX_COL_STEP) + 2;
+const numRows = Math.ceil(MAP_H / HEX_ROW_STEP) + 2;
+
+for (let col = 0; col < numCols; col++) {
+  for (let row = 0; row < numRows; row++) {
+    const cx = col * HEX_COL_STEP - HEX_SIZE;
+    const cy = row * HEX_ROW_STEP + (col % 2 === 1 ? HEX_H / 2 : 0) - HEX_SIZE;
+    if (cx > MAP_W + HEX_SIZE || cy > MAP_H + HEX_SIZE) continue;
+
+    // Compute intensity from nearby regions
+    let maxIntensity = 0;
+    let closestRegion: Region | null = null;
+    let closestDist = Infinity;
+
+    REGIONS.forEach(r => {
+      const rx = r.nx * MAP_W;
+      const ry = r.ny * MAP_H;
+      const dist = Math.sqrt((cx - rx) ** 2 + (cy - ry) ** 2);
+      const spread = 80 + r.intensity * 60;
+      const influence = Math.max(0, 1 - dist / spread) * r.intensity;
+      if (influence > maxIntensity) { maxIntensity = influence; }
+      if (dist < closestDist) { closestDist = dist; closestRegion = r; }
+    });
+
+    hexCells.push({ col, row, cx, cy, intensity: maxIntensity, hoveredRegion: closestDist < 90 ? closestRegion : null });
+  }
+}
+
+// ── Pulses ─────────────────────────────────────────────────────────────────────
+interface Pulse {
+  x: number;
+  y: number;
+  r: number;
+  maxR: number;
+  alpha: number;
+  color: string;
+  speed: number;
+}
+
+const pulses: Pulse[] = [];
+let lastPulseTime = 0;
+
+function spawnPulse(): void {
+  const region = REGIONS[Math.floor(Math.random() * REGIONS.length)];
+  pulses.push({
+    x: region.nx * MAP_W,
+    y: region.ny * MAP_H,
+    r: 0,
+    maxR: 55 + region.intensity * 45,
+    alpha: 0.7,
+    color: region.color,
+    speed: 30 + Math.random() * 20,
+  });
+}
+
+// ── Simplified continent outlines (stylised, not accurate) ─────────────────────
+// Each continent is a set of canvas path points [x_norm, y_norm] in map-normalised coords
+const CONTINENTS: { name: string; points: [number, number][]; color: string }[] = [
+  {
+    name: 'North America',
+    color: 'rgba(124,58,237,0.12)',
+    points: [
+      [0.08,0.08],[0.28,0.08],[0.33,0.15],[0.30,0.20],[0.35,0.28],
+      [0.28,0.32],[0.24,0.42],[0.18,0.48],[0.14,0.44],[0.10,0.38],
+      [0.06,0.28],[0.06,0.18],
+    ],
+  },
+  {
+    name: 'South America',
+    color: 'rgba(124,58,237,0.10)',
+    points: [
+      [0.20,0.48],[0.30,0.48],[0.34,0.54],[0.32,0.65],[0.27,0.75],
+      [0.22,0.82],[0.18,0.78],[0.16,0.66],[0.16,0.56],
+    ],
+  },
+  {
+    name: 'Europe',
+    color: 'rgba(129,140,248,0.15)',
+    points: [
+      [0.44,0.16],[0.56,0.16],[0.58,0.22],[0.55,0.28],[0.50,0.30],
+      [0.46,0.28],[0.43,0.22],
+    ],
+  },
+  {
+    name: 'Africa',
+    color: 'rgba(124,58,237,0.09)',
+    points: [
+      [0.47,0.30],[0.56,0.30],[0.60,0.36],[0.60,0.50],[0.56,0.62],
+      [0.50,0.68],[0.46,0.62],[0.44,0.50],[0.44,0.36],
+    ],
+  },
+  {
+    name: 'Asia',
+    color: 'rgba(167,139,250,0.11)',
+    points: [
+      [0.57,0.10],[0.80,0.10],[0.88,0.16],[0.90,0.24],[0.85,0.32],
+      [0.80,0.36],[0.72,0.38],[0.65,0.34],[0.60,0.28],[0.58,0.20],
+    ],
+  },
+  {
+    name: 'Australia',
+    color: 'rgba(124,58,237,0.12)',
+    points: [
+      [0.74,0.58],[0.84,0.58],[0.88,0.64],[0.86,0.72],[0.80,0.76],
+      [0.74,0.74],[0.70,0.68],[0.70,0.62],
+    ],
+  },
+];
+
+// ── Ticker data ────────────────────────────────────────────────────────────────
+const TICKER_TEXT = [
+  '🇺🇸 United States  +$8,420  ROAS 4.2×',
+  '🇬🇧 United Kingdom  +$3,180  ROAS 3.8×',
+  '🇩🇪 Germany  +$2,940  ROAS 3.1×',
+  '🇦🇺 Australia  +$1,860  ROAS 2.9×',
+  '🇯🇵 Japan  +$1,420  ROAS 2.4×',
+  '🇨🇦 Canada  +$1,120  ROAS 2.6×',
+  '🇫🇷 France  +$980  ROAS 2.3×',
+  '🇳🇱 Netherlands  +$870  ROAS 2.8×',
+];
+const TICKER_FULL = TICKER_TEXT.join('     ·     ');
+let tickerX = 0;
+
+// ── Map pan ────────────────────────────────────────────────────────────────────
+let panOffset = 0;  // -5 to +5
+
+// ── Hex path helper ─────────────────────────────────────────────────────────────
+function hexPath(cx: number, cy: number, size: number): void {
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const angle = (Math.PI / 180) * (60 * i - 30);
+    const px = cx + size * Math.cos(angle);
+    const py = cy + size * Math.sin(angle);
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+}
+
+// ── Round rect helper ──────────────────────────────────────────────────────────
+function roundRect(x: number, y: number, w: number, h: number, r: number): void {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// ── Draw functions ─────────────────────────────────────────────────────────────
+
+function drawContinents(pan: number): void {
+  CONTINENTS.forEach(cont => {
+    ctx.save();
+    ctx.translate(pan, 0);
+    ctx.beginPath();
+    cont.points.forEach(([nx, ny], i) => {
+      const px = nx * MAP_W, py = ny * MAP_H;
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    });
+    ctx.closePath();
+    ctx.fillStyle = cont.color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+    ctx.restore();
+  });
+}
+
+function drawHexGrid(pan: number, t: number): void {
+  hexCells.forEach(cell => {
+    const cx = cell.cx + pan;
+    const cy = cell.cy;
+    if (cx < -HEX_SIZE || cx > MAP_W + HEX_SIZE) return;
+
+    const pulse = Math.sin(t * 1.2 + cell.col * 0.3 + cell.row * 0.4) * 0.06 + 0.94;
+    const intensity = cell.intensity * pulse;
+
+    if (intensity < 0.04) {
+      // Very faint grid for non-active cells
+      hexPath(cx, cy, HEX_SIZE - 1);
+      ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+      return;
+    }
+
+    // Active hex: filled with purple gradient by intensity
+    const alpha = 0.08 + intensity * 0.55;
+    hexPath(cx, cy, HEX_SIZE - 1);
+
+    // Fill with radial glow
+    const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, HEX_SIZE);
+    grd.addColorStop(0, `rgba(124,58,237,${alpha * 1.6})`);
+    grd.addColorStop(1, `rgba(124,58,237,${alpha * 0.3})`);
+    ctx.fillStyle = grd;
+    ctx.fill();
+
+    ctx.strokeStyle = `rgba(167,139,250,${0.15 + intensity * 0.5})`;
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+  });
+}
+
+function drawPulses(pan: number, dt: number): void {
+  for (let i = pulses.length - 1; i >= 0; i--) {
+    const p = pulses[i];
+    p.r += p.speed * dt;
+    p.alpha -= 0.6 * dt;
+    if (p.alpha <= 0) { pulses.splice(i, 1); continue; }
+    ctx.beginPath();
+    ctx.arc(p.x + pan, p.y, p.r, 0, Math.PI * 2);
+    ctx.strokeStyle = `${p.color}${Math.round(p.alpha * 255).toString(16).padStart(2, '0')}`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // Second ring
+    if (p.r > 10) {
+      ctx.beginPath();
+      ctx.arc(p.x + pan, p.y, p.r * 0.55, 0, Math.PI * 2);
+      const a2 = p.alpha * 0.4;
+      ctx.strokeStyle = `${p.color}${Math.round(a2 * 255).toString(16).padStart(2, '0')}`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+  }
+}
+
+function drawCampaignMarkers(pan: number, t: number): void {
+  REGIONS.forEach((r, ri) => {
+    const mx = r.nx * MAP_W + pan;
+    const my = r.ny * MAP_H;
+    const pulse = 0.7 + Math.sin(t * 2 + ri * 1.2) * 0.3;
+
+    // Outer glow ring
+    ctx.beginPath();
+    ctx.arc(mx, my, 14 * pulse, 0, Math.PI * 2);
+    ctx.fillStyle = `${r.color}18`;
+    ctx.fill();
+
+    // Middle ring
+    ctx.beginPath();
+    ctx.arc(mx, my, 8, 0, Math.PI * 2);
+    ctx.fillStyle = `${r.color}35`;
+    ctx.fill();
+    ctx.strokeStyle = r.color;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Core dot
+    ctx.beginPath();
+    ctx.arc(mx, my, 4, 0, Math.PI * 2);
+    ctx.fillStyle = r.color;
+    ctx.fill();
+
+    // Label
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.font = '600 9px -apple-system,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(r.flag + ' ' + r.name.split(' ')[0], mx, my - 20);
+
+    // ROAS tag
+    ctx.fillStyle = `${r.color}22`;
+    roundRect(mx - 22, my - 16, 44, 13, 3);
+    ctx.fill();
+    ctx.fillStyle = r.color;
+    ctx.font = '600 8px -apple-system,sans-serif';
+    ctx.fillText(`${r.roas}× ROAS`, mx, my - 7);
+  });
+}
+
+// Tooltip for hovered hex
+function drawTooltip(pan: number): void {
+  if (mouseX < 0 || mouseX >= MAP_W || mouseY < 0 || mouseY >= MAP_H) return;
+
+  // Find closest hex to mouse
+  let closestCell: HexCell | null = null;
+  let closestDist = Infinity;
+  hexCells.forEach(cell => {
+    const dist = Math.hypot(cell.cx + pan - mouseX, cell.cy - mouseY);
+    if (dist < HEX_SIZE && dist < closestDist) { closestDist = dist; closestCell = cell; }
+  });
+
+  if (!closestCell || !(closestCell as HexCell).hoveredRegion) return;
+  const region = (closestCell as HexCell).hoveredRegion!;
+
+  const TW = 160, TH = 90;
+  let tx = mouseX + 14;
+  let ty = mouseY - 10;
+  if (tx + TW > MAP_W) tx = mouseX - TW - 14;
+  if (ty + TH > MAP_H) ty = MAP_H - TH - 4;
+
+  ctx.fillStyle = 'rgba(13,15,31,0.96)';
+  roundRect(tx, ty, TW, TH, 8);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(124,58,237,0.6)';
+  ctx.lineWidth = 1;
+  roundRect(tx, ty, TW, TH, 8);
+  ctx.stroke();
+
+  ctx.fillStyle = '#fff';
+  ctx.font = '700 11px -apple-system,sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(`${region.flag}  ${region.name}`, tx + 10, ty + 18);
+
+  const rows = [
+    ['Impressions', region.impressions >= 1000 ? `${(region.impressions / 1000).toFixed(0)}k` : String(region.impressions)],
+    ['CTR',         `${region.ctr}%`],
+    ['ROAS',        `${region.roas}×`],
+    ['Spend',       `$${region.spend.toLocaleString()}`],
+  ];
+  rows.forEach(([label, val], i) => {
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.font = '400 9px -apple-system,sans-serif';
+    ctx.fillText(label, tx + 10, ty + 36 + i * 14);
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.font = '600 9px -apple-system,sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(val, tx + TW - 10, ty + 36 + i * 14);
+    ctx.textAlign = 'left';
+  });
+}
+
+function drawSidePanel(): void {
+  // Panel background
+  ctx.fillStyle = '#0d0f1f';
+  ctx.fillRect(MAP_W, 0, SIDE_W, MAP_H);
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(MAP_W + 0.5, 0); ctx.lineTo(MAP_W + 0.5, MAP_H); ctx.stroke();
+
+  // Header
+  ctx.fillStyle = 'rgba(124,58,237,0.15)';
+  ctx.fillRect(MAP_W, 0, SIDE_W, 36);
+  ctx.strokeStyle = 'rgba(124,58,237,0.3)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(MAP_W, 36); ctx.lineTo(W, 36); ctx.stroke();
+
+  ctx.fillStyle = '#fff';
+  ctx.font = '700 11px -apple-system,sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Top Regions', MAP_W + 12, 22);
+
+  // Region entries
+  const sorted = [...REGIONS].sort((a, b) => b.roas - a.roas);
+  sorted.forEach((r, i) => {
+    const ey = 44 + i * 72;
+
+    // Row background
+    ctx.fillStyle = i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent';
+    ctx.fillRect(MAP_W, ey - 4, SIDE_W, 68);
+
+    // Rank
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '700 10px -apple-system,sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`#${i + 1}`, MAP_W + 10, ey + 10);
+
+    // Flag + name
+    ctx.fillStyle = '#fff';
+    ctx.font = '400 13px -apple-system,sans-serif';
+    ctx.fillText(r.flag, MAP_W + 26, ey + 12);
+    ctx.font = '600 10px -apple-system,sans-serif';
+    ctx.fillText(r.name, MAP_W + 46, ey + 12);
+
+    // Spend
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '400 9px -apple-system,sans-serif';
+    ctx.fillText(`$${r.spend.toLocaleString()} spend`, MAP_W + 10, ey + 26);
+
+    // ROAS chip
+    ctx.fillStyle = `${r.color}28`;
+    roundRect(MAP_W + 10, ey + 32, 58, 14, 3);
+    ctx.fill();
+    ctx.fillStyle = r.color;
+    ctx.font = '600 9px -apple-system,sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`ROAS ${r.roas}×`, MAP_W + 15, ey + 42);
+
+    // ROAS bar
+    const barX = MAP_W + 10;
+    const barW = SIDE_W - 20;
+    const barY = ey + 52;
+    ctx.fillStyle = 'rgba(255,255,255,0.07)';
+    roundRect(barX, barY, barW, 4, 2);
+    ctx.fill();
+    const fillRatio = r.roas / 5;
+    const barGrd = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+    barGrd.addColorStop(0, r.color);
+    barGrd.addColorStop(1, `${r.color}66`);
+    ctx.fillStyle = barGrd;
+    roundRect(barX, barY, barW * fillRatio, 4, 2);
+    ctx.fill();
+
+    // Divider
+    if (i < sorted.length - 1) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(MAP_W + 10, ey + 64); ctx.lineTo(W - 10, ey + 64); ctx.stroke();
+    }
+  });
+}
+
+function drawTicker(t: number, dt: number): void {
+  ctx.fillStyle = '#0a0b18';
+  ctx.fillRect(0, MAP_H, W, TICKER_H);
+  ctx.strokeStyle = 'rgba(124,58,237,0.3)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, MAP_H + 0.5); ctx.lineTo(W, MAP_H + 0.5); ctx.stroke();
+
+  // Scroll speed
+  tickerX -= 60 * dt;
+
+  ctx.save();
+  ctx.rect(0, MAP_H, MAP_W, TICKER_H);
+  ctx.clip();
+
+  ctx.font = '500 11px -apple-system,sans-serif';
+  ctx.textAlign = 'left';
+
+  // Measure full text width
+  const text = TICKER_FULL + '     ·     ' + TICKER_FULL;
+  const textW = ctx.measureText(TICKER_FULL + '     ·     ').width;
+
+  // Wrap
+  if (tickerX < -textW) tickerX += textW;
+
+  // Purple accent dots separator
+  const fullRepeat = text + '     ·     ' + TICKER_FULL;
+
+  // Draw text in two passes for seamless loop
+  for (let rep = 0; rep < 3; rep++) {
+    const xOff = tickerX + rep * textW;
+    if (xOff > MAP_W + 100 || xOff + textW < -100) continue;
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.fillText(TICKER_FULL, xOff, MAP_H + 18);
+  }
+
+  // Live dot indicator
+  ctx.restore();
+
+  ctx.beginPath();
+  ctx.arc(MAP_W - 14, MAP_H + TICKER_H / 2, 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#22c55e';
+  ctx.fill();
+  ctx.fillStyle = 'rgba(34,197,94,0.2)';
+  ctx.beginPath();
+  ctx.arc(MAP_W - 14, MAP_H + TICKER_H / 2, 7, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.font = '500 9px -apple-system,sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText('LIVE', MAP_W - 24, MAP_H + 18);
+}
+
+// ── Main loop ──────────────────────────────────────────────────────────────────
+let lastTime = 0;
+
+function loop(ts: number): void {
+  const dt = Math.min((ts - lastTime) / 1000, 0.05);
+  lastTime = ts;
+  const t = ts / 1000;
+
+  // Slow pan: ±5px over 10 seconds
+  panOffset = Math.sin(t * (Math.PI / 10)) * 5;
+
+  // Spawn pulses periodically
+  if (t - lastPulseTime > 1.4 + Math.random() * 0.8) {
+    spawnPulse();
+    lastPulseTime = t;
+  }
+
+  // Clear
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, W, H);
+
+  // Clip to map area
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, MAP_W, MAP_H);
+  ctx.clip();
+
+  // Grid dots background
+  ctx.fillStyle = 'rgba(255,255,255,0.025)';
+  for (let gx = 0; gx < MAP_W; gx += 22) {
+    for (let gy = 0; gy < MAP_H; gy += 22) {
+      ctx.beginPath();
+      ctx.arc(gx, gy, 0.8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  drawContinents(panOffset);
+  drawHexGrid(panOffset, t);
+  drawPulses(panOffset, dt);
+  drawCampaignMarkers(panOffset, t);
+  drawTooltip(panOffset);
+
+  ctx.restore();
+
+  drawSidePanel();
+  drawTicker(t, dt);
+
+  requestAnimationFrame(loop);
+}
+
+requestAnimationFrame(ts => { lastTime = ts; requestAnimationFrame(loop); });
+</script>

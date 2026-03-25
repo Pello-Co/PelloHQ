@@ -1,0 +1,417 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="PelloAds — Design 6 | Pello" description="PelloAds test design 6 — Variant Evolution Timeline">
+  <div style="min-height:100vh;background:#060712;display:flex;flex-direction:column;align-items:center;padding:2rem;">
+    <h1 style="color:#7c3aed;font:700 1.5rem/1.3 -apple-system,sans-serif;margin-bottom:0.5rem;letter-spacing:-0.02em;">PelloAds</h1>
+    <p style="color:rgba(255,255,255,0.5);font:400 0.85rem/1.4 -apple-system,sans-serif;margin-bottom:1.5rem;">Design 6 — Variant Evolution Timeline</p>
+    <canvas id="ads-canvas-6" style="width:100%;max-width:960px;border-radius:12px;cursor:crosshair;display:block;"></canvas>
+  </div>
+</Layout>
+
+<script>
+(function() {
+  const canvas = document.getElementById('ads-canvas-6') as HTMLCanvasElement;
+  const ctx = canvas.getContext('2d')!;
+  const DPR = window.devicePixelRatio || 1;
+
+  function resize() {
+    const w = canvas.parentElement!.clientWidth;
+    const h = Math.round(w * 0.62);
+    canvas.width = Math.round(w * DPR);
+    canvas.height = Math.round(h * DPR);
+    canvas.style.height = h + 'px';
+    ctx.scale(DPR, DPR);
+    W = w; H = h;
+    buildLayout();
+  }
+
+  let W = 0, H = 0;
+  let mouse = { x: -1, y: -1 };
+  let frame = 0;
+  let tooltip: { x: number; y: number; lines: string[] } | null = null;
+
+  // Layout constants (set in buildLayout)
+  let PAD_L = 0, PAD_R = 0, PAD_T = 0, PAD_B = 0;
+  let CHART_W = 0, CHART_H = 0;
+  const DAYS = 30;
+  const Y_MIN = 0, Y_MAX = 100;
+
+  function buildLayout() {
+    PAD_L = 64; PAD_R = 32; PAD_T = 52; PAD_B = 72;
+    CHART_W = W - PAD_L - PAD_R;
+    CHART_H = H - PAD_T - PAD_B;
+  }
+
+  type VariantStatus = 'active' | 'killed' | 'promoted';
+  interface EventMarker { day: number; type: 'launch' | 'kill' | 'promote' | 'budget'; label: string; }
+  interface Variant {
+    id: string;
+    startDay: number;
+    endDay: number | null;
+    status: VariantStatus;
+    parentId: string | null;
+    perf: number[]; // length = (endDay ?? 30) - startDay + 1
+    color: string;
+    events: EventMarker[];
+  }
+
+  // Build variant data
+  function makePerf(start: number, end: number, trend: 'up' | 'down' | 'flat' | 'spike', base: number): number[] {
+    const len = end - start + 1;
+    const arr: number[] = [];
+    let v = base;
+    for (let i = 0; i < len; i++) {
+      const noise = (Math.random() - 0.5) * 8;
+      if (trend === 'up') v = Math.min(96, v + (Math.random() * 3) + noise * 0.3);
+      else if (trend === 'down') v = Math.max(4, v - (Math.random() * 2.5) + noise * 0.3);
+      else if (trend === 'spike') { v = i < len * 0.4 ? Math.min(88, v + 4 + noise * 0.5) : Math.max(10, v - 3.5 + noise * 0.3); }
+      else v = Math.max(10, Math.min(90, v + noise * 0.8));
+      arr.push(Math.round(v));
+    }
+    return arr;
+  }
+
+  const VARIANTS: Variant[] = [
+    { id: 'V-001', startDay: 0, endDay: null, status: 'active', parentId: null, color: '#7c3aed', events: [
+      { day: 0, type: 'launch', label: 'Launched' }, { day: 12, type: 'budget', label: 'Budget +40%' }
+    ], perf: makePerf(0, 30, 'up', 38) },
+    { id: 'V-002', startDay: 0, endDay: 8, status: 'killed', parentId: null, color: '#ef4444', events: [
+      { day: 0, type: 'launch', label: 'Launched' }, { day: 8, type: 'kill', label: 'Killed — low CTR' }
+    ], perf: makePerf(0, 8, 'down', 42) },
+    { id: 'V-003', startDay: 2, endDay: null, status: 'active', parentId: null, color: '#22c55e', events: [
+      { day: 2, type: 'launch', label: 'Launched' }, { day: 10, type: 'promote', label: 'Promoted — winner' }, { day: 18, type: 'budget', label: 'Budget +80%' }
+    ], perf: makePerf(2, 30, 'up', 45) },
+    { id: 'V-004', startDay: 5, endDay: 14, status: 'killed', parentId: 'V-001', color: '#f59e0b', events: [
+      { day: 5, type: 'launch', label: 'Branch from V-001' }, { day: 14, type: 'kill', label: 'Killed — CPC too high' }
+    ], perf: makePerf(5, 14, 'spike', 52) },
+    { id: 'V-005', startDay: 8, endDay: null, status: 'active', parentId: 'V-003', color: '#22c55e', events: [
+      { day: 8, type: 'launch', label: 'Branch from V-003' }, { day: 20, type: 'promote', label: 'Promoted — winner' }
+    ], perf: makePerf(8, 30, 'up', 58) },
+    { id: 'V-006', startDay: 10, endDay: 19, status: 'killed', parentId: 'V-003', color: '#ef4444', events: [
+      { day: 10, type: 'launch', label: 'Branch from V-003' }, { day: 19, type: 'kill', label: 'Killed — low conv.' }
+    ], perf: makePerf(10, 19, 'down', 48) },
+    { id: 'V-007', startDay: 14, endDay: null, status: 'active', parentId: 'V-005', color: '#a78bfa', events: [
+      { day: 14, type: 'launch', label: 'Branch from V-005' }, { day: 22, type: 'budget', label: 'Budget +60%' }
+    ], perf: makePerf(14, 30, 'up', 62) },
+    { id: 'V-008', startDay: 16, endDay: 24, status: 'killed', parentId: 'V-001', color: '#ef4444', events: [
+      { day: 16, type: 'launch', label: 'Branch from V-001' }, { day: 24, type: 'kill', label: 'Killed — audience saturation' }
+    ], perf: makePerf(16, 24, 'flat', 35) },
+    { id: 'V-009', startDay: 20, endDay: null, status: 'active', parentId: 'V-007', color: '#22c55e', events: [
+      { day: 20, type: 'launch', label: 'Branch from V-007' }
+    ], perf: makePerf(20, 30, 'up', 68) },
+    { id: 'V-010', startDay: 24, endDay: null, status: 'active', parentId: 'V-005', color: '#7c3aed', events: [
+      { day: 24, type: 'launch', label: 'Branch from V-005' }
+    ], perf: makePerf(24, 30, 'flat', 72) },
+  ];
+
+  function dayToX(day: number) { return PAD_L + (day / DAYS) * CHART_W; }
+  function perfToY(p: number) { return PAD_T + CHART_H - ((p - Y_MIN) / (Y_MAX - Y_MIN)) * CHART_H; }
+  function variantPerfAt(v: Variant, day: number): number | null {
+    if (day < v.startDay || (v.endDay !== null && day > v.endDay)) return null;
+    const idx = day - v.startDay;
+    return v.perf[Math.min(idx, v.perf.length - 1)] ?? null;
+  }
+
+  function getThickness(v: Variant, day: number, perfVal: number): number {
+    if (v.status === 'killed') return Math.max(0.5, 1.5 * (perfVal / 80));
+    if (v.status === 'promoted' || (v.status === 'active' && perfVal > 60)) return Math.min(4, 1.5 + (perfVal / 80) * 2.5);
+    return Math.max(0.8, 1 + (perfVal / 100) * 2);
+  }
+
+  function getAlpha(v: Variant, day: number): number {
+    if (v.status === 'killed') {
+      const progress = (day - v.startDay) / ((v.endDay! - v.startDay) || 1);
+      return 0.85 - progress * 0.55;
+    }
+    return 0.9;
+  }
+
+  let hoveredVariant: Variant | null = null;
+  let hoveredDay = -1;
+
+  function hitTest() {
+    const mx = mouse.x, my = mouse.y;
+    hoveredVariant = null;
+    hoveredDay = -1;
+    tooltip = null;
+    if (mx < PAD_L || mx > W - PAD_R || my < PAD_T || my > H - PAD_B) return;
+    const day = Math.round(((mx - PAD_L) / CHART_W) * DAYS);
+    for (const v of VARIANTS) {
+      const p = variantPerfAt(v, day);
+      if (p === null) continue;
+      const py = perfToY(p);
+      if (Math.abs(my - py) < 12) {
+        hoveredVariant = v;
+        hoveredDay = day;
+        const lines = [
+          v.id + (v.status === 'active' ? '  ●  LIVE' : v.status === 'killed' ? '  ✕  KILLED' : '  ★  WINNER'),
+          `Day ${day}  •  Score: ${p}`,
+          `Budget: ${v.status === 'killed' ? 'Paused' : v.status === 'promoted' ? 'Max ($8.4k/day)' : `$${(p * 48).toLocaleString()}/day`}`,
+          v.parentId ? `Branched from ${v.parentId}` : 'Original variant',
+        ];
+        const ex = Math.min(mx + 12, W - 180);
+        const ey = Math.max(my - 60, PAD_T + 4);
+        tooltip = { x: ex, y: ey, lines };
+        break;
+      }
+    }
+  }
+
+  function drawGrid() {
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    // Horizontal gridlines
+    for (let p = 0; p <= 100; p += 20) {
+      const y = perfToY(p);
+      ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(W - PAD_R, y); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.28)';
+      ctx.font = `10px -apple-system,sans-serif`;
+      ctx.textAlign = 'right';
+      ctx.fillText(String(p), PAD_L - 8, y + 4);
+    }
+    // Vertical day lines
+    for (let d = 0; d <= DAYS; d += 5) {
+      const x = dayToX(d);
+      ctx.beginPath(); ctx.moveTo(x, PAD_T); ctx.lineTo(x, PAD_T + CHART_H); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.28)';
+      ctx.textAlign = 'center';
+      ctx.font = `10px -apple-system,sans-serif`;
+      ctx.fillText(`Day ${d}`, x, PAD_T + CHART_H + 18);
+    }
+    // Axis labels
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.font = `11px -apple-system,sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('Performance Score', PAD_L - 48, PAD_T + CHART_H / 2);
+    ctx.fillText('Campaign Timeline', PAD_L + CHART_W / 2, H - 10);
+  }
+
+  function drawVariants() {
+    const now = frame * 0.018;
+    for (const v of VARIANTS) {
+      const endDay = v.endDay ?? DAYS;
+      const pts: [number, number][] = [];
+      for (let d = v.startDay; d <= endDay; d++) {
+        const p = variantPerfAt(v, d);
+        if (p !== null) pts.push([dayToX(d), perfToY(p)]);
+      }
+      if (pts.length < 2) continue;
+
+      // Draw the line
+      for (let i = 1; i < pts.length; i++) {
+        const d = v.startDay + i;
+        const p = variantPerfAt(v, d) ?? 50;
+        const alpha = getAlpha(v, d);
+        const thickness = getThickness(v, d, p);
+        const isHov = hoveredVariant === v;
+        ctx.save();
+        ctx.strokeStyle = hexToRgba(v.color, isHov ? Math.min(1, alpha + 0.15) : alpha);
+        ctx.lineWidth = isHov ? thickness + 1.5 : thickness;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(pts[i - 1][0], pts[i - 1][1]);
+        ctx.lineTo(pts[i][0], pts[i][1]);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Draw pulse for active end
+      if (v.status === 'active' && pts.length > 0) {
+        const [ex, ey] = pts[pts.length - 1];
+        const pulse = 0.5 + 0.5 * Math.sin(now * 2 + v.startDay);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(ex, ey, 3 + pulse * 4, 0, Math.PI * 2);
+        ctx.fillStyle = hexToRgba(v.color, 0.12 * pulse);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(ex, ey, 3, 0, Math.PI * 2);
+        ctx.fillStyle = v.color;
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Draw events
+      for (const ev of v.events) {
+        if (ev.day > endDay) continue;
+        const p = variantPerfAt(v, ev.day);
+        if (p === null) continue;
+        const ex = dayToX(ev.day), ey = perfToY(p);
+        const col = ev.type === 'kill' ? '#ef4444' : ev.type === 'promote' ? '#22c55e' : ev.type === 'budget' ? '#f59e0b' : '#7c3aed';
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(ex, ey, 4.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#0d0f1f';
+        ctx.fill();
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Variant ID label at start
+      if (pts.length > 0) {
+        const [sx, sy] = pts[0];
+        ctx.save();
+        ctx.fillStyle = hexToRgba(v.color, 0.7);
+        ctx.font = `bold 9px -apple-system,sans-serif`;
+        ctx.textAlign = 'left';
+        ctx.fillText(v.id, sx + 2, sy - 6);
+        ctx.restore();
+      }
+    }
+
+    // Draw branch connectors
+    for (const v of VARIANTS) {
+      if (!v.parentId) continue;
+      const parent = VARIANTS.find(p => p.id === v.parentId);
+      if (!parent) continue;
+      const pp = variantPerfAt(parent, v.startDay);
+      const vp = variantPerfAt(v, v.startDay);
+      if (pp === null || vp === null) continue;
+      const px = dayToX(v.startDay), py = perfToY(pp);
+      const vx = dayToX(v.startDay), vy = perfToY(vp);
+      ctx.save();
+      ctx.setLineDash([3, 4]);
+      ctx.strokeStyle = hexToRgba(v.color, 0.35);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.lineTo(vx, vy);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+  }
+
+  function drawTitle() {
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.font = `600 13px -apple-system,sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.fillText('Variant Evolution — 30-Day Campaign', PAD_L, 28);
+
+    // Legend
+    const items = [
+      { col: '#22c55e', label: 'Winner / Active' },
+      { col: '#7c3aed', label: 'Testing' },
+      { col: '#ef4444', label: 'Killed' },
+      { col: '#f59e0b', label: 'Budget event' },
+    ];
+    let lx = W - PAD_R - 20;
+    for (let i = items.length - 1; i >= 0; i--) {
+      const it = items[i];
+      ctx.font = `11px -apple-system,sans-serif`;
+      const tw = ctx.measureText(it.label).width;
+      lx -= tw;
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.textAlign = 'left';
+      ctx.fillText(it.label, lx, 28);
+      lx -= 20;
+      ctx.beginPath();
+      ctx.arc(lx + 10, 23, 4, 0, Math.PI * 2);
+      ctx.fillStyle = it.col;
+      ctx.fill();
+      lx -= 16;
+    }
+    ctx.restore();
+  }
+
+  function drawTooltip() {
+    if (!tooltip) return;
+    const { x, y, lines } = tooltip;
+    const padX = 12, padY = 10, lineH = 18;
+    const bw = 180, bh = lines.length * lineH + padY * 2;
+    const bx = Math.min(x, W - bw - 8);
+    const by = Math.max(y, 8);
+    ctx.save();
+    ctx.beginPath();
+    roundRect(ctx, bx, by, bw, bh, 8);
+    ctx.fillStyle = 'rgba(13,15,31,0.96)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(124,58,237,0.45)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    lines.forEach((ln, i) => {
+      ctx.fillStyle = i === 0 ? '#fff' : 'rgba(255,255,255,0.6)';
+      ctx.font = i === 0 ? `600 11px -apple-system,sans-serif` : `11px -apple-system,sans-serif`;
+      ctx.textAlign = 'left';
+      ctx.fillText(ln, bx + padX, by + padY + i * lineH + 11);
+    });
+    ctx.restore();
+  }
+
+  function drawHoverLine() {
+    if (hoveredDay < 0) return;
+    const x = dayToX(hoveredDay);
+    ctx.save();
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, PAD_T);
+    ctx.lineTo(x, PAD_T + CHART_H);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  function draw() {
+    frame++;
+    ctx.clearRect(0, 0, W, H);
+
+    // Background
+    ctx.fillStyle = '#060712';
+    ctx.fillRect(0, 0, W, H);
+
+    // Chart area bg
+    ctx.fillStyle = '#0a0b1a';
+    ctx.beginPath();
+    roundRect(ctx, PAD_L, PAD_T, CHART_W, CHART_H, 4);
+    ctx.fill();
+
+    drawGrid();
+    hitTest();
+    drawHoverLine();
+    drawVariants();
+    drawTitle();
+    drawTooltip();
+
+    requestAnimationFrame(draw);
+  }
+
+  function hexToRgba(hex: string, alpha: number): string {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  function roundRect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r);
+    c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r);
+    c.lineTo(x, y + r);
+    c.quadraticCurveTo(x, y, x + r, y);
+    c.closePath();
+  }
+
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = (e.clientX - rect.left) * (W / rect.width);
+    mouse.y = (e.clientY - rect.top) * (H / rect.height);
+  });
+  canvas.addEventListener('mouseleave', () => { mouse.x = -1; mouse.y = -1; });
+
+  new ResizeObserver(resize).observe(canvas.parentElement!);
+  resize();
+  draw();
+})();
+</script>

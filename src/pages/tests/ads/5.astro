@@ -1,0 +1,407 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="PelloAds — Design 5" description="PelloAds test design 5 — Performance Radar">
+  <div style="min-height:100vh;background:#060712;display:flex;flex-direction:column;align-items:center;padding:2rem;">
+    <h1 style="color:#7c3aed;font:700 1.5rem/1.3 -apple-system,sans-serif;margin-bottom:0.5rem;letter-spacing:-0.02em;">PelloAds</h1>
+    <p style="color:rgba(255,255,255,0.5);font:400 0.85rem/1.4 -apple-system,sans-serif;margin-bottom:1.5rem;">Design 5 — Performance Radar</p>
+    <canvas id="ads-canvas-5" style="width:100%;max-width:900px;border-radius:12px;cursor:crosshair;"></canvas>
+  </div>
+</Layout>
+
+<script>
+const canvas = document.getElementById('ads-canvas-5') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const dpr = window.devicePixelRatio || 1;
+const W = 900, H = 560;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+ctx.scale(dpr, dpr);
+
+let mouseX = -1, mouseY = -1;
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - r.left) * (W / r.width);
+  mouseY = (e.clientY - r.top) * (H / r.height);
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
+
+const AXES = ['CTR', 'ROAS', 'CPC', 'Reach', 'Engagement', 'Conversions'];
+const N_AXES = AXES.length;
+const RADAR_CX = 360;
+const RADAR_CY = H / 2 + 16;
+const RADAR_R = 160;
+
+interface Campaign {
+  name: string;
+  color: string;
+  values: number[];
+  displayValues: number[];
+  orbitAngle: number;
+  orbitSpeed: number;
+  orbitR: number;
+  dotX: number;
+  dotY: number;
+  sparklines: number[][];
+  hovered: boolean;
+}
+
+const campaigns: Campaign[] = [
+  {
+    name: 'Summer Sale',
+    color: '#7c3aed',
+    values: [0.82, 0.75, 0.68, 0.91, 0.78, 0.85],
+    displayValues: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
+    orbitAngle: 0,
+    orbitSpeed: 0.008,
+    orbitR: RADAR_R + 44,
+    dotX: 0, dotY: 0,
+    sparklines: Array.from({ length: 6 }, () => Array.from({ length: 20 }, () => Math.random() * 0.4 + 0.5)),
+    hovered: false,
+  },
+  {
+    name: 'Retargeting',
+    color: '#10b981',
+    values: [0.91, 0.88, 0.72, 0.60, 0.85, 0.94],
+    displayValues: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
+    orbitAngle: Math.PI * 2 / 3,
+    orbitSpeed: 0.011,
+    orbitR: RADAR_R + 44,
+    dotX: 0, dotY: 0,
+    sparklines: Array.from({ length: 6 }, () => Array.from({ length: 20 }, () => Math.random() * 0.35 + 0.6)),
+    hovered: false,
+  },
+  {
+    name: 'Brand Awareness',
+    color: '#f59e0b',
+    values: [0.55, 0.48, 0.88, 0.95, 0.70, 0.42],
+    displayValues: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
+    orbitAngle: Math.PI * 4 / 3,
+    orbitSpeed: 0.006,
+    orbitR: RADAR_R + 44,
+    dotX: 0, dotY: 0,
+    sparklines: Array.from({ length: 6 }, () => Array.from({ length: 20 }, () => Math.random() * 0.3 + 0.4)),
+    hovered: false,
+  },
+];
+
+// Actual metric values for display
+const metricValues: Record<string, Record<string, string>> = {
+  'Summer Sale':     { CTR: '3.2%', ROAS: '4.1x', CPC: '$0.82', Reach: '2.4M', Engagement: '8.3%', Conversions: '1,247' },
+  'Retargeting':     { CTR: '4.8%', ROAS: '5.6x', CPC: '$1.10', Reach: '840k', Engagement: '11.2%', Conversions: '2,103' },
+  'Brand Awareness': { CTR: '1.9%', ROAS: '2.3x', CPC: '$0.55', Reach: '8.1M', Engagement: '6.1%', Conversions: '412' },
+};
+
+let t = 0;
+let hoveredCampaign: Campaign | null = null;
+
+function axisAngle(i: number) {
+  return (i / N_AXES) * Math.PI * 2 - Math.PI / 2;
+}
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  const rr = Math.min(r, h / 2, w / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.lineTo(x + w - rr, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+  ctx.lineTo(x + w, y + h - rr);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+  ctx.lineTo(x + rr, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + rr);
+  ctx.lineTo(x, y + rr);
+  ctx.quadraticCurveTo(x, y, x + rr, y);
+  ctx.closePath();
+}
+
+function drawSparkline(vals: number[], x: number, y: number, w: number, h: number, color: string) {
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const range = max - min || 1;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  vals.forEach((v, i) => {
+    const px = x + (i / (vals.length - 1)) * w;
+    const py = y + h - ((v - min) / range) * h;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  });
+  ctx.stroke();
+}
+
+function draw() {
+  t += 0.016;
+
+  // Animate display values
+  campaigns.forEach(camp => {
+    camp.values.forEach((v, i) => {
+      camp.displayValues[i] += (v - camp.displayValues[i]) * 0.04;
+    });
+    // Drift values slowly
+    camp.values.forEach((v, i) => {
+      const drift = (Math.random() - 0.5) * 0.003;
+      camp.values[i] = Math.max(0.1, Math.min(1, v + drift));
+    });
+    // Update sparklines
+    camp.sparklines.forEach((sl, i) => {
+      sl.push(camp.values[i]);
+      sl.shift();
+    });
+    // Orbit
+    camp.orbitAngle += camp.orbitSpeed;
+    camp.dotX = RADAR_CX + Math.cos(camp.orbitAngle) * camp.orbitR;
+    camp.dotY = RADAR_CY + Math.sin(camp.orbitAngle) * camp.orbitR;
+  });
+
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, W, H);
+
+  // Header
+  ctx.fillStyle = '#0d0f1f';
+  roundRect(ctx, 16, 14, W - 32, 46, 8);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(124,58,237,0.3)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = '#fff';
+  ctx.font = '600 13px -apple-system, sans-serif';
+  ctx.fillText('Performance Radar — Live Campaign Health', 28, 41);
+
+  const pulse = Math.sin(t * 3) * 0.5 + 0.5;
+  ctx.fillStyle = `rgba(34,197,94,${0.6 + pulse * 0.4})`;
+  ctx.beginPath();
+  ctx.arc(W - 90, 37, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(34,197,94,0.9)';
+  ctx.font = '500 10px -apple-system, sans-serif';
+  ctx.fillText('LIVE', W - 82, 41);
+
+  // Radar rings
+  for (let ring = 1; ring <= 5; ring++) {
+    const r = (ring / 5) * RADAR_R;
+    ctx.beginPath();
+    for (let i = 0; i < N_AXES; i++) {
+      const ang = axisAngle(i);
+      const x = RADAR_CX + Math.cos(ang) * r;
+      const y = RADAR_CY + Math.sin(ang) * r;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = `rgba(255,255,255,${ring === 5 ? 0.12 : 0.06})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Ring labels on first axis
+    if (ring % 2 === 0) {
+      ctx.fillStyle = 'rgba(255,255,255,0.2)';
+      ctx.font = '9px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${ring * 20}%`, RADAR_CX + Math.cos(axisAngle(0)) * r + 2, RADAR_CY + Math.sin(axisAngle(0)) * r - 3);
+      ctx.textAlign = 'left';
+    }
+  }
+
+  // Radar axes
+  AXES.forEach((axis, i) => {
+    const ang = axisAngle(i);
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(RADAR_CX, RADAR_CY);
+    ctx.lineTo(RADAR_CX + Math.cos(ang) * RADAR_R, RADAR_CY + Math.sin(ang) * RADAR_R);
+    ctx.stroke();
+
+    // Axis label
+    const labelR = RADAR_R + 20;
+    const lx = RADAR_CX + Math.cos(ang) * labelR;
+    const ly = RADAR_CY + Math.sin(ang) * labelR;
+    ctx.fillStyle = 'rgba(124,58,237,0.9)';
+    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(axis, lx, ly + 4);
+    ctx.textAlign = 'left';
+  });
+
+  // Campaign radar shapes
+  campaigns.forEach((camp, ci) => {
+    const isHovered = camp === hoveredCampaign;
+    camp.hovered = isHovered;
+
+    ctx.beginPath();
+    camp.displayValues.forEach((v, i) => {
+      const ang = axisAngle(i);
+      const r = v * RADAR_R;
+      const x = RADAR_CX + Math.cos(ang) * r;
+      const y = RADAR_CY + Math.sin(ang) * r;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.closePath();
+
+    ctx.fillStyle = camp.color + (isHovered ? '22' : '10');
+    ctx.fill();
+    ctx.strokeStyle = camp.color + (isHovered ? 'cc' : '66');
+    ctx.lineWidth = isHovered ? 2 : 1.5;
+    ctx.stroke();
+
+    // Value dots
+    camp.displayValues.forEach((v, i) => {
+      const ang = axisAngle(i);
+      const r = v * RADAR_R;
+      const x = RADAR_CX + Math.cos(ang) * r;
+      const y = RADAR_CY + Math.sin(ang) * r;
+      ctx.fillStyle = camp.color;
+      ctx.beginPath();
+      ctx.arc(x, y, isHovered ? 4 : 3, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Orbiting dot
+    const dotR = 6;
+    const dotHovered = Math.hypot(mouseX - camp.dotX, mouseY - camp.dotY) < 14;
+    if (dotHovered) hoveredCampaign = camp;
+
+    ctx.fillStyle = camp.color;
+    ctx.beginPath();
+    ctx.arc(camp.dotX, camp.dotY, dotHovered ? dotR + 2 : dotR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Dot label
+    const labelOffX = camp.dotX > RADAR_CX ? 12 : -12;
+    ctx.fillStyle = '#fff';
+    ctx.font = '500 10px -apple-system, sans-serif';
+    ctx.textAlign = camp.dotX > RADAR_CX ? 'left' : 'right';
+    ctx.fillText(camp.name, camp.dotX + labelOffX, camp.dotY + 4);
+    ctx.textAlign = 'left';
+  });
+
+  // Reset hovered if mouse is far from all dots
+  let anyHovered = false;
+  for (const camp of campaigns) {
+    if (Math.hypot(mouseX - camp.dotX, mouseY - camp.dotY) < 14) { anyHovered = true; break; }
+    // Also check mouse near radar shape
+    const inRadar = Math.hypot(mouseX - RADAR_CX, mouseY - RADAR_CY) < RADAR_R;
+    if (inRadar) {
+      // Find closest campaign shape
+      let minDist = Infinity;
+      campaigns.forEach(c => {
+        let inside = true;
+        c.displayValues.forEach((v, i) => {
+          const ang = axisAngle(i);
+          const r2 = v * RADAR_R;
+          // Basic inside check
+        });
+      });
+    }
+  }
+  if (!anyHovered && Math.hypot(mouseX - RADAR_CX, mouseY - RADAR_CY) > RADAR_R + 30) {
+    hoveredCampaign = null;
+  }
+
+  // Right panel — sparklines
+  const panelX = RADAR_CX + RADAR_R + 64;
+  const panelY = 76;
+  const panelW = W - panelX - 16;
+  const panelH = H - panelY - 16;
+
+  ctx.fillStyle = 'rgba(13,15,31,0.7)';
+  roundRect(ctx, panelX, panelY, panelW, panelH, 8);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.font = '500 9px -apple-system, sans-serif';
+  ctx.fillText('LIVE METRICS', panelX + 12, panelY + 16);
+
+  const slotH = (panelH - 30) / N_AXES;
+  AXES.forEach((axis, ai) => {
+    const sy = panelY + 24 + ai * slotH;
+    const isHighlighted = hoveredCampaign !== null;
+
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.font = '600 10px -apple-system, sans-serif';
+    ctx.fillText(axis, panelX + 12, sy + 12);
+
+    // Sparklines per campaign
+    campaigns.forEach((camp, ci) => {
+      const spX = panelX + 12 + ci * ((panelW - 24) / 3);
+      const spW = (panelW - 24) / 3 - 6;
+      const isCampHovered = camp === hoveredCampaign;
+
+      drawSparkline(camp.sparklines[ai], spX, sy + 14, spW, slotH - 22, isCampHovered ? camp.color : camp.color + '55');
+
+      // Current value
+      const valText = metricValues[camp.name][axis];
+      ctx.fillStyle = isCampHovered ? camp.color : camp.color + '88';
+      ctx.font = `${isCampHovered ? '600' : '400'} 9px -apple-system, sans-serif`;
+      ctx.fillText(valText, spX, sy + slotH - 8);
+    });
+
+    // Divider
+    if (ai < N_AXES - 1) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(panelX + 8, sy + slotH);
+      ctx.lineTo(panelX + panelW - 8, sy + slotH);
+      ctx.stroke();
+    }
+  });
+
+  // Legend in panel
+  campaigns.forEach((camp, ci) => {
+    const lx = panelX + 12 + ci * ((panelW - 24) / 3);
+    ctx.fillStyle = camp.color;
+    ctx.beginPath();
+    ctx.arc(lx + 4, panelY + 22, 3, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Hover tooltip on orbiting dot
+  if (hoveredCampaign) {
+    const camp = hoveredCampaign;
+    const tw = 190, tth = 110;
+    let tx = camp.dotX + 16;
+    let ty = camp.dotY - tth / 2;
+    if (tx + tw > W - 8) tx = camp.dotX - tw - 16;
+    if (ty + tth > H - 8) ty = H - tth - 8;
+    if (ty < 76) ty = 76;
+
+    ctx.fillStyle = '#0d0f1f';
+    roundRect(ctx, tx, ty, tw, tth, 7);
+    ctx.fill();
+    ctx.strokeStyle = camp.color;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.fillStyle = camp.color;
+    ctx.font = '600 12px -apple-system, sans-serif';
+    ctx.fillText(camp.name, tx + 10, ty + 18);
+
+    const mv = metricValues[camp.name];
+    let row = 0;
+    for (const ax of AXES) {
+      const ry = ty + 34 + Math.floor(row / 2) * 22;
+      const rx = tx + 10 + (row % 2) * 90;
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.font = '400 9px -apple-system, sans-serif';
+      ctx.fillText(ax, rx, ry);
+      ctx.fillStyle = '#fff';
+      ctx.font = '600 10px -apple-system, sans-serif';
+      ctx.fillText(mv[ax], rx, ry + 11);
+      row++;
+    }
+  }
+
+  requestAnimationFrame(draw);
+}
+
+draw();
+</script>

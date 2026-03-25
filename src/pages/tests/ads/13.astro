@@ -1,0 +1,380 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="PelloAds — Design 13" description="PelloAds test design 13">
+  <div style="min-height:100vh;background:#060712;display:flex;flex-direction:column;align-items:center;padding:2rem;">
+    <h1 style="color:#7c3aed;font:700 1.5rem/1.3 -apple-system,sans-serif;margin-bottom:0.5rem;letter-spacing:-0.02em;">PelloAds</h1>
+    <p style="color:rgba(255,255,255,0.5);font:400 0.85rem/1.4 -apple-system,sans-serif;margin-bottom:1.5rem;">Design 13 — Conversion Funnel Analytics</p>
+    <canvas id="ads-canvas-13" style="width:100%;max-width:900px;border-radius:12px;cursor:crosshair;"></canvas>
+  </div>
+</Layout>
+
+<script>
+const canvas = document.getElementById('ads-canvas-13') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const dpr = window.devicePixelRatio || 1;
+const W = 900, H = 560;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+ctx.scale(dpr, dpr);
+
+let mouseX = -1, mouseY = -1;
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - r.left) * (W / r.width);
+  mouseY = (e.clientY - r.top) * (H / r.height);
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
+
+interface FunnelStage {
+  name: string;
+  thisWeek: number;
+  lastWeek: number;
+  unit: string;
+  sources: { name: string; pct: number }[];
+}
+
+const stages: FunnelStage[] = [
+  { name: 'Impressions', thisWeek: 2840000, lastWeek: 2540000, unit: '', sources: [{ name: 'Google', pct: 44 }, { name: 'Meta', pct: 33 }, { name: 'TikTok', pct: 23 }] },
+  { name: 'Clicks', thisWeek: 238560, lastWeek: 213200, unit: '', sources: [{ name: 'Google', pct: 51 }, { name: 'Meta', pct: 29 }, { name: 'TikTok', pct: 20 }] },
+  { name: 'Leads', thisWeek: 59640, lastWeek: 61820, unit: '', sources: [{ name: 'Google', pct: 48 }, { name: 'Meta', pct: 36 }, { name: 'TikTok', pct: 16 }] },
+  { name: 'Conversions', thisWeek: 17892, lastWeek: 17100, unit: '', sources: [{ name: 'Google', pct: 56 }, { name: 'Meta', pct: 30 }, { name: 'TikTok', pct: 14 }] },
+  { name: 'Revenue', thisWeek: 42000, lastWeek: 39800, unit: '$', sources: [{ name: 'Google', pct: 60 }, { name: 'Meta', pct: 27 }, { name: 'TikTok', pct: 13 }] },
+];
+
+// Funnel layout
+const FUNNEL_TOP = 70;
+const FUNNEL_BOTTOM = 480;
+const FUNNEL_H = FUNNEL_BOTTOM - FUNNEL_TOP;
+const STAGE_H = FUNNEL_H / stages.length;
+
+// Left funnel center X, right funnel center X
+const LX = 230;
+const RX = 640;
+const MAX_W = 160; // max half-width at top
+const MIN_W = 22;  // min half-width at bottom (for revenue)
+
+// Proportional widths
+const topVal = stages[0].thisWeek;
+function normWidth(val: number, maxW: number): number {
+  return MIN_W + (maxW - MIN_W) * Math.sqrt(val / topVal);
+}
+
+// Relative conversion rates between stages
+function convRate(i: number, arr: number[]): string {
+  if (i === 0) return '';
+  const rate = (arr[i] / arr[i - 1]) * 100;
+  return rate.toFixed(1) + '%';
+}
+
+// Animation state
+let animProgress = 0; // 0→1 on load
+const ANIM_DUR = 1800;
+let animStart = -1;
+
+// Particles
+interface Particle { funnel: 0 | 1; stageIdx: number; x: number; yOff: number; progress: number; speed: number; }
+const particles: Particle[] = [];
+
+function spawnParticle() {
+  const funnel: 0 | 1 = Math.random() < 0.5 ? 0 : 1;
+  const stageIdx = Math.floor(Math.random() * (stages.length - 1));
+  particles.push({ funnel, stageIdx, x: (Math.random() - 0.5) * 0.6, yOff: 0, progress: 0, speed: 0.008 + Math.random() * 0.012 });
+  if (particles.length > 60) particles.shift();
+}
+
+setInterval(spawnParticle, 80);
+
+function formatVal(stage: FunnelStage, val: number): string {
+  if (stage.unit === '$') return `$${(val / 1000).toFixed(0)}k`;
+  if (val >= 1000000) return `${(val / 1000000).toFixed(2)}M`;
+  if (val >= 1000) return `${(val / 1000).toFixed(0)}k`;
+  return val.toLocaleString();
+}
+
+function lerp(a: number, b: number, t: number) { return a + (b - a) * t; }
+function easeOut(t: number) { return 1 - Math.pow(1 - t, 3); }
+
+function drawRoundRect(x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// Hover state
+let hoveredStage: number = -1;
+
+function getHoveredStage(): number {
+  if (mouseX < 0) return -1;
+  for (let i = 0; i < stages.length; i++) {
+    const stageY = FUNNEL_TOP + i * STAGE_H;
+    // Check left funnel
+    const lHalf = normWidth(stages[i].thisWeek, MAX_W);
+    if (mouseX >= LX - lHalf - 8 && mouseX <= LX + lHalf + 8 && mouseY >= stageY && mouseY <= stageY + STAGE_H) return i;
+    // Check right funnel
+    const rHalf = normWidth(stages[i].lastWeek, MAX_W);
+    if (mouseX >= RX - rHalf - 8 && mouseX <= RX + rHalf + 8 && mouseY >= stageY && mouseY <= stageY + STAGE_H) return i;
+  }
+  return -1;
+}
+
+function drawFunnelStage(
+  cx: number,
+  topY: number,
+  topHalfW: number,
+  botHalfW: number,
+  stageH: number,
+  color: string,
+  alpha: number,
+  isHovered: boolean
+) {
+  ctx.beginPath();
+  ctx.moveTo(cx - topHalfW, topY);
+  ctx.lineTo(cx + topHalfW, topY);
+  ctx.lineTo(cx + botHalfW, topY + stageH);
+  ctx.lineTo(cx - botHalfW, topY + stageH);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, topY, 0, topY + stageH);
+  grad.addColorStop(0, color + (isHovered ? 'cc' : Math.round(alpha * 255).toString(16).padStart(2, '0')));
+  grad.addColorStop(1, color + (isHovered ? 'aa' : Math.round(alpha * 200).toString(16).padStart(2, '0')));
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.strokeStyle = color + (isHovered ? 'ff' : '66');
+  ctx.lineWidth = isHovered ? 1.5 : 1;
+  ctx.stroke();
+}
+
+// Stage colors
+const stageColors = ['#6366f1', '#7c3aed', '#8b5cf6', '#a855f7', '#22c55e'];
+
+function draw(t: number) {
+  if (animStart < 0) animStart = t;
+  const elapsed = t - animStart;
+  animProgress = Math.min(easeOut(Math.min(elapsed / ANIM_DUR, 1)), 1);
+
+  // Update particles
+  particles.forEach(p => {
+    p.progress += p.speed;
+  });
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, W, H);
+  drawRoundRect(8, 8, W - 16, H - 16, 10);
+  ctx.fillStyle = '#0d0f1f';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(124,58,237,0.2)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  hoveredStage = getHoveredStage();
+
+  // Column headers
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  ctx.font = '600 12px -apple-system,sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.fillText('This Week', LX, 32);
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.fillText('Last Week', RX, 32);
+
+  // Live badge
+  ctx.font = '500 10px -apple-system,sans-serif';
+  ctx.fillStyle = '#22c55e';
+  ctx.fillText('● LIVE', LX + 60, 32);
+
+  // Draw funnels
+  for (let i = 0; i < stages.length; i++) {
+    const stage = stages[i];
+    const stageY = FUNNEL_TOP + i * STAGE_H;
+    const isHov = hoveredStage === i;
+    const animFactor = Math.min(animProgress * stages.length - i, 1);
+    if (animFactor <= 0) continue;
+
+    const thisTopW = normWidth(stage.thisWeek, MAX_W) * animFactor;
+    const lastTopW = normWidth(stage.lastWeek, MAX_W) * animFactor;
+    const nextStage = stages[i + 1];
+    const thisBotW = nextStage ? normWidth(nextStage.thisWeek, MAX_W) * animFactor : MIN_W * animFactor;
+    const lastBotW = nextStage ? normWidth(nextStage.lastWeek, MAX_W) * animFactor : MIN_W * animFactor;
+
+    drawFunnelStage(LX, stageY, thisTopW, thisBotW, STAGE_H - 2, stageColors[i], 0.55, isHov);
+    drawFunnelStage(RX, stageY, lastTopW, lastBotW, STAGE_H - 2, stageColors[i], 0.3, isHov);
+
+    // Stage label (center between funnels)
+    const midX = (LX + RX) / 2;
+    ctx.font = '600 11px -apple-system,sans-serif';
+    ctx.fillStyle = isHov ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.5)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(stage.name.toUpperCase(), midX, stageY + STAGE_H / 2);
+
+    // Delta arrow between funnels
+    if (animFactor > 0.5) {
+      const delta = ((stage.thisWeek - stage.lastWeek) / stage.lastWeek) * 100;
+      const isPos = delta >= 0;
+      const deltaColor = isPos ? '#22c55e' : '#ef4444';
+      const arrow = isPos ? '▲' : '▼';
+
+      drawRoundRect(midX - 26, stageY + STAGE_H / 2 - 9, 52, 18, 4);
+      ctx.fillStyle = isPos ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)';
+      ctx.fill();
+      ctx.strokeStyle = deltaColor + '44';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.font = '600 10px -apple-system,sans-serif';
+      ctx.fillStyle = deltaColor;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`${arrow} ${Math.abs(delta).toFixed(1)}%`, midX, stageY + STAGE_H / 2 + 1);
+    }
+
+    // Values on funnel faces
+    if (animFactor > 0.8) {
+      // This week value (left funnel)
+      const animVal = Math.round(stage.thisWeek * animFactor);
+      ctx.font = `${isHov ? '700' : '600'} ${isHov ? '13' : '12'}px -apple-system,sans-serif`;
+      ctx.fillStyle = isHov ? '#ffffff' : 'rgba(255,255,255,0.8)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(formatVal(stage, animVal), LX, stageY + STAGE_H / 2);
+
+      // Last week value (right funnel)
+      const lastAnimVal = Math.round(stage.lastWeek * animFactor);
+      ctx.font = '500 11px -apple-system,sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.fillText(formatVal(stage, lastAnimVal), RX, stageY + STAGE_H / 2);
+    }
+
+    // Conversion rate annotations (left side)
+    if (i > 0 && animFactor > 0.9) {
+      const thisRates = stages.map(s => s.thisWeek);
+      const rateStr = convRate(i, thisRates);
+      const annoX = LX - normWidth(stage.thisWeek, MAX_W) - 12;
+      ctx.font = '500 10px -apple-system,sans-serif';
+      ctx.fillStyle = stageColors[i] + 'cc';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(rateStr, annoX, stageY + 6);
+
+      // Small connector line
+      ctx.beginPath();
+      ctx.moveTo(annoX + 4, stageY + 6);
+      ctx.lineTo(LX - normWidth(stage.thisWeek, MAX_W), stageY + 4);
+      ctx.strokeStyle = stageColors[i] + '55';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Stage divider line (subtle)
+    if (i < stages.length - 1) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 6]);
+      ctx.beginPath();
+      ctx.moveTo(40, stageY + STAGE_H);
+      ctx.lineTo(W - 40, stageY + STAGE_H);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  // Particles
+  particles.forEach(p => {
+    if (p.progress > 1) return;
+    const stage = stages[p.stageIdx];
+    const nextStage = stages[p.stageIdx + 1];
+    if (!nextStage) return;
+
+    const cx = p.funnel === 0 ? LX : RX;
+    const vals = p.funnel === 0
+      ? [stage.thisWeek, nextStage.thisWeek]
+      : [stage.lastWeek, nextStage.lastWeek];
+
+    const topW = normWidth(vals[0], MAX_W);
+    const botW = normWidth(vals[1], MAX_W);
+    const currentW = lerp(topW, botW, p.progress);
+
+    const stageY = FUNNEL_TOP + p.stageIdx * STAGE_H;
+    const py = stageY + p.progress * STAGE_H;
+    const px = cx + p.x * currentW * 2;
+
+    const alpha = Math.sin(p.progress * Math.PI) * 0.8;
+    ctx.beginPath();
+    ctx.arc(px, py, 2, 0, Math.PI * 2);
+    ctx.fillStyle = p.funnel === 0
+      ? `rgba(124,58,237,${alpha})`
+      : `rgba(100,100,180,${alpha * 0.5})`;
+    ctx.fill();
+  });
+
+  // Tooltip for hovered stage
+  if (hoveredStage >= 0 && hoveredStage < stages.length) {
+    const stage = stages[hoveredStage];
+    const tw = 220;
+    const th = 90;
+    let tx = mouseX + 14;
+    let ty = mouseY - th / 2;
+    if (tx + tw > W - 12) tx = mouseX - tw - 14;
+    if (ty < 12) ty = 12;
+    if (ty + th > H - 12) ty = H - 12 - th;
+
+    ctx.shadowBlur = 24;
+    ctx.shadowColor = 'rgba(0,0,0,0.7)';
+    drawRoundRect(tx, ty, tw, th, 8);
+    ctx.fillStyle = '#1a1c30';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = stageColors[hoveredStage] + '66';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'left';
+
+    ctx.font = '700 11px -apple-system,sans-serif';
+    ctx.fillStyle = stageColors[hoveredStage];
+    ctx.fillText(stage.name.toUpperCase(), tx + 12, ty + 10);
+
+    // Sources
+    stage.sources.forEach((src, si) => {
+      const ly = ty + 30 + si * 18;
+      ctx.font = '400 10px -apple-system,sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.fillText(src.name, tx + 12, ly);
+
+      // Mini bar
+      const barX = tx + 70;
+      const barW = 100;
+      const barH = 5;
+      drawRoundRect(barX, ly + 1, barW, barH, 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.07)';
+      ctx.fill();
+      drawRoundRect(barX, ly + 1, barW * (src.pct / 100), barH, 2);
+      ctx.fillStyle = stageColors[hoveredStage] + 'cc';
+      ctx.fill();
+
+      ctx.font = '600 10px -apple-system,sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.textAlign = 'right';
+      ctx.fillText(`${src.pct}%`, tx + tw - 10, ly);
+      ctx.textAlign = 'left';
+    });
+  }
+
+  requestAnimationFrame(draw);
+}
+
+requestAnimationFrame(draw);
+</script>

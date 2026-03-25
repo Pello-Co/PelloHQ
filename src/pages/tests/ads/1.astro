@@ -1,0 +1,290 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="PelloAds — Design 1" description="PelloAds test design 1 — Campaign War Room">
+  <div style="min-height:100vh;background:#060712;display:flex;flex-direction:column;align-items:center;padding:2rem;">
+    <h1 style="color:#7c3aed;font:700 1.5rem/1.3 -apple-system,sans-serif;margin-bottom:0.5rem;letter-spacing:-0.02em;">PelloAds</h1>
+    <p style="color:rgba(255,255,255,0.5);font:400 0.85rem/1.4 -apple-system,sans-serif;margin-bottom:1.5rem;">Design 1 — Campaign War Room</p>
+    <canvas id="ads-canvas-1" style="width:100%;max-width:900px;border-radius:12px;cursor:crosshair;"></canvas>
+  </div>
+</Layout>
+
+<script>
+const canvas = document.getElementById('ads-canvas-1') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const dpr = window.devicePixelRatio || 1;
+
+const W = 900, H = 560;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+ctx.scale(dpr, dpr);
+
+let mouseX = -1, mouseY = -1;
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - r.left) * (W / r.width);
+  mouseY = (e.clientY - r.top) * (H / r.height);
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
+
+interface Variant {
+  id: string;
+  label: string;
+  ctr: number;
+  roas: number;
+  spend: number;
+  status: 'winner' | 'testing' | 'killed';
+  pulse: number;
+  baseColor: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+const campaigns = ['Summer Sale', 'Brand Awareness', 'Retargeting'];
+const creativeTypes = ['Video', 'Static', 'Carousel', 'Story'];
+
+const variants: Variant[] = [];
+let idCounter = 1;
+const KILL_THRESHOLD = 0.8;
+
+for (let c = 0; c < 3; c++) {
+  for (let v = 0; v < 8; v++) {
+    const ctr = Math.random() * 4 + 0.5;
+    const roas = Math.random() * 5 + 0.5;
+    const score = (ctr / 4) * 0.5 + (roas / 5) * 0.5;
+    const status: Variant['status'] = score < KILL_THRESHOLD * 0.4 ? 'killed' : score > KILL_THRESHOLD * 0.8 ? 'winner' : 'testing';
+    variants.push({
+      id: `V${String(idCounter++).padStart(3,'0')}`,
+      label: `${creativeTypes[v % 4]} ${String.fromCharCode(65 + Math.floor(v/4))}`,
+      ctr: parseFloat(ctr.toFixed(2)),
+      roas: parseFloat(roas.toFixed(2)),
+      spend: Math.floor(Math.random() * 4000 + 500),
+      status,
+      pulse: Math.random() * Math.PI * 2,
+      baseColor: `hsl(${260 + Math.random() * 40}, 60%, ${20 + score * 30}%)`,
+      x: 0, y: 0, w: 0, h: 0
+    });
+  }
+}
+
+const stats = { tested: 2847, winners: 143, killed: 2704, saved: 284000 };
+let statsAnim = { tested: 0, winners: 0, killed: 0, saved: 0 };
+let t = 0;
+
+function lerp(a: number, b: number, f: number) { return a + (b - a) * f; }
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function draw() {
+  t += 0.016;
+  statsAnim.tested = lerp(statsAnim.tested, stats.tested, 0.04);
+  statsAnim.winners = lerp(statsAnim.winners, stats.winners, 0.04);
+  statsAnim.killed = lerp(statsAnim.killed, stats.killed, 0.04);
+  statsAnim.saved = lerp(statsAnim.saved, stats.saved, 0.04);
+
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, W, H);
+
+  // Header bar
+  ctx.fillStyle = '#0d0f1f';
+  roundRect(ctx, 16, 16, W - 32, 52, 8);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(124,58,237,0.3)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = '#fff';
+  ctx.font = '600 13px -apple-system, sans-serif';
+  ctx.fillText('Campaign War Room', 28, 47);
+
+  // Live badge
+  const pulse = Math.sin(t * 3) * 0.5 + 0.5;
+  ctx.fillStyle = `rgba(34,197,94,${0.6 + pulse * 0.4})`;
+  ctx.beginPath();
+  ctx.arc(W - 90, 42, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(34,197,94,0.9)';
+  ctx.font = '500 11px -apple-system, sans-serif';
+  ctx.fillText('LIVE', W - 80, 46);
+
+  // Stats bar
+  const statLabels = [
+    { label: 'Variants Tested', val: Math.round(statsAnim.tested).toLocaleString(), color: '#a78bfa' },
+    { label: 'Winners Promoted', val: Math.round(statsAnim.winners).toLocaleString(), color: '#34d399' },
+    { label: 'Auto-Killed', val: Math.round(statsAnim.killed).toLocaleString(), color: '#f87171' },
+    { label: 'Budget Saved', val: `$${Math.round(statsAnim.saved / 1000)}k`, color: '#fbbf24' },
+  ];
+  const sw = (W - 32 - 16 * 3) / 4;
+  statLabels.forEach((s, i) => {
+    const sx = 16 + i * (sw + 16 / 1.5);
+    ctx.fillStyle = '#0d0f1f';
+    roundRect(ctx, sx, 80, sw, 56, 6);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = s.color;
+    ctx.font = '700 18px -apple-system, sans-serif';
+    ctx.fillText(s.val, sx + 12, 108);
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '400 10px -apple-system, sans-serif';
+    ctx.fillText(s.label, sx + 12, 125);
+  });
+
+  // Kill threshold line label
+  const gridTop = 152, gridH = H - gridTop - 16;
+  const killY = gridTop + gridH * (1 - KILL_THRESHOLD);
+
+  // Campaign columns
+  const colW = (W - 32 - 24) / 3;
+  campaigns.forEach((camp, ci) => {
+    const cx = 16 + ci * (colW + 12);
+    ctx.fillStyle = 'rgba(13,15,31,0.8)';
+    roundRect(ctx, cx, gridTop, colW, gridH, 8);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(124,58,237,0.15)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '500 10px -apple-system, sans-serif';
+    ctx.fillText(camp.toUpperCase(), cx + 10, gridTop + 18);
+
+    const campVariants = variants.slice(ci * 8, ci * 8 + 8);
+    const vw = (colW - 24) / 4;
+    const vh = 56;
+    campVariants.forEach((v, vi) => {
+      const vx = cx + 12 + (vi % 4) * (vw + 4);
+      const vy = gridTop + 28 + Math.floor(vi / 4) * (vh + 6);
+      v.x = vx; v.y = vy; v.w = vw; v.h = vh;
+      v.pulse += 0.04;
+
+      const isHovered = mouseX >= vx && mouseX <= vx + vw && mouseY >= vy && mouseY <= vy + vh;
+      const score = (v.ctr / 4) * 0.5 + (v.roas / 5) * 0.5;
+
+      let bgColor: string;
+      if (v.status === 'winner') bgColor = `rgba(16,185,129,${0.15 + Math.sin(v.pulse) * 0.05})`;
+      else if (v.status === 'killed') bgColor = 'rgba(239,68,68,0.1)';
+      else bgColor = `rgba(124,58,237,${0.1 + score * 0.1})`;
+
+      ctx.fillStyle = bgColor;
+      roundRect(ctx, vx, vy, vw, vh, 5);
+      ctx.fill();
+
+      if (isHovered) {
+        ctx.strokeStyle = v.status === 'winner' ? '#10b981' : v.status === 'killed' ? '#ef4444' : '#7c3aed';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      } else {
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // Score bar
+      const barH = 3;
+      ctx.fillStyle = 'rgba(255,255,255,0.1)';
+      roundRect(ctx, vx + 4, vy + vh - 8, vw - 8, barH, 1.5);
+      ctx.fill();
+      const barColor = v.status === 'winner' ? '#10b981' : v.status === 'killed' ? '#ef4444' : '#7c3aed';
+      ctx.fillStyle = barColor;
+      roundRect(ctx, vx + 4, vy + vh - 8, (vw - 8) * score, barH, 1.5);
+      ctx.fill();
+
+      // Label
+      ctx.fillStyle = v.status === 'killed' ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.8)';
+      ctx.font = `500 9px -apple-system, sans-serif`;
+      ctx.fillText(v.id, vx + 4, vy + 14);
+
+      // CTR
+      ctx.fillStyle = v.status === 'winner' ? '#34d399' : v.status === 'killed' ? '#f87171' : '#a78bfa';
+      ctx.font = '600 11px -apple-system, sans-serif';
+      ctx.fillText(`${v.ctr}%`, vx + 4, vy + 30);
+
+      // Status dot
+      const dotColor = v.status === 'winner' ? '#10b981' : v.status === 'killed' ? '#ef4444' : '#f59e0b';
+      ctx.fillStyle = dotColor;
+      ctx.beginPath();
+      ctx.arc(vx + vw - 7, vy + 8, 3, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Kill threshold line
+    const relKillY = gridTop + 28 + (vh + 6) + 3;
+    ctx.strokeStyle = 'rgba(239,68,68,0.5)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    ctx.moveTo(cx + 8, relKillY);
+    ctx.lineTo(cx + colW - 8, relKillY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(239,68,68,0.7)';
+    ctx.font = '400 9px -apple-system, sans-serif';
+    ctx.fillText('kill threshold', cx + 10, relKillY - 3);
+  });
+
+  // Tooltip
+  let hoveredVariant: Variant | null = null;
+  for (const v of variants) {
+    if (mouseX >= v.x && mouseX <= v.x + v.w && mouseY >= v.y && mouseY <= v.y + v.h) {
+      hoveredVariant = v;
+      break;
+    }
+  }
+
+  if (hoveredVariant) {
+    const tv = hoveredVariant;
+    const tw = 160, tth = 90;
+    let tx = tv.x + tv.w + 6;
+    let ty = tv.y;
+    if (tx + tw > W - 10) tx = tv.x - tw - 6;
+    if (ty + tth > H - 10) ty = H - tth - 10;
+
+    ctx.fillStyle = '#0d0f1f';
+    roundRect(ctx, tx, ty, tw, tth, 7);
+    ctx.fill();
+    ctx.strokeStyle = tv.status === 'winner' ? '#10b981' : tv.status === 'killed' ? '#ef4444' : '#7c3aed';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.fillStyle = '#fff';
+    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.fillText(tv.id + ' — ' + tv.label, tx + 10, ty + 18);
+
+    const rows = [
+      { k: 'CTR', v: `${tv.ctr}%`, c: '#a78bfa' },
+      { k: 'ROAS', v: `${tv.roas}x`, c: '#34d399' },
+      { k: 'Spend', v: `$${tv.spend.toLocaleString()}`, c: '#fbbf24' },
+      { k: 'Status', v: tv.status.toUpperCase(), c: tv.status === 'winner' ? '#10b981' : tv.status === 'killed' ? '#f87171' : '#f59e0b' },
+    ];
+    rows.forEach((row, ri) => {
+      const ry = ty + 34 + ri * 14;
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = '400 10px -apple-system, sans-serif';
+      ctx.fillText(row.k, tx + 10, ry);
+      ctx.fillStyle = row.c;
+      ctx.font = '500 10px -apple-system, sans-serif';
+      ctx.fillText(row.v, tx + 60, ry);
+    });
+  }
+
+  requestAnimationFrame(draw);
+}
+
+draw();
+</script>

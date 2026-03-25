@@ -1,0 +1,410 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="PelloAds — Design 12" description="PelloAds test design 12">
+  <div style="min-height:100vh;background:#060712;display:flex;flex-direction:column;align-items:center;padding:2rem;">
+    <h1 style="color:#7c3aed;font:700 1.5rem/1.3 -apple-system,sans-serif;margin-bottom:0.5rem;letter-spacing:-0.02em;">PelloAds</h1>
+    <p style="color:rgba(255,255,255,0.5);font:400 0.85rem/1.4 -apple-system,sans-serif;margin-bottom:1.5rem;">Design 12 — Ad Spend Optimiser</p>
+    <canvas id="ads-canvas-12" style="width:100%;max-width:900px;border-radius:12px;cursor:crosshair;"></canvas>
+  </div>
+</Layout>
+
+<script>
+const canvas = document.getElementById('ads-canvas-12') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const dpr = window.devicePixelRatio || 1;
+const W = 900, H = 560;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+ctx.scale(dpr, dpr);
+
+let mouseX = -1, mouseY = -1;
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - r.left) * (W / r.width);
+  mouseY = (e.clientY - r.top) * (H / r.height);
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
+
+interface Campaign {
+  name: string;
+  roas: number;
+  roasLabel: string;
+  budgetPct: number;       // current animated budget share (0-1)
+  targetPct: number;       // target share after optimisation
+  basePct: number;         // pre-optimisation share
+  color: string;
+  roasColor: string;
+  spendBase: number;
+}
+
+const totalBudget = 50000;
+const totalSpent = 47230;
+const utilPct = totalSpent / totalBudget;
+
+const campaigns: Campaign[] = [
+  { name: 'Brand Awareness', roas: 1.2, roasLabel: '1.2x', budgetPct: 0.22, targetPct: 0.08, basePct: 0.22, color: '#ef4444', roasColor: '#f87171', spendBase: 10340 },
+  { name: 'App Install', roas: 2.8, roasLabel: '2.8x', budgetPct: 0.18, targetPct: 0.16, basePct: 0.18, color: '#f59e0b', roasColor: '#fbbf24', spendBase: 8480 },
+  { name: 'Retargeting', roas: 4.1, roasLabel: '4.1x', budgetPct: 0.14, targetPct: 0.22, basePct: 0.14, color: '#22c55e', roasColor: '#4ade80', spendBase: 6610 },
+  { name: 'Lookalike', roas: 3.4, roasLabel: '3.4x', budgetPct: 0.16, targetPct: 0.20, basePct: 0.16, color: '#10b981', roasColor: '#34d399', spendBase: 7540 },
+  { name: 'Competitor', roas: 1.8, roasLabel: '1.8x', budgetPct: 0.17, targetPct: 0.12, basePct: 0.17, color: '#f59e0b', roasColor: '#fbbf24', spendBase: 8000 },
+  { name: 'Product Demo', roas: 5.2, roasLabel: '5.2x', budgetPct: 0.13, targetPct: 0.22, basePct: 0.13, color: '#7c3aed', roasColor: '#a78bfa', spendBase: 6260 },
+];
+
+// Sort by ROAS for display
+const sortedCamps = [...campaigns].sort((a, b) => b.roas - a.roas);
+
+// Gauge center
+const GX = 310, GY = 240;
+const OUTER_R = 130;
+const INNER_R = 88;
+const RING_GAP = 14;
+const RING_W = 14;
+
+// Reallocation animation
+let reallocationPhase = 0; // 0-1, cycles every 4s
+let lastRealloc = 0;
+
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * t;
+}
+
+function easeInOut(t: number) {
+  return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+}
+
+function drawRoundRect(x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function arcPath(cx: number, cy: number, r: number, startAngle: number, endAngle: number) {
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, startAngle, endAngle);
+}
+
+const START_ANGLE = Math.PI * 0.75;
+const END_ANGLE = Math.PI * 2.25;
+const FULL_SWEEP = END_ANGLE - START_ANGLE;
+
+// Particles for budget flow
+interface FlowParticle {
+  campIdx: number;
+  progress: number; // 0-1 along flow path
+  speed: number;
+}
+const particles: FlowParticle[] = [];
+
+function initParticles() {
+  particles.length = 0;
+  for (let i = 0; i < 20; i++) {
+    particles.push({ campIdx: Math.floor(Math.random() * campaigns.length), progress: Math.random(), speed: 0.003 + Math.random() * 0.004 });
+  }
+}
+initParticles();
+
+let hoveredCamp: number = -1;
+
+function getHoveredCamp(): number {
+  if (mouseX < 0) return -1;
+  // Check list items
+  const listX = 520;
+  const listTop = 80;
+  const itemH = 68;
+  for (let i = 0; i < sortedCamps.length; i++) {
+    const iy = listTop + i * itemH;
+    if (mouseX >= listX && mouseX <= W - 24 && mouseY >= iy && mouseY <= iy + itemH - 4) {
+      return campaigns.indexOf(sortedCamps[i]);
+    }
+  }
+  // Check arc rings
+  const dx = mouseX - GX, dy = mouseY - GY;
+  const dist = Math.hypot(dx, dy);
+  if (dist > INNER_R - 10 && dist < OUTER_R + RING_GAP * campaigns.length + 40) {
+    const angle = Math.atan2(dy, dx);
+    const normAngle = ((angle - START_ANGLE) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+    if (normAngle <= FULL_SWEEP) {
+      // Find which ring
+      for (let i = 0; i < campaigns.length; i++) {
+        const r = OUTER_R + 6 + i * (RING_W + RING_GAP);
+        if (dist >= r - 4 && dist <= r + RING_W + 4) {
+          return i;
+        }
+      }
+    }
+  }
+  return -1;
+}
+
+function draw(t: number) {
+  // Update reallocation phase
+  const elapsed = t - lastRealloc;
+  reallocationPhase = Math.min(elapsed / 4000, 1);
+  if (elapsed > 8000) {
+    lastRealloc = t;
+    reallocationPhase = 0;
+  }
+
+  const easedPhase = easeInOut(Math.min(reallocationPhase * 1.5, 1));
+
+  // Update campaign budget percentages
+  campaigns.forEach(c => {
+    c.budgetPct = lerp(c.basePct, c.targetPct, easedPhase);
+  });
+
+  // Update particles
+  particles.forEach(p => {
+    p.progress += p.speed;
+    if (p.progress > 1) {
+      p.progress = 0;
+      p.campIdx = Math.floor(Math.random() * campaigns.length);
+    }
+  });
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, W, H);
+
+  drawRoundRect(8, 8, W - 16, H - 16, 10);
+  ctx.fillStyle = '#0d0f1f';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(124,58,237,0.2)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  hoveredCamp = getHoveredCamp();
+
+  // --- Main donut gauge ---
+  // Background track
+  ctx.beginPath();
+  ctx.arc(GX, GY, INNER_R + (OUTER_R - INNER_R) / 2, START_ANGLE, END_ANGLE);
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = OUTER_R - INNER_R;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // Utilisation arc
+  const utilEnd = START_ANGLE + FULL_SWEEP * utilPct;
+  const grad = ctx.createLinearGradient(GX - OUTER_R, GY, GX + OUTER_R, GY);
+  grad.addColorStop(0, '#4f46e5');
+  grad.addColorStop(0.5, '#7c3aed');
+  grad.addColorStop(1, '#a855f7');
+  ctx.beginPath();
+  ctx.arc(GX, GY, INNER_R + (OUTER_R - INNER_R) / 2, START_ANGLE, utilEnd);
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = OUTER_R - INNER_R;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // Glow on end cap
+  ctx.shadowBlur = 18;
+  ctx.shadowColor = '#7c3aed';
+  ctx.beginPath();
+  const capX = GX + Math.cos(utilEnd) * (INNER_R + (OUTER_R - INNER_R) / 2);
+  const capY = GY + Math.sin(utilEnd) * (INNER_R + (OUTER_R - INNER_R) / 2);
+  ctx.arc(capX, capY, 5, 0, Math.PI * 2);
+  ctx.fillStyle = '#c084fc';
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Center text
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = '700 36px -apple-system,sans-serif';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(`${Math.round(utilPct * 100)}%`, GX, GY - 12);
+
+  ctx.font = '500 12px -apple-system,sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.fillText('Daily Budget', GX, GY + 14);
+
+  ctx.font = '400 11px -apple-system,sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.fillText(`$${totalSpent.toLocaleString()} / $${totalBudget.toLocaleString()}`, GX, GY + 32);
+
+  // --- Campaign arc rings (outer rings) ---
+  for (let i = 0; i < campaigns.length; i++) {
+    const camp = campaigns[i];
+    const ringR = OUTER_R + 14 + i * (RING_W + RING_GAP);
+    const ringEnd = START_ANGLE + FULL_SWEEP * camp.budgetPct;
+    const isHov = hoveredCamp === i;
+
+    // Track
+    ctx.beginPath();
+    ctx.arc(GX, GY, ringR, START_ANGLE, END_ANGLE);
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = RING_W;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // Arc fill
+    if (isHov) {
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = camp.color;
+    }
+    ctx.beginPath();
+    ctx.arc(GX, GY, ringR, START_ANGLE, ringEnd);
+    ctx.strokeStyle = camp.color + (isHov ? 'ff' : 'cc');
+    ctx.lineWidth = isHov ? RING_W + 2 : RING_W;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Label at end of arc
+    const labelAngle = START_ANGLE + FULL_SWEEP * camp.budgetPct;
+    const lx = GX + Math.cos(labelAngle) * (ringR + RING_W / 2 + 10);
+    const ly = GY + Math.sin(labelAngle) * (ringR + RING_W / 2 + 10);
+    if (isHov) {
+      ctx.font = '600 11px -apple-system,sans-serif';
+      ctx.fillStyle = camp.roasColor;
+      ctx.textAlign = lx > GX ? 'left' : 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`${Math.round(camp.budgetPct * 100)}%`, lx, ly);
+    }
+  }
+
+  // Particles flowing along rings
+  particles.forEach(p => {
+    const camp = campaigns[p.campIdx];
+    const ringR = OUTER_R + 14 + p.campIdx * (RING_W + RING_GAP);
+    const arcSweep = FULL_SWEEP * camp.budgetPct;
+    const pAngle = START_ANGLE + arcSweep * p.progress;
+    const px = GX + Math.cos(pAngle) * ringR;
+    const py = GY + Math.sin(pAngle) * ringR;
+    ctx.beginPath();
+    ctx.arc(px, py, 2, 0, Math.PI * 2);
+    ctx.fillStyle = camp.roasColor + 'cc';
+    ctx.fill();
+  });
+
+  // Optimisation phase indicator
+  const phaseBarX = GX - 60, phaseBarY = GY + INNER_R + (OUTER_R - INNER_R) / 2 + 12 + campaigns.length * (RING_W + RING_GAP) + 4;
+  if (phaseBarY < H - 40) {
+    ctx.font = '400 10px -apple-system,sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('REALLOCATING', GX, phaseBarY);
+    drawRoundRect(GX - 60, phaseBarY + 14, 120, 4, 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    ctx.fill();
+    drawRoundRect(GX - 60, phaseBarY + 14, 120 * easedPhase, 4, 2);
+    ctx.fillStyle = '#7c3aed';
+    ctx.fill();
+  }
+
+  // --- Campaign list (right side) ---
+  const listX = 520;
+  const listTop = 80;
+  const itemH = 68;
+  const listW = W - listX - 24;
+
+  // List header
+  ctx.font = '600 11px -apple-system,sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('CAMPAIGN PERFORMANCE', listX, 58);
+
+  ctx.font = '400 10px -apple-system,sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.textAlign = 'right';
+  ctx.fillText('ROAS → BUDGET', W - 24, 58);
+
+  for (let i = 0; i < sortedCamps.length; i++) {
+    const camp = sortedCamps[i];
+    const campIdx = campaigns.indexOf(camp);
+    const iy = listTop + i * itemH;
+    const isHov = hoveredCamp === campIdx;
+
+    // Row background
+    drawRoundRect(listX, iy, listW, itemH - 6, 6);
+    ctx.fillStyle = isHov ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.025)';
+    ctx.fill();
+    if (isHov) {
+      ctx.strokeStyle = camp.color + '44';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Campaign name
+    ctx.font = '500 12px -apple-system,sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(camp.name, listX + 10, iy + 10);
+
+    // ROAS badge
+    const roasW = 44;
+    drawRoundRect(W - 24 - roasW, iy + 8, roasW, 18, 4);
+    ctx.fillStyle = camp.color + '33';
+    ctx.fill();
+    ctx.font = '700 10px -apple-system,sans-serif';
+    ctx.fillStyle = camp.roasColor;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(camp.roasLabel, W - 24 - roasW / 2, iy + 17);
+
+    // Budget bar
+    const barX = listX + 10;
+    const barY = iy + 36;
+    const barW = listW - 20 - roasW - 8;
+    const barH = 6;
+
+    drawRoundRect(barX, barY, barW, barH, 3);
+    ctx.fillStyle = 'rgba(255,255,255,0.06)';
+    ctx.fill();
+
+    const fillW = barW * camp.budgetPct;
+    drawRoundRect(barX, barY, fillW, barH, 3);
+    const barGrad = ctx.createLinearGradient(barX, 0, barX + fillW, 0);
+    barGrad.addColorStop(0, camp.color + '99');
+    barGrad.addColorStop(1, camp.color);
+    ctx.fillStyle = barGrad;
+    ctx.fill();
+
+    // Spend amount
+    const spendVal = camp.spendBase * (camp.budgetPct / camp.basePct);
+    ctx.font = '400 10px -apple-system,sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(`$${Math.round(spendVal).toLocaleString()}`, barX, barY + 10);
+
+    ctx.font = '400 10px -apple-system,sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${Math.round(camp.budgetPct * 100)}% of budget`, W - 24 - roasW - 12, barY + 10);
+  }
+
+  // Vertical divider
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(listX - 14, 40);
+  ctx.lineTo(listX - 14, H - 20);
+  ctx.stroke();
+
+  // Title area
+  ctx.font = '600 11px -apple-system,sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('BUDGET UTILISATION', GX, 24);
+
+  requestAnimationFrame(draw);
+}
+
+requestAnimationFrame(draw);
+</script>

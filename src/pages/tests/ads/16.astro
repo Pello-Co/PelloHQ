@@ -1,0 +1,365 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="PelloAds — Design 16" description="PelloAds test design 16">
+  <div style="min-height:100vh;background:#060712;display:flex;flex-direction:column;align-items:center;padding:2rem;">
+    <h1 style="color:#7c3aed;font:700 1.5rem/1.3 -apple-system,sans-serif;margin-bottom:0.5rem;letter-spacing:-0.02em;">PelloAds</h1>
+    <p style="color:rgba(255,255,255,0.5);font:400 0.85rem/1.4 -apple-system,sans-serif;margin-bottom:1.5rem;">Design 16 — Campaign Comparison Dashboard</p>
+    <canvas id="ads-canvas-16" style="width:100%;max-width:900px;border-radius:12px;cursor:crosshair;"></canvas>
+  </div>
+</Layout>
+
+<script>
+const canvas = document.getElementById('ads-canvas-16') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const dpr = window.devicePixelRatio || 1;
+
+const W = 900, H = 580;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+canvas.style.height = H + 'px';
+ctx.scale(dpr, dpr);
+
+const campaigns = [
+  { name: 'Holiday Sale 2024', ctr: 3.4, roas: 4.2, cpc: 1.20, conv: 847, color: '#10b981', winner: true },
+  { name: 'Brand Awareness',   ctr: 1.8, roas: 2.1, cpc: 2.80, conv: 312, color: '#7c3aed', winner: false },
+  { name: 'Retargeting Q4',    ctr: 2.9, roas: 3.7, cpc: 1.55, conv: 634, color: '#f59e0b', winner: false },
+  { name: 'Product Launch',    ctr: 1.2, roas: 1.4, cpc: 3.90, conv: 198, color: '#ef4444', winner: false },
+];
+
+const metrics = [
+  { key: 'ctr',  label: 'CTR',         unit: '%',  max: 4.0 },
+  { key: 'roas', label: 'ROAS',        unit: 'x',  max: 5.0 },
+  { key: 'cpc',  label: 'CPC',         unit: '$',  max: 5.0, invert: true },
+  { key: 'conv', label: 'Conversions', unit: '',   max: 1000 },
+];
+
+let activeMetric = 0;
+let animProgress = 1; // 0..1
+let animStart = 0;
+let prevMetric = 0;
+let prevProgress: number[] = campaigns.map(() => 0);
+let curProgress: number[] = campaigns.map(() => 0);
+let targetProgress: number[] = campaigns.map(() => 0);
+let hoveredCol = -1;
+let mouseX = 0, mouseY = 0;
+let pulseT = 0;
+
+// Sparkline data (10 points per campaign, normalised 0..1)
+const sparklines = campaigns.map((c) => {
+  const pts: number[] = [];
+  let v = 0.5;
+  for (let i = 0; i < 10; i++) {
+    v = Math.max(0.05, Math.min(0.95, v + (Math.random() - 0.5) * 0.25));
+    pts.push(v);
+  }
+  // Ensure last point matches relative performance
+  const mKey = metrics[activeMetric].key as keyof typeof c;
+  pts[9] = 0.5;
+  return pts;
+});
+
+function getMetricValue(c: typeof campaigns[0], mIdx: number): number {
+  const m = metrics[mIdx];
+  const raw = c[m.key as keyof typeof c] as number;
+  const norm = raw / m.max;
+  return m.invert ? 1 - norm * 0.8 : norm;
+}
+
+function easeOutCubic(t: number) { return 1 - Math.pow(1 - t, 3); }
+
+function switchMetric(idx: number) {
+  if (idx === activeMetric) return;
+  prevProgress = [...curProgress];
+  prevMetric = activeMetric;
+  activeMetric = idx;
+  targetProgress = campaigns.map((_, i) => getMetricValue(campaigns[i], activeMetric));
+  animStart = performance.now();
+  animProgress = 0;
+}
+
+// Initial targets
+targetProgress = campaigns.map((_, i) => getMetricValue(campaigns[i], activeMetric));
+// Animate in from 0
+curProgress = campaigns.map(() => 0);
+prevProgress = [...curProgress];
+animStart = performance.now();
+animProgress = 0;
+
+// Tab button zones
+const tabH = 48;
+const tabY = 16;
+const tabW = 120;
+const tabsX = W / 2 - (metrics.length * tabW) / 2;
+
+// Column layout
+const colPadX = 40;
+const colAreaTop = tabY + tabH + 16;
+const colAreaBottom = H - 20;
+const colCount = campaigns.length;
+const colTotalW = W - colPadX * 2;
+const colW = colTotalW / colCount;
+
+// Bar area
+const barTop = colAreaTop + 80;
+const barBottom = colAreaBottom - 100; // leave room for sparkline
+const barMaxH = barBottom - barTop;
+
+function drawRoundRect(x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function draw(ts: number) {
+  ctx.clearRect(0, 0, W, H);
+  pulseT = ts * 0.001;
+
+  // Background
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, W, H);
+
+  // Update animation
+  if (animProgress < 1) {
+    const elapsed = (ts - animStart) / 800;
+    animProgress = Math.min(1, elapsed);
+    const t = easeOutCubic(animProgress);
+    for (let i = 0; i < campaigns.length; i++) {
+      curProgress[i] = prevProgress[i] + (targetProgress[i] - prevProgress[i]) * t;
+    }
+  } else {
+    curProgress = [...targetProgress];
+  }
+
+  // --- TABS ---
+  metrics.forEach((m, i) => {
+    const tx = tabsX + i * tabW + 4;
+    const ty = tabY;
+    const tw = tabW - 8;
+    const th = tabH - 8;
+    const isActive = i === activeMetric;
+    drawRoundRect(tx, ty, tw, th, 8);
+    ctx.fillStyle = isActive ? '#7c3aed' : '#0d0f1f';
+    ctx.fill();
+    if (!isActive) {
+      ctx.strokeStyle = 'rgba(124,58,237,0.3)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    ctx.fillStyle = isActive ? '#fff' : 'rgba(255,255,255,0.5)';
+    ctx.font = `${isActive ? 600 : 400} 13px -apple-system, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(m.label, tx + tw / 2, ty + th / 2);
+  });
+
+  // --- COLUMNS ---
+  campaigns.forEach((camp, ci) => {
+    const cx = colPadX + ci * colW;
+    const cCenterX = cx + colW / 2;
+    const isHovered = ci === hoveredCol;
+
+    // Column hover background
+    if (isHovered) {
+      const grad = ctx.createLinearGradient(cx + 8, colAreaTop, cx + 8, colAreaBottom);
+      grad.addColorStop(0, camp.color + '18');
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      drawRoundRect(cx + 8, colAreaTop, colW - 16, colAreaBottom - colAreaTop, 10);
+      ctx.fill();
+
+      // Subtle glow border
+      ctx.strokeStyle = camp.color + '40';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // WINNER badge
+    if (camp.winner) {
+      const bw = 64, bh = 20;
+      drawRoundRect(cCenterX - bw / 2, colAreaTop + 4, bw, bh, 10);
+      ctx.fillStyle = '#10b98130';
+      ctx.fill();
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = '#10b981';
+      ctx.font = '700 9px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('WINNER', cCenterX, colAreaTop + 14);
+    }
+
+    // Color dot + campaign name
+    const dotY = colAreaTop + (camp.winner ? 36 : 14);
+    ctx.beginPath();
+    ctx.arc(cCenterX - 36, dotY + 7, 5, 0, Math.PI * 2);
+    ctx.fillStyle = camp.color;
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    // Wrap long names
+    const words = camp.name.split(' ');
+    let line1 = words.slice(0, 2).join(' ');
+    let line2 = words.slice(2).join(' ');
+    ctx.fillText(line1, cCenterX + 4, dotY);
+    if (line2) {
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.font = '400 10px -apple-system, sans-serif';
+      ctx.fillText(line2, cCenterX + 4, dotY + 14);
+    }
+
+    // --- BAR ---
+    const barW = Math.min(48, colW - 32);
+    const barX = cCenterX - barW / 2;
+
+    const prog = curProgress[ci];
+    const pulseOffset = animProgress >= 1 ? Math.sin(pulseT * 2 + ci * 1.2) * 1 : 0;
+    const barH = prog * barMaxH + pulseOffset;
+    const barY = barBottom - barH;
+
+    // Bar track
+    drawRoundRect(barX, barTop, barW, barMaxH, 6);
+    ctx.fillStyle = '#0d0f1f';
+    ctx.fill();
+
+    // Bar fill
+    if (barH > 4) {
+      const barGrad = ctx.createLinearGradient(0, barY, 0, barBottom);
+      barGrad.addColorStop(0, camp.color);
+      barGrad.addColorStop(1, camp.color + '60');
+      drawRoundRect(barX, barY, barW, barH, 6);
+      ctx.fillStyle = barGrad;
+      ctx.fill();
+
+      // Shimmer top cap
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      drawRoundRect(barX + 4, barY, barW - 8, 3, 2);
+      ctx.fill();
+    }
+
+    // Metric value label above bar
+    const m = metrics[activeMetric];
+    const rawVal = camp[m.key as keyof typeof camp] as number;
+    let valStr = '';
+    if (m.key === 'ctr') valStr = rawVal.toFixed(1) + '%';
+    else if (m.key === 'roas') valStr = rawVal.toFixed(1) + 'x';
+    else if (m.key === 'cpc') valStr = '$' + rawVal.toFixed(2);
+    else valStr = rawVal.toString();
+
+    ctx.fillStyle = camp.color;
+    ctx.font = '700 13px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(valStr, cCenterX, barY - 4);
+
+    // --- SPARKLINE ---
+    const spY = barBottom + 12;
+    const spH = 32;
+    const spW = colW - 20;
+    const spX = cx + 10;
+    const pts = sparklines[ci];
+    ctx.beginPath();
+    pts.forEach((p, pi) => {
+      const px = spX + (pi / (pts.length - 1)) * spW;
+      const py = spY + spH - p * spH;
+      if (pi === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    });
+    ctx.strokeStyle = camp.color + 'aa';
+    ctx.lineWidth = 1.5;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    // Sparkline fill
+    ctx.lineTo(spX + spW, spY + spH);
+    ctx.lineTo(spX, spY + spH);
+    ctx.closePath();
+    ctx.fillStyle = camp.color + '18';
+    ctx.fill();
+  });
+
+  // --- HOVER TOOLTIP ---
+  if (hoveredCol >= 0) {
+    const camp = campaigns[hoveredCol];
+    const tx = colPadX + hoveredCol * colW + colW / 2;
+    const ty = barBottom - 20;
+    const tw = 160, th = 88, tr = 8;
+    let ttX = tx - tw / 2;
+    let ttY = ty - th - 12;
+    if (ttX < 8) ttX = 8;
+    if (ttX + tw > W - 8) ttX = W - tw - 8;
+    if (ttY < 8) ttY = ty + 20;
+
+    drawRoundRect(ttX, ttY, tw, th, tr);
+    ctx.fillStyle = '#13152e';
+    ctx.fill();
+    ctx.strokeStyle = camp.color + '80';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    const lines = [
+      `CTR: ${camp.ctr.toFixed(1)}%`,
+      `ROAS: ${camp.roas.toFixed(1)}x`,
+      `CPC: $${camp.cpc.toFixed(2)}`,
+      `Conv: ${camp.conv.toLocaleString()}`,
+    ];
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.font = '12px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    lines.forEach((ln, li) => {
+      ctx.fillText(ln, ttX + 12, ttY + 10 + li * 18);
+    });
+  }
+
+  requestAnimationFrame(draw);
+}
+
+requestAnimationFrame(draw);
+
+// Mouse interaction
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - rect.left) * (W / rect.width);
+  mouseY = (e.clientY - rect.top) * (H / rect.height);
+
+  // Check column hover
+  hoveredCol = -1;
+  for (let i = 0; i < campaigns.length; i++) {
+    const cx = colPadX + i * colW;
+    if (mouseX >= cx && mouseX <= cx + colW && mouseY >= colAreaTop && mouseY <= colAreaBottom) {
+      hoveredCol = i;
+      break;
+    }
+  }
+});
+
+canvas.addEventListener('mouseleave', () => { hoveredCol = -1; });
+
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * (W / rect.width);
+  const my = (e.clientY - rect.top) * (H / rect.height);
+  metrics.forEach((_, i) => {
+    const tx = tabsX + i * tabW + 4;
+    const ty = tabY;
+    const tw = tabW - 8;
+    const th = tabH - 8;
+    if (mx >= tx && mx <= tx + tw && my >= ty && my <= ty + th) {
+      switchMetric(i);
+    }
+  });
+});
+</script>

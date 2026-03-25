@@ -1,0 +1,321 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="PelloAds — Design 2" description="PelloAds test design 2 — A/B Testing Arena">
+  <div style="min-height:100vh;background:#060712;display:flex;flex-direction:column;align-items:center;padding:2rem;">
+    <h1 style="color:#7c3aed;font:700 1.5rem/1.3 -apple-system,sans-serif;margin-bottom:0.5rem;letter-spacing:-0.02em;">PelloAds</h1>
+    <p style="color:rgba(255,255,255,0.5);font:400 0.85rem/1.4 -apple-system,sans-serif;margin-bottom:1.5rem;">Design 2 — A/B Testing Arena</p>
+    <canvas id="ads-canvas-2" style="width:100%;max-width:900px;border-radius:12px;cursor:crosshair;"></canvas>
+  </div>
+</Layout>
+
+<script>
+const canvas = document.getElementById('ads-canvas-2') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const dpr = window.devicePixelRatio || 1;
+const W = 900, H = 580;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+ctx.scale(dpr, dpr);
+
+let mouseX = -1, mouseY = -1;
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - r.left) * (W / r.width);
+  mouseY = (e.clientY - r.top) * (H / r.height);
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
+
+interface Matchup {
+  round: number;
+  idA: string;
+  idB: string;
+  labelA: string;
+  labelB: string;
+  ctrA: number;
+  ctrB: number;
+  roasA: number;
+  roasB: number;
+  cpcA: number;
+  cpcB: number;
+  progress: number;
+  winner: 'A' | 'B' | null;
+  animOffset: number;
+  yA: number;
+  yB: number;
+  x: number;
+  cardW: number;
+  cardH: number;
+}
+
+const creativeLabels = [
+  'Video 30s', 'Static Hero', 'Carousel 5', 'Story Reel',
+  'Video 15s', 'Product Shot', 'Lifestyle', 'Text Only',
+  'Animated GIF', 'UGC Video', 'Testimonial', 'Countdown',
+  'Video 60s', 'Infographic', 'Comparison', 'CTA Bold',
+];
+
+function makeMatchup(round: number, ia: number, ib: number, animOffset: number): Matchup {
+  const ctrA = parseFloat((Math.random() * 3 + 0.5).toFixed(2));
+  const ctrB = parseFloat((Math.random() * 3 + 0.5).toFixed(2));
+  return {
+    round,
+    idA: `V${String(ia + 1).padStart(3,'0')}`,
+    idB: `V${String(ib + 1).padStart(3,'0')}`,
+    labelA: creativeLabels[ia % creativeLabels.length],
+    labelB: creativeLabels[ib % creativeLabels.length],
+    ctrA,
+    ctrB,
+    roasA: parseFloat((Math.random() * 4 + 1).toFixed(2)),
+    roasB: parseFloat((Math.random() * 4 + 1).toFixed(2)),
+    cpcA: parseFloat((Math.random() * 2 + 0.3).toFixed(2)),
+    cpcB: parseFloat((Math.random() * 2 + 0.3).toFixed(2)),
+    progress: 0.3 + Math.random() * 0.7,
+    winner: Math.random() > 0.5 ? 'A' : 'B',
+    animOffset,
+    yA: 0, yB: 0, x: 0, cardW: 0, cardH: 0
+  };
+}
+
+// 3 rounds: 8 matchups round 1, 4 round 2, 2 round 3
+const rounds: Matchup[][] = [
+  Array.from({ length: 4 }, (_, i) => makeMatchup(0, i * 2, i * 2 + 1, i * 0.3)),
+  Array.from({ length: 2 }, (_, i) => makeMatchup(1, 8 + i * 2, 8 + i * 2 + 1, i * 0.5 + 1.2)),
+  [makeMatchup(2, 12, 13, 2.4)],
+];
+
+let t = 0;
+
+function lerp(a: number, b: number, f: number) { return a + (b - a) * f; }
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function drawMatchupCard(m: Matchup, x: number, y: number, cw: number, ch: number, side: 'A' | 'B') {
+  const label = side === 'A' ? m.labelA : m.labelB;
+  const id = side === 'A' ? m.idA : m.idB;
+  const ctr = side === 'A' ? m.ctrA : m.ctrB;
+  const roas = side === 'A' ? m.roasA : m.roasB;
+  const cpc = side === 'A' ? m.cpcA : m.cpcB;
+  const isWinner = m.winner === side;
+  const anim = Math.sin(t * 2 + m.animOffset) * 0.5 + 0.5;
+
+  if (side === 'A') { m.yA = y; m.x = x; m.cardW = cw; m.cardH = ch; }
+  else { m.yB = y; }
+
+  const isHovered = mouseX >= x && mouseX <= x + cw && mouseY >= y && mouseY <= y + ch;
+
+  ctx.fillStyle = isWinner
+    ? `rgba(16,185,129,${0.12 + anim * 0.04})`
+    : 'rgba(13,15,31,0.9)';
+  roundRect(ctx, x, y, cw, ch, 7);
+  ctx.fill();
+  ctx.strokeStyle = isWinner
+    ? `rgba(16,185,129,${0.5 + anim * 0.3})`
+    : isHovered ? 'rgba(124,58,237,0.6)' : 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = isWinner ? 1.5 : 1;
+  ctx.stroke();
+
+  // Winner crown
+  if (isWinner) {
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = '10px sans-serif';
+    ctx.fillText('▲', x + cw - 16, y + 14);
+  }
+
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.font = '400 9px -apple-system, sans-serif';
+  ctx.fillText(id, x + 8, y + 14);
+
+  ctx.fillStyle = isWinner ? '#fff' : 'rgba(255,255,255,0.75)';
+  ctx.font = '600 11px -apple-system, sans-serif';
+  ctx.fillText(label, x + 8, y + 28);
+
+  // Metrics
+  const metrics = [
+    { k: 'CTR', v: `${ctr}%`, c: '#a78bfa' },
+    { k: 'ROAS', v: `${roas}x`, c: '#34d399' },
+    { k: 'CPC', v: `$${cpc}`, c: '#fbbf24' },
+  ];
+  metrics.forEach((met, mi) => {
+    const mx = x + 8 + mi * ((cw - 16) / 3);
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '400 8px -apple-system, sans-serif';
+    ctx.fillText(met.k, mx, y + ch - 20);
+    ctx.fillStyle = met.c;
+    ctx.font = '600 10px -apple-system, sans-serif';
+    ctx.fillText(met.v, mx, y + ch - 8);
+  });
+
+  // Progress bar
+  ctx.fillStyle = 'rgba(255,255,255,0.08)';
+  roundRect(ctx, x + 8, y + 34, cw - 16, 3, 1.5);
+  ctx.fill();
+  const pColor = isWinner ? '#10b981' : '#7c3aed';
+  ctx.fillStyle = pColor;
+  roundRect(ctx, x + 8, y + 34, (cw - 16) * m.progress, 3, 1.5);
+  ctx.fill();
+}
+
+function draw() {
+  t += 0.016;
+
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, W, H);
+
+  // Header
+  ctx.fillStyle = '#0d0f1f';
+  roundRect(ctx, 16, 16, W - 32, 48, 8);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(124,58,237,0.3)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = '#fff';
+  ctx.font = '600 13px -apple-system, sans-serif';
+  ctx.fillText('A/B Testing Arena', 28, 45);
+
+  const roundLabels = ['Round 1 — 4 Active Tests', 'Round 2 — Semi-Finals', 'Final'];
+  const roundColors = ['rgba(124,58,237,0.7)', 'rgba(251,191,36,0.7)', 'rgba(16,185,129,0.7)'];
+
+  const panelTop = 76;
+  const panelH = H - panelTop - 16;
+  const roundW = (W - 32 - 24) / 3;
+
+  rounds.forEach((round, ri) => {
+    const rx = 16 + ri * (roundW + 12);
+
+    // Round panel bg
+    ctx.fillStyle = 'rgba(13,15,31,0.6)';
+    roundRect(ctx, rx, panelTop, roundW, panelH, 8);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Round label
+    ctx.fillStyle = roundColors[ri];
+    ctx.font = '500 10px -apple-system, sans-serif';
+    ctx.fillText(roundLabels[ri], rx + 10, panelTop + 18);
+
+    const numMatchups = round.length;
+    const cardH = 80;
+    const totalCardH = numMatchups * (cardH * 2 + 12) + (numMatchups - 1) * 16;
+    const startY = panelTop + 28 + (panelH - 28 - totalCardH) / 2;
+    const cardW = roundW - 20;
+
+    round.forEach((m, mi) => {
+      const groupY = startY + mi * (cardH * 2 + 28);
+      const cardX = rx + 10;
+
+      drawMatchupCard(m, cardX, groupY, cardW, cardH, 'A');
+      drawMatchupCard(m, cardX, groupY + cardH + 8, cardW, cardH, 'B');
+
+      // VS connector
+      const midY = groupY + cardH + 4;
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      ctx.font = '700 9px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('VS', cardX + cardW / 2, midY + 5);
+      ctx.textAlign = 'left';
+
+      // Connecting line between rounds
+      if (ri < 2) {
+        const nextRound = rounds[ri + 1];
+        const nextMatchupIdx = Math.floor(mi / 2);
+        if (nextMatchupIdx < nextRound.length) {
+          const nx = rx + roundW + 12;
+          const nextM = nextRound[nextMatchupIdx];
+          const srcY = midY;
+          // Draw bracket line
+          ctx.strokeStyle = 'rgba(124,58,237,0.2)';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([3, 4]);
+          ctx.beginPath();
+          ctx.moveTo(cardX + cardW, srcY);
+          ctx.lineTo(nx + 10, srcY);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      }
+    });
+  });
+
+  // Tooltip
+  let hoveredMatchup: { m: Matchup; side: 'A' | 'B' } | null = null;
+  for (const round of rounds) {
+    for (const m of round) {
+      if (mouseX >= m.x && mouseX <= m.x + m.cardW) {
+        if (mouseY >= m.yA && mouseY <= m.yA + m.cardH) {
+          hoveredMatchup = { m, side: 'A' };
+          break;
+        }
+        if (mouseY >= m.yB && mouseY <= m.yB + m.cardH) {
+          hoveredMatchup = { m, side: 'B' };
+          break;
+        }
+      }
+    }
+    if (hoveredMatchup) break;
+  }
+
+  if (hoveredMatchup) {
+    const { m, side } = hoveredMatchup;
+    const isWinner = m.winner === side;
+    const tw = 165, tth = 76;
+    let tx = m.x + m.cardW + 8;
+    let ty = (side === 'A' ? m.yA : m.yB);
+    if (tx + tw > W - 8) tx = m.x - tw - 8;
+    if (ty + tth > H - 8) ty = H - tth - 8;
+
+    ctx.fillStyle = '#0d0f1f';
+    roundRect(ctx, tx, ty, tw, tth, 7);
+    ctx.fill();
+    ctx.strokeStyle = isWinner ? '#10b981' : '#7c3aed';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    const label = side === 'A' ? m.labelA : m.labelB;
+    const id = side === 'A' ? m.idA : m.idB;
+    const ctr = side === 'A' ? m.ctrA : m.ctrB;
+    const roas = side === 'A' ? m.roasA : m.roasB;
+    const cpc = side === 'A' ? m.cpcA : m.cpcB;
+
+    ctx.fillStyle = '#fff';
+    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.fillText(`${id} — ${label}`, tx + 10, ty + 16);
+
+    ctx.fillStyle = isWinner ? '#10b981' : '#f87171';
+    ctx.font = '500 10px -apple-system, sans-serif';
+    ctx.fillText(isWinner ? '▲ WINNING' : '▼ LOSING', tx + 10, ty + 30);
+
+    [
+      { k: 'CTR', v: `${ctr}%` },
+      { k: 'ROAS', v: `${roas}x` },
+      { k: 'CPC', v: `$${cpc}` },
+    ].forEach((row, i) => {
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = '400 10px -apple-system, sans-serif';
+      ctx.fillText(row.k, tx + 10 + i * 52, ty + 58);
+      ctx.fillStyle = '#a78bfa';
+      ctx.font = '600 10px -apple-system, sans-serif';
+      ctx.fillText(row.v, tx + 10 + i * 52, ty + 70);
+    });
+  }
+
+  requestAnimationFrame(draw);
+}
+
+draw();
+</script>

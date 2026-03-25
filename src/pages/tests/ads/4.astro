@@ -1,0 +1,334 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="PelloAds — Design 4" description="PelloAds test design 4 — Creative Matrix">
+  <div style="min-height:100vh;background:#060712;display:flex;flex-direction:column;align-items:center;padding:2rem;">
+    <h1 style="color:#7c3aed;font:700 1.5rem/1.3 -apple-system,sans-serif;margin-bottom:0.5rem;letter-spacing:-0.02em;">PelloAds</h1>
+    <p style="color:rgba(255,255,255,0.5);font:400 0.85rem/1.4 -apple-system,sans-serif;margin-bottom:1.5rem;">Design 4 — Creative Matrix</p>
+    <canvas id="ads-canvas-4" style="width:100%;max-width:900px;border-radius:12px;cursor:crosshair;"></canvas>
+  </div>
+</Layout>
+
+<script>
+const canvas = document.getElementById('ads-canvas-4') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const dpr = window.devicePixelRatio || 1;
+const W = 900, H = 560;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+ctx.scale(dpr, dpr);
+
+let mouseX = -1, mouseY = -1;
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - r.left) * (W / r.width);
+  mouseY = (e.clientY - r.top) * (H / r.height);
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
+
+const creativeTypes = ['Video 30s', 'Static Hero', 'Carousel', 'Story Reel', 'Video 15s', 'UGC'];
+const audiences = ['25-34 Women', '18-24 Men', '35-44 Parents', '45-54 HHI>100k', 'Retarget 30d', 'Lookalike 2%'];
+
+interface Cell {
+  ctr: number;
+  roas: number;
+  spend: number;
+  conversions: number;
+  score: number;
+  displayScore: number;
+  pulse: number;
+  isWinner: boolean;
+  updateTimer: number;
+}
+
+const ROWS = creativeTypes.length;
+const COLS = audiences.length;
+const cells: Cell[][] = [];
+
+for (let r = 0; r < ROWS; r++) {
+  cells.push([]);
+  for (let c = 0; c < COLS; c++) {
+    const ctr = parseFloat((Math.random() * 4 + 0.3).toFixed(2));
+    const roas = parseFloat((Math.random() * 5 + 0.4).toFixed(2));
+    const score = (ctr / 4.3) * 0.45 + (roas / 5.4) * 0.55;
+    cells[r].push({
+      ctr, roas,
+      spend: Math.floor(Math.random() * 5000 + 200),
+      conversions: Math.floor(Math.random() * 200 + 5),
+      score,
+      displayScore: score,
+      pulse: Math.random() * Math.PI * 2,
+      isWinner: score > 0.72,
+      updateTimer: Math.random() * 200,
+    });
+  }
+}
+
+interface WinnerSlot {
+  row: number;
+  col: number;
+  x: number;
+  score: number;
+  roas: number;
+}
+
+const topWinners: WinnerSlot[] = [];
+
+function updateTopWinners() {
+  topWinners.length = 0;
+  const all: { row: number; col: number; score: number; roas: number }[] = [];
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (cells[r][c].isWinner) all.push({ row: r, col: c, score: cells[r][c].score, roas: cells[r][c].roas });
+    }
+  }
+  all.sort((a, b) => b.score - a.score);
+  all.slice(0, 5).forEach((w, i) => {
+    topWinners.push({ ...w, x: 0 });
+  });
+}
+
+updateTopWinners();
+
+let t = 0;
+const MARGIN_LEFT = 130;
+const MARGIN_TOP = 120;
+const CELL_W = (W - MARGIN_LEFT - 20) / COLS;
+const CELL_H = (H - MARGIN_TOP - 56) / ROWS;
+
+function heatColor(score: number): string {
+  if (score < 0.25) return `rgba(30,27,75,${0.5 + score * 0.8})`;
+  if (score < 0.5) return `rgba(55,48,163,${0.4 + score * 0.6})`;
+  if (score < 0.65) return `rgba(124,58,237,${0.4 + score * 0.6})`;
+  if (score < 0.8) return `rgba(234,88,12,${0.4 + score * 0.7})`;
+  return `rgba(16,185,129,${0.5 + score * 0.5})`;
+}
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  const rr = Math.min(r, h / 2, w / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.lineTo(x + w - rr, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+  ctx.lineTo(x + w, y + h - rr);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+  ctx.lineTo(x + rr, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + rr);
+  ctx.lineTo(x, y + rr);
+  ctx.quadraticCurveTo(x, y, x + rr, y);
+  ctx.closePath();
+}
+
+function draw() {
+  t += 0.016;
+
+  // Animate cell scores
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const cell = cells[r][c];
+      cell.pulse += 0.02 + cell.score * 0.01;
+      cell.updateTimer -= 1;
+      if (cell.updateTimer <= 0) {
+        const delta = (Math.random() - 0.48) * 0.04;
+        cell.score = Math.max(0, Math.min(1, cell.score + delta));
+        cell.isWinner = cell.score > 0.72;
+        cell.updateTimer = 60 + Math.random() * 120;
+      }
+      cell.displayScore += (cell.score - cell.displayScore) * 0.05;
+    }
+  }
+
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, W, H);
+
+  // Header
+  ctx.fillStyle = '#0d0f1f';
+  roundRect(ctx, 16, 14, W - 32, 46, 8);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(124,58,237,0.3)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = '#fff';
+  ctx.font = '600 13px -apple-system, sans-serif';
+  ctx.fillText('Creative Matrix — Performance Heatmap', 28, 41);
+
+  // Legend
+  const legendColors = [
+    { c: 'rgba(30,27,75,0.8)', l: 'Low' },
+    { c: 'rgba(124,58,237,0.6)', l: 'Mid' },
+    { c: 'rgba(234,88,12,0.7)', l: 'Good' },
+    { c: 'rgba(16,185,129,0.8)', l: 'Top' },
+  ];
+  legendColors.forEach((lc, i) => {
+    const lx = W - 200 + i * 46;
+    ctx.fillStyle = lc.c;
+    roundRect(ctx, lx, 24, 32, 14, 3);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '400 9px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(lc.l, lx + 16, 51);
+    ctx.textAlign = 'left';
+  });
+
+  // Column headers (audiences)
+  audiences.forEach((aud, ci) => {
+    const cx = MARGIN_LEFT + ci * CELL_W + CELL_W / 2;
+    ctx.save();
+    ctx.translate(cx, MARGIN_TOP - 8);
+    ctx.rotate(-Math.PI / 6);
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '500 9px -apple-system, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(aud, 0, 0);
+    ctx.textAlign = 'left';
+    ctx.restore();
+  });
+
+  // Row labels (creative types)
+  creativeTypes.forEach((ct, ri) => {
+    const cy = MARGIN_TOP + ri * CELL_H + CELL_H / 2;
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.font = '500 10px -apple-system, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(ct, MARGIN_LEFT - 8, cy + 4);
+    ctx.textAlign = 'left';
+  });
+
+  // Draw cells
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const cell = cells[r][c];
+      const cx = MARGIN_LEFT + c * CELL_W + 2;
+      const cy = MARGIN_TOP + r * CELL_H + 2;
+      const cw = CELL_W - 4;
+      const ch = CELL_H - 4;
+
+      const isHovered = mouseX >= cx && mouseX <= cx + cw && mouseY >= cy && mouseY <= cy + ch;
+
+      ctx.fillStyle = heatColor(cell.displayScore);
+      roundRect(ctx, cx, cy, cw, ch, 4);
+      ctx.fill();
+
+      if (cell.isWinner) {
+        const winPulse = Math.sin(cell.pulse * 2) * 0.3 + 0.7;
+        ctx.strokeStyle = `rgba(251,191,36,${winPulse * 0.8})`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      } else if (isHovered) {
+        ctx.strokeStyle = 'rgba(124,58,237,0.8)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      } else {
+        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+
+      // Score text in cell
+      if (CELL_H > 28) {
+        ctx.fillStyle = cell.displayScore > 0.5 ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)';
+        ctx.font = `600 ${Math.min(11, CELL_H * 0.28)}px -apple-system, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText(`${(cell.displayScore * 100).toFixed(0)}`, cx + cw / 2, cy + ch / 2 + 4);
+        ctx.textAlign = 'left';
+      }
+    }
+  }
+
+  // Winner strip at bottom
+  const stripY = MARGIN_TOP + ROWS * CELL_H + 12;
+  ctx.fillStyle = 'rgba(13,15,31,0.8)';
+  roundRect(ctx, MARGIN_LEFT, stripY, W - MARGIN_LEFT - 20, 34, 6);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(251,191,36,0.3)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = 'rgba(251,191,36,0.8)';
+  ctx.font = '500 9px -apple-system, sans-serif';
+  ctx.fillText('TOP PERFORMERS', MARGIN_LEFT + 10, stripY + 12);
+
+  updateTopWinners();
+  topWinners.forEach((w, i) => {
+    const slotW = (W - MARGIN_LEFT - 110) / 5;
+    const sx = MARGIN_LEFT + 100 + i * slotW;
+    const cell = cells[w.row][w.col];
+    const wPulse = Math.sin(t * 2 + i) * 0.2 + 0.8;
+
+    ctx.fillStyle = `rgba(251,191,36,${0.12 * wPulse})`;
+    roundRect(ctx, sx, stripY + 6, slotW - 6, 22, 4);
+    ctx.fill();
+    ctx.strokeStyle = `rgba(251,191,36,${0.4 * wPulse})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = '500 9px -apple-system, sans-serif';
+    ctx.fillText(`${creativeTypes[w.row].split(' ')[0]} × ${audiences[w.col].split(' ')[0]}`, sx + 5, stripY + 17);
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '400 8px -apple-system, sans-serif';
+    ctx.fillText(`${w.roas.toFixed(1)}x ROAS`, sx + 5, stripY + 27);
+  });
+
+  // Tooltip
+  let hoveredCell: { r: number; c: number } | null = null;
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const cx = MARGIN_LEFT + c * CELL_W + 2;
+      const cy = MARGIN_TOP + r * CELL_H + 2;
+      const cw = CELL_W - 4, ch = CELL_H - 4;
+      if (mouseX >= cx && mouseX <= cx + cw && mouseY >= cy && mouseY <= cy + ch) {
+        hoveredCell = { r, c };
+      }
+    }
+  }
+
+  if (hoveredCell) {
+    const cell = cells[hoveredCell.r][hoveredCell.c];
+    const cx = MARGIN_LEFT + hoveredCell.c * CELL_W;
+    const cy = MARGIN_TOP + hoveredCell.r * CELL_H;
+    const tw = 170, tth = 96;
+    let tx = cx + CELL_W + 4;
+    let ty = cy;
+    if (tx + tw > W - 8) tx = cx - tw - 4;
+    if (ty + tth > H - 8) ty = H - tth - 8;
+    if (ty < 14) ty = 14;
+
+    ctx.fillStyle = '#0d0f1f';
+    roundRect(ctx, tx, ty, tw, tth, 7);
+    ctx.fill();
+    ctx.strokeStyle = cell.isWinner ? '#fbbf24' : '#7c3aed';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.fillStyle = '#fff';
+    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.fillText(creativeTypes[hoveredCell.r], tx + 10, ty + 16);
+    ctx.fillStyle = 'rgba(124,58,237,0.8)';
+    ctx.font = '400 10px -apple-system, sans-serif';
+    ctx.fillText(audiences[hoveredCell.c], tx + 10, ty + 29);
+
+    [
+      { k: 'Score', v: `${(cell.score * 100).toFixed(1)}`, c: cell.isWinner ? '#fbbf24' : '#a78bfa' },
+      { k: 'CTR', v: `${cell.ctr}%`, c: '#a78bfa' },
+      { k: 'ROAS', v: `${cell.roas}x`, c: '#34d399' },
+      { k: 'Spend', v: `$${cell.spend.toLocaleString()}`, c: '#fbbf24' },
+      { k: 'Conversions', v: `${cell.conversions}`, c: '#38bdf8' },
+    ].forEach((row, i) => {
+      const ry = ty + 44 + i * 11;
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.font = '400 9px -apple-system, sans-serif';
+      ctx.fillText(row.k, tx + 10, ry);
+      ctx.fillStyle = row.c;
+      ctx.font = '600 9px -apple-system, sans-serif';
+      ctx.fillText(row.v, tx + 105, ry);
+    });
+  }
+
+  requestAnimationFrame(draw);
+}
+
+draw();
+</script>

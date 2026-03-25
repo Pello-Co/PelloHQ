@@ -1,0 +1,459 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="PelloAds — Design 17" description="PelloAds test design 17">
+  <div style="min-height:100vh;background:#060712;display:flex;flex-direction:column;align-items:center;padding:2rem;">
+    <h1 style="color:#7c3aed;font:700 1.5rem/1.3 -apple-system,sans-serif;margin-bottom:0.5rem;letter-spacing:-0.02em;">PelloAds</h1>
+    <p style="color:rgba(255,255,255,0.5);font:400 0.85rem/1.4 -apple-system,sans-serif;margin-bottom:1.5rem;">Design 17 — Ad Copy Testing Lab</p>
+    <canvas id="ads-canvas-17" style="width:100%;max-width:900px;border-radius:12px;cursor:crosshair;"></canvas>
+  </div>
+</Layout>
+
+<script>
+const canvas = document.getElementById('ads-canvas-17') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const dpr = window.devicePixelRatio || 1;
+
+const W = 900, H = 600;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+canvas.style.height = H + 'px';
+ctx.scale(dpr, dpr);
+
+// --- Data ---
+interface Variant {
+  headline: string;
+  ctr: number;
+  roas: number;
+  conv: number;
+  impr: number;
+  bar: number;      // animated bar fill 0..1
+  barTarget: number;
+  color: string;
+}
+
+const variants: Variant[] = [
+  { headline: 'Scale 10x Faster',      ctr: 3.8, roas: 4.7, conv: 312, impr: 82100, bar: 0, barTarget: 1.00, color: '#10b981' },
+  { headline: 'Crush Your CPC',        ctr: 3.1, roas: 3.9, conv: 256, impr: 76400, bar: 0, barTarget: 0.82, color: '#10b981' },
+  { headline: 'Your Growth Engine',    ctr: 2.6, roas: 3.1, conv: 198, impr: 68200, bar: 0, barTarget: 0.68, color: '#f59e0b' },
+  { headline: 'Beat Competitors Now',  ctr: 2.2, roas: 2.7, conv: 167, impr: 61800, bar: 0, barTarget: 0.58, color: '#f59e0b' },
+  { headline: 'ROI You Can Measure',   ctr: 1.9, roas: 2.2, conv: 134, impr: 54300, bar: 0, barTarget: 0.50, color: '#7c3aed' },
+  { headline: 'Zero Wasted Budget',    ctr: 1.4, roas: 1.8, conv: 98,  impr: 43100, bar: 0, barTarget: 0.37, color: '#7c3aed' },
+];
+
+const killed = [
+  { headline: 'Unlimited Growth Hack', reason: 'CTR < 0.5%' },
+  { headline: 'Try For Free Today',    reason: 'CPC too high' },
+  { headline: 'Results Guaranteed',    reason: 'ROAS < 1x' },
+  { headline: 'Click Here Now',        reason: 'CTR < 0.5%' },
+];
+
+// Sparkline for winner (7 days)
+const winnerSpark = [0.52, 0.58, 0.61, 0.68, 0.74, 0.82, 1.0];
+
+let hoveredVariant = -1;
+let mouseX = 0, mouseY = 0;
+let t = 0;
+
+// Layout
+const leftX = 20, leftW = 275;
+const centreX = leftX + leftW + 16, centreW = 290;
+const rightX = centreX + centreW + 16, rightW = W - rightX - 20;
+const contentTop = 20;
+
+// Card layout (left panel)
+const cardH = 72, cardGap = 8;
+const leftTitleH = 28;
+
+function easeOutCubic(t: number) { return 1 - Math.pow(1 - t, 3); }
+
+function drawRR(x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// Slowly drift bar targets for live effect
+function tickBars() {
+  variants.forEach((v, i) => {
+    if (i === 0) return; // winner stays at 1
+    const drift = (Math.random() - 0.5) * 0.008;
+    v.barTarget = Math.max(0.1, Math.min(0.99, v.barTarget + drift));
+  });
+}
+setInterval(tickBars, 1200);
+
+function draw(ts: number) {
+  t = ts * 0.001;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, W, H);
+
+  // Animate bars toward target
+  variants.forEach(v => {
+    v.bar += (v.barTarget - v.bar) * 0.04;
+  });
+
+  // === LEFT PANEL — Variants Queue ===
+  // Panel bg
+  drawRR(leftX, contentTop, leftW, H - contentTop - 20, 10);
+  ctx.fillStyle = '#0d0f1f';
+  ctx.fill();
+
+  // Title
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.font = '700 9px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('VARIANTS IN TEST', leftX + 14, contentTop + 10);
+
+  // "6 active" badge
+  ctx.fillStyle = '#10b98130';
+  drawRR(leftX + leftW - 60, contentTop + 6, 44, 16, 8);
+  ctx.fill();
+  ctx.fillStyle = '#10b981';
+  ctx.font = '600 9px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('6 active', leftX + leftW - 38, contentTop + 14);
+
+  variants.forEach((v, i) => {
+    const cy = contentTop + leftTitleH + i * (cardH + cardGap);
+    const isHov = hoveredVariant === i;
+
+    // Card bg
+    drawRR(leftX + 8, cy, leftW - 16, cardH, 8);
+    ctx.fillStyle = isHov ? '#161930' : '#0a0c1a';
+    ctx.fill();
+    if (isHov) {
+      ctx.strokeStyle = v.color + '60';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Rank number
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.font = '700 11px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(`#${i + 1}`, leftX + 16, cy + 10);
+
+    // Headline
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.font = '600 12px -apple-system, sans-serif';
+    ctx.fillText(v.headline, leftX + 36, cy + 10);
+
+    // CTR label
+    ctx.fillStyle = v.color;
+    ctx.font = '700 11px -apple-system, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${v.ctr.toFixed(1)}% CTR`, leftX + leftW - 16, cy + 10);
+
+    // Progress bar track
+    const barX = leftX + 16, barY = cy + 34, barW = leftW - 32, barH = 6;
+    drawRR(barX, barY, barW, barH, 3);
+    ctx.fillStyle = '#1a1d2e';
+    ctx.fill();
+
+    // Progress bar fill
+    const fillW = barW * v.bar;
+    if (fillW > 4) {
+      const grad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+      grad.addColorStop(0, v.color + 'cc');
+      grad.addColorStop(1, v.color);
+      drawRR(barX, barY, fillW, barH, 3);
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+
+    // Impressions
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.font = '400 10px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(`${(v.impr / 1000).toFixed(0)}k impr`, leftX + 16, cy + 50);
+
+    // vs best
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.fillText(`vs best: ${Math.round(v.bar * 100)}%`, leftX + leftW - 16, cy + 50);
+  });
+
+  // === CENTRE PANEL — Top Performer ===
+  drawRR(centreX, contentTop, centreW, H - contentTop - 20, 10);
+  ctx.fillStyle = '#0d0f1f';
+  ctx.fill();
+  // Subtle green border
+  ctx.strokeStyle = '#10b98130';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Title
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.font = '700 9px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('TOP PERFORMER', centreX + 14, contentTop + 10);
+
+  // WINNER badge
+  const bw = 64, bh = 20;
+  drawRR(centreX + centreW - bw - 10, contentTop + 6, bw, bh, 10);
+  ctx.fillStyle = '#10b98125';
+  ctx.fill();
+  ctx.strokeStyle = '#10b981';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.fillStyle = '#10b981';
+  ctx.font = '700 9px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('WINNER', centreX + centreW - bw / 2 - 10, contentTop + 16);
+
+  const winner = variants[0];
+
+  // Big headline
+  ctx.fillStyle = '#fff';
+  ctx.font = '700 22px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText(winner.headline, centreX + centreW / 2, contentTop + 40);
+
+  // Glow under headline
+  const glowGrad = ctx.createRadialGradient(centreX + centreW / 2, contentTop + 55, 0, centreX + centreW / 2, contentTop + 55, 80);
+  glowGrad.addColorStop(0, '#10b98115');
+  glowGrad.addColorStop(1, 'transparent');
+  ctx.fillStyle = glowGrad;
+  ctx.fillRect(centreX, contentTop + 30, centreW, 60);
+
+  // 2x2 stats grid
+  const statsData = [
+    { label: 'CTR',         val: `${winner.ctr.toFixed(1)}%`,  color: '#10b981' },
+    { label: 'ROAS',        val: `${winner.roas.toFixed(1)}x`, color: '#10b981' },
+    { label: 'Conversions', val: winner.conv.toString(),        color: '#7c3aed' },
+    { label: 'Impressions', val: `${(winner.impr / 1000).toFixed(0)}k`, color: '#f59e0b' },
+  ];
+  const sgX = centreX + 14, sgY = contentTop + 80, sgW = (centreW - 28 - 8) / 2, sgH = 52;
+  statsData.forEach((s, i) => {
+    const col = i % 2, row = Math.floor(i / 2);
+    const sx = sgX + col * (sgW + 8), sy = sgY + row * (sgH + 8);
+    drawRR(sx, sy, sgW, sgH, 6);
+    ctx.fillStyle = '#080a18';
+    ctx.fill();
+    ctx.strokeStyle = s.color + '30';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = s.color;
+    ctx.font = '700 16px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(s.val, sx + sgW / 2, sy + sgH / 2 - 6);
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '400 9px -apple-system, sans-serif';
+    ctx.fillText(s.label, sx + sgW / 2, sy + sgH / 2 + 10);
+  });
+
+  // Sparkline — 7 days
+  const spLabel = '7-day performance';
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.font = '400 9px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(spLabel, centreX + 14, contentTop + 208);
+
+  const spX = centreX + 14, spY = contentTop + 226, spW = centreW - 28, spH = 50;
+  // Fill under spark
+  ctx.beginPath();
+  winnerSpark.forEach((p, pi) => {
+    const px = spX + (pi / (winnerSpark.length - 1)) * spW;
+    const py = spY + spH - p * spH;
+    if (pi === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  });
+  ctx.lineTo(spX + spW, spY + spH);
+  ctx.lineTo(spX, spY + spH);
+  ctx.closePath();
+  ctx.fillStyle = '#10b98118';
+  ctx.fill();
+  // Line
+  ctx.beginPath();
+  winnerSpark.forEach((p, pi) => {
+    const px = spX + (pi / (winnerSpark.length - 1)) * spW;
+    const py = spY + spH - p * spH;
+    if (pi === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  });
+  ctx.strokeStyle = '#10b981';
+  ctx.lineWidth = 2;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+  // Dots
+  winnerSpark.forEach((p, pi) => {
+    const px = spX + (pi / (winnerSpark.length - 1)) * spW;
+    const py = spY + spH - p * spH;
+    ctx.beginPath();
+    ctx.arc(px, py, 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#10b981';
+    ctx.fill();
+  });
+
+  // Day labels
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  ctx.font = '400 9px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  days.forEach((d, i) => {
+    const px = spX + (i / (days.length - 1)) * spW;
+    ctx.fillText(d, px, spY + spH + 4);
+  });
+
+  // Trend info
+  ctx.fillStyle = '#10b981';
+  ctx.font = '700 12px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('▲ +92% this week', centreX + centreW / 2, contentTop + 300);
+
+  // === RIGHT PANEL — Killed Variants ===
+  drawRR(rightX, contentTop, rightW, H - contentTop - 20, 10);
+  ctx.fillStyle = '#0d0f1f';
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.font = '700 9px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('KILLED VARIANTS', rightX + 14, contentTop + 10);
+
+  // Count badge
+  drawRR(rightX + rightW - 60, contentTop + 6, 48, 16, 8);
+  ctx.fillStyle = '#ef444420';
+  ctx.fill();
+  ctx.fillStyle = '#ef4444';
+  ctx.font = '600 9px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('4 today', rightX + rightW - 36, contentTop + 14);
+
+  killed.forEach((k, i) => {
+    const ky = contentTop + 36 + i * 78;
+
+    // Card
+    drawRR(rightX + 8, ky, rightW - 16, 66, 8);
+    ctx.fillStyle = '#0a0c1a';
+    ctx.fill();
+    ctx.strokeStyle = '#ef444430';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Red X icon (drawn with lines)
+    const xCx = rightX + 24, xCy = ky + 18;
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(xCx - 6, xCy - 6);
+    ctx.lineTo(xCx + 6, xCy + 6);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(xCx + 6, xCy - 6);
+    ctx.lineTo(xCx - 6, xCy + 6);
+    ctx.stroke();
+
+    // Headline (faded)
+    ctx.fillStyle = 'rgba(255,255,255,0.38)';
+    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(k.headline, rightX + 38, ky + 10);
+
+    // Strikethrough
+    const textW = ctx.measureText(k.headline).width;
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(rightX + 38, ky + 17);
+    ctx.lineTo(rightX + 38 + textW, ky + 17);
+    ctx.stroke();
+
+    // Reason
+    drawRR(rightX + 14, ky + 36, rightW - 28, 18, 9);
+    ctx.fillStyle = '#ef444418';
+    ctx.fill();
+    ctx.fillStyle = '#ef4444cc';
+    ctx.font = '600 9px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(k.reason, rightX + rightW / 2, ky + 45);
+  });
+
+  // === HOVER TOOLTIP ===
+  if (hoveredVariant >= 0) {
+    const v = variants[hoveredVariant];
+    const cardY = contentTop + leftTitleH + hoveredVariant * (cardH + cardGap);
+    const ttW = 170, ttH = 96, ttR = 8;
+    let ttX = leftX + leftW + 8;
+    let ttY = cardY - 8;
+    if (ttY + ttH > H - 20) ttY = H - ttH - 20;
+
+    drawRR(ttX, ttY, ttW, ttH, ttR);
+    ctx.fillStyle = '#13152e';
+    ctx.fill();
+    ctx.strokeStyle = v.color + '80';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = v.color;
+    ctx.font = '700 12px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(v.headline, ttX + 12, ttY + 10);
+
+    const lines = [
+      `CTR: ${v.ctr.toFixed(1)}%`,
+      `ROAS: ${v.roas.toFixed(1)}x`,
+      `Conv: ${v.conv}`,
+      `Impr: ${(v.impr / 1000).toFixed(0)}k`,
+    ];
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.font = '11px -apple-system, sans-serif';
+    lines.forEach((ln, li) => {
+      ctx.fillText(ln, ttX + 12, ttY + 28 + li * 16);
+    });
+  }
+
+  requestAnimationFrame(draw);
+}
+
+requestAnimationFrame(draw);
+
+// Card hover zones
+const cardZones = () => variants.map((_, i) => ({
+  x: leftX + 8,
+  y: contentTop + leftTitleH + i * (cardH + cardGap),
+  w: leftW - 16,
+  h: cardH,
+}));
+
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - rect.left) * (W / rect.width);
+  mouseY = (e.clientY - rect.top) * (H / rect.height);
+  hoveredVariant = -1;
+  cardZones().forEach((z, i) => {
+    if (mouseX >= z.x && mouseX <= z.x + z.w && mouseY >= z.y && mouseY <= z.y + z.h) {
+      hoveredVariant = i;
+    }
+  });
+});
+
+canvas.addEventListener('mouseleave', () => { hoveredVariant = -1; });
+</script>

@@ -1,0 +1,419 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="PelloAds — Design 3" description="PelloAds test design 3 — Budget Flow Visualiser">
+  <div style="min-height:100vh;background:#060712;display:flex;flex-direction:column;align-items:center;padding:2rem;">
+    <h1 style="color:#7c3aed;font:700 1.5rem/1.3 -apple-system,sans-serif;margin-bottom:0.5rem;letter-spacing:-0.02em;">PelloAds</h1>
+    <p style="color:rgba(255,255,255,0.5);font:400 0.85rem/1.4 -apple-system,sans-serif;margin-bottom:1.5rem;">Design 3 — Budget Flow Visualiser</p>
+    <canvas id="ads-canvas-3" style="width:100%;max-width:900px;border-radius:12px;cursor:crosshair;"></canvas>
+  </div>
+</Layout>
+
+<script>
+const canvas = document.getElementById('ads-canvas-3') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const dpr = window.devicePixelRatio || 1;
+const W = 900, H = 540;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+ctx.scale(dpr, dpr);
+
+let mouseX = -1, mouseY = -1;
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - r.left) * (W / r.width);
+  mouseY = (e.clientY - r.top) * (H / r.height);
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
+
+const totalBudget = 48500;
+
+interface Channel {
+  name: string;
+  color: string;
+  share: number;
+  campaigns: Campaign[];
+  y: number;
+  h: number;
+}
+
+interface Campaign {
+  name: string;
+  share: number;
+  variants: FlowVariant[];
+  y: number;
+  h: number;
+}
+
+interface FlowVariant {
+  name: string;
+  share: number;
+  isWinner: boolean;
+  roas: number;
+  ctr: number;
+  y: number;
+  h: number;
+  animPulse: number;
+}
+
+const channels: Channel[] = [
+  {
+    name: 'Google', color: '#4285f4', share: 0.38,
+    campaigns: [
+      { name: 'Search Brand', share: 0.55, variants: [
+        { name: 'V001', share: 0.45, isWinner: true, roas: 4.2, ctr: 3.1, y: 0, h: 0, animPulse: 0 },
+        { name: 'V002', share: 0.30, isWinner: false, roas: 2.1, ctr: 1.8, y: 0, h: 0, animPulse: 0.5 },
+        { name: 'V003', share: 0.25, isWinner: false, roas: 1.4, ctr: 1.2, y: 0, h: 0, animPulse: 1.0 },
+      ], y: 0, h: 0 },
+      { name: 'Display', share: 0.45, variants: [
+        { name: 'V004', share: 0.60, isWinner: true, roas: 3.5, ctr: 2.4, y: 0, h: 0, animPulse: 0.2 },
+        { name: 'V005', share: 0.40, isWinner: false, roas: 1.8, ctr: 1.1, y: 0, h: 0, animPulse: 0.8 },
+      ], y: 0, h: 0 },
+    ],
+    y: 0, h: 0
+  },
+  {
+    name: 'Meta', color: '#0ea5e9', share: 0.32,
+    campaigns: [
+      { name: 'Retargeting', share: 0.6, variants: [
+        { name: 'V006', share: 0.50, isWinner: true, roas: 5.1, ctr: 4.2, y: 0, h: 0, animPulse: 0.3 },
+        { name: 'V007', share: 0.30, isWinner: false, roas: 2.3, ctr: 2.0, y: 0, h: 0, animPulse: 0.9 },
+        { name: 'V008', share: 0.20, isWinner: false, roas: 1.1, ctr: 0.9, y: 0, h: 0, animPulse: 1.5 },
+      ], y: 0, h: 0 },
+      { name: 'Prospecting', share: 0.4, variants: [
+        { name: 'V009', share: 0.65, isWinner: true, roas: 2.8, ctr: 1.9, y: 0, h: 0, animPulse: 0.4 },
+        { name: 'V010', share: 0.35, isWinner: false, roas: 1.5, ctr: 1.1, y: 0, h: 0, animPulse: 1.2 },
+      ], y: 0, h: 0 },
+    ],
+    y: 0, h: 0
+  },
+  {
+    name: 'TikTok', color: '#ec4899', share: 0.18,
+    campaigns: [
+      { name: 'UGC Push', share: 1.0, variants: [
+        { name: 'V011', share: 0.55, isWinner: true, roas: 3.8, ctr: 5.3, y: 0, h: 0, animPulse: 0.6 },
+        { name: 'V012', share: 0.45, isWinner: false, roas: 1.7, ctr: 2.1, y: 0, h: 0, animPulse: 1.1 },
+      ], y: 0, h: 0 },
+    ],
+    y: 0, h: 0
+  },
+  {
+    name: 'LinkedIn', color: '#0284c7', share: 0.12,
+    campaigns: [
+      { name: 'B2B', share: 1.0, variants: [
+        { name: 'V013', share: 0.70, isWinner: true, roas: 2.1, ctr: 1.4, y: 0, h: 0, animPulse: 0.7 },
+        { name: 'V014', share: 0.30, isWinner: false, roas: 0.9, ctr: 0.7, y: 0, h: 0, animPulse: 1.3 },
+      ], y: 0, h: 0 },
+    ],
+    y: 0, h: 0
+  },
+];
+
+let t = 0;
+let hoveredPath: { channel: number; campaign: number; variant: number } | null = null;
+
+const COL1_X = 60;
+const COL2_X = 260;
+const COL3_X = 480;
+const COL4_X = 720;
+const FLOW_TOP = 76;
+const FLOW_H = H - FLOW_TOP - 40;
+const NODE_W = 100;
+const NODE_H_MIN = 14;
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  if (h < 2) h = 2;
+  const rr = Math.min(r, h / 2, w / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.lineTo(x + w - rr, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+  ctx.lineTo(x + w, y + h - rr);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+  ctx.lineTo(x + rr, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + rr);
+  ctx.lineTo(x, y + rr);
+  ctx.quadraticCurveTo(x, y, x + rr, y);
+  ctx.closePath();
+}
+
+function drawCurvedFlow(x1: number, y1: number, h1: number, x2: number, y2: number, h2: number, color: string, opacity: number) {
+  const grad = ctx.createLinearGradient(x1, 0, x2, 0);
+  grad.addColorStop(0, `${color}${Math.round(opacity * 255).toString(16).padStart(2,'0')}`);
+  grad.addColorStop(1, `${color}${Math.round(opacity * 0.6 * 255).toString(16).padStart(2,'0')}`);
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  const cx = (x1 + x2) / 2;
+  ctx.moveTo(x1 + NODE_W, y1);
+  ctx.bezierCurveTo(cx, y1, cx, y2, x2, y2);
+  ctx.lineTo(x2, y2 + h2);
+  ctx.bezierCurveTo(cx, y2 + h2, cx, y1 + h1, x1 + NODE_W, y1 + h1);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function computeLayout() {
+  let totalH = FLOW_H;
+  let cy = FLOW_TOP;
+  channels.forEach(ch => {
+    ch.h = Math.max(NODE_H_MIN, ch.share * totalH - 4);
+    ch.y = cy;
+    cy += ch.h + (totalH / channels.length - ch.h) / 2 + 4;
+  });
+
+  // Re-center channels
+  let usedH = channels.reduce((s, c) => s + c.h, 0);
+  let gap = (FLOW_H - usedH) / (channels.length + 1);
+  cy = FLOW_TOP + gap;
+  channels.forEach(ch => {
+    ch.y = cy;
+    cy += ch.h + gap;
+  });
+
+  channels.forEach(ch => {
+    let campY = ch.y;
+    ch.campaigns.forEach(camp => {
+      camp.h = Math.max(NODE_H_MIN, camp.share * ch.h - 2);
+      camp.y = campY;
+      campY += camp.h + 2;
+
+      let varY = camp.y;
+      camp.variants.forEach(v => {
+        v.h = Math.max(NODE_H_MIN, v.share * camp.h - 1);
+        v.y = varY;
+        varY += v.h + 1;
+      });
+    });
+  });
+}
+
+function isHoveredFlow(ci: number, cpi: number, vi: number) {
+  if (!hoveredPath) return false;
+  return hoveredPath.channel === ci && hoveredPath.campaign === cpi && hoveredPath.variant === vi;
+}
+
+function checkHover() {
+  hoveredPath = null;
+  channels.forEach((ch, ci) => {
+    // Check source node
+    if (mouseX >= COL1_X && mouseX <= COL1_X + NODE_W && mouseY >= ch.y && mouseY <= ch.y + ch.h) {
+      hoveredPath = { channel: ci, campaign: -1, variant: -1 };
+    }
+    ch.campaigns.forEach((camp, cpi) => {
+      if (mouseX >= COL2_X && mouseX <= COL2_X + NODE_W && mouseY >= camp.y && mouseY <= camp.y + camp.h) {
+        hoveredPath = { channel: ci, campaign: cpi, variant: -1 };
+      }
+      camp.variants.forEach((v, vi) => {
+        if (mouseX >= COL3_X && mouseX <= COL3_X + NODE_W && mouseY >= v.y && mouseY <= v.y + v.h) {
+          hoveredPath = { channel: ci, campaign: cpi, variant: vi };
+        }
+      });
+    });
+  });
+}
+
+function draw() {
+  t += 0.016;
+  computeLayout();
+  checkHover();
+
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, W, H);
+
+  // Header
+  ctx.fillStyle = '#0d0f1f';
+  roundRect(ctx, 16, 14, W - 32, 48, 8);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(124,58,237,0.3)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = '#fff';
+  ctx.font = '600 13px -apple-system, sans-serif';
+  ctx.fillText('Budget Flow Visualiser', 28, 43);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.font = '400 11px -apple-system, sans-serif';
+  ctx.fillText(`Total Budget: $${totalBudget.toLocaleString()}/mo`, 28, 56);
+
+  // Column headers
+  const colHeaders = [
+    { label: 'BUDGET SOURCE', x: COL1_X },
+    { label: 'CHANNELS', x: COL2_X - 30 },
+    { label: 'CAMPAIGNS', x: COL3_X - 10 },
+    { label: 'VARIANTS', x: COL4_X - 10 },
+  ];
+  colHeaders.forEach(h => {
+    ctx.fillStyle = 'rgba(124,58,237,0.6)';
+    ctx.font = '500 9px -apple-system, sans-serif';
+    ctx.fillText(h.label, h.x, FLOW_TOP - 6);
+  });
+
+  // Total budget node
+  const totalH = channels[channels.length - 1].y + channels[channels.length - 1].h - channels[0].y;
+  const totalY = channels[0].y;
+  const pulse = Math.sin(t * 1.5) * 0.3 + 0.7;
+
+  ctx.fillStyle = `rgba(124,58,237,${0.3 * pulse})`;
+  roundRect(ctx, COL1_X - 30, totalY, 115, totalH, 6);
+  ctx.fill();
+  ctx.strokeStyle = `rgba(124,58,237,${0.6 * pulse})`;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.fillStyle = '#fff';
+  ctx.font = '600 12px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('$48.5k', COL1_X - 30 + 57, totalY + totalH / 2 - 4);
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.font = '400 10px -apple-system, sans-serif';
+  ctx.fillText('monthly', COL1_X - 30 + 57, totalY + totalH / 2 + 10);
+  ctx.textAlign = 'left';
+
+  // Draw flows: total → channels
+  channels.forEach((ch, ci) => {
+    const isHighlighted = hoveredPath && hoveredPath.channel === ci;
+    drawCurvedFlow(
+      COL1_X - 30, totalY + ci * (totalH / channels.length),
+      totalH / channels.length - 2,
+      COL2_X - 30, ch.y, ch.h,
+      ch.color.replace('#', '#'), isHighlighted ? 0.5 : 0.2
+    );
+  });
+
+  // Channels → campaigns
+  channels.forEach((ch, ci) => {
+    ch.campaigns.forEach((camp, cpi) => {
+      const isHighlighted = hoveredPath && hoveredPath.channel === ci && (hoveredPath.campaign === cpi || hoveredPath.campaign === -1);
+      drawCurvedFlow(COL2_X - 30, ch.y, ch.h, COL3_X - 10, camp.y, camp.h,
+        channels[ci].color, isHighlighted ? 0.4 : 0.15);
+    });
+  });
+
+  // Campaigns → variants
+  channels.forEach((ch, ci) => {
+    ch.campaigns.forEach((camp, cpi) => {
+      camp.variants.forEach((v, vi) => {
+        v.animPulse += 0.03;
+        const isHighlighted = hoveredPath && hoveredPath.channel === ci && hoveredPath.campaign === cpi;
+        const winnerPulse = v.isWinner ? Math.sin(v.animPulse) * 0.2 + 0.8 : 0.3;
+        drawCurvedFlow(COL3_X - 10, camp.y, camp.h, COL4_X - 10, v.y, v.h,
+          v.isWinner ? '#fbbf24' : ch.color, isHighlighted ? winnerPulse : winnerPulse * 0.5);
+      });
+    });
+  });
+
+  // Draw channel nodes
+  channels.forEach((ch, ci) => {
+    const isHighlighted = hoveredPath && hoveredPath.channel === ci;
+    ctx.fillStyle = `${ch.color}${isHighlighted ? '40' : '25'}`;
+    roundRect(ctx, COL2_X - 30, ch.y, NODE_W + 20, ch.h, 5);
+    ctx.fill();
+    ctx.strokeStyle = `${ch.color}${isHighlighted ? '99' : '50'}`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    if (ch.h > 16) {
+      const spend = Math.round(totalBudget * ch.share);
+      ctx.fillStyle = '#fff';
+      ctx.font = `${Math.min(11, Math.max(8, ch.h * 0.2))}px -apple-system, sans-serif`;
+      ctx.fillText(ch.name, COL2_X - 26, ch.y + ch.h / 2 - 4);
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.font = `${Math.min(10, Math.max(7, ch.h * 0.16))}px -apple-system, sans-serif`;
+      ctx.fillText(`$${(spend / 1000).toFixed(1)}k`, COL2_X - 26, ch.y + ch.h / 2 + 8);
+    }
+  });
+
+  // Draw campaign nodes
+  channels.forEach((ch, ci) => {
+    ch.campaigns.forEach((camp, cpi) => {
+      const isHighlighted = hoveredPath && hoveredPath.channel === ci && hoveredPath.campaign === cpi;
+      ctx.fillStyle = `${ch.color}${isHighlighted ? '35' : '18'}`;
+      roundRect(ctx, COL3_X - 10, camp.y, NODE_W + 10, camp.h, 4);
+      ctx.fill();
+      ctx.strokeStyle = `${ch.color}${isHighlighted ? '80' : '40'}`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      if (camp.h > 12) {
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        ctx.font = `${Math.min(10, Math.max(7, camp.h * 0.2))}px -apple-system, sans-serif`;
+        ctx.fillText(camp.name, COL3_X - 6, camp.y + camp.h / 2 + 4);
+      }
+    });
+  });
+
+  // Draw variant nodes
+  channels.forEach((ch, ci) => {
+    ch.campaigns.forEach((camp, cpi) => {
+      camp.variants.forEach((v, vi) => {
+        const isHighlighted = hoveredPath && hoveredPath.channel === ci && hoveredPath.campaign === cpi && hoveredPath.variant === vi;
+        const glowPulse = v.isWinner ? Math.sin(v.animPulse * 2) * 0.3 + 0.7 : 0.5;
+        ctx.fillStyle = v.isWinner ? `rgba(251,191,36,${0.2 * glowPulse})` : `rgba(239,68,68,0.1)`;
+        roundRect(ctx, COL4_X - 10, v.y, NODE_W + 30, v.h, 4);
+        ctx.fill();
+        ctx.strokeStyle = v.isWinner ? `rgba(251,191,36,${0.6 * glowPulse})` : 'rgba(239,68,68,0.3)';
+        ctx.lineWidth = isHighlighted ? 1.5 : 1;
+        ctx.stroke();
+
+        if (v.h > 10) {
+          const spend = Math.round(totalBudget * ch.share * camp.share * v.share);
+          ctx.fillStyle = v.isWinner ? '#fbbf24' : 'rgba(255,255,255,0.4)';
+          ctx.font = `${Math.min(10, Math.max(7, v.h * 0.35))}px -apple-system, sans-serif`;
+          ctx.fillText(v.isWinner ? `${v.name} ★` : v.name, COL4_X - 6, v.y + v.h / 2 + 3);
+          if (v.h > 18) {
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.font = `${Math.min(9, Math.max(6, v.h * 0.28))}px -apple-system, sans-serif`;
+            ctx.fillText(`$${(spend/1000).toFixed(1)}k`, COL4_X - 6, v.y + v.h / 2 + 13);
+          }
+        }
+      });
+    });
+  });
+
+  // Tooltip for hovered node
+  if (hoveredPath && hoveredPath.variant >= 0) {
+    const ch = channels[hoveredPath.channel];
+    const camp = ch.campaigns[hoveredPath.campaign];
+    const v = camp.variants[hoveredPath.variant];
+    const spend = Math.round(totalBudget * ch.share * camp.share * v.share);
+    const tw = 170, tth = 82;
+    let tx = COL4_X + NODE_W + 24;
+    let ty = v.y;
+    if (tx + tw > W - 8) tx = COL4_X - tw - 15;
+    if (ty + tth > H - 8) ty = H - tth - 8;
+
+    ctx.fillStyle = '#0d0f1f';
+    roundRect(ctx, tx, ty, tw, tth, 7);
+    ctx.fill();
+    ctx.strokeStyle = v.isWinner ? '#fbbf24' : '#ef4444';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.fillStyle = '#fff';
+    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.fillText(`${v.name} — ${ch.name}`, tx + 10, ty + 16);
+    ctx.fillStyle = v.isWinner ? '#fbbf24' : '#f87171';
+    ctx.font = '500 10px -apple-system, sans-serif';
+    ctx.fillText(v.isWinner ? '▲ Budget Winner' : '▼ Under-performer', tx + 10, ty + 30);
+
+    [
+      { k: 'Monthly Spend', v: `$${spend.toLocaleString()}` },
+      { k: 'ROAS', v: `${v.roas}x` },
+      { k: 'CTR', v: `${v.ctr}%` },
+    ].forEach((row, i) => {
+      const ry = ty + 46 + i * 12;
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.font = '400 9px -apple-system, sans-serif';
+      ctx.fillText(row.k, tx + 10, ry);
+      ctx.fillStyle = '#a78bfa';
+      ctx.font = '600 9px -apple-system, sans-serif';
+      ctx.fillText(row.v, tx + 108, ry);
+    });
+  }
+
+  requestAnimationFrame(draw);
+}
+
+draw();
+</script>
