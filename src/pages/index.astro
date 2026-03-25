@@ -723,9 +723,11 @@ custom code.</h2>
     width: 100%;
     max-width: 520px;
     border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.08);
-    background: rgba(6,7,18,0.85);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03);
+    border: 1px solid rgba(99,102,241,0.15);
+    background: rgba(6,7,18,0.65);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(99,102,241,0.05), inset 0 1px 0 rgba(255,255,255,0.04);
     overflow: hidden;
   }
   .build-window-bar {
@@ -2400,23 +2402,66 @@ custom code.</h2>
   }
 
   // ── Product 5: Ads Equalizer Bars ────────────────────────────────────────
-  function drawBars(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, _state: Record<string, unknown>) {
+  function initMatrix(w: number, h: number) {
+    const colW = 14;
+    const cols = Math.ceil(w / colW);
+    const drops: number[] = [];
+    const speeds: number[] = [];
+    const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン01{}()[];:<>=+-*/&|!?#$%@^~`const function return async await import export class interface type let var if else for while switch case break new this true false null undefined void delete typeof instanceof in of do try catch finally throw yields';
+    for (let i = 0; i < cols; i++) {
+      drops.push(Math.random() * -50);
+      speeds.push(0.3 + Math.random() * 0.8);
+    }
+    return { drops, speeds, chars, colW, cols };
+  }
+  function drawMatrix(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
     const [r,g,b]=PV_RGB[5];
-    const numBars=40, barW=3, barGap=2, totalW=barW+barGap;
-    const startX=(w-numBars*totalW)/2;
-    const centerY=h*0.62;
-    for (let i=0;i<numBars;i++) {
-      const x=startX+i*totalW;
-      const bCx=x+barW/2;
-      const n=(noise2(i*0.15+t*0.4, t*0.6+i*0.05)+1)*0.5;
-      let barH=4+n*30;
-      if (hasMouse) {
-        const dx=Math.abs(mx-bCx);
-        if (dx<60) barH=Math.max(barH, Math.pow(1-dx/60,2)*35);
+    const st = state as { drops: number[]; speeds: number[]; chars: string; colW: number; cols: number };
+    const fontSize = 11;
+    ctx.font = `${fontSize}px "SF Mono", "Fira Code", monospace`;
+
+    for (let i = 0; i < st.cols; i++) {
+      const x = i * st.colW;
+      st.drops[i] += st.speeds[i];
+
+      // Draw trail of characters
+      const trailLen = 18;
+      for (let j = 0; j < trailLen; j++) {
+        const y = (st.drops[i] - j) * fontSize;
+        if (y < 0 || y > h) continue;
+
+        // Pick a pseudo-random character
+        const ci = Math.floor((t * 3 + i * 7 + j * 13) % st.chars.length);
+        const ch = st.chars[ci];
+
+        // Head character is brightest
+        let alpha: number;
+        if (j === 0) {
+          alpha = 0.9;
+          ctx.fillStyle = `rgba(255,255,255,0.85)`;
+        } else {
+          alpha = Math.max(0.03, (1 - j / trailLen) * 0.4);
+          ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+        }
+
+        // Mouse proximity brightens
+        if (hasMouse) {
+          const dx = Math.abs(mx - x), dy = Math.abs(my - y);
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < 80) {
+            const boost = (1 - dist / 80) * 0.3;
+            ctx.fillStyle = `rgba(${r},${g},${b},${Math.min(0.85, alpha + boost)})`;
+          }
+        }
+
+        ctx.fillText(ch, x, y);
       }
-      const alpha=0.25+(barH/34)*0.25;
-      ctx.fillStyle=`rgba(${r},${g},${b},${alpha})`;
-      ctx.fillRect(x, centerY-barH, barW, barH);
+
+      // Reset when off screen
+      if (st.drops[i] * fontSize > h + trailLen * fontSize) {
+        st.drops[i] = Math.random() * -10;
+        st.speeds[i] = 0.3 + Math.random() * 0.8;
+      }
     }
   }
 
@@ -2506,6 +2551,7 @@ custom code.</h2>
       case 1: return initReach(w,h);
       case 2: return initRain(w,h);
       case 3: return initSocial(w,h);
+      case 5: return initMatrix(w,h);
       case 6: return initParticles(w,h);
       case 7: return initBlueprint();
       default: return {};
@@ -2524,7 +2570,7 @@ custom code.</h2>
       case 2: drawRain(ctx,w,h,t,lx,ly,hasMouse,state); break;
       case 3: drawSocial(ctx,w,h,t,lx,ly,hasMouse,state); break;
       case 4: drawTopo(ctx,w,h,t,lx,ly,hasMouse,state); break;
-      case 5: drawBars(ctx,w,h,t,lx,ly,hasMouse,state); break;
+      case 5: drawMatrix(ctx,w,h,t,lx,ly,hasMouse,state); break;
       case 6: drawParticles(ctx,w,h,t,lx,ly,hasMouse,state); break;
       case 7: drawBlueprint(ctx,w,h,t,lx,ly,hasMouse,state); break;
     }
