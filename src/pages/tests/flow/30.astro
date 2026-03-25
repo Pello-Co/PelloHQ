@@ -54,7 +54,7 @@ const PANEL_BORDER= 'rgba(255,255,255,0.08)';
 const TEXT_DIM    = 'rgba(255,255,255,0.4)';
 const TEXT_MID    = 'rgba(255,255,255,0.65)';
 const TEXT_BRIGHT = '#ffffff';
-const HEADER_H    = 50;      // stats bar
+const HEADER_H    = 54;      // stats bar
 const GAP         = 6;       // px between panels
 const SIM_START_H = new Date().getHours() + new Date().getMinutes() / 60;
 
@@ -280,52 +280,118 @@ function agentAlpha(idx:number): number {
 // ─── Panel 0: Stats header ────────────────────────────────────────────────────
 
 function drawStatsBar() {
-  ctx.fillStyle = PANEL_BG;
+  // Background with subtle gradient
+  const bgGrad = ctx.createLinearGradient(0, 0, W, 0);
+  bgGrad.addColorStop(0, 'rgba(79,70,229,0.06)');
+  bgGrad.addColorStop(0.5, 'rgba(10,12,30,0.95)');
+  bgGrad.addColorStop(1, 'rgba(34,197,94,0.04)');
+  ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, HEADER_H);
-  ctx.strokeStyle = PANEL_BORDER;
+
+  // Bottom border with gradient
+  const borderGrad = ctx.createLinearGradient(0, 0, W, 0);
+  borderGrad.addColorStop(0, 'rgba(79,70,229,0.3)');
+  borderGrad.addColorStop(0.5, 'rgba(255,255,255,0.06)');
+  borderGrad.addColorStop(1, 'rgba(34,197,94,0.2)');
+  ctx.strokeStyle = borderGrad;
   ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(0, HEADER_H); ctx.lineTo(W, HEADER_H); ctx.stroke();
 
   const stats = [
-    { label:'Active Agents', value:'5', prefix:'' },
-    { label:'Tasks Today',   value:'47', prefix:'' },
-    { label:'Completion',    value:'98.7%', prefix:'' },
-    { label:'Cost Today',    value:'$4.82', prefix:'' },
-    { label:'Next Task',     value:'2m 14s', prefix:'' },
+    { label:'AGENTS',     value:'5',     accent: '#818cf8', icon: '◆' },
+    { label:'TASKS',      value:'47',    accent: '#a78bfa', icon: '⚡' },
+    { label:'SUCCESS',    value:'98.7%', accent: '#4ade80', icon: '✓' },
+    { label:'COST',       value:'$4.82', accent: '#fbbf24', icon: '◈' },
+    { label:'NEXT IN',    value:'2m 14s',accent: '#22d3ee', icon: '◷' },
   ];
 
-  const segW = W / (stats.length + 1);
-  ctx.font = '600 11px -apple-system, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
+  const totalStats = stats.length + 1; // +1 for running indicator
+  const segW = W / totalStats;
+  const cardPad = 4;
+  const cardH = HEADER_H - 8;
 
   stats.forEach((s, i) => {
-    const cx = segW * (i + 0.5);
-    ctx.fillStyle = TEXT_DIM;
-    ctx.fillText(s.prefix + s.label, cx, HEADER_H * 0.35);
+    const cx = segW * i + segW / 2;
+    const cardX = segW * i + cardPad;
+    const cardY = 4;
+    const cardW = segW - cardPad * 2;
+
+    // Card background
+    roundRect(cardX, cardY, cardW, cardH, 6);
+    ctx.fillStyle = 'rgba(255,255,255,0.02)';
+    ctx.fill();
+
+    // Accent dot
+    ctx.beginPath();
+    ctx.arc(cardX + 12, cardY + cardH / 2, 3, 0, Math.PI * 2);
+    ctx.fillStyle = s.accent + '60';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cardX + 12, cardY + cardH / 2, 1.5, 0, Math.PI * 2);
+    ctx.fillStyle = s.accent;
+    ctx.fill();
+
+    // Label
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.font = '500 7px -apple-system, sans-serif';
+    ctx.fillStyle = s.accent + '90';
+    ctx.letterSpacing = '0.08em';
+    ctx.fillText(s.label, cardX + 22, cardY + 8);
+
+    // Value
+    ctx.font = '700 14px -apple-system, sans-serif';
     ctx.fillStyle = TEXT_BRIGHT;
-    ctx.font = '700 13px -apple-system, sans-serif';
-    ctx.fillText(s.value, cx, HEADER_H * 0.7);
-    ctx.font = '600 11px -apple-system, sans-serif';
-    // divider
-    if (i < stats.length - 1) {
-      ctx.strokeStyle = PANEL_BORDER;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(segW * (i + 1), 8);
-      ctx.lineTo(segW * (i + 1), HEADER_H - 8);
-      ctx.stroke();
-    }
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(s.value, cardX + 22, cardY + cardH - 6);
+
+    // Reset letter spacing
+    ctx.letterSpacing = '0em';
   });
 
-  // Running indicator
-  const rx = W - segW * 0.5;
-  const pulse = 0.5 + 0.5 * Math.sin(Date.now() * 0.004);
-  ctx.fillStyle = `rgba(34,197,94,${0.5 + 0.5 * pulse})`;
-  ctx.beginPath(); ctx.arc(rx - 28, HEADER_H / 2, 4, 0, Math.PI * 2); ctx.fill();
+  // Running indicator — special card with pulse
+  const ri = stats.length;
+  const rcx = segW * ri + segW / 2;
+  const rcardX = segW * ri + cardPad;
+  const rcardY = 4;
+  const rcardW = segW - cardPad * 2;
+
+  // Pulsing background
+  const pulse = 0.5 + 0.5 * Math.sin(Date.now() * 0.003);
+  roundRect(rcardX, rcardY, rcardW, cardH, 6);
+  ctx.fillStyle = `rgba(34,197,94,${0.03 + pulse * 0.04})`;
+  ctx.fill();
+  ctx.strokeStyle = `rgba(34,197,94,${0.15 + pulse * 0.15})`;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Pulsing dot
+  ctx.beginPath();
+  ctx.arc(rcardX + 12, rcardY + cardH / 2, 4, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(34,197,94,${0.3 + pulse * 0.5})`;
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(rcardX + 12, rcardY + cardH / 2, 2, 0, Math.PI * 2);
   ctx.fillStyle = '#22c55e';
-  ctx.font = '700 12px -apple-system, sans-serif';
-  ctx.fillText('3 Running', rx - 10, HEADER_H / 2);
+  ctx.fill();
+
+  // Label
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.font = '500 7px -apple-system, sans-serif';
+  ctx.fillStyle = '#22c55e90';
+  ctx.fillText('RUNNING', rcardX + 22, rcardY + 8);
+
+  // Value
+  ctx.font = '700 14px -apple-system, sans-serif';
+  ctx.fillStyle = '#22c55e';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('3', rcardX + 22, rcardY + cardH - 6);
+
+  // "agents" suffix
+  ctx.font = '400 9px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(34,197,94,0.5)';
+  ctx.fillText('agents', rcardX + 38, rcardY + cardH - 8);
 }
 
 // ─── Panel 1: Mini Weekly Calendar (top-left) ─────────────────────────────────
