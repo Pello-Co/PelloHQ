@@ -1,0 +1,794 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloFlow — Clock Schedule | Pello" description="PelloFlow runs your AI agents on a 24-hour circular schedule. Visualise when every agent fires, monitor health scores, and keep your entire automation suite in perfect sync.">
+  <Header />
+  <main id="main-content">
+    <section class="flow-section" aria-labelledby="flow-headline">
+      <div class="flow-layout">
+        <div class="flow-text">
+          <span class="flow-badge">PelloFlow</span>
+          <h1 id="flow-headline">Clock<br/>Schedule</h1>
+          <p>Every AI agent, every task, mapped around the clock. Watch your entire automation suite run in perfect 24-hour cadence — no conflicts, no gaps, no surprises.</p>
+          <ul class="flow-pills" role="list">
+            <li>Custom AI agents</li>
+            <li>End-to-end automation</li>
+            <li>API &amp; webhook integration</li>
+            <li>Ongoing maintenance</li>
+          </ul>
+        </div>
+        <div class="flow-canvas-col">
+          <canvas id="flow-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .flow-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .flow-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .flow-layout { grid-template-columns: 1fr; } }
+  .flow-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .flow-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(79,70,229,0.12); border: 1px solid rgba(79,70,229,0.35); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #818cf8; width: fit-content; }
+  .flow-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .flow-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .flow-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .flow-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .flow-canvas-col { position: relative; width: 100%; min-height: 580px; }
+  #flow-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: default; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Agent {
+  id: string;
+  name: string;
+  color: string;
+  ring: number; // 1 = innermost, 5 = outermost
+}
+
+interface Task {
+  agentId: string;
+  label: string;
+  startHour: number;  // fractional, e.g. 9.0
+  endHour: number;
+  records: string;
+  health: string;
+  latency: string;
+  payload: string;
+  completion: string;
+  nextRun: string;
+}
+
+interface LegendItem {
+  agent: Agent;
+  x: number;
+  y: number;
+  r: number; // dot radius for hit detection
+}
+
+interface Popup {
+  task: Task | null;
+  alpha: number;
+  targetAlpha: number;
+  x: number;
+  y: number;
+  targetX: number;
+  targetY: number;
+}
+
+// ─── Data ─────────────────────────────────────────────────────────────────────
+
+const AGENTS: Agent[] = [
+  { id: 'sales',      name: 'Sales Agent',      color: '#6366f1', ring: 1 },
+  { id: 'marketing',  name: 'Marketing Agent',  color: '#f43f5e', ring: 2 },
+  { id: 'operations', name: 'Operations Agent', color: '#10b981', ring: 3 },
+  { id: 'hr',         name: 'HR Agent',         color: '#f59e0b', ring: 4 },
+  { id: 'outreach',   name: 'Outreach Agent',   color: '#8b5cf6', ring: 5 },
+];
+
+const TASKS: Task[] = [
+  // Sales
+  { agentId: 'sales', label: 'Lead Scoring',    startHour: 9,    endHour: 10,   records: '1,247 records', health: '99.2%', latency: '2.3ms',  payload: '4.2 MB',  completion: '98.7%', nextRun: 'Today, 09:00' },
+  { agentId: 'sales', label: 'Pipeline Review', startHour: 14,   endHour: 16,   records: '342 records',   health: '97.8%', latency: '3.1ms',  payload: '1.8 MB',  completion: '99.1%', nextRun: 'Today, 14:00' },
+  { agentId: 'sales', label: 'CRM Sync',        startHour: 18,   endHour: 18.5, records: '891 records',   health: '100%',  latency: '1.1ms',  payload: '2.6 MB',  completion: '100%',  nextRun: 'Today, 18:00' },
+  // Marketing
+  { agentId: 'marketing', label: 'Social Queue',      startHour: 10, endHour: 12,   records: '56 posts',      health: '98.4%', latency: '4.7ms',  payload: '8.1 MB',  completion: '97.5%', nextRun: 'Today, 10:00' },
+  { agentId: 'marketing', label: 'Content Brief',     startHour: 13, endHour: 14.5, records: '12 briefs',     health: '96.1%', latency: '6.2ms',  payload: '3.4 MB',  completion: '95.8%', nextRun: 'Today, 13:00' },
+  { agentId: 'marketing', label: 'Analytics Report',  startHour: 20, endHour: 21,   records: '14,320 events', health: '99.9%', latency: '1.8ms',  payload: '12.3 MB', completion: '100%',  nextRun: 'Today, 20:00' },
+  // Operations
+  { agentId: 'operations', label: 'Invoice Process', startHour: 8,  endHour: 9.5,  records: '203 invoices',  health: '98.9%', latency: '2.9ms',  payload: '5.7 MB',  completion: '99.5%', nextRun: 'Today, 08:00' },
+  { agentId: 'operations', label: 'Payroll Run',     startHour: 11, endHour: 13,   records: '47 employees',  health: '100%',  latency: '1.4ms',  payload: '0.9 MB',  completion: '100%',  nextRun: 'Today, 11:00' },
+  { agentId: 'operations', label: 'System Backup',   startHour: 22, endHour: 23.5, records: '1 snapshot',    health: '100%',  latency: '0.7ms',  payload: '2.1 GB',  completion: '100%',  nextRun: 'Today, 22:00' },
+  // HR
+  { agentId: 'hr', label: 'Onboarding Seq',      startHour: 9,  endHour: 11,   records: '8 new hires',   health: '97.3%', latency: '3.5ms',  payload: '1.2 MB',  completion: '96.4%', nextRun: 'Today, 09:00' },
+  { agentId: 'hr', label: 'Performance Review',  startHour: 15, endHour: 16.5, records: '31 reviews',    health: '95.6%', latency: '5.1ms',  payload: '2.8 MB',  completion: '94.9%', nextRun: 'Today, 15:00' },
+  // Outreach
+  { agentId: 'outreach', label: 'Email Campaign', startHour: 13,  endHour: 17,   records: '4,812 emails',  health: '98.1%', latency: '2.1ms',  payload: '6.4 MB',  completion: '97.8%', nextRun: 'Today, 13:00' },
+  { agentId: 'outreach', label: 'Follow-up Seq',  startHour: 9,   endHour: 10.5, records: '762 sequences', health: '99.4%', latency: '1.7ms',  payload: '3.1 MB',  completion: '99.2%', nextRun: 'Today, 09:00' },
+];
+
+// ─── Canvas Setup ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('flow-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const col = canvas.parentElement as HTMLElement;
+
+let W = 0, H = 0, dpr = 1;
+let cx = 0, cy = 0;
+let outerR = 0;
+let mouse = { x: -9999, y: -9999 };
+let frame = 0;
+
+// Sim time: starts at 10:30, advances slowly
+let simHour = 10.5;
+const SIM_SPEED = 0.0003; // hours per frame at 60fps → ~1 hour per ~55 seconds
+
+// Interaction state
+let hoveredTask: Task | null = null;
+let hoveredAgent: string | null = null;
+let legendItems: LegendItem[] = [];
+
+const popup: Popup = {
+  task: null,
+  alpha: 0,
+  targetAlpha: 0,
+  x: 0, y: 0,
+  targetX: 0, targetY: 0,
+};
+
+// Per-task glow state (keyed by task label)
+const taskGlow: Map<string, number> = new Map();
+
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  const rect = col.getBoundingClientRect();
+  W = rect.width;
+  H = rect.height || 580;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  cx = W / 2;
+  cy = H / 2;
+  outerR = Math.min(W, H) * 0.44;
+}
+
+window.addEventListener('resize', resize);
+resize();
+
+// ─── Geometry Helpers ─────────────────────────────────────────────────────────
+
+// Convert hour (0-24) to angle in radians. 0h = top = -PI/2, clockwise.
+function hourToAngle(h: number): number {
+  return (h / 24) * Math.PI * 2 - Math.PI / 2;
+}
+
+// Ring geometry: ring 1 is innermost, ring 5 is outermost
+function ringRadii(ring: number): { inner: number; outer: number } {
+  // We'll place rings in a band between 40% and 95% of outerR
+  const minR = outerR * 0.40;
+  const maxR = outerR * 0.93;
+  const bandW = (maxR - minR) / 5;
+  const inner = minR + (ring - 1) * bandW;
+  const outer = inner + bandW * 0.72;
+  return { inner, outer };
+}
+
+function midR(ring: number): number {
+  const { inner, outer } = ringRadii(ring);
+  return (inner + outer) / 2;
+}
+
+function arcPoint(angle: number, r: number): { x: number; y: number } {
+  return { x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r };
+}
+
+// ─── Hit Detection ─────────────────────────────────────────────────────────────
+
+function angleNorm(a: number): number {
+  // normalise to [0, 2PI)
+  while (a < 0) a += Math.PI * 2;
+  while (a >= Math.PI * 2) a -= Math.PI * 2;
+  return a;
+}
+
+function isAngleBetween(angle: number, start: number, end: number): boolean {
+  const a = angleNorm(angle);
+  const s = angleNorm(start);
+  let e = angleNorm(end);
+  if (e <= s) e += Math.PI * 2;
+  const aa = a >= s ? a : a + Math.PI * 2;
+  return aa >= s && aa <= e;
+}
+
+function hitTestTask(mx: number, my: number): Task | null {
+  const dx = mx - cx;
+  const dy = my - cy;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  // angle from center: atan2 gives [-PI, PI]; we want [0, 2PI] clockwise from top
+  const rawAngle = Math.atan2(dy, dx);
+
+  for (const task of TASKS) {
+    const agent = AGENTS.find(a => a.id === task.agentId)!;
+    const { inner, outer } = ringRadii(agent.ring);
+    if (dist < inner - 4 || dist > outer + 4) continue;
+
+    const startAngle = hourToAngle(task.startHour);
+    const endAngle = hourToAngle(task.endHour);
+
+    if (isAngleBetween(rawAngle, startAngle, endAngle)) {
+      return task;
+    }
+  }
+  return null;
+}
+
+function taskArcCenter(task: Task): { x: number; y: number } {
+  const agent = AGENTS.find(a => a.id === task.agentId)!;
+  const r = midR(agent.ring);
+  const midAngle = (hourToAngle(task.startHour) + hourToAngle(task.endHour)) / 2;
+  return arcPoint(midAngle, r);
+}
+
+// ─── Mouse Handling ────────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => {
+  const rect = canvas.getBoundingClientRect();
+  mouse.x = e.clientX - rect.left;
+  mouse.y = e.clientY - rect.top;
+});
+
+canvas.addEventListener('mouseleave', () => {
+  mouse.x = -9999;
+  mouse.y = -9999;
+});
+
+// ─── Format Helpers ───────────────────────────────────────────────────────────
+
+function fmtHour(h: number): string {
+  const total = Math.round(h * 60);
+  const hh = Math.floor(total / 60) % 24;
+  const mm = total % 60;
+  const ampm = hh >= 12 ? 'PM' : 'AM';
+  const hh12 = hh % 12 || 12;
+  return `${hh12}:${mm.toString().padStart(2, '0')} ${ampm}`;
+}
+
+function fmtDigital(h: number): string {
+  const total = Math.floor(h * 60);
+  const hh = Math.floor(total / 60) % 24;
+  const mm = total % 60;
+  return `${hh.toString().padStart(2, '0')}:${mm.toString().padStart(2, '0')}`;
+}
+
+// ─── Draw Utilities ───────────────────────────────────────────────────────────
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const n = parseInt(hex.slice(1), 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+function rgbaColor(hex: string, alpha: number): string {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+// ─── Drawing: Clock Face ──────────────────────────────────────────────────────
+
+function drawClockFace() {
+  // Outer decorative ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, outerR + 6, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, outerR + 2, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Hour tick marks (24 ticks)
+  for (let h = 0; h < 24; h++) {
+    const angle = hourToAngle(h);
+    const isMajor = h % 3 === 0;
+    const tickLen = isMajor ? 12 : 6;
+    const r0 = outerR + (isMajor ? 14 : 10);
+    const r1 = r0 + tickLen;
+    const sx = cx + Math.cos(angle) * r0;
+    const sy = cy + Math.sin(angle) * r0;
+    const ex = cx + Math.cos(angle) * r1;
+    const ey = cy + Math.sin(angle) * r1;
+    ctx.beginPath();
+    ctx.moveTo(sx, sy);
+    ctx.lineTo(ex, ey);
+    ctx.strokeStyle = isMajor ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.18)';
+    ctx.lineWidth = isMajor ? 1.5 : 1;
+    ctx.stroke();
+  }
+
+  // Hour labels at cardinal + intercardinal points (0,3,6,9,12,15,18,21)
+  const labelHours = [0, 3, 6, 9, 12, 15, 18, 21];
+  ctx.font = `500 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (const h of labelHours) {
+    const angle = hourToAngle(h);
+    const labelR = outerR + 36;
+    const lx = cx + Math.cos(angle) * labelR;
+    const ly = cy + Math.sin(angle) * labelR;
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillText(String(h), lx, ly);
+  }
+
+  // Inner clear circle (slightly darker center zone)
+  const innerClearR = ringRadii(1).inner - 8;
+  const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, innerClearR);
+  grd.addColorStop(0, 'rgba(10,8,30,0.95)');
+  grd.addColorStop(1, 'rgba(6,7,18,0.7)');
+  ctx.beginPath();
+  ctx.arc(cx, cy, innerClearR, 0, Math.PI * 2);
+  ctx.fillStyle = grd;
+  ctx.fill();
+
+  // Subtle radial grid lines
+  for (let h = 0; h < 24; h += 3) {
+    const angle = hourToAngle(h);
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(angle) * outerR, cy + Math.sin(angle) * outerR);
+    ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+}
+
+// ─── Drawing: Ring Backgrounds ────────────────────────────────────────────────
+
+function drawRingBands() {
+  for (const agent of AGENTS) {
+    const { inner, outer } = ringRadii(agent.ring);
+    ctx.beginPath();
+    ctx.arc(cx, cy, outer, 0, Math.PI * 2);
+    ctx.arc(cx, cy, inner, 0, Math.PI * 2, true);
+    ctx.fillStyle = rgbaColor(agent.color, 0.04);
+    ctx.fill();
+
+    // ring border lines
+    ctx.beginPath();
+    ctx.arc(cx, cy, inner, 0, Math.PI * 2);
+    ctx.strokeStyle = rgbaColor(agent.color, 0.12);
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, outer, 0, Math.PI * 2);
+    ctx.strokeStyle = rgbaColor(agent.color, 0.12);
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+  }
+}
+
+// ─── Drawing: Task Arcs ───────────────────────────────────────────────────────
+
+function drawTaskArcs(simH: number) {
+  const simAngle = hourToAngle(simH);
+
+  for (const task of TASKS) {
+    const agent = AGENTS.find(a => a.id === task.agentId)!;
+    const { inner, outer } = ringRadii(agent.ring);
+    const startAngle = hourToAngle(task.startHour);
+    const endAngle = hourToAngle(task.endHour);
+
+    // Determine if task is active (sim clock is within its range)
+    const isActive = isAngleBetween(simAngle, startAngle, endAngle);
+    // Determine hovered/dimmed state
+    const isHovered = hoveredTask === task;
+    const isDimmed = hoveredAgent !== null && hoveredAgent !== agent.id;
+
+    // Base alpha
+    let baseAlpha = 0.85;
+    if (isDimmed) baseAlpha = 0.12;
+    if (isHovered) baseAlpha = 1.0;
+
+    // Glow for active tasks
+    const glowKey = task.label;
+    let glow = taskGlow.get(glowKey) ?? 0;
+    if (isActive || isHovered) {
+      glow = Math.min(1, glow + 0.04);
+    } else {
+      glow = Math.max(0, glow - 0.02);
+    }
+    taskGlow.set(glowKey, glow);
+
+    // Glow effect: shadow around the arc
+    if (glow > 0.05) {
+      ctx.save();
+      ctx.shadowColor = rgbaColor(agent.color, glow * 0.7);
+      ctx.shadowBlur = 12 + glow * 8;
+    }
+
+    // Draw the thick arc
+    const arcW = (outer - inner) * 0.88;
+    const r = (inner + outer) / 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, startAngle, endAngle);
+    ctx.strokeStyle = rgbaColor(agent.color, baseAlpha);
+    ctx.lineWidth = arcW;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    if (glow > 0.05) ctx.restore();
+
+    // Draw thin bright edge for active
+    if (glow > 0.1) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, startAngle, endAngle);
+      ctx.strokeStyle = rgbaColor('#ffffff', glow * 0.35);
+      ctx.lineWidth = 1.5;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+
+    // Label on arc if arc is large enough
+    const arcSpan = (endAngle - startAngle + Math.PI * 4) % (Math.PI * 2);
+    if (arcSpan > 0.25 && !isDimmed) {
+      const midAngle = startAngle + arcSpan / 2;
+      const lx = cx + Math.cos(midAngle) * r;
+      const ly = cy + Math.sin(midAngle) * r;
+
+      ctx.save();
+      ctx.translate(lx, ly);
+      // rotate text tangentially
+      let rot = midAngle + Math.PI / 2;
+      if (midAngle > 0 && midAngle < Math.PI) rot -= Math.PI;
+      ctx.rotate(rot);
+
+      const fontSize = Math.min(9.5, arcW * 0.38);
+      ctx.font = `600 ${fontSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = `rgba(255,255,255,${0.55 + glow * 0.45})`;
+      ctx.fillText(task.label, 0, 0);
+      ctx.restore();
+    }
+  }
+}
+
+// ─── Drawing: Clock Hand ──────────────────────────────────────────────────────
+
+function drawClockHand(simH: number) {
+  const angle = hourToAngle(simH);
+  const handR = outerR * 0.95;
+
+  // Shadow glow
+  ctx.save();
+  ctx.shadowColor = 'rgba(99,102,241,0.6)';
+  ctx.shadowBlur = 14;
+
+  // Main hand
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx + Math.cos(angle) * handR, cy + Math.sin(angle) * handR);
+  ctx.strokeStyle = 'rgba(129,140,248,0.9)';
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // Tip accent
+  ctx.beginPath();
+  ctx.arc(cx + Math.cos(angle) * handR, cy + Math.sin(angle) * handR, 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#818cf8';
+  ctx.fill();
+
+  ctx.restore();
+
+  // Center pivot
+  ctx.beginPath();
+  ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+  const pivotGrd = ctx.createRadialGradient(cx, cy, 0, cx, cy, 6);
+  pivotGrd.addColorStop(0, '#a5b4fc');
+  pivotGrd.addColorStop(1, '#4f46e5');
+  ctx.fillStyle = pivotGrd;
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+// ─── Drawing: Digital Readout ─────────────────────────────────────────────────
+
+function drawDigitalReadout(simH: number) {
+  const timeStr = fmtDigital(simH);
+  const innerClearR = ringRadii(1).inner - 8;
+  const tyBase = cy - innerClearR * 0.18;
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  ctx.font = `700 ${Math.round(innerClearR * 0.32)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace`;
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.fillText(timeStr, cx, tyBase);
+
+  ctx.font = `400 ${Math.round(innerClearR * 0.13)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+  ctx.fillStyle = 'rgba(165,180,252,0.6)';
+  ctx.fillText('SIMULATION', cx, tyBase + innerClearR * 0.25);
+}
+
+// ─── Drawing: Legend ──────────────────────────────────────────────────────────
+
+function drawLegend() {
+  const itemH = 24;
+  const dotR = 5;
+  const padX = 14;
+  const padY = 12;
+  const panelW = 160;
+  const panelH = padY * 2 + AGENTS.length * itemH;
+
+  const px = W - panelW - 16;
+  const py = H - panelH - 16;
+
+  // Panel background
+  ctx.save();
+  ctx.beginPath();
+  roundRect(ctx, px, py, panelW, panelH, 10);
+  ctx.fillStyle = 'rgba(10,8,30,0.82)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.restore();
+
+  // Items
+  legendItems = [];
+  ctx.font = `500 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left';
+
+  for (let i = 0; i < AGENTS.length; i++) {
+    const agent = AGENTS[i];
+    const ix = px + padX;
+    const iy = py + padY + i * itemH + itemH / 2;
+
+    const isHover = hoveredAgent === agent.id;
+    const isDim = hoveredAgent !== null && hoveredAgent !== agent.id;
+
+    // Dot
+    ctx.beginPath();
+    ctx.arc(ix + dotR, iy, dotR, 0, Math.PI * 2);
+    ctx.fillStyle = rgbaColor(agent.color, isDim ? 0.3 : 1.0);
+    ctx.fill();
+    if (isHover) {
+      ctx.save();
+      ctx.shadowColor = agent.color;
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(ix + dotR, iy, dotR, 0, Math.PI * 2);
+      ctx.fillStyle = agent.color;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Label
+    ctx.fillStyle = isDim ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.82)';
+    ctx.fillText(agent.name, ix + dotR * 2 + 8, iy);
+
+    legendItems.push({ agent, x: ix + dotR, y: iy, r: dotR + 14 });
+  }
+}
+
+// ─── Drawing: Popup ───────────────────────────────────────────────────────────
+
+function drawPopup(p: Popup) {
+  if (p.alpha < 0.01 || !p.task) return;
+
+  const task = p.task;
+  const agent = AGENTS.find(a => a.id === task.agentId)!;
+
+  const padX = 16;
+  const padY = 14;
+  const lineH = 20;
+  const panelW = 220;
+
+  const rows = [
+    { label: 'Agent',       value: agent.name,                    isAgent: true },
+    { label: 'Window',      value: `${fmtHour(task.startHour)} — ${fmtHour(task.endHour)}` },
+    { label: 'Frequency',   value: 'Daily' },
+    { label: 'Records',     value: task.records },
+    { label: 'Health',      value: task.health },
+    { label: 'Latency',     value: task.latency },
+    { label: 'Payload',     value: task.payload },
+    { label: 'Completion',  value: task.completion },
+    { label: 'Next run',    value: task.nextRun },
+  ];
+
+  const panelH = padY * 2 + lineH + 8 + rows.length * lineH;
+
+  // Clamp to canvas
+  let bx = p.x + 14;
+  let by = p.y - panelH / 2;
+  if (bx + panelW > W - 10) bx = p.x - panelW - 14;
+  if (by < 8) by = 8;
+  if (by + panelH > H - 8) by = H - panelH - 8;
+
+  ctx.save();
+  ctx.globalAlpha = p.alpha;
+
+  // Panel shadow
+  ctx.shadowColor = 'rgba(0,0,0,0.6)';
+  ctx.shadowBlur = 24;
+  ctx.beginPath();
+  roundRect(ctx, bx, by, panelW, panelH, 12);
+  ctx.fillStyle = 'rgba(12,10,32,0.97)';
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Border
+  ctx.beginPath();
+  roundRect(ctx, bx, by, panelW, panelH, 12);
+  ctx.strokeStyle = rgbaColor(agent.color, 0.45);
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Top color bar
+  ctx.beginPath();
+  roundRect(ctx, bx, by, panelW, 4, 12);
+  ctx.fillStyle = agent.color;
+  ctx.fill();
+
+  // Title
+  ctx.font = `700 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+  ctx.textBaseline = 'top';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#fff';
+  ctx.fillText(task.label, bx + padX, by + padY + 4);
+
+  // Divider
+  ctx.beginPath();
+  ctx.moveTo(bx + padX, by + padY + lineH + 6);
+  ctx.lineTo(bx + panelW - padX, by + padY + lineH + 6);
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Rows
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const ry = by + padY + lineH + 8 + i * lineH + lineH * 0.5;
+
+    ctx.font = `400 10.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(255,255,255,0.42)';
+    ctx.fillText(row.label, bx + padX, ry);
+
+    if ((row as any).isAgent) {
+      // Colored dot + name
+      ctx.beginPath();
+      ctx.arc(bx + panelW - padX - 68, ry, 4, 0, Math.PI * 2);
+      ctx.fillStyle = agent.color;
+      ctx.fill();
+      ctx.font = `600 10.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+      ctx.fillStyle = rgbaColor(agent.color, 0.9);
+      ctx.textAlign = 'right';
+      ctx.fillText(row.value, bx + panelW - padX, ry);
+      ctx.textAlign = 'left';
+    } else {
+      ctx.font = `600 10.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+      ctx.fillStyle = 'rgba(255,255,255,0.88)';
+      ctx.textAlign = 'right';
+      ctx.fillText(row.value, bx + panelW - padX, ry);
+      ctx.textAlign = 'left';
+    }
+  }
+
+  ctx.restore();
+}
+
+// ─── roundRect Polyfill ───────────────────────────────────────────────────────
+
+function roundRect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  c.moveTo(x + r, y);
+  c.lineTo(x + w - r, y);
+  c.quadraticCurveTo(x + w, y, x + w, y + r);
+  c.lineTo(x + w, y + h - r);
+  c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  c.lineTo(x + r, y + h);
+  c.quadraticCurveTo(x, y + h, x, y + h - r);
+  c.lineTo(x, y + r);
+  c.quadraticCurveTo(x, y, x + r, y);
+  c.closePath();
+}
+
+// ─── Interaction Update ───────────────────────────────────────────────────────
+
+function updateInteraction() {
+  // Check legend hover
+  let newHoveredAgent: string | null = null;
+  for (const item of legendItems) {
+    const dx = mouse.x - item.x;
+    const dy = mouse.y - item.y;
+    if (Math.sqrt(dx * dx + dy * dy) < item.r) {
+      newHoveredAgent = item.agent.id;
+      break;
+    }
+  }
+  hoveredAgent = newHoveredAgent;
+
+  // Task hover
+  const hit = hitTestTask(mouse.x, mouse.y);
+  hoveredTask = hit;
+
+  if (hit) {
+    canvas.style.cursor = 'pointer';
+    popup.task = hit;
+    popup.targetAlpha = 1;
+    const arc = taskArcCenter(hit);
+    popup.targetX = arc.x;
+    popup.targetY = arc.y;
+  } else {
+    canvas.style.cursor = 'default';
+    popup.targetAlpha = 0;
+  }
+
+  // Lerp popup
+  popup.alpha = lerp(popup.alpha, popup.targetAlpha, 0.12);
+  popup.x = lerp(popup.x, popup.targetX, 0.15);
+  popup.y = lerp(popup.y, popup.targetY, 0.15);
+
+  if (popup.alpha < 0.01 && popup.targetAlpha === 0) {
+    popup.task = null;
+  }
+}
+
+// ─── Main Render Loop ─────────────────────────────────────────────────────────
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Advance sim time
+  simHour = (simHour + SIM_SPEED) % 24;
+
+  // Background radial glow
+  const bgGrd = ctx.createRadialGradient(cx, cy, 0, cx, cy, outerR * 1.2);
+  bgGrd.addColorStop(0, 'rgba(79,70,229,0.07)');
+  bgGrd.addColorStop(0.6, 'rgba(79,70,229,0.02)');
+  bgGrd.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.beginPath();
+  ctx.arc(cx, cy, outerR * 1.2, 0, Math.PI * 2);
+  ctx.fillStyle = bgGrd;
+  ctx.fill();
+
+  drawClockFace();
+  drawRingBands();
+  drawTaskArcs(simHour);
+  drawClockHand(simHour);
+  drawDigitalReadout(simHour);
+  drawLegend();
+  updateInteraction();
+  drawPopup(popup);
+
+  frame++;
+  requestAnimationFrame(draw);
+}
+
+draw();
+</script>

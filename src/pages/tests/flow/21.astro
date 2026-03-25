@@ -1,0 +1,749 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloFlow — Agent Calendar | Pello" description="PelloFlow schedules and runs your AI agents on a live weekly calendar — automatically handling every task, every day, with full observability.">
+  <Header />
+  <main id="main-content">
+    <section class="flow-section" aria-labelledby="flow-headline">
+      <div class="flow-layout">
+        <div class="flow-text">
+          <span class="flow-badge">PelloFlow</span>
+          <h1 id="flow-headline">Agent Calendar</h1>
+          <p>Every AI agent, every task, every run — laid out on a live weekly calendar. See exactly what's running, when it ran, and what it delivered, all in one view.</p>
+          <ul class="flow-pills" role="list">
+            <li>Custom AI agents</li>
+            <li>End-to-end automation</li>
+            <li>API &amp; webhook integration</li>
+            <li>Ongoing maintenance</li>
+          </ul>
+        </div>
+        <div class="flow-canvas-col">
+          <canvas id="flow-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .flow-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .flow-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .flow-layout { grid-template-columns: 1fr; } }
+  .flow-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .flow-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(79,70,229,0.12); border: 1px solid rgba(79,70,229,0.35); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #818cf8; width: fit-content; }
+  .flow-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .flow-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .flow-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .flow-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .flow-canvas-col { position: relative; width: 100%; min-height: 580px; }
+  #flow-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: default; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Agent {
+  name: string;
+  color: string;
+}
+
+interface Task {
+  name: string;
+  agent: string;
+  days: number[];      // 0 = Mon … 6 = Sun
+  startHour: number;   // fractional (e.g. 9.0)
+  endHour: number;
+  popup: PopupData;
+}
+
+interface PopupData {
+  status: 'Completed' | 'Running' | 'Scheduled';
+  successRate: string;
+  records: string;
+  avgDuration: string;
+  description: string;
+  nextRun: string;
+}
+
+interface HitBox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  task: Task;
+  dayIndex: number;
+}
+
+interface LegendHit {
+  x: number;
+  y: number;
+  r: number;
+  agent: string;
+}
+
+// ─── Canvas setup ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('flow-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+
+let W = 0, H = 0, dpr = 1;
+
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement!.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.scale(dpr, dpr);
+  W = rect.width;
+  H = rect.height;
+}
+
+window.addEventListener('resize', () => { resize(); });
+resize();
+
+// ─── Agents ───────────────────────────────────────────────────────────────────
+
+const AGENTS: Agent[] = [
+  { name: 'Sales Agent',      color: '#6366f1' },
+  { name: 'Marketing Agent',  color: '#f43f5e' },
+  { name: 'Operations Agent', color: '#10b981' },
+  { name: 'HR Agent',         color: '#f59e0b' },
+  { name: 'Outreach Agent',   color: '#8b5cf6' },
+];
+
+// ─── Tasks ────────────────────────────────────────────────────────────────────
+
+const TASKS: Task[] = [
+  {
+    name: 'Lead Scoring Batch',
+    agent: 'Sales Agent',
+    days: [0, 2, 4], // Mon, Wed, Fri
+    startHour: 9, endHour: 10,
+    popup: {
+      status: 'Completed',
+      successRate: '98.4%',
+      records: '1,247 records',
+      avgDuration: '47m 23s',
+      description: 'Scores and ranks inbound leads using engagement signals and firmographic data.',
+      nextRun: 'Tomorrow, 9:00 AM',
+    },
+  },
+  {
+    name: 'Social Post Queue',
+    agent: 'Marketing Agent',
+    days: [0, 1, 3], // Mon, Tue, Thu
+    startHour: 10, endHour: 12,
+    popup: {
+      status: 'Running',
+      successRate: '99.1%',
+      records: '86 posts',
+      avgDuration: '1h 52m',
+      description: 'Generates, formats and schedules social media content across LinkedIn, X and Instagram.',
+      nextRun: 'Today, 10:00 AM',
+    },
+  },
+  {
+    name: 'Invoice Processing',
+    agent: 'Operations Agent',
+    days: [1, 3], // Tue, Thu
+    startHour: 14, endHour: 15,
+    popup: {
+      status: 'Completed',
+      successRate: '100%',
+      records: '312 invoices',
+      avgDuration: '58m 11s',
+      description: 'Extracts, validates and routes supplier invoices into the accounting system with zero manual handling.',
+      nextRun: 'Thursday, 2:00 PM',
+    },
+  },
+  {
+    name: 'Onboarding Sequence',
+    agent: 'HR Agent',
+    days: [0], // Mon
+    startHour: 9, endHour: 11,
+    popup: {
+      status: 'Completed',
+      successRate: '97.6%',
+      records: '24 new hires',
+      avgDuration: '1h 44m',
+      description: 'Sends welcome packs, creates accounts, assigns onboarding tasks and notifies team leads.',
+      nextRun: 'Next Monday, 9:00 AM',
+    },
+  },
+  {
+    name: 'Email Campaign',
+    agent: 'Outreach Agent',
+    days: [2], // Wed
+    startHour: 13, endHour: 16,
+    popup: {
+      status: 'Scheduled',
+      successRate: '95.2%',
+      records: '8,450 contacts',
+      avgDuration: '2h 51m',
+      description: 'Personalises and sends email campaigns with dynamic copy tailored to each recipient segment.',
+      nextRun: 'Wednesday, 1:00 PM',
+    },
+  },
+  {
+    name: 'Pipeline Review',
+    agent: 'Sales Agent',
+    days: [4], // Fri
+    startHour: 14, endHour: 16,
+    popup: {
+      status: 'Scheduled',
+      successRate: '96.8%',
+      records: '183 deals',
+      avgDuration: '1h 39m',
+      description: 'Audits open deals, flags stalled opportunities and drafts follow-up action items for the sales team.',
+      nextRun: 'Friday, 2:00 PM',
+    },
+  },
+  {
+    name: 'Content Calendar',
+    agent: 'Marketing Agent',
+    days: [0], // Mon
+    startHour: 15, endHour: 17,
+    popup: {
+      status: 'Completed',
+      successRate: '99.7%',
+      records: '52 content items',
+      avgDuration: '1h 58m',
+      description: 'Builds the weekly content plan, assigns briefs to writers and populates the editorial calendar.',
+      nextRun: 'Next Monday, 3:00 PM',
+    },
+  },
+  {
+    name: 'Payroll Run',
+    agent: 'Operations Agent',
+    days: [4], // Fri
+    startHour: 10, endHour: 12,
+    popup: {
+      status: 'Scheduled',
+      successRate: '100%',
+      records: '147 employees',
+      avgDuration: '1h 23m',
+      description: 'Calculates gross pay, deductions and net pay, then submits the payroll batch to the payment provider.',
+      nextRun: 'Friday, 10:00 AM',
+    },
+  },
+];
+
+// ─── Calendar geometry ────────────────────────────────────────────────────────
+
+const DAY_LABELS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+const START_HOUR = 8;
+const END_HOUR   = 18; // exclusive → 10 rows of 1hr each
+
+function getAgentColor(name: string): string {
+  return AGENTS.find(a => a.name === name)?.color ?? '#fff';
+}
+
+// Layout constants (computed each frame from W/H)
+interface CalLayout {
+  padL: number;
+  padT: number;
+  padR: number;
+  padB: number;
+  labelW: number;
+  legendH: number;
+  headerH: number;
+  gridW: number;
+  gridH: number;
+  colW: number;
+  rowH: number;
+}
+
+function getLayout(): CalLayout {
+  const padL   = 20;
+  const padT   = 20;
+  const padR   = 20;
+  const padB   = 20;
+  const labelW = 44;
+  const legendH = 36;
+  const headerH = 32;
+  const gridW  = W - padL - padR - labelW;
+  const gridH  = H - padT - padB - legendH - headerH;
+  const colW   = gridW / 7;
+  const rowH   = gridH / (END_HOUR - START_HOUR);
+  return { padL, padT, padR, padB, labelW, legendH, headerH, gridW, gridH, colW, rowH };
+}
+
+// Map an hour (fractional) to a Y coordinate within the grid area
+function hourToY(hour: number, l: CalLayout): number {
+  return l.padT + l.legendH + l.headerH + (hour - START_HOUR) * l.rowH;
+}
+
+// Map a day index to X start of that column
+function dayToX(day: number, l: CalLayout): number {
+  return l.padL + l.labelW + day * l.colW;
+}
+
+// ─── Interaction state ─────────────────────────────────────────────────────────
+
+let mouseX = 0, mouseY = 0;
+let hoveredAgent: string | null = null;
+let hoveredTask: (Task & { dayIndex: number }) | null = null;
+let popupOpacity  = 0;
+let popupTargetOp = 0;
+let hitBoxes: HitBox[]     = [];
+let legendHits: LegendHit[] = [];
+
+canvas.addEventListener('mousemove', (e) => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = e.clientX - r.left;
+  mouseY = e.clientY - r.top;
+});
+canvas.addEventListener('mouseleave', () => {
+  mouseX = -999;
+  mouseY = -999;
+});
+
+// ─── Simulated time ───────────────────────────────────────────────────────────
+
+// Starts at 10:30am and creeps forward at 1 simulated minute per real 200ms
+let simHour = 10.5;
+let lastTs  = 0;
+
+// ─── Rounded rect helper ──────────────────────────────────────────────────────
+
+function roundRect(x: number, y: number, w: number, h: number, r: number) {
+  const rr = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.lineTo(x + w - rr, y);
+  ctx.quadraticCurveTo(x + w, y,     x + w, y + rr);
+  ctx.lineTo(x + w, y + h - rr);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+  ctx.lineTo(x + rr, y + h);
+  ctx.quadraticCurveTo(x, y + h,     x, y + h - rr);
+  ctx.lineTo(x, y + rr);
+  ctx.quadraticCurveTo(x, y,         x + rr, y);
+  ctx.closePath();
+}
+
+// ─── Draw legend ──────────────────────────────────────────────────────────────
+
+function drawLegend(l: CalLayout) {
+  legendHits = [];
+
+  const totalW = AGENTS.reduce((acc, a) => acc + ctx.measureText(a.name).width + 24, 0);
+  let lx = l.padL + l.labelW + (l.gridW - totalW) / 2;
+  const ly = l.padT + 16;
+
+  AGENTS.forEach(agent => {
+    const tw = ctx.measureText(agent.name).width;
+    const isHov = hoveredAgent === agent.name;
+    const cx = lx + 6, cy = ly;
+
+    // proximity check
+    const dist = Math.hypot(mouseX - cx, mouseY - cy);
+    if (dist < 40) {
+      hoveredAgent = agent.name;
+    }
+
+    legendHits.push({ x: cx, y: cy, r: 40, agent: agent.name });
+
+    // dot
+    ctx.globalAlpha = hoveredAgent === null || isHov ? 1 : 0.35;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+    ctx.fillStyle = agent.color;
+    ctx.fill();
+
+    // label
+    ctx.fillStyle = isHov ? '#fff' : 'rgba(255,255,255,0.7)';
+    ctx.font = `${isHov ? 600 : 400} 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    ctx.fillText(agent.name, lx + 14, ly + 4);
+    ctx.globalAlpha = 1;
+
+    lx += tw + 24;
+  });
+}
+
+// ─── Draw header row (day names + dates) ─────────────────────────────────────
+
+function drawHeader(l: CalLayout) {
+  // Background strip
+  ctx.fillStyle = 'rgba(255,255,255,0.025)';
+  roundRect(l.padL + l.labelW, l.padT + l.legendH, l.gridW, l.headerH, 4);
+  ctx.fill();
+
+  const today = 0; // treat Monday as today for the sim
+  DAY_LABELS.forEach((label, i) => {
+    const x = dayToX(i, l);
+    const isToday = i === today;
+
+    if (isToday) {
+      ctx.fillStyle = 'rgba(79,70,229,0.18)';
+      roundRect(x, l.padT + l.legendH, l.colW, l.headerH, 0);
+      ctx.fill();
+    }
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = isToday ? '#818cf8' : 'rgba(255,255,255,0.45)';
+    ctx.font = `600 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    ctx.fillText(label, x + l.colW / 2, l.padT + l.legendH + 12);
+
+    // date number (simulate Mar 24–30)
+    const dateNum = 24 + i;
+    ctx.fillStyle = isToday ? '#c7d2fe' : 'rgba(255,255,255,0.3)';
+    ctx.font = `${isToday ? 700 : 400} 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    ctx.fillText(String(dateNum), x + l.colW / 2, l.padT + l.legendH + 26);
+    ctx.textAlign = 'left';
+  });
+}
+
+// ─── Draw grid lines ──────────────────────────────────────────────────────────
+
+function drawGrid(l: CalLayout) {
+  const x0 = l.padL + l.labelW;
+  const x1 = x0 + l.gridW;
+  const y0 = l.padT + l.legendH + l.headerH;
+
+  // Hour rows
+  for (let h = START_HOUR; h <= END_HOUR; h++) {
+    const y = hourToY(h, l);
+    ctx.beginPath();
+    ctx.moveTo(x0, y);
+    ctx.lineTo(x1, y);
+    ctx.strokeStyle = h === START_HOUR || h === END_HOUR
+      ? 'rgba(255,255,255,0.1)'
+      : 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Row label
+    if (h < END_HOUR) {
+      const label = h < 12 ? `${h}am` : h === 12 ? '12pm' : `${h - 12}pm`;
+      ctx.fillStyle = 'rgba(255,255,255,0.28)';
+      ctx.font = '10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(label, x0 - 6, y + 11);
+      ctx.textAlign = 'left';
+    }
+  }
+
+  // Day columns
+  for (let d = 0; d <= 7; d++) {
+    const x = l.padL + l.labelW + d * l.colW;
+    ctx.beginPath();
+    ctx.moveTo(x, y0);
+    ctx.lineTo(x, y0 + l.gridH);
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+}
+
+// ─── Draw task blocks ─────────────────────────────────────────────────────────
+
+function drawTasks(l: CalLayout) {
+  hitBoxes = [];
+
+  TASKS.forEach(task => {
+    const color = getAgentColor(task.agent);
+    const isAgentFaded = hoveredAgent !== null && hoveredAgent !== task.agent;
+
+    task.days.forEach(dayIndex => {
+      const x  = dayToX(dayIndex, l) + 3;
+      const y  = hourToY(task.startHour, l) + 2;
+      const bw = l.colW - 6;
+      const bh = (task.endHour - task.startHour) * l.rowH - 4;
+
+      // Hit box registration
+      hitBoxes.push({ x, y, w: bw, h: bh, task, dayIndex });
+
+      const isHov = hoveredTask?.name === task.name && hoveredTask?.dayIndex === dayIndex;
+
+      ctx.globalAlpha = isAgentFaded ? 0.08 : isHov ? 1 : 0.88;
+
+      // Background
+      ctx.fillStyle = color + '22';
+      roundRect(x, y, bw, bh, 4);
+      ctx.fill();
+
+      // Left accent bar
+      ctx.fillStyle = color;
+      roundRect(x, y, 3, bh, 2);
+      ctx.fill();
+
+      // Border
+      ctx.strokeStyle = color + (isHov ? 'cc' : '55');
+      ctx.lineWidth   = isHov ? 1.5 : 1;
+      roundRect(x, y, bw, bh, 4);
+      ctx.stroke();
+
+      // Task name
+      ctx.fillStyle = isHov ? '#fff' : 'rgba(255,255,255,0.85)';
+      ctx.font = `600 9.5px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x + 6, y, bw - 10, bh);
+      ctx.clip();
+      ctx.fillText(task.name, x + 6, y + 13);
+      ctx.restore();
+
+      // Time label if block tall enough
+      if (bh > 32) {
+        const startLabel = task.startHour < 12 ? `${task.startHour}:00 AM` : task.startHour === 12 ? '12:00 PM' : `${task.startHour - 12}:00 PM`;
+        ctx.fillStyle = color + 'bb';
+        ctx.font = `400 8.5px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+        ctx.fillText(startLabel, x + 6, y + 25);
+      }
+
+      ctx.globalAlpha = 1;
+    });
+  });
+}
+
+// ─── Draw current time line ───────────────────────────────────────────────────
+
+function drawTimeLine(l: CalLayout) {
+  if (simHour < START_HOUR || simHour > END_HOUR) return;
+  const y  = hourToY(simHour, l);
+  const x0 = l.padL + l.labelW;
+  const x1 = x0 + l.gridW;
+
+  // Glow
+  ctx.shadowColor  = '#ef4444';
+  ctx.shadowBlur   = 6;
+  ctx.strokeStyle  = '#ef4444';
+  ctx.lineWidth    = 1.5;
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(x0, y);
+  ctx.lineTo(x1, y);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Circle at left
+  ctx.beginPath();
+  ctx.arc(x0 + 3, y, 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#ef4444';
+  ctx.fill();
+
+  // Time label
+  const hh = Math.floor(simHour);
+  const mm = Math.round((simHour - hh) * 60);
+  const period = hh < 12 ? 'AM' : 'PM';
+  const hDisp  = hh > 12 ? hh - 12 : hh;
+  const label  = `${hDisp}:${mm.toString().padStart(2, '0')} ${period}`;
+  ctx.fillStyle = '#ef4444';
+  ctx.font = '600 9px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.fillText(label, x0 + 8, y - 4);
+}
+
+// ─── Draw popup ───────────────────────────────────────────────────────────────
+
+function drawPopup(l: CalLayout) {
+  if (popupOpacity < 0.01 || !hoveredTask) return;
+
+  const task    = hoveredTask;
+  const pd      = task.popup;
+  const color   = getAgentColor(task.agent);
+
+  const pW = 230;
+  const pH = 208;
+
+  // Position popup — prefer right of mouse, flip if near edge
+  let px = mouseX + 14;
+  let py = mouseY - 20;
+  if (px + pW > W - 10) px = mouseX - pW - 10;
+  if (py + pH > H - 10) py = H - pH - 10;
+  if (py < 10)           py = 10;
+
+  ctx.globalAlpha = popupOpacity;
+
+  // Shadow
+  ctx.shadowColor = 'rgba(0,0,0,0.6)';
+  ctx.shadowBlur  = 24;
+
+  // Card background
+  ctx.fillStyle = '#0e1124';
+  roundRect(px, py, pW, pH, 8);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Border
+  ctx.strokeStyle = 'rgba(79,70,229,0.5)';
+  ctx.lineWidth   = 1;
+  roundRect(px, py, pW, pH, 8);
+  ctx.stroke();
+
+  // Left color strip
+  ctx.fillStyle = color;
+  roundRect(px, py, 3, pH, 8);
+  ctx.fill();
+
+  // Content
+  const tx = px + 14;
+  let ty   = py + 18;
+  const lineH = 18;
+
+  // Task name
+  ctx.fillStyle = '#fff';
+  ctx.font = `700 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+  ctx.fillText(task.name, tx, ty);
+  ty += lineH;
+
+  // Agent name with dot
+  ctx.beginPath();
+  ctx.arc(tx + 4, ty - 4, 4, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.font = `400 10.5px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+  ctx.fillText(task.agent, tx + 12, ty);
+  ty += lineH - 2;
+
+  // Divider
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth   = 1;
+  ctx.beginPath();
+  ctx.moveTo(px + 10, ty - 4);
+  ctx.lineTo(px + pW - 10, ty - 4);
+  ctx.stroke();
+  ty += 4;
+
+  // Time range
+  const sh = task.startHour;
+  const eh = task.endHour;
+  const fmt = (h: number) => {
+    const ampm = h < 12 ? 'AM' : 'PM';
+    const d    = h > 12 ? h - 12 : h;
+    return `${d}:00 ${ampm}`;
+  };
+  drawKV(tx, ty, 'Time', `${fmt(sh)} — ${fmt(eh)}`); ty += lineH;
+
+  // Status
+  const statusColor = pd.status === 'Completed' ? '#10b981' : pd.status === 'Running' ? '#6366f1' : '#94a3b8';
+  ctx.fillStyle     = 'rgba(255,255,255,0.35)';
+  ctx.font          = `400 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+  ctx.fillText('Status', tx, ty);
+  ctx.beginPath();
+  ctx.arc(tx + 62, ty - 4, 3, 0, Math.PI * 2);
+  ctx.fillStyle = statusColor;
+  ctx.fill();
+  ctx.fillStyle = statusColor;
+  ctx.font      = `600 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+  ctx.fillText(pd.status, tx + 70, ty);
+  ty += lineH;
+
+  drawKV(tx, ty, 'Success rate',  pd.successRate);   ty += lineH;
+  drawKV(tx, ty, 'Records',       pd.records);       ty += lineH;
+  drawKV(tx, ty, 'Avg duration',  pd.avgDuration);   ty += lineH;
+
+  // Description
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.font      = `400 9.5px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+  const words   = pd.description.split(' ');
+  let line      = '';
+  let descY     = ty;
+  words.forEach(w => {
+    const test = line ? line + ' ' + w : w;
+    if (ctx.measureText(test).width > pW - 30) {
+      ctx.fillText(line, tx, descY);
+      descY += 13;
+      line = w;
+    } else {
+      line = test;
+    }
+  });
+  if (line) ctx.fillText(line, tx, descY);
+  ty = descY + 16;
+
+  // Next run
+  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  ctx.font      = `400 9.5px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+  ctx.fillText(`Next run: ${pd.nextRun}`, tx, py + pH - 12);
+
+  ctx.globalAlpha = 1;
+}
+
+function drawKV(x: number, y: number, key: string, val: string) {
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.font      = `400 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+  ctx.fillText(key, x, y);
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.font      = `500 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+  ctx.fillText(val, x + 100, y);
+}
+
+// ─── Interaction detection ────────────────────────────────────────────────────
+
+function detectInteractions() {
+  // Reset hovered agent each frame — legend draw will re-set if mouse near
+  hoveredAgent = null;
+
+  // Check legend hits
+  legendHits.forEach(lh => {
+    const dist = Math.hypot(mouseX - lh.x, mouseY - lh.y);
+    if (dist < lh.r) {
+      hoveredAgent = lh.agent;
+    }
+  });
+
+  // Check task hit boxes
+  let found: (Task & { dayIndex: number }) | null = null;
+  for (const hb of hitBoxes) {
+    if (
+      mouseX >= hb.x && mouseX <= hb.x + hb.w &&
+      mouseY >= hb.y && mouseY <= hb.y + hb.h
+    ) {
+      found = { ...hb.task, dayIndex: hb.dayIndex };
+      break;
+    }
+  }
+
+  hoveredTask      = found;
+  popupTargetOp    = found ? 1 : 0;
+}
+
+// ─── Main loop ────────────────────────────────────────────────────────────────
+
+function loop(ts: number) {
+  requestAnimationFrame(loop);
+
+  const dt = lastTs ? (ts - lastTs) / 1000 : 0;
+  lastTs   = ts;
+
+  // Advance sim time: 1 sim minute per 200ms real → 5 min/sec
+  simHour += dt * (5 / 60);
+  if (simHour > END_HOUR) simHour = START_HOUR;
+
+  // Lerp popup opacity
+  popupOpacity += (popupTargetOp - popupOpacity) * 0.18;
+
+  // Detect hover
+  detectInteractions();
+
+  // Clear
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  ctx.fillStyle = '#080b1a';
+  roundRect(0, 0, W, H, 10);
+  ctx.fill();
+
+  const l = getLayout();
+
+  // Draw layers
+  drawGrid(l);
+  drawHeader(l);
+  drawTasks(l);
+  drawTimeLine(l);
+  drawLegend(l);
+  drawPopup(l);
+}
+
+requestAnimationFrame(loop);
+</script>

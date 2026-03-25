@@ -1,0 +1,777 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloFlow — Gantt Timeline | Pello" description="PelloFlow orchestrates AI agents across a full 24-hour timeline. Visualise task scheduling, dependencies, progress tracking, and live execution for every automation in your stack.">
+  <Header />
+  <main id="main-content">
+    <section class="flow-section" aria-labelledby="flow-headline">
+      <div class="flow-layout">
+        <div class="flow-text">
+          <span class="flow-badge">PelloFlow</span>
+          <h1 id="flow-headline">Gantt Timeline</h1>
+          <p>Orchestrate every AI agent across your 24-hour window. Track task dependencies, monitor live progress, and spot bottlenecks before they cost you a deal.</p>
+          <ul class="flow-pills" role="list">
+            <li>Custom AI agents</li>
+            <li>End-to-end automation</li>
+            <li>API &amp; webhook integration</li>
+            <li>Ongoing maintenance</li>
+          </ul>
+        </div>
+        <div class="flow-canvas-col">
+          <canvas id="flow-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .flow-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .flow-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .flow-layout { grid-template-columns: 1fr; } }
+  .flow-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .flow-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(79,70,229,0.12); border: 1px solid rgba(79,70,229,0.35); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #818cf8; width: fit-content; }
+  .flow-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .flow-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .flow-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .flow-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .flow-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #flow-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: default; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface TaskBar {
+  id: string;
+  agentIdx: number;
+  label: string;
+  startH: number;  // hour decimal e.g. 9.0
+  endH: number;    // hour decimal e.g. 10.0
+  progress: number; // 0-1
+  // popup data
+  agentName: string;
+  agentColor: string;
+  recordsIn: number;
+  recordsOut: number;
+  errors: number;
+  throughput: number; // rec/min
+  cron: string;
+  // computed hit area (logical px)
+  rx: number;
+  ry: number;
+  rw: number;
+  rh: number;
+}
+
+interface Dependency {
+  fromId: string;
+  toId: string;
+}
+
+interface AgentDef {
+  name: string;
+  color: string;
+}
+
+interface PopupState {
+  taskId: string | null;
+  alpha: number;
+  targetAlpha: number;
+  x: number;
+  y: number;
+}
+
+interface HoverState {
+  agentIdx: number | null;  // which row is hovered in legend
+  taskId: string | null;
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const ACCENT = '#4f46e5';
+const BG_PANEL = '#0e1124';
+const LABEL_COL_W = 130;   // left column for agent labels
+const HEADER_H    = 36;    // time axis height
+const ROW_H       = 68;    // height per agent row
+const BAR_PAD_V   = 18;    // vertical padding inside row for bar
+const HOUR_START  = 0;
+const HOUR_END    = 24;
+
+// sim "now" time in hours, starts at 11:00, advances slowly
+let simNow = 11.0;
+
+const AGENTS: AgentDef[] = [
+  { name: 'Sales Agent',     color: '#6366f1' },
+  { name: 'Marketing Agent', color: '#f43f5e' },
+  { name: 'Operations Agent',color: '#10b981' },
+  { name: 'HR Agent',        color: '#f59e0b' },
+  { name: 'Outreach Agent',  color: '#8b5cf6' },
+];
+
+const TASKS_DEF: Omit<TaskBar, 'rx'|'ry'|'rw'|'rh'>[] = [
+  // Sales
+  {
+    id: 'sales_lead',   agentIdx: 0, label: 'Lead Scoring',
+    startH: 9,  endH: 10,   progress: 1.0,
+    agentName: 'Sales Agent', agentColor: '#6366f1',
+    recordsIn: 2340, recordsOut: 2298, errors: 2, throughput: 48,
+    cron: '0 9 * * 1-5',
+  },
+  {
+    id: 'sales_pipe',   agentIdx: 0, label: 'Pipeline Review',
+    startH: 14, endH: 16,   progress: 0.0,
+    agentName: 'Sales Agent', agentColor: '#6366f1',
+    recordsIn: 184, recordsOut: 184, errors: 0, throughput: 12,
+    cron: '0 14 * * 1-5',
+  },
+  {
+    id: 'sales_crm',    agentIdx: 0, label: 'CRM Sync',
+    startH: 18, endH: 18.5, progress: 0.0,
+    agentName: 'Sales Agent', agentColor: '#6366f1',
+    recordsIn: 412, recordsOut: 408, errors: 4, throughput: 137,
+    cron: '0 18 * * *',
+  },
+  // Marketing
+  {
+    id: 'mktg_social',  agentIdx: 1, label: 'Social Queue',
+    startH: 10, endH: 12,   progress: 1.0,
+    agentName: 'Marketing Agent', agentColor: '#f43f5e',
+    recordsIn: 96, recordsOut: 96, errors: 0, throughput: 8,
+    cron: '0 10 * * *',
+  },
+  {
+    id: 'mktg_brief',   agentIdx: 1, label: 'Content Brief',
+    startH: 13, endH: 14.5, progress: 0.0,
+    agentName: 'Marketing Agent', agentColor: '#f43f5e',
+    recordsIn: 24, recordsOut: 24, errors: 0, throughput: 4,
+    cron: '0 13 * * 1',
+  },
+  {
+    id: 'mktg_analytics',agentIdx: 1, label: 'Analytics Report',
+    startH: 20, endH: 21,   progress: 0.0,
+    agentName: 'Marketing Agent', agentColor: '#f43f5e',
+    recordsIn: 5840, recordsOut: 5840, errors: 0, throughput: 97,
+    cron: '0 20 * * *',
+  },
+  // Operations
+  {
+    id: 'ops_invoice',  agentIdx: 2, label: 'Invoice Process',
+    startH: 8,  endH: 9.5,  progress: 1.0,
+    agentName: 'Operations Agent', agentColor: '#10b981',
+    recordsIn: 228, recordsOut: 225, errors: 3, throughput: 25,
+    cron: '0 8 * * 1-5',
+  },
+  {
+    id: 'ops_payroll',  agentIdx: 2, label: 'Payroll Run',
+    startH: 11, endH: 13,   progress: 0.62,
+    agentName: 'Operations Agent', agentColor: '#10b981',
+    recordsIn: 310, recordsOut: 310, errors: 0, throughput: 26,
+    cron: '0 11 * * 5',
+  },
+  {
+    id: 'ops_backup',   agentIdx: 2, label: 'System Backup',
+    startH: 22, endH: 23.5, progress: 0.0,
+    agentName: 'Operations Agent', agentColor: '#10b981',
+    recordsIn: 18200, recordsOut: 18200, errors: 0, throughput: 202,
+    cron: '0 22 * * *',
+  },
+  // HR
+  {
+    id: 'hr_onboard',   agentIdx: 3, label: 'Onboarding Seq',
+    startH: 9,  endH: 11,   progress: 1.0,
+    agentName: 'HR Agent', agentColor: '#f59e0b',
+    recordsIn: 7, recordsOut: 7, errors: 0, throughput: 1,
+    cron: '0 9 * * 1',
+  },
+  {
+    id: 'hr_perf',      agentIdx: 3, label: 'Performance Review',
+    startH: 15, endH: 16.5, progress: 0.0,
+    agentName: 'HR Agent', agentColor: '#f59e0b',
+    recordsIn: 42, recordsOut: 42, errors: 0, throughput: 5,
+    cron: '0 15 1 * *',
+  },
+  // Outreach
+  {
+    id: 'out_email',    agentIdx: 4, label: 'Email Campaign',
+    startH: 13, endH: 17,   progress: 0.0,
+    agentName: 'Outreach Agent', agentColor: '#8b5cf6',
+    recordsIn: 8400, recordsOut: 8361, errors: 39, throughput: 35,
+    cron: '0 13 * * 2,4',
+  },
+  {
+    id: 'out_followup', agentIdx: 4, label: 'Follow-up Seq',
+    startH: 9,  endH: 10.5, progress: 1.0,
+    agentName: 'Outreach Agent', agentColor: '#8b5cf6',
+    recordsIn: 1230, recordsOut: 1187, errors: 6, throughput: 137,
+    cron: '0 9 * * 1-5',
+  },
+];
+
+const DEPENDENCIES: Dependency[] = [
+  { fromId: 'sales_lead',  toId: 'sales_pipe'  },
+  { fromId: 'out_followup',toId: 'out_email'   },
+  { fromId: 'ops_invoice', toId: 'ops_payroll' },
+  { fromId: 'hr_onboard',  toId: 'hr_perf'     },
+];
+
+// milestone task IDs (draw diamond at end of bar)
+const MILESTONE_IDS = new Set(['sales_pipe', 'out_email', 'hr_perf', 'ops_backup']);
+
+// ─── Canvas Setup ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('flow-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const col = canvas.parentElement as HTMLElement;
+
+let W = 0, H = 0, dpr = 1;
+let mouse = { x: -9999, y: -9999 };
+
+const tasks: TaskBar[] = TASKS_DEF.map(t => ({ ...t, rx: 0, ry: 0, rw: 0, rh: 0 }));
+
+const popup: PopupState = { taskId: null, alpha: 0, targetAlpha: 0, x: 0, y: 0 };
+const hover: HoverState = { agentIdx: null, taskId: null };
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = col.getBoundingClientRect();
+  W = rect.width;
+  H = rect.height;
+  canvas.width  = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+window.addEventListener('resize', () => { resize(); });
+resize();
+
+// ─── Layout helpers ───────────────────────────────────────────────────────────
+
+function chartLeft(): number  { return LABEL_COL_W; }
+function chartRight(): number { return W - 16; }
+function chartWidth(): number { return chartRight() - chartLeft(); }
+function chartTop(): number   { return HEADER_H; }
+function totalRowsH(): number { return AGENTS.length * ROW_H; }
+
+function hourToX(h: number): number {
+  const frac = (h - HOUR_START) / (HOUR_END - HOUR_START);
+  return chartLeft() + frac * chartWidth();
+}
+
+function rowTopY(agentIdx: number): number {
+  return chartTop() + agentIdx * ROW_H;
+}
+
+function computeHitboxes(): void {
+  for (const t of tasks) {
+    const x = hourToX(t.startH);
+    const x2 = hourToX(t.endH);
+    const y = rowTopY(t.agentIdx) + BAR_PAD_V;
+    const bh = ROW_H - BAR_PAD_V * 2;
+    t.rx = x; t.ry = y; t.rw = x2 - x; t.rh = bh;
+  }
+}
+
+// ─── Draw helpers ─────────────────────────────────────────────────────────────
+
+function roundRect(x: number, y: number, w: number, h: number, r: number): void {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const m = hex.replace('#','').match(/.{2}/g)!;
+  return { r: parseInt(m[0],16), g: parseInt(m[1],16), b: parseInt(m[2],16) };
+}
+
+function colorAlpha(hex: string, a: number): string {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+function drawDiamond(x: number, y: number, size: number, color: string): void {
+  ctx.beginPath();
+  ctx.moveTo(x, y - size);
+  ctx.lineTo(x + size, y);
+  ctx.lineTo(x, y + size);
+  ctx.lineTo(x - size, y);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+}
+
+// ─── Draw sections ────────────────────────────────────────────────────────────
+
+function drawBackground(): void {
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, W, H);
+
+  // label column bg
+  ctx.fillStyle = 'rgba(255,255,255,0.02)';
+  ctx.fillRect(0, 0, LABEL_COL_W, H);
+
+  // alternating row backgrounds
+  for (let i = 0; i < AGENTS.length; i++) {
+    const y = rowTopY(i);
+    const even = i % 2 === 0;
+    ctx.fillStyle = even ? 'rgba(255,255,255,0.014)' : 'rgba(255,255,255,0.028)';
+    ctx.fillRect(LABEL_COL_W, y, chartWidth(), ROW_H);
+  }
+}
+
+function drawTimeAxis(): void {
+  const y = chartTop();
+
+  // axis bg
+  ctx.fillStyle = 'rgba(255,255,255,0.04)';
+  ctx.fillRect(LABEL_COL_W, 0, chartWidth(), HEADER_H);
+
+  ctx.font = '10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  for (let h = HOUR_START; h <= HOUR_END; h += 2) {
+    const x = hourToX(h);
+
+    // tick
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, HEADER_H - 6);
+    ctx.lineTo(x, HEADER_H);
+    ctx.stroke();
+
+    // vertical grid line
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.beginPath();
+    ctx.moveTo(x, HEADER_H);
+    ctx.lineTo(x, chartTop() + totalRowsH());
+    ctx.stroke();
+
+    // label
+    const label = h === 0 ? '0:00' : h < 10 ? `${h}:00` : `${h}:00`;
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.fillText(label, x, HEADER_H / 2);
+  }
+
+  // divider line under axis
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(LABEL_COL_W, HEADER_H);
+  ctx.lineTo(W, HEADER_H);
+  ctx.stroke();
+
+  // label column / chart divider
+  ctx.beginPath();
+  ctx.moveTo(LABEL_COL_W, 0);
+  ctx.lineTo(LABEL_COL_W, chartTop() + totalRowsH());
+  ctx.stroke();
+}
+
+function drawAgentLabels(): void {
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+
+  for (let i = 0; i < AGENTS.length; i++) {
+    const ag = AGENTS[i];
+    const cy = rowTopY(i) + ROW_H / 2;
+    const isHoveredRow = hover.agentIdx === i;
+    const dimRow = hover.agentIdx !== null && !isHoveredRow;
+    const rowAlpha = dimRow ? 0.15 : 1.0;
+
+    // dot
+    ctx.beginPath();
+    ctx.arc(14, cy, 5, 0, Math.PI * 2);
+    ctx.fillStyle = colorAlpha(ag.color, rowAlpha);
+    ctx.fill();
+
+    // label
+    ctx.font = `${isHoveredRow ? '600' : '500'} 11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    ctx.fillStyle = `rgba(255,255,255,${dimRow ? 0.12 : 0.82})`;
+    ctx.fillText(ag.name, 26, cy);
+
+    // row separator
+    const sepY = rowTopY(i) + ROW_H;
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, sepY);
+    ctx.lineTo(W, sepY);
+    ctx.stroke();
+  }
+}
+
+function drawTaskBars(): void {
+  computeHitboxes();
+
+  for (const t of tasks) {
+    const dimTask = hover.agentIdx !== null && hover.agentIdx !== t.agentIdx;
+    const baseAlpha = dimTask ? 0.08 : 1.0;
+    const isHovered = hover.taskId === t.id;
+    const { rx, ry, rw, rh } = t;
+    if (rw < 2) continue;
+
+    const r = 5;
+    const ag = AGENTS[t.agentIdx];
+
+    // bar background (full width, dimmer)
+    ctx.save();
+    roundRect(rx, ry, rw, rh, r);
+    ctx.fillStyle = colorAlpha(ag.color, 0.18 * baseAlpha);
+    ctx.fill();
+
+    // progress fill (brighter)
+    if (t.progress > 0) {
+      const pw = rw * t.progress;
+      ctx.save();
+      ctx.beginPath();
+      roundRect(rx, ry, rw, rh, r);
+      ctx.clip();
+      roundRect(rx, ry, pw, rh, r);
+      ctx.fillStyle = colorAlpha(ag.color, 0.55 * baseAlpha);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // border
+    roundRect(rx, ry, rw, rh, r);
+    ctx.strokeStyle = colorAlpha(ag.color, (isHovered ? 0.9 : 0.5) * baseAlpha);
+    ctx.lineWidth = isHovered ? 1.5 : 1;
+    ctx.stroke();
+    ctx.restore();
+
+    // hover glow
+    if (isHovered) {
+      ctx.save();
+      roundRect(rx - 2, ry - 2, rw + 4, rh + 4, r + 2);
+      ctx.shadowColor = ag.color;
+      ctx.shadowBlur = 12;
+      ctx.strokeStyle = colorAlpha(ag.color, 0.4);
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // label
+    if (rw > 50) {
+      ctx.save();
+      ctx.beginPath();
+      roundRect(rx + 1, ry, rw - 2, rh, r);
+      ctx.clip();
+      ctx.font = `500 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+      ctx.fillStyle = `rgba(255,255,255,${0.9 * baseAlpha})`;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(t.label, rx + 7, ry + rh / 2);
+      ctx.restore();
+    }
+
+    // milestone diamond
+    if (MILESTONE_IDS.has(t.id)) {
+      const mx = rx + rw;
+      const my = ry + rh / 2;
+      drawDiamond(mx, my, 6, colorAlpha(ag.color, baseAlpha));
+    }
+  }
+}
+
+function drawDependencies(): void {
+  for (const dep of DEPENDENCIES) {
+    const from = tasks.find(t => t.id === dep.fromId);
+    const to   = tasks.find(t => t.id === dep.toId);
+    if (!from || !to) continue;
+
+    const dimDep = hover.agentIdx !== null && hover.agentIdx !== from.agentIdx;
+    const alpha = dimDep ? 0.04 : 0.35;
+
+    const x1 = from.rx + from.rw;
+    const y1 = from.ry + from.rh / 2;
+    const x2 = to.rx;
+    const y2 = to.ry + to.rh / 2;
+
+    const cp1x = x1 + Math.abs(x2 - x1) * 0.4;
+    const cp1y = y1;
+    const cp2x = x2 - Math.abs(x2 - x1) * 0.4;
+    const cp2y = y2;
+
+    ctx.save();
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x2, y2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // arrowhead
+    const dx = x2 - cp2x;
+    const dy = y2 - cp2y;
+    const angle = Math.atan2(dy, dx);
+    const aSize = 5;
+    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - aSize * Math.cos(angle - 0.4), y2 - aSize * Math.sin(angle - 0.4));
+    ctx.lineTo(x2 - aSize * Math.cos(angle + 0.4), y2 - aSize * Math.sin(angle + 0.4));
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function drawNowLine(): void {
+  if (simNow < HOUR_START || simNow > HOUR_END) return;
+  const x = hourToX(simNow);
+  const yTop = chartTop();
+  const yBot = chartTop() + totalRowsH();
+
+  // glow
+  ctx.save();
+  ctx.shadowColor = '#ef4444';
+  ctx.shadowBlur = 8;
+  ctx.strokeStyle = 'rgba(239,68,68,0.9)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(x, yTop);
+  ctx.lineTo(x, yBot);
+  ctx.stroke();
+  ctx.restore();
+
+  // label pill
+  const h = Math.floor(simNow);
+  const m = Math.floor((simNow - h) * 60);
+  const label = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  const tw = ctx.measureText(label).width + 10;
+
+  ctx.fillStyle = '#ef4444';
+  roundRect(x - tw / 2, yTop - 18, tw, 14, 3);
+  ctx.fill();
+
+  ctx.font = 'bold 9px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, x, yTop - 11);
+}
+
+function drawPopup(): void {
+  if (popup.alpha < 0.01) return;
+  const t = tasks.find(t => t.id === popup.taskId);
+  if (!t) return;
+
+  const PAD = 14;
+  const W_POP = 210;
+  const STRIP_W = 4;
+  const LINE_H = 18;
+  const ag = AGENTS[t.agentIdx];
+
+  // content lines
+  const fmtH = (h: number) => {
+    const hh = Math.floor(h);
+    const mm = Math.round((h - hh) * 60);
+    return `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+  };
+  const durationMin = Math.round((t.endH - t.startH) * 60);
+  const progressPct = Math.round(t.progress * 100);
+
+  const lines: { label: string; value: string; valueColor?: string }[] = [
+    { label: 'Agent',      value: t.agentName },
+    { label: 'Time',       value: `${fmtH(t.startH)} → ${fmtH(t.endH)}` },
+    { label: 'Duration',   value: `${durationMin} min` },
+    { label: 'Progress',   value: `${progressPct}%` },
+    { label: 'Records In', value: t.recordsIn.toLocaleString() },
+    { label: 'Records Out',value: t.recordsOut.toLocaleString() },
+    { label: 'Errors',     value: String(t.errors), valueColor: t.errors > 0 ? '#f87171' : '#4ade80' },
+    { label: 'Throughput', value: `${t.throughput} rec/min` },
+    { label: 'Last Result',value: 'SUCCESS', valueColor: '#4ade80' },
+    { label: 'Cron',       value: t.cron },
+  ];
+
+  const H_POP = PAD * 2 + LINE_H * (lines.length + 1.5);
+
+  let px = popup.x + 12;
+  let py = popup.y - H_POP / 2;
+
+  // clamp to canvas
+  if (px + W_POP > W - 8) px = popup.x - W_POP - 12;
+  if (py < 8) py = 8;
+  if (py + H_POP > H - 8) py = H - H_POP - 8;
+
+  ctx.save();
+  ctx.globalAlpha = popup.alpha;
+
+  // shadow
+  ctx.shadowColor = 'rgba(0,0,0,0.6)';
+  ctx.shadowBlur = 20;
+
+  // bg
+  roundRect(px, py, W_POP, H_POP, 8);
+  ctx.fillStyle = BG_PANEL;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // border
+  roundRect(px, py, W_POP, H_POP, 8);
+  ctx.strokeStyle = colorAlpha(ACCENT, 0.5);
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // color strip left
+  roundRect(px, py, STRIP_W, H_POP, 4);
+  ctx.fillStyle = ag.color;
+  ctx.fill();
+
+  const textX = px + STRIP_W + PAD;
+
+  // title
+  ctx.font = 'bold 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(t.label, textX, py + PAD);
+
+  // agent dot
+  ctx.beginPath();
+  ctx.arc(textX + 6, py + PAD + LINE_H * 0.9, 4, 0, Math.PI * 2);
+  ctx.fillStyle = ag.color;
+  ctx.fill();
+
+  // lines
+  ctx.font = '10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  for (let i = 0; i < lines.length; i++) {
+    const ly = py + PAD + LINE_H * (i + 1.5);
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.textAlign = 'left';
+    ctx.fillText(lines[i].label, textX, ly);
+    ctx.fillStyle = lines[i].valueColor ?? 'rgba(255,255,255,0.88)';
+    ctx.textAlign = 'right';
+    ctx.fillText(lines[i].value, px + W_POP - PAD, ly);
+  }
+
+  ctx.restore();
+}
+
+// ─── Hit-testing ──────────────────────────────────────────────────────────────
+
+function hitTestTaskBar(mx: number, my: number): TaskBar | null {
+  for (const t of tasks) {
+    if (mx >= t.rx && mx <= t.rx + t.rw && my >= t.ry && my <= t.ry + t.rh) {
+      return t;
+    }
+  }
+  return null;
+}
+
+function hitTestAgentLabel(mx: number, my: number): number | null {
+  if (mx > LABEL_COL_W) return null;
+  for (let i = 0; i < AGENTS.length; i++) {
+    const y = rowTopY(i);
+    if (my >= y && my < y + ROW_H) return i;
+  }
+  return null;
+}
+
+// ─── Event listeners ──────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  mouse.x = mx;
+  mouse.y = my;
+
+  computeHitboxes();
+
+  const hitTask  = hitTestTaskBar(mx, my);
+  const hitAgent = hitTestAgentLabel(mx, my);
+
+  if (hitTask) {
+    hover.taskId = hitTask.id;
+    hover.agentIdx = null;
+    popup.taskId = hitTask.id;
+    popup.targetAlpha = 1;
+    popup.x = mx;
+    popup.y = my;
+    canvas.style.cursor = 'pointer';
+  } else {
+    hover.taskId = null;
+    popup.targetAlpha = 0;
+    canvas.style.cursor = 'default';
+  }
+
+  if (hitAgent !== null) {
+    hover.agentIdx = hitAgent;
+  } else if (!hitTask) {
+    hover.agentIdx = null;
+  }
+});
+
+canvas.addEventListener('mouseleave', () => {
+  hover.taskId   = null;
+  hover.agentIdx = null;
+  popup.targetAlpha = 0;
+  mouse.x = -9999;
+  mouse.y = -9999;
+  canvas.style.cursor = 'default';
+});
+
+// ─── Animation loop ───────────────────────────────────────────────────────────
+
+let lastTime = 0;
+
+function tick(ts: number): void {
+  const dt = Math.min((ts - lastTime) / 1000, 0.05);
+  lastTime = ts;
+
+  // advance sim clock (1 sim-hour per 60 real seconds → 1/3600 per frame at 60fps ≈ ~0.0167/s)
+  simNow += dt * (1 / 60);
+  if (simNow > HOUR_END) simNow = HOUR_START;
+
+  // lerp popup alpha
+  popup.alpha = lerp(popup.alpha, popup.targetAlpha, 0.18);
+
+  // draw
+  ctx.clearRect(0, 0, W, H);
+  drawBackground();
+  drawTimeAxis();
+  drawAgentLabels();
+  drawDependencies();
+  drawTaskBars();
+  drawNowLine();
+  drawPopup();
+
+  requestAnimationFrame(tick);
+}
+
+requestAnimationFrame((ts) => {
+  lastTime = ts;
+  requestAnimationFrame(tick);
+});
+</script>

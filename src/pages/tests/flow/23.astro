@@ -1,0 +1,952 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloFlow — Kanban + Timeline | Pello" description="PelloFlow Kanban and Timeline hybrid view showing AI agent tasks across all stages — scheduled, running, completed, and failed — with rich hover details.">
+  <Header />
+  <main id="main-content">
+    <section class="flow-section" aria-labelledby="flow-headline">
+      <div class="flow-layout">
+        <div class="flow-text">
+          <span class="flow-badge">PelloFlow</span>
+          <h1 id="flow-headline">Kanban +<br/>Timeline</h1>
+          <p>Every AI agent task — across every workflow — visible in one unified view. Track what's running, what's queued, and everything that completed.</p>
+          <ul class="flow-pills" role="list">
+            <li>Custom AI agents</li>
+            <li>End-to-end automation</li>
+            <li>API &amp; webhook integration</li>
+            <li>Ongoing maintenance</li>
+          </ul>
+        </div>
+        <div class="flow-canvas-col">
+          <canvas id="flow-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .flow-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .flow-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .flow-layout { grid-template-columns: 1fr; } }
+  .flow-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .flow-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(79,70,229,0.12); border: 1px solid rgba(79,70,229,0.35); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #818cf8; width: fit-content; }
+  .flow-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .flow-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .flow-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .flow-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .flow-canvas-col { position: relative; width: 100%; min-height: 580px; }
+  #flow-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: default; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Agent {
+  id: string;
+  name: string;
+  color: string;
+}
+
+type TaskStatus = 'scheduled' | 'running' | 'completed' | 'failed';
+
+interface KanbanTask {
+  id: string;
+  name: string;
+  agentId: string;
+  status: TaskStatus;
+  progress?: number;       // 0–1, only for running
+  timeLabel: string;       // e.g. "in 30m" / "2h 14m ago"
+  popup: PopupData;
+}
+
+interface TimelineEntry {
+  id: string;
+  agentId: string;
+  taskName: string;
+  timestamp: string;       // display string e.g. "09:41"
+  duration: string;        // e.g. "1m 22s"
+  alpha: number;           // for fade-in
+  y: number;               // current y (animated)
+  targetY: number;
+}
+
+interface PopupData {
+  taskName: string;
+  agentId: string;
+  execTimestamp: string;
+  status: TaskStatus;
+  duration: string;
+  recordsIn: number;
+  recordsOut: number;
+  retries: number;
+  costEstimate: string;
+  logExcerpt: string;
+  nextRun: string;
+}
+
+interface HoverTarget {
+  type: 'kanban' | 'timeline';
+  id: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+interface FilterState {
+  activeAgent: string | null;  // null = show all
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const BG       = '#060712';
+const SURFACE  = 'rgba(255,255,255,0.04)';
+const BORDER   = 'rgba(255,255,255,0.08)';
+const TEXT_HI  = '#ffffff';
+const TEXT_MID = 'rgba(255,255,255,0.65)';
+const TEXT_LO  = 'rgba(255,255,255,0.35)';
+
+const AGENTS: Record<string, Agent> = {
+  sales:     { id: 'sales',     name: 'Sales Agent',     color: '#6366f1' },
+  marketing: { id: 'marketing', name: 'Marketing Agent', color: '#f43f5e' },
+  ops:       { id: 'ops',       name: 'Operations Agent',color: '#10b981' },
+  hr:        { id: 'hr',        name: 'HR Agent',        color: '#f59e0b' },
+  outreach:  { id: 'outreach',  name: 'Outreach Agent',  color: '#8b5cf6' },
+};
+
+const COLUMNS: { key: TaskStatus; label: string }[] = [
+  { key: 'scheduled', label: 'SCHEDULED' },
+  { key: 'running',   label: 'RUNNING'   },
+  { key: 'completed', label: 'COMPLETED' },
+  { key: 'failed',    label: 'FAILED'    },
+];
+
+// ─── Initial Task Data ────────────────────────────────────────────────────────
+
+const INITIAL_TASKS: KanbanTask[] = [
+  {
+    id: 't1', name: 'Email Campaign', agentId: 'outreach', status: 'scheduled',
+    timeLabel: 'in 18m',
+    popup: {
+      taskName: 'Email Campaign', agentId: 'outreach',
+      execTimestamp: 'Scheduled 10:00', status: 'scheduled',
+      duration: '—', recordsIn: 4800, recordsOut: 0, retries: 0,
+      costEstimate: '~$0.38',
+      logExcerpt: 'Pending — segment ready, SMTP warmed',
+      nextRun: 'Today 10:00 AM',
+    },
+  },
+  {
+    id: 't2', name: 'Weekly Report', agentId: 'ops', status: 'scheduled',
+    timeLabel: 'in 43m',
+    popup: {
+      taskName: 'Weekly Report', agentId: 'ops',
+      execTimestamp: 'Scheduled 10:25', status: 'scheduled',
+      duration: '—', recordsIn: 0, recordsOut: 0, retries: 0,
+      costEstimate: '~$0.06',
+      logExcerpt: 'Waiting for scheduler tick',
+      nextRun: 'Today 10:25 AM',
+    },
+  },
+  {
+    id: 't3', name: 'Lead Nurture', agentId: 'sales', status: 'scheduled',
+    timeLabel: 'in 1h 10m',
+    popup: {
+      taskName: 'Lead Nurture', agentId: 'sales',
+      execTimestamp: 'Scheduled 10:52', status: 'scheduled',
+      duration: '—', recordsIn: 312, recordsOut: 0, retries: 0,
+      costEstimate: '~$0.12',
+      logExcerpt: 'Sequence step 3 — 312 contacts eligible',
+      nextRun: 'Today 10:52 AM',
+    },
+  },
+  {
+    id: 't4', name: 'Lead Scoring', agentId: 'sales', status: 'running',
+    timeLabel: 'started 4m ago', progress: 0.65,
+    popup: {
+      taskName: 'Lead Scoring', agentId: 'sales',
+      execTimestamp: 'Started 09:37', status: 'running',
+      duration: '4m 02s', recordsIn: 1247, recordsOut: 810, retries: 0,
+      costEstimate: '$0.09 so far',
+      logExcerpt: 'Processed 810/1,247 leads → model scored → writing to CRM',
+      nextRun: 'Every 6h',
+    },
+  },
+  {
+    id: 't5', name: 'Social Queue', agentId: 'marketing', status: 'running',
+    timeLabel: 'started 9m ago', progress: 0.40,
+    popup: {
+      taskName: 'Social Queue', agentId: 'marketing',
+      execTimestamp: 'Started 09:32', status: 'running',
+      duration: '9m 14s', recordsIn: 56, recordsOut: 22, retries: 0,
+      costEstimate: '$0.05 so far',
+      logExcerpt: 'Publishing post 22/56 → Twitter, LinkedIn scheduled',
+      nextRun: 'Daily 09:30 AM',
+    },
+  },
+  {
+    id: 't6', name: 'Payroll Run', agentId: 'ops', status: 'completed',
+    timeLabel: '2h 14m ago',
+    popup: {
+      taskName: 'Payroll Run', agentId: 'ops',
+      execTimestamp: 'Completed 07:28', status: 'completed',
+      duration: '3m 41s', recordsIn: 84, recordsOut: 84, retries: 0,
+      costEstimate: '$0.07',
+      logExcerpt: '84 employees processed → payslips generated → Xero synced',
+      nextRun: 'Next Friday 07:00 AM',
+    },
+  },
+  {
+    id: 't7', name: 'Onboarding Seq', agentId: 'hr', status: 'completed',
+    timeLabel: '3h 02m ago',
+    popup: {
+      taskName: 'Onboarding Seq', agentId: 'hr',
+      execTimestamp: 'Completed 06:40', status: 'completed',
+      duration: '1m 55s', recordsIn: 3, recordsOut: 3, retries: 0,
+      costEstimate: '$0.02',
+      logExcerpt: '3 new hires → welcome email → Slack invite → HRIS record created',
+      nextRun: 'On new hire event',
+    },
+  },
+  {
+    id: 't8', name: 'Content Brief', agentId: 'marketing', status: 'completed',
+    timeLabel: '4h 51m ago',
+    popup: {
+      taskName: 'Content Brief', agentId: 'marketing',
+      execTimestamp: 'Completed 04:51', status: 'completed',
+      duration: '48s', recordsIn: 12, recordsOut: 12, retries: 0,
+      costEstimate: '$0.11',
+      logExcerpt: '12 briefs generated → SEO keywords injected → Notion synced',
+      nextRun: 'Mondays 05:00 AM',
+    },
+  },
+  {
+    id: 't9', name: 'CRM Sync', agentId: 'sales', status: 'failed',
+    timeLabel: '1h 33m ago',
+    popup: {
+      taskName: 'CRM Sync', agentId: 'sales',
+      execTimestamp: 'Failed 08:09', status: 'failed',
+      duration: '12s', recordsIn: 0, recordsOut: 0, retries: 3,
+      costEstimate: '$0.01',
+      logExcerpt: 'Error: HubSpot API 429 rate limit → 3 retries exhausted',
+      nextRun: 'Retry in 15m',
+    },
+  },
+];
+
+const INITIAL_TIMELINE: { agentId: string; taskName: string; timestamp: string; duration: string }[] = [
+  { agentId: 'marketing', taskName: 'Content Brief',   timestamp: '04:51', duration: '48s'    },
+  { agentId: 'hr',        taskName: 'Onboarding Seq',  timestamp: '06:40', duration: '1m 55s' },
+  { agentId: 'ops',       taskName: 'Payroll Run',     timestamp: '07:28', duration: '3m 41s' },
+  { agentId: 'outreach',  taskName: 'Prospect Scrape', timestamp: '07:55', duration: '2m 08s' },
+  { agentId: 'sales',     taskName: 'Pipeline Digest',  timestamp: '08:02', duration: '22s'   },
+  { agentId: 'ops',       taskName: 'Log Archiver',    timestamp: '08:30', duration: '11s'    },
+  { agentId: 'hr',        taskName: 'PTO Approval',    timestamp: '08:47', duration: '5s'     },
+  { agentId: 'marketing', taskName: 'Ad Performance',  timestamp: '09:10', duration: '1m 02s' },
+];
+
+// ─── New tasks that will be injected periodically ─────────────────────────────
+
+const INJECT_TASKS: { agentId: string; taskName: string; duration: string }[] = [
+  { agentId: 'outreach',  taskName: 'Follow-up Seq',  duration: '58s'    },
+  { agentId: 'sales',     taskName: 'Deal Alerts',    duration: '14s'    },
+  { agentId: 'ops',       taskName: 'DB Backup',      duration: '2m 17s' },
+  { agentId: 'hr',        taskName: 'Timesheet Check',duration: '31s'    },
+  { agentId: 'marketing', taskName: 'A/B Results',    duration: '44s'    },
+  { agentId: 'sales',     taskName: 'Quote Builder',  duration: '1m 05s' },
+];
+
+// ─── Canvas Setup ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('flow-canvas') as HTMLCanvasElement;
+const ctx    = canvas.getContext('2d')!;
+let W = 0, H = 0, dpr = 1;
+
+function resize() {
+  const rect = (canvas.parentElement as HTMLElement).getBoundingClientRect();
+  dpr = window.devicePixelRatio || 1;
+  W   = rect.width;
+  H   = Math.max(rect.height, 560);
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+}
+
+window.addEventListener('resize', () => { resize(); });
+resize();
+
+// ─── State ────────────────────────────────────────────────────────────────────
+
+let tasks: KanbanTask[]     = INITIAL_TASKS.map(t => ({ ...t }));
+let timeline: TimelineEntry[] = [];
+let filterState: FilterState  = { activeAgent: null };
+
+let popupAlpha  = 0;
+let popupTarget = 0;
+let popupData: PopupData | null = null;
+let popupX = 0, popupY = 0;
+let hoveredId: string | null = null;
+
+let mouseX = 0, mouseY = 0;
+let hoverTargets: HoverTarget[] = [];
+
+let filterPills: { agentId: string | null; label: string; x: number; y: number; w: number; h: number }[] = [];
+let timelineScrollOffset = 0;
+
+let injectIndex   = 0;
+let lastInjectAt  = performance.now();
+const INJECT_INTERVAL = 3200;
+
+// ─── Build initial timeline ───────────────────────────────────────────────────
+
+(function buildInitialTimeline() {
+  INITIAL_TIMELINE.forEach((entry, i) => {
+    timeline.push({
+      id:        'tl-' + i,
+      agentId:   entry.agentId,
+      taskName:  entry.taskName,
+      timestamp: entry.timestamp,
+      duration:  entry.duration,
+      alpha:     1,
+      y:         0,
+      targetY:   0,
+    });
+  });
+})();
+
+// ─── Layout helpers ───────────────────────────────────────────────────────────
+
+const FILTER_BAR_H  = 40;
+const FILTER_PAD_T  = 12;
+const COL_HEADER_H  = 32;
+const CARD_H        = 68;
+const CARD_GAP      = 8;
+const CARD_PAD      = 10;
+const KANBAN_TOP    = FILTER_PAD_T + FILTER_BAR_H + 12;
+
+function splitX(): number { return W * 0.5; }
+
+function colX(colIndex: number): number {
+  const halfW = splitX();
+  const colW  = (halfW - 16) / 4;
+  return 8 + colIndex * colW;
+}
+
+function colWidth(): number {
+  return (splitX() - 16) / 4;
+}
+
+// ─── Drawing primitives ───────────────────────────────────────────────────────
+
+function roundRect(x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function drawTextClipped(text: string, x: number, y: number, maxW: number, font: string, color: string) {
+  ctx.font        = font;
+  ctx.fillStyle   = color;
+  ctx.textBaseline = 'middle';
+  const metrics   = ctx.measureText(text);
+  if (metrics.width > maxW) {
+    let truncated = text;
+    while (ctx.measureText(truncated + '…').width > maxW && truncated.length > 0) {
+      truncated = truncated.slice(0, -1);
+    }
+    ctx.fillText(truncated + '…', x, y);
+  } else {
+    ctx.fillText(text, x, y);
+  }
+}
+
+// ─── Filter bar ───────────────────────────────────────────────────────────────
+
+function drawFilterBar() {
+  filterPills = [];
+  const allPill = { agentId: null, label: 'All' };
+  const pills   = [allPill, ...Object.values(AGENTS).map(a => ({ agentId: a.id, label: a.name.split(' ')[0] }))];
+
+  let px = 8;
+  const py = FILTER_PAD_T;
+  const ph = FILTER_BAR_H - 8;
+
+  pills.forEach(pill => {
+    ctx.font = '500 11px system-ui, sans-serif';
+    const tw  = ctx.measureText(pill.label).width;
+    const pw  = tw + 20;
+
+    const isActive = filterState.activeAgent === pill.agentId;
+    const agent    = pill.agentId ? AGENTS[pill.agentId] : null;
+
+    roundRect(px, py, pw, ph, ph / 2);
+    if (isActive) {
+      ctx.fillStyle = agent ? agent.color + '33' : 'rgba(79,70,229,0.2)';
+      ctx.fill();
+      ctx.strokeStyle = agent ? agent.color : '#4f46e5';
+      ctx.lineWidth   = 1;
+      ctx.stroke();
+    } else {
+      ctx.fillStyle   = 'rgba(255,255,255,0.05)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.lineWidth   = 1;
+      ctx.stroke();
+    }
+
+    // dot for agent pills
+    if (agent) {
+      ctx.beginPath();
+      ctx.arc(px + 10, py + ph / 2, 3, 0, Math.PI * 2);
+      ctx.fillStyle = agent.color;
+      ctx.fill();
+      ctx.font        = '500 11px system-ui, sans-serif';
+      ctx.fillStyle   = isActive ? TEXT_HI : TEXT_MID;
+      ctx.textBaseline = 'middle';
+      ctx.fillText(pill.label, px + 17, py + ph / 2);
+    } else {
+      ctx.font        = '500 11px system-ui, sans-serif';
+      ctx.fillStyle   = isActive ? TEXT_HI : TEXT_MID;
+      ctx.textBaseline = 'middle';
+      ctx.fillText(pill.label, px + 10, py + ph / 2);
+    }
+
+    filterPills.push({ agentId: pill.agentId, label: pill.label, x: px, y: py, w: pw, h: ph });
+    px += pw + 6;
+  });
+}
+
+// ─── Kanban board ─────────────────────────────────────────────────────────────
+
+function agentAlpha(agentId: string): number {
+  if (!filterState.activeAgent) return 1;
+  return filterState.activeAgent === agentId ? 1 : 0.1;
+}
+
+function drawKanban() {
+  hoverTargets = [];
+
+  const cw     = colWidth();
+  const halfW  = splitX();
+
+  // Divider
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth   = 1;
+  ctx.beginPath();
+  ctx.moveTo(halfW - 1, FILTER_PAD_T);
+  ctx.lineTo(halfW - 1, H - 20);
+  ctx.stroke();
+
+  COLUMNS.forEach((col, ci) => {
+    const cx    = colX(ci);
+    const colTasks = tasks.filter(t => t.status === col.key);
+    const count = colTasks.length;
+
+    // Column header
+    const headerY = KANBAN_TOP;
+    ctx.font      = '600 9px system-ui, sans-serif';
+    ctx.fillStyle = TEXT_LO;
+    ctx.textBaseline = 'middle';
+    ctx.letterSpacing = '0.08em';
+    ctx.fillText(col.label, cx + CARD_PAD, headerY + 10);
+    ctx.letterSpacing = '0';
+
+    // Count badge
+    ctx.font      = '600 9px system-ui, sans-serif';
+    const labelW  = ctx.measureText(col.label).width;
+    const badgeX  = cx + CARD_PAD + labelW + 6;
+    const badgeR  = 8;
+    roundRect(badgeX, headerY + 4, badgeR * 2, 13, 6);
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    ctx.fill();
+    ctx.fillStyle = TEXT_MID;
+    ctx.textAlign = 'center';
+    ctx.fillText(String(count), badgeX + badgeR, headerY + 10.5);
+    ctx.textAlign = 'left';
+
+    // Cards
+    let cardY = headerY + COL_HEADER_H + 4;
+    colTasks.forEach(task => {
+      const agent = AGENTS[task.agentId];
+      const alpha = agentAlpha(task.agentId);
+
+      ctx.globalAlpha = alpha;
+
+      const isHovered = hoveredId === task.id;
+
+      // Card background
+      roundRect(cx, cardY, cw - 6, CARD_H, 6);
+      if (col.key === 'completed') {
+        ctx.fillStyle = isHovered ? 'rgba(16,185,129,0.12)' : 'rgba(16,185,129,0.06)';
+      } else if (col.key === 'failed') {
+        ctx.fillStyle = isHovered ? 'rgba(239,68,68,0.14)' : 'rgba(239,68,68,0.07)';
+      } else {
+        ctx.fillStyle = isHovered ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.04)';
+      }
+      ctx.fill();
+
+      // Border
+      roundRect(cx, cardY, cw - 6, CARD_H, 6);
+      if (col.key === 'completed') {
+        ctx.strokeStyle = 'rgba(16,185,129,0.25)';
+      } else if (col.key === 'failed') {
+        ctx.strokeStyle = 'rgba(239,68,68,0.3)';
+      } else {
+        ctx.strokeStyle = 'rgba(255,255,255,0.09)';
+      }
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Left accent strip
+      roundRect(cx, cardY, 3, CARD_H, 3);
+      ctx.fillStyle = agent.color;
+      ctx.fill();
+
+      // Task name
+      const nameX = cx + CARD_PAD + 6;
+      drawTextClipped(task.name, nameX, cardY + 16, cw - 32, '600 12px system-ui, sans-serif', TEXT_HI);
+
+      // Agent dot + name
+      ctx.beginPath();
+      ctx.arc(nameX, cardY + 32, 3, 0, Math.PI * 2);
+      ctx.fillStyle = agent.color;
+      ctx.fill();
+      drawTextClipped(agent.name, nameX + 8, cardY + 32, cw - 40, '400 10px system-ui, sans-serif', TEXT_MID);
+
+      // Time label
+      const timeLabelY = cardY + CARD_H - 14;
+      if (col.key === 'failed') {
+        // Error icon
+        ctx.font        = '600 11px system-ui, sans-serif';
+        ctx.fillStyle   = '#ef4444';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('✕', cx + CARD_PAD + 6, timeLabelY);
+        drawTextClipped(task.timeLabel, cx + CARD_PAD + 20, timeLabelY, cw - 50, '400 10px system-ui, sans-serif', 'rgba(239,68,68,0.8)');
+      } else {
+        drawTextClipped(task.timeLabel, nameX, timeLabelY, cw - 30, '400 10px system-ui, sans-serif', TEXT_LO);
+      }
+
+      // Progress bar for running tasks
+      if (col.key === 'running' && task.progress !== undefined) {
+        const barX = cx + CARD_PAD + 6;
+        const barW = cw - CARD_PAD * 2 - 10;
+        const barY = cardY + CARD_H - 6;
+        // track
+        roundRect(barX, barY, barW, 3, 1.5);
+        ctx.fillStyle = 'rgba(255,255,255,0.08)';
+        ctx.fill();
+        // fill
+        roundRect(barX, barY, barW * task.progress, 3, 1.5);
+        ctx.fillStyle = agent.color;
+        ctx.fill();
+      }
+
+      ctx.globalAlpha = 1;
+
+      // Register hover target
+      hoverTargets.push({ type: 'kanban', id: task.id, x: cx, y: cardY, w: cw - 6, h: CARD_H });
+
+      cardY += CARD_H + CARD_GAP;
+    });
+  });
+}
+
+// ─── Timeline (right half) ────────────────────────────────────────────────────
+
+const TL_LEFT        = splitX() + 16;
+const TL_ENTRY_H     = 36;
+const TL_ENTRY_GAP   = 6;
+const TL_HEADER_H    = 28;
+
+function drawTimeline() {
+  const tlLeft = splitX() + 16;
+  const tlW    = W - tlLeft - 8;
+
+  // Section header
+  ctx.font        = '600 9px system-ui, sans-serif';
+  ctx.fillStyle   = TEXT_LO;
+  ctx.textBaseline = 'middle';
+  ctx.letterSpacing = '0.08em';
+  ctx.fillText('COMPLETED TIMELINE', tlLeft, KANBAN_TOP + 10);
+  ctx.letterSpacing = '0';
+
+  const startY = KANBAN_TOP + TL_HEADER_H;
+
+  // Draw newest first (top)
+  const visibleEntries = [...timeline].reverse();
+  let entY = startY;
+
+  visibleEntries.forEach((entry, i) => {
+    if (entY > H - 20) return;
+
+    entry.targetY = startY + i * (TL_ENTRY_H + TL_ENTRY_GAP);
+    if (entry.y === 0 && i === 0) entry.y = entry.targetY;
+
+    const agent = AGENTS[entry.agentId];
+    const alpha = agentAlpha(entry.agentId) * entry.alpha;
+    ctx.globalAlpha = alpha;
+
+    const isHovered = hoveredId === entry.id;
+
+    // Row background
+    roundRect(tlLeft, entY, tlW, TL_ENTRY_H, 5);
+    ctx.fillStyle = isHovered ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.03)';
+    ctx.fill();
+    roundRect(tlLeft, entY, tlW, TL_ENTRY_H, 5);
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.lineWidth   = 1;
+    ctx.stroke();
+
+    // Timeline dot
+    const dotX = tlLeft + 14;
+    const dotY = entY + TL_ENTRY_H / 2;
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, 4, 0, Math.PI * 2);
+    ctx.fillStyle = agent.color;
+    ctx.fill();
+
+    // Connector line to next
+    if (i < visibleEntries.length - 1 && entY + TL_ENTRY_H + TL_ENTRY_GAP < H - 20) {
+      ctx.beginPath();
+      ctx.moveTo(dotX, entY + TL_ENTRY_H);
+      ctx.lineTo(dotX, entY + TL_ENTRY_H + TL_ENTRY_GAP);
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.lineWidth   = 1;
+      ctx.stroke();
+    }
+
+    // Timestamp
+    ctx.font        = '500 10px system-ui, sans-serif';
+    ctx.fillStyle   = TEXT_LO;
+    ctx.textBaseline = 'middle';
+    ctx.fillText(entry.timestamp, tlLeft + 24, dotY);
+
+    // Task name
+    const nameX = tlLeft + 24 + 36;
+    drawTextClipped(entry.taskName, nameX, dotY, tlW - 100, '600 11px system-ui, sans-serif', TEXT_HI);
+
+    // Duration
+    ctx.font        = '400 10px system-ui, sans-serif';
+    ctx.fillStyle   = TEXT_LO;
+    ctx.textAlign   = 'right';
+    ctx.fillText(entry.duration, tlLeft + tlW - 6, dotY);
+    ctx.textAlign   = 'left';
+
+    ctx.globalAlpha = 1;
+
+    // Register hover target
+    hoverTargets.push({ type: 'timeline', id: entry.id, x: tlLeft, y: entY, w: tlW, h: TL_ENTRY_H });
+
+    entY += TL_ENTRY_H + TL_ENTRY_GAP;
+  });
+}
+
+// ─── Popup ────────────────────────────────────────────────────────────────────
+
+const POPUP_W = 220;
+const POPUP_H = 200;
+
+function drawPopup() {
+  if (popupAlpha < 0.01 || !popupData) return;
+
+  ctx.globalAlpha = popupAlpha;
+
+  let px = popupX + 12;
+  let py = popupY - POPUP_H - 4;
+  if (py < 8)        py = popupY + 12;
+  if (px + POPUP_W > W - 8) px = popupX - POPUP_W - 4;
+
+  // Shadow
+  ctx.shadowColor   = 'rgba(0,0,0,0.6)';
+  ctx.shadowBlur    = 24;
+  roundRect(px, py, POPUP_W, POPUP_H, 8);
+  ctx.fillStyle = '#0d1028';
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Border
+  roundRect(px, py, POPUP_W, POPUP_H, 8);
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.lineWidth   = 1;
+  ctx.stroke();
+
+  const agent      = AGENTS[popupData.agentId];
+  const statusColor = popupData.status === 'completed' ? '#10b981'
+                    : popupData.status === 'failed'    ? '#ef4444'
+                    : popupData.status === 'running'   ? '#f59e0b'
+                    : 'rgba(255,255,255,0.4)';
+
+  let row = py + 16;
+  const lx = px + 12;
+  const rw = POPUP_W - 24;
+
+  // Task name
+  ctx.font        = '700 12px system-ui, sans-serif';
+  ctx.fillStyle   = TEXT_HI;
+  ctx.textBaseline = 'top';
+  drawTextClipped(popupData.taskName, lx, row, rw, '700 12px system-ui, sans-serif', TEXT_HI);
+  row += 16;
+
+  // Agent dot + name
+  ctx.beginPath();
+  ctx.arc(lx + 4, row + 4, 3, 0, Math.PI * 2);
+  ctx.fillStyle = agent.color;
+  ctx.fill();
+  ctx.font      = '400 10px system-ui, sans-serif';
+  ctx.fillStyle = TEXT_MID;
+  ctx.textBaseline = 'top';
+  ctx.fillText(agent.name, lx + 11, row);
+  row += 14;
+
+  // Divider
+  ctx.beginPath();
+  ctx.moveTo(lx, row); ctx.lineTo(lx + rw, row);
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth   = 1;
+  ctx.stroke();
+  row += 8;
+
+  function dataRow(label: string, value: string, valueColor = TEXT_MID) {
+    ctx.font        = '400 9.5px system-ui, sans-serif';
+    ctx.fillStyle   = TEXT_LO;
+    ctx.textBaseline = 'top';
+    ctx.fillText(label, lx, row);
+    ctx.fillStyle = valueColor;
+    ctx.textAlign = 'right';
+    ctx.fillText(value, lx + rw, row);
+    ctx.textAlign = 'left';
+    row += 14;
+  }
+
+  // Status
+  ctx.font        = '400 9.5px system-ui, sans-serif';
+  ctx.fillStyle   = TEXT_LO;
+  ctx.textBaseline = 'top';
+  ctx.fillText('Status', lx, row);
+  ctx.beginPath();
+  ctx.arc(lx + rw - 34, row + 5, 3, 0, Math.PI * 2);
+  ctx.fillStyle = statusColor;
+  ctx.fill();
+  ctx.font      = '500 9.5px system-ui, sans-serif';
+  ctx.fillStyle = statusColor;
+  ctx.textAlign = 'right';
+  ctx.fillText(popupData.status.charAt(0).toUpperCase() + popupData.status.slice(1), lx + rw, row);
+  ctx.textAlign = 'left';
+  row += 14;
+
+  dataRow('Duration', popupData.duration);
+  dataRow('Records in / out', `${popupData.recordsIn.toLocaleString()} / ${popupData.recordsOut.toLocaleString()}`);
+  dataRow('Retries', String(popupData.retries), popupData.retries > 0 ? '#f59e0b' : TEXT_MID);
+  dataRow('Cost', popupData.costEstimate);
+
+  // Divider
+  ctx.beginPath();
+  ctx.moveTo(lx, row); ctx.lineTo(lx + rw, row);
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth   = 1;
+  ctx.stroke();
+  row += 6;
+
+  // Log excerpt
+  ctx.font        = '400 9px system-ui, sans-serif';
+  ctx.fillStyle   = 'rgba(255,255,255,0.4)';
+  ctx.textBaseline = 'top';
+  drawTextClipped(popupData.logExcerpt, lx, row, rw, '400 9px system-ui, sans-serif', 'rgba(255,255,255,0.4)');
+  row += 13;
+
+  dataRow('Next run', popupData.nextRun, 'rgba(79,70,229,0.9)');
+
+  ctx.globalAlpha = 1;
+}
+
+// ─── Inject new completed task periodically ───────────────────────────────────
+
+function maybeInject(now: number) {
+  if (now - lastInjectAt < INJECT_INTERVAL) return;
+  lastInjectAt = now;
+
+  const def     = INJECT_TASKS[injectIndex % INJECT_TASKS.length];
+  injectIndex++;
+
+  const hr      = new Date().getHours().toString().padStart(2, '0');
+  const mn      = new Date().getMinutes().toString().padStart(2, '0');
+  const timeStr = `${hr}:${mn}`;
+
+  // Add to timeline
+  const newEntry: TimelineEntry = {
+    id:        'tl-' + Date.now(),
+    agentId:   def.agentId,
+    taskName:  def.taskName,
+    timestamp: timeStr,
+    duration:  def.duration,
+    alpha:     0,
+    y:         0,
+    targetY:   0,
+  };
+  timeline.push(newEntry);
+
+  // Trim timeline to 12 entries
+  if (timeline.length > 12) timeline.shift();
+
+  // Add a completed task to kanban completed column (cycle — replace oldest)
+  const completedTasks = tasks.filter(t => t.status === 'completed');
+  if (completedTasks.length >= 4) {
+    const oldest = completedTasks[0];
+    tasks = tasks.filter(t => t.id !== oldest.id);
+  }
+  tasks.push({
+    id:        'k-' + Date.now(),
+    name:      def.taskName,
+    agentId:   def.agentId,
+    status:    'completed',
+    timeLabel: 'just now',
+    popup: {
+      taskName:       def.taskName,
+      agentId:        def.agentId,
+      execTimestamp:  `Completed ${timeStr}`,
+      status:         'completed',
+      duration:       def.duration,
+      recordsIn:      Math.floor(Math.random() * 1000) + 50,
+      recordsOut:     Math.floor(Math.random() * 900) + 50,
+      retries:        0,
+      costEstimate:   '$0.0' + (Math.floor(Math.random() * 9) + 1),
+      logExcerpt:     'Task completed successfully → output written',
+      nextRun:        'Next scheduled run',
+    },
+  });
+
+  // Animate running task progress forward slightly
+  tasks.forEach(t => {
+    if (t.status === 'running' && t.progress !== undefined) {
+      t.progress = Math.min(1, t.progress + 0.08 + Math.random() * 0.06);
+    }
+  });
+}
+
+// ─── Mouse interaction ────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => {
+  const rect = canvas.getBoundingClientRect();
+  mouseX = e.clientX - rect.left;
+  mouseY = e.clientY - rect.top;
+
+  // Check filter pills
+  let onPill = false;
+  for (const pill of filterPills) {
+    if (mouseX >= pill.x && mouseX <= pill.x + pill.w && mouseY >= pill.y && mouseY <= pill.y + pill.h) {
+      canvas.style.cursor = 'pointer';
+      onPill = true;
+      break;
+    }
+  }
+
+  // Check hover targets for popup
+  let found = false;
+  for (const ht of hoverTargets) {
+    if (mouseX >= ht.x && mouseX <= ht.x + ht.w && mouseY >= ht.y && mouseY <= ht.y + ht.h) {
+      hoveredId    = ht.id;
+      popupTarget  = 1;
+      popupX       = mouseX;
+      popupY       = mouseY;
+
+      if (ht.type === 'kanban') {
+        const task = tasks.find(t => t.id === ht.id);
+        if (task) popupData = task.popup;
+      } else {
+        const entry = timeline.find(e => e.id === ht.id);
+        if (entry) {
+          popupData = {
+            taskName:       entry.taskName,
+            agentId:        entry.agentId,
+            execTimestamp:  `Completed ${entry.timestamp}`,
+            status:         'completed',
+            duration:       entry.duration,
+            recordsIn:      Math.floor(Math.random() * 1000) + 100,
+            recordsOut:     Math.floor(Math.random() * 900) + 90,
+            retries:        0,
+            costEstimate:   '$0.0' + (Math.floor(Math.random() * 9) + 1),
+            logExcerpt:     'Task completed — results archived',
+            nextRun:        'Per schedule',
+          };
+        }
+      }
+
+      if (!onPill) canvas.style.cursor = 'pointer';
+      found = true;
+      break;
+    }
+  }
+
+  if (!found) {
+    hoveredId    = null;
+    popupTarget  = 0;
+    if (!onPill) canvas.style.cursor = 'default';
+  }
+});
+
+canvas.addEventListener('click', (e: MouseEvent) => {
+  const rect = canvas.getBoundingClientRect();
+  const cx   = e.clientX - rect.left;
+  const cy   = e.clientY - rect.top;
+
+  for (const pill of filterPills) {
+    if (cx >= pill.x && cx <= pill.x + pill.w && cy >= pill.y && cy <= pill.y + pill.h) {
+      filterState.activeAgent = filterState.activeAgent === pill.agentId ? null : pill.agentId;
+      break;
+    }
+  }
+});
+
+canvas.addEventListener('mouseleave', () => {
+  hoveredId   = null;
+  popupTarget = 0;
+});
+
+// ─── Main render loop ─────────────────────────────────────────────────────────
+
+function lerp(a: number, b: number, t: number): number { return a + (b - a) * t; }
+
+function render(now: number) {
+  requestAnimationFrame(render);
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, W, H);
+
+  maybeInject(now);
+
+  // Animate timeline entry fade-in
+  timeline.forEach(e => {
+    if (e.alpha < 1) e.alpha = Math.min(1, e.alpha + 0.04);
+  });
+
+  // Animate popup
+  popupAlpha = lerp(popupAlpha, popupTarget, 0.12);
+
+  drawFilterBar();
+  drawKanban();
+  drawTimeline();
+  drawPopup();
+}
+
+requestAnimationFrame(render);
+</script>
