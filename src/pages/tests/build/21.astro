@@ -330,50 +330,91 @@ function drawStatusCodes(px: number, py: number, pw: number, ph: number): void {
   const hovered = mx > px && mx < px + pw && my > py && my < py + ph;
 
   panel(px, py, pw, ph, hovered);
-  labelSans('Status Codes', px + 12, py + 18, 'rgba(255,255,255,0.75)', 11);
 
   const total = s200 + s4xx + s5xx;
-  const bars = [
-    { label: '2xx', count: s200, color: '#4ade80' },
-    { label: '4xx', count: s4xx, color: '#f59e0b' },
-    { label: '5xx', count: s5xx, color: '#ef4444' },
+  const codes = [
+    { label: '2xx', sublabel: 'Success', count: s200, color: '#4ade80', pct: (s200/total*100) },
+    { label: '4xx', sublabel: 'Client Error', count: s4xx, color: '#f59e0b', pct: (s4xx/total*100) },
+    { label: '5xx', sublabel: 'Server Error', count: s5xx, color: '#ef4444', pct: (s5xx/total*100) },
   ];
 
-  const barAreaW = pw - 24;
-  let bx = px + 12;
-  const by = py + 30;
-  const bh = 6;
+  // Donut chart on the left
+  const donutR = Math.min(ph * 0.32, 20);
+  const donutCx = px + 14 + donutR;
+  const donutCy = py + ph / 2;
+  const donutW = 5;
+  let angle = -Math.PI / 2;
 
-  for (const bar of bars) {
-    const bw = (bar.count / total) * barAreaW;
-    roundRect(bx, by, bw, bh, 2);
-    ctx.fillStyle = bar.color;
+  for (const c of codes) {
+    const sweep = (c.count / total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.arc(donutCx, donutCy, donutR, angle, angle + sweep);
+    ctx.strokeStyle = c.color;
+    ctx.lineWidth = donutW;
+    ctx.lineCap = 'round';
     ctx.globalAlpha = 0.85;
-    ctx.fill();
+    ctx.stroke();
     ctx.globalAlpha = 1;
-    bx += bw + 1;
+    angle += sweep;
   }
 
-  // Labels below
-  let lx = px + 12;
-  const ly = by + 14;
-  for (const bar of bars) {
-    const bw = (bar.count / total) * barAreaW;
-    ctx.font = '500 9px -apple-system, sans-serif';
-    ctx.fillStyle = bar.color;
-    ctx.textBaseline = 'top';
+  // Centre text in donut
+  const rate = (s200/total*100).toFixed(1);
+  ctx.font = 'bold 9px -apple-system, sans-serif';
+  ctx.fillStyle = '#4ade80';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(rate + '%', donutCx, donutCy - 3);
+  ctx.font = '400 6px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.fillText('success', donutCx, donutCy + 7);
+
+  // Status cards to the right of donut
+  const cardsX = px + 14 + donutR * 2 + 16;
+  const cardsW = pw - (cardsX - px) - 12;
+  const cardW = Math.floor((cardsW - 8) / 3);
+  const cardH = ph - 16;
+  const cardY = py + 8;
+
+  for (let i = 0; i < codes.length; i++) {
+    const c = codes[i]!;
+    const cx = cardsX + i * (cardW + 4);
+
+    // Card background
+    roundRect(cx, cardY, cardW, cardH, 6);
+    ctx.fillStyle = c.color + '08';
+    ctx.fill();
+    ctx.strokeStyle = c.color + '20';
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+
+    // Status label
+    ctx.font = 'bold 10px -apple-system, sans-serif';
+    ctx.fillStyle = c.color;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText(c.label, cx + 8, cardY + 7);
+
+    // Sublabel
+    ctx.font = '400 6.5px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillText(c.sublabel, cx + 8, cardY + 20);
+
+    // Count
+    ctx.font = 'bold 12px -apple-system, sans-serif';
+    ctx.fillStyle = '#fff';
+    ctx.fillText(c.count.toLocaleString(), cx + 8, cardY + 32);
+
+    // Percentage badge
+    ctx.font = '400 7px -apple-system, sans-serif';
+    const pctText = c.pct.toFixed(1) + '%';
+    const pctW = ctx.measureText(pctText).width + 8;
+    roundRect(cx + cardW - pctW - 6, cardY + 6, pctW, 14, 3);
+    ctx.fillStyle = c.color + '18';
+    ctx.fill();
+    ctx.fillStyle = c.color;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(pctText, cx + cardW - pctW/2 - 6, cardY + 13);
     ctx.textAlign = 'left';
-    ctx.fillText(bar.label, lx, ly);
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.font = '400 9px -apple-system, sans-serif';
-    ctx.fillText(` ${bar.count.toLocaleString()}`, lx + 18, ly);
-    lx += bw + 1;
   }
-  ctx.textAlign = 'left';
-
-  // Success rate
-  const rate = ((s200 / total) * 100).toFixed(2);
-  labelSans(`${rate}% success rate`, px + pw / 2, py + ph - 12, 'rgba(255,255,255,0.35)', 9, 'center');
 }
 
 // ─── Panel: Endpoints ─────────────────────────────────────────────────────────
