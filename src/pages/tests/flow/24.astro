@@ -96,24 +96,36 @@ const AGENTS: Agent[] = [
 ];
 
 const TASKS: Task[] = [
-  // Sales
-  { agentId: 'sales', label: 'Lead Scoring',    startHour: 9,    endHour: 10,   records: '1,247 records', health: '99.2%', latency: '2.3ms',  payload: '4.2 MB',  completion: '98.7%', nextRun: 'Today, 09:00' },
-  { agentId: 'sales', label: 'Pipeline Review', startHour: 14,   endHour: 16,   records: '342 records',   health: '97.8%', latency: '3.1ms',  payload: '1.8 MB',  completion: '99.1%', nextRun: 'Today, 14:00' },
-  { agentId: 'sales', label: 'CRM Sync',        startHour: 18,   endHour: 18.5, records: '891 records',   health: '100%',  latency: '1.1ms',  payload: '2.6 MB',  completion: '100%',  nextRun: 'Today, 18:00' },
-  // Marketing
-  { agentId: 'marketing', label: 'Social Queue',      startHour: 10, endHour: 12,   records: '56 posts',      health: '98.4%', latency: '4.7ms',  payload: '8.1 MB',  completion: '97.5%', nextRun: 'Today, 10:00' },
-  { agentId: 'marketing', label: 'Content Brief',     startHour: 13, endHour: 14.5, records: '12 briefs',     health: '96.1%', latency: '6.2ms',  payload: '3.4 MB',  completion: '95.8%', nextRun: 'Today, 13:00' },
-  { agentId: 'marketing', label: 'Analytics Report',  startHour: 20, endHour: 21,   records: '14,320 events', health: '99.9%', latency: '1.8ms',  payload: '12.3 MB', completion: '100%',  nextRun: 'Today, 20:00' },
-  // Operations
-  { agentId: 'operations', label: 'Invoice Process', startHour: 8,  endHour: 9.5,  records: '203 invoices',  health: '98.9%', latency: '2.9ms',  payload: '5.7 MB',  completion: '99.5%', nextRun: 'Today, 08:00' },
-  { agentId: 'operations', label: 'Payroll Run',     startHour: 11, endHour: 13,   records: '47 employees',  health: '100%',  latency: '1.4ms',  payload: '0.9 MB',  completion: '100%',  nextRun: 'Today, 11:00' },
-  { agentId: 'operations', label: 'System Backup',   startHour: 22, endHour: 23.5, records: '1 snapshot',    health: '100%',  latency: '0.7ms',  payload: '2.1 GB',  completion: '100%',  nextRun: 'Today, 22:00' },
-  // HR
-  { agentId: 'hr', label: 'Onboarding Seq',      startHour: 9,  endHour: 11,   records: '8 new hires',   health: '97.3%', latency: '3.5ms',  payload: '1.2 MB',  completion: '96.4%', nextRun: 'Today, 09:00' },
-  { agentId: 'hr', label: 'Performance Review',  startHour: 15, endHour: 16.5, records: '31 reviews',    health: '95.6%', latency: '5.1ms',  payload: '2.8 MB',  completion: '94.9%', nextRun: 'Today, 15:00' },
-  // Outreach
-  { agentId: 'outreach', label: 'Email Campaign', startHour: 13,  endHour: 17,   records: '4,812 emails',  health: '98.1%', latency: '2.1ms',  payload: '6.4 MB',  completion: '97.8%', nextRun: 'Today, 13:00' },
-  { agentId: 'outreach', label: 'Follow-up Seq',  startHour: 9,   endHour: 10.5, records: '762 sequences', health: '99.4%', latency: '1.7ms',  payload: '3.1 MB',  completion: '99.2%', nextRun: 'Today, 09:00' },
+  // Sales Agent
+  { agentId: 'sales', label: 'Lead Scoring',       startHour: 6,    endHour: 7,    records: '1,247 leads scored',   health: '99.2%', latency: '2.3ms',  payload: '4.2 MB',  completion: '98.7%', nextRun: 'Every 3 hours' },
+  { agentId: 'sales', label: 'Pipeline Review',    startHour: 9,    endHour: 10.5, records: '$2.4M pipeline',       health: '97.8%', latency: '3.1ms',  payload: '1.8 MB',  completion: '99.1%', nextRun: 'Today, 14:00' },
+  { agentId: 'sales', label: 'CRM Sync',           startHour: 12,   endHour: 12.5, records: '891 contacts synced',  health: '100%',  latency: '1.1ms',  payload: '2.6 MB',  completion: '100%',  nextRun: 'Every 30 min' },
+  { agentId: 'sales', label: 'Deal Alerts',        startHour: 14,   endHour: 15,   records: '23 deals flagged',     health: '100%',  latency: '0.8ms',  payload: '0.4 MB',  completion: '100%',  nextRun: 'Continuous' },
+  { agentId: 'sales', label: 'Forecast Update',    startHour: 17,   endHour: 18,   records: 'Q2 forecast revised',  health: '99.5%', latency: '4.2ms',  payload: '3.1 MB',  completion: '100%',  nextRun: 'Daily, 17:00' },
+  { agentId: 'sales', label: 'Win/Loss Analysis',  startHour: 20,   endHour: 21,   records: '14 deals analysed',    health: '98.9%', latency: '5.8ms',  payload: '7.2 MB',  completion: '97.3%', nextRun: 'Daily, 20:00' },
+  // Marketing Agent
+  { agentId: 'marketing', label: 'Social Scheduler',   startHour: 7,  endHour: 8,    records: '42 posts queued',      health: '98.4%', latency: '4.7ms',  payload: '8.1 MB',  completion: '97.5%', nextRun: 'Daily, 07:00' },
+  { agentId: 'marketing', label: 'SEO Audit',          startHour: 10, endHour: 11.5, records: '2,840 pages crawled',  health: '99.1%', latency: '12ms',   payload: '34 MB',   completion: '100%',  nextRun: 'Weekly, Mon' },
+  { agentId: 'marketing', label: 'Ad Spend Optimiser', startHour: 13, endHour: 14,   records: '$12.4k budget adj.',   health: '96.1%', latency: '6.2ms',  payload: '3.4 MB',  completion: '95.8%', nextRun: 'Every 2 hours' },
+  { agentId: 'marketing', label: 'Campaign Analytics', startHour: 16, endHour: 17,   records: '14,320 events',        health: '99.9%', latency: '1.8ms',  payload: '12.3 MB', completion: '100%',  nextRun: 'Daily, 16:00' },
+  { agentId: 'marketing', label: 'A/B Test Review',    startHour: 19, endHour: 19.5, records: '6 experiments',        health: '100%',  latency: '2.1ms',  payload: '1.9 MB',  completion: '100%',  nextRun: 'Daily, 19:00' },
+  // Operations Agent
+  { agentId: 'operations', label: 'Invoice Processing', startHour: 8,  endHour: 9.5,  records: '203 invoices cleared', health: '98.9%', latency: '2.9ms',  payload: '5.7 MB',  completion: '99.5%', nextRun: 'Daily, 08:00' },
+  { agentId: 'operations', label: 'Inventory Sync',     startHour: 11, endHour: 12,   records: '8,421 SKUs updated',   health: '100%',  latency: '1.4ms',  payload: '14.2 MB', completion: '100%',  nextRun: 'Every 4 hours' },
+  { agentId: 'operations', label: 'Vendor Payments',     startHour: 14, endHour: 15.5, records: '47 payments sent',     health: '100%',  latency: '3.8ms',  payload: '2.1 MB',  completion: '100%',  nextRun: 'Daily, 14:00' },
+  { agentId: 'operations', label: 'System Backup',       startHour: 22, endHour: 23.5, records: '1.2 TB snapshot',      health: '100%',  latency: '0.7ms',  payload: '2.1 GB',  completion: '100%',  nextRun: 'Daily, 22:00' },
+  { agentId: 'operations', label: 'SLA Monitor',         startHour: 0,  endHour: 1,    records: '12 SLAs checked',      health: '100%',  latency: '0.4ms',  payload: '0.2 MB',  completion: '100%',  nextRun: 'Every hour' },
+  // HR Agent
+  { agentId: 'hr', label: 'Onboarding Flow',       startHour: 9,  endHour: 11,   records: '8 new hires setup',    health: '97.3%', latency: '3.5ms',  payload: '1.2 MB',  completion: '96.4%', nextRun: 'Daily, 09:00' },
+  { agentId: 'hr', label: 'Leave Approvals',       startHour: 12, endHour: 12.5, records: '14 requests cleared',  health: '100%',  latency: '0.9ms',  payload: '0.3 MB',  completion: '100%',  nextRun: 'Continuous' },
+  { agentId: 'hr', label: 'Performance Review',    startHour: 15, endHour: 16.5, records: '31 reviews compiled',  health: '95.6%', latency: '5.1ms',  payload: '2.8 MB',  completion: '94.9%', nextRun: 'Quarterly' },
+  { agentId: 'hr', label: 'Training Tracker',      startHour: 18, endHour: 19,   records: '67 certifications',    health: '99.1%', latency: '2.2ms',  payload: '4.1 MB',  completion: '98.5%', nextRun: 'Weekly, Fri' },
+  // Outreach Agent
+  { agentId: 'outreach', label: 'Email Campaign',     startHour: 8,   endHour: 10,   records: '4,812 emails sent',    health: '98.1%', latency: '2.1ms',  payload: '6.4 MB',  completion: '97.8%', nextRun: 'Daily, 08:00' },
+  { agentId: 'outreach', label: 'Follow-up Sequences', startHour: 11,  endHour: 12.5, records: '762 sequences active', health: '99.4%', latency: '1.7ms',  payload: '3.1 MB',  completion: '99.2%', nextRun: 'Continuous' },
+  { agentId: 'outreach', label: 'Reply Handler',       startHour: 13,  endHour: 14,   records: '89 replies sorted',    health: '99.8%', latency: '0.6ms',  payload: '0.8 MB',  completion: '100%',  nextRun: 'Every 15 min' },
+  { agentId: 'outreach', label: 'Domain Warmup',       startHour: 5,   endHour: 6,    records: '12 domains warmed',    health: '100%',  latency: '1.2ms',  payload: '0.1 MB',  completion: '100%',  nextRun: 'Daily, 05:00' },
+  { agentId: 'outreach', label: 'Bounce Analysis',     startHour: 20,  endHour: 21,   records: '0.8% bounce rate',     health: '99.7%', latency: '3.4ms',  payload: '2.3 MB',  completion: '100%',  nextRun: 'Daily, 20:00' },
 ];
 
 // ─── Canvas Setup ─────────────────────────────────────────────────────────────
@@ -610,16 +622,19 @@ function drawPopup(p: Popup) {
   const lineH = 20;
   const panelW = 220;
 
+  // Build status based on time
+  const now = new Date().getHours() + new Date().getMinutes() / 60;
+  const status = now > task.endHour ? '✓ Completed' : now >= task.startHour ? '● Running' : '◦ Scheduled';
+  const statusColor = now > task.endHour ? '#4ade80' : now >= task.startHour ? '#fbbf24' : 'rgba(255,255,255,0.5)';
+
   const rows = [
     { label: 'Agent',       value: agent.name,                    isAgent: true },
+    { label: 'Status',      value: status,                        statusColor },
     { label: 'Window',      value: `${fmtHour(task.startHour)} — ${fmtHour(task.endHour)}` },
-    { label: 'Frequency',   value: 'Daily' },
-    { label: 'Records',     value: task.records },
+    { label: 'Processed',   value: task.records },
     { label: 'Health',      value: task.health },
-    { label: 'Latency',     value: task.latency },
-    { label: 'Payload',     value: task.payload },
     { label: 'Completion',  value: task.completion },
-    { label: 'Next run',    value: task.nextRun },
+    { label: 'Schedule',    value: task.nextRun },
   ];
 
   const panelH = padY * 2 + lineH + 8 + rows.length * lineH;
@@ -646,15 +661,17 @@ function drawPopup(p: Popup) {
   // Border
   ctx.beginPath();
   roundRect(ctx, bx, by, panelW, panelH, 12);
-  ctx.strokeStyle = rgbaColor(agent.color, 0.45);
-  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = rgbaColor(agent.color, 0.2);
+  ctx.lineWidth = 1;
   ctx.stroke();
 
   // Top color bar
   ctx.beginPath();
-  roundRect(ctx, bx, by, panelW, 4, 12);
+  roundRect(ctx, bx, by, panelW, 3, 12);
   ctx.fillStyle = agent.color;
+  ctx.globalAlpha *= 0.7;
   ctx.fill();
+  ctx.globalAlpha = p.alpha;
 
   // Title
   ctx.font = `700 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
@@ -681,7 +698,13 @@ function drawPopup(p: Popup) {
     ctx.fillStyle = 'rgba(255,255,255,0.42)';
     ctx.fillText(row.label, bx + padX, ry);
 
-    if ((row as any).isAgent) {
+    if ((row as any).statusColor) {
+      ctx.font = `600 10.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+      ctx.fillStyle = (row as any).statusColor;
+      ctx.textAlign = 'right';
+      ctx.fillText(row.value, bx + panelW - padX, ry);
+      ctx.textAlign = 'left';
+    } else if ((row as any).isAgent) {
       // Colored dot + name
       ctx.beginPath();
       ctx.arc(bx + panelW - padX - 68, ry, 4, 0, Math.PI * 2);
