@@ -79,6 +79,67 @@ const col = canvas.parentElement as HTMLElement;
 
 let W = 0, H = 0, dpr = 1;
 let frame = 0;
+
+// ─── Code Editor Data ─────────────────────────────────────────────────────────
+
+interface CodeLine { tokens: {text:string; color:string}[] }
+
+const CK = '#c792ea', CF = '#82aaff', CS = '#c3e88d', CT = '#ffcb6b';
+const CC = '#546e7a', CP = 'rgba(255,255,255,0.45)', CD = 'rgba(255,255,255,0.82)', CR = '#89ddff';
+
+const CODE_FILES = [
+  { name: 'auth.service.ts', lines: [
+    {tokens:[{text:'// auth.service.ts — OAuth2 + JWT + RBAC',color:CC}]},
+    {tokens:[{text:'import',color:CK},{text:' { Injectable } ',color:CD},{text:'from',color:CK},{text:" '@nestjs/common'",color:CS}]},
+    {tokens:[{text:'import',color:CK},{text:' { JwtService } ',color:CD},{text:'from',color:CK},{text:" '@nestjs/jwt'",color:CS}]},
+    {tokens:[{text:'import',color:CK},{text:' { PrismaService } ',color:CD},{text:'from',color:CK},{text:" './prisma.service'",color:CS}]},
+    {tokens:[]},
+    {tokens:[{text:'@Injectable',color:CR},{text:'()',color:CP}]},
+    {tokens:[{text:'export class ',color:CK},{text:'AuthService',color:CT},{text:' {',color:CP}]},
+    {tokens:[{text:'  constructor',color:CD},{text:'(',color:CP},{text:'private ',color:CK},{text:'jwt',color:CD},{text:': ',color:CP},{text:'JwtService',color:CT},{text:',',color:CP}]},
+    {tokens:[{text:'               ',color:CD},{text:'private ',color:CK},{text:'prisma',color:CD},{text:': ',color:CP},{text:'PrismaService',color:CT},{text:') {}',color:CP}]},
+    {tokens:[]},
+    {tokens:[{text:'  async ',color:CK},{text:'signIn',color:CF},{text:'(',color:CP},{text:'email',color:CD},{text:': ',color:CP},{text:'string',color:CT},{text:', ',color:CP},{text:'password',color:CD},{text:': ',color:CP},{text:'string',color:CT},{text:')',color:CP}]},
+    {tokens:[{text:'           : ',color:CP},{text:'Promise',color:CT},{text:'<',color:CP},{text:'AuthResponse',color:CT},{text:'> {',color:CP}]},
+    {tokens:[{text:'    const ',color:CK},{text:'user',color:CD},{text:' = ',color:CP},{text:'await ',color:CK},{text:'this',color:CK},{text:'.',color:CP},{text:'prisma.user.findUnique',color:CF},{text:'({',color:CP}]},
+    {tokens:[{text:'      where',color:CD},{text:': { ',color:CP},{text:'email',color:CD},{text:' },',color:CP}]},
+    {tokens:[{text:'      select',color:CD},{text:': { ',color:CP},{text:'id',color:CD},{text:', ',color:CP},{text:'role',color:CD},{text:', ',color:CP},{text:'passwordHash',color:CD},{text:' }',color:CP}]},
+    {tokens:[{text:'    });',color:CP}]},
+  ]},
+  { name: 'roles.guard.ts', lines: [
+    {tokens:[{text:'// roles.guard.ts — RBAC guard',color:CC}]},
+    {tokens:[{text:'import',color:CK},{text:' { Injectable, CanActivate } ',color:CD},{text:'from',color:CK},{text:" '@nestjs/common'",color:CS}]},
+    {tokens:[{text:'import',color:CK},{text:' { Reflector } ',color:CD},{text:'from',color:CK},{text:" '@nestjs/core'",color:CS}]},
+    {tokens:[]},
+    {tokens:[{text:'@Injectable',color:CR},{text:'()',color:CP}]},
+    {tokens:[{text:'export class ',color:CK},{text:'RolesGuard',color:CT},{text:' implements ',color:CK},{text:'CanActivate',color:CT},{text:' {',color:CP}]},
+    {tokens:[{text:'  constructor',color:CD},{text:'(',color:CP},{text:'private ',color:CK},{text:'reflector',color:CD},{text:': ',color:CP},{text:'Reflector',color:CT},{text:') {}',color:CP}]},
+    {tokens:[]},
+    {tokens:[{text:'  canActivate',color:CF},{text:'(',color:CP},{text:'context',color:CD},{text:': ',color:CP},{text:'ExecutionContext',color:CT},{text:'): ',color:CP},{text:'boolean',color:CT},{text:' {',color:CP}]},
+    {tokens:[{text:'    const ',color:CK},{text:'required',color:CD},{text:' = ',color:CP},{text:'this',color:CK},{text:'.',color:CP},{text:'reflector.getAllAndOverride',color:CF},{text:'<',color:CP},{text:'Role',color:CT},{text:'[]>(',color:CP},{text:'ROLES_KEY',color:CS},{text:', [',color:CP}]},
+    {tokens:[{text:'      context',color:CD},{text:'.',color:CP},{text:'getHandler',color:CF},{text:'(), ',color:CP},{text:'context',color:CD},{text:'.',color:CP},{text:'getClass',color:CF},{text:'(),',color:CP}]},
+    {tokens:[{text:'    ]);',color:CP}]},
+    {tokens:[{text:'    if ',color:CK},{text:'(!required) ',color:CP},{text:'return true',color:CK},{text:';',color:CP}]},
+    {tokens:[{text:'    const ',color:CK},{text:'{ ',color:CP},{text:'user',color:CD},{text:' } = ',color:CP},{text:'context',color:CD},{text:'.',color:CP},{text:'switchToHttp',color:CF},{text:'().',color:CP},{text:'getRequest',color:CF},{text:'();',color:CP}]},
+    {tokens:[{text:'    return ',color:CK},{text:'required',color:CD},{text:'.',color:CP},{text:'some',color:CF},{text:'((',color:CP},{text:'role',color:CD},{text:') => ',color:CP},{text:'user',color:CD},{text:'.',color:CP},{text:'role',color:CD},{text:' === ',color:CP},{text:'role',color:CD},{text:');',color:CP}]},
+    {tokens:[{text:'  }',color:CP}]},
+    {tokens:[{text:'}',color:CP}]},
+  ]}
+];
+
+let codeFileIdx = 0;
+let codeChars = 0;
+const CODE_SPEED = 0.8;
+
+function totalCodeChars(fileIdx: number): number {
+  let n = 0;
+  for (const line of CODE_FILES[fileIdx]!.lines) {
+    for (const tok of line.tokens) n += tok.text.length;
+    n++; // newline
+  }
+  return n;
+}
+
 let mouse = { x: -9999, y: -9999 };
 
 // Rolling data buffers (last 60 samples)
@@ -489,14 +550,99 @@ function updateData(): void {
 
 // ─── Main Draw ────────────────────────────────────────────────────────────────
 
+function drawCodeEditor(px: number, py: number, pw: number, ph: number): void {
+  panel(px, py, pw, ph);
+
+  // Title bar
+  roundRect(px, py, pw, 24, 8);
+  ctx.fillStyle = 'rgba(255,255,255,0.03)';
+  ctx.fill();
+
+  // Traffic dots
+  const dotC = ['#ef4444', '#f59e0b', '#4ade80'];
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath(); ctx.arc(px + 14 + i * 12, py + 12, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = dotC[i]!; ctx.globalAlpha = 0.6; ctx.fill(); ctx.globalAlpha = 1;
+  }
+
+  // File tabs
+  let tabX = px + 52;
+  for (let i = 0; i < CODE_FILES.length; i++) {
+    const active = i === codeFileIdx % CODE_FILES.length;
+    ctx.font = '400 8px -apple-system, sans-serif';
+    const tw = ctx.measureText(CODE_FILES[i]!.name).width + 16;
+    if (active) {
+      roundRect(tabX, py + 4, tw, 16, 3);
+      ctx.fillStyle = 'rgba(99,102,241,0.15)'; ctx.fill();
+      ctx.strokeStyle = 'rgba(99,102,241,0.3)'; ctx.lineWidth = 0.5; ctx.stroke();
+    }
+    ctx.fillStyle = active ? '#fff' : 'rgba(255,255,255,0.3)';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(CODE_FILES[i]!.name, tabX + 8, py + 12);
+    tabX += tw + 3;
+  }
+
+  // Gutter + code
+  const gutterW = 22;
+  const edY = py + 26;
+  const edH = ph - 26;
+  const lineH = 13;
+  const maxLines = Math.floor(edH / lineH);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.02)';
+  ctx.fillRect(px, edY, gutterW, edH);
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 0.5;
+  ctx.beginPath(); ctx.moveTo(px + gutterW, edY); ctx.lineTo(px + gutterW, edY + edH); ctx.stroke();
+
+  const file = CODE_FILES[codeFileIdx % CODE_FILES.length]!;
+  let charsLeft = Math.floor(codeChars);
+  let lineNum = 0;
+
+  for (const cl of file.lines) {
+    if (lineNum >= maxLines) break;
+    const drawY = edY + lineNum * lineH;
+
+    ctx.font = '400 7px "SF Mono", monospace';
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.textBaseline = 'top'; ctx.textAlign = 'right';
+    ctx.fillText(String(lineNum + 1), px + gutterW - 3, drawY + 2);
+    ctx.textAlign = 'left';
+
+    let tokX = px + gutterW + 6;
+    let lineDone = true;
+
+    for (const tok of cl.tokens) {
+      if (charsLeft <= 0) { lineDone = false; break; }
+      ctx.font = '400 8.5px "SF Mono", "Fira Code", monospace';
+      if (charsLeft < tok.text.length) {
+        const partial = tok.text.slice(0, charsLeft);
+        ctx.fillStyle = tok.color;
+        ctx.fillText(partial, tokX, drawY + 2);
+        tokX += ctx.measureText(partial).width;
+        if (frame % 60 < 40) { ctx.fillStyle = '#6366f1'; ctx.fillRect(tokX, drawY + 2, 1.5, 9); }
+        charsLeft = 0; lineDone = false; break;
+      } else {
+        ctx.fillStyle = tok.color;
+        ctx.fillText(tok.text, tokX, drawY + 2);
+        tokX += ctx.measureText(tok.text).width;
+        charsLeft -= tok.text.length;
+      }
+    }
+
+    lineNum++;
+    if (!lineDone) break;
+  }
+}
+
 function draw(): void {
   ctx.clearRect(0, 0, W, H);
 
-  const pad = 12;
+  const pad = 10;
   const halfW = (W - pad * 3) / 2;
-  const topH = 110;
-  const midH = 68;
-  const botH = Math.max(120, H - topH - midH - pad * 4);
+  const topH = 100;
+  const midH = 58;
+  const row3H = 70;
+  const codeH = Math.max(140, H - topH - midH - row3H - pad * 5);
 
   // Row 1: req volume | latency
   drawReqVolume(pad, pad, halfW, topH);
@@ -505,10 +651,22 @@ function draw(): void {
   // Row 2: status codes (full width)
   drawStatusCodes(pad, pad * 2 + topH, W - pad * 2, midH);
 
-  // Row 3: endpoints (left) | live feed (right)
+  // Row 3: endpoints (left) | live feed (right) — compact
   const row3Y = pad * 3 + topH + midH;
-  drawEndpoints(pad, row3Y, halfW, botH);
-  drawLiveFeed(pad * 2 + halfW, row3Y, halfW, botH);
+  drawEndpoints(pad, row3Y, halfW, row3H);
+  drawLiveFeed(pad * 2 + halfW, row3Y, halfW, row3H);
+
+  // Row 4: code editor (full width)
+  const row4Y = pad * 4 + topH + midH + row3H;
+  drawCodeEditor(pad, row4Y, W - pad * 2, codeH);
+
+  // Advance code typing
+  const total = totalCodeChars(codeFileIdx);
+  codeChars += CODE_SPEED;
+  if (codeChars > total + 60) {
+    codeChars = 0;
+    codeFileIdx = (codeFileIdx + 1) % CODE_FILES.length;
+  }
 }
 
 // ─── Loop ─────────────────────────────────────────────────────────────────────
