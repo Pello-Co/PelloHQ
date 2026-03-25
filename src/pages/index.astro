@@ -4418,7 +4418,7 @@ products, built for you.</h2>
   })();
 
   // ── Wire up card canvases ────────────────────────────────────────────────
-  const pvCards: CardState[] = [];
+  const pvCards: (CardState & { productIdx?: number })[] = [];
   const pvCardElems = document.querySelectorAll<HTMLElement>('.product-card');
   const pvVisible = new Set<number>();
 
@@ -4440,8 +4440,9 @@ products, built for you.</h2>
     bgCanvas.style.width = `${cw}px`;
     bgCanvas.style.height = `${ch}px`;
     bgCtx.setTransform(halfDpr, 0, 0, halfDpr, 0, 0);
-    const pState = initProdState(i, cw, ch);
-    pvCards.push({ canvas: bgCanvas, ctx: bgCtx, w: cw, h: ch, dpr: halfDpr, visible: false, state: pState });
+    const productIdx = parseInt(card.getAttribute('data-product') || String(i), 10);
+    const pState = initProdState(productIdx, cw, ch);
+    pvCards.push({ canvas: bgCanvas, ctx: bgCtx, w: cw, h: ch, dpr: halfDpr, visible: false, state: pState, productIdx });
 
     // Apply product colour tint to card background
     const section = card.querySelector('.ps-section') as HTMLElement|null;
@@ -4470,7 +4471,7 @@ products, built for you.</h2>
       bgCanvas.style.width = `${nw}px`;
       bgCanvas.style.height = `${nh}px`;
       bgCtx.setTransform(halfDpr, 0, 0, halfDpr, 0, 0);
-      cs.state = initProdState(i, nw, nh);
+      cs.state = initProdState(cs.productIdx ?? i, nw, nh);
     }).observe(roTarget);
 
     // Fade in on first intersection
@@ -4490,7 +4491,7 @@ products, built for you.</h2>
         bgCanvas.style.width = `${nw2}px`;
         bgCanvas.style.height = `${nh2}px`;
         bgCtx.setTransform(halfDpr, 0, 0, halfDpr, 0, 0);
-        cs.state = initProdState(i, nw2, nh2);
+        cs.state = initProdState(cs.productIdx ?? i, nw2, nh2);
       }, 300);
     }
   });
@@ -4513,7 +4514,7 @@ products, built for you.</h2>
     requestAnimationFrame(pvLoop);
     const t = performance.now() * 0.001;
     for (const idx of pvVisible) {
-      if (idx < pvCards.length) renderProd(idx, pvCards[idx], t);
+      if (idx < pvCards.length) renderProd(pvCards[idx].productIdx ?? idx, pvCards[idx], t);
     }
   }
   requestAnimationFrame(pvLoop);
