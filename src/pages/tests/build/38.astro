@@ -1,0 +1,779 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloBuild — Cost Explorer | Pello" description="PelloBuild delivers cloud cost optimization and infrastructure spend analysis — visualize your AWS, GCP, or Azure costs by service, spot anomalies, and uncover savings opportunities at a glance.">
+  <Header />
+  <main id="main-content">
+    <section class="cost-section" aria-labelledby="cost-headline">
+      <div class="cost-layout">
+        <div class="cost-text">
+          <span class="cost-badge">PelloBuild</span>
+          <h1 id="cost-headline">Cloud Costs, Under Control.</h1>
+          <p>PelloBuild builds intelligent cost dashboards that surface spend anomalies, forecast overruns, and identify optimisation opportunities across your entire cloud infrastructure — before the bill arrives.</p>
+          <ul class="cost-pills" role="list">
+            <li>Full-stack development</li>
+            <li>Data infrastructure</li>
+            <li>Internal tooling</li>
+            <li>Systems integration</li>
+          </ul>
+        </div>
+        <div class="cost-canvas-col">
+          <canvas id="cost-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060a14; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .cost-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .cost-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .cost-layout { grid-template-columns: 1fr; } }
+  .cost-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .cost-badge { display: inline-flex; align-items: center; padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6366f1; width: fit-content; }
+  .cost-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .cost-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .cost-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .cost-pills li { padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .cost-canvas-col { position: relative; width: 100%; min-height: 580px; }
+  #cost-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: crosshair; }
+</style>
+
+<script>
+// ─── Types ─────────────────────────────────────────────────────────────────────
+
+interface DayData {
+  date: string;
+  compute: number;
+  storage: number;
+  network: number;
+  database: number;
+  cdn: number;
+  isAnomaly: boolean;
+}
+
+interface CostDriver {
+  label: string;
+  amount: number;
+  color: string;
+}
+
+interface SavingItem {
+  description: string;
+  saving: number;
+}
+
+interface TooltipState {
+  visible: boolean;
+  x: number;
+  y: number;
+  dayIndex: number;
+}
+
+// ─── Constants ─────────────────────────────────────────────────────────────────
+
+const SERVICE_COLORS = {
+  compute:  '#3b82f6',
+  storage:  '#22c55e',
+  network:  '#eab308',
+  database: '#a855f7',
+  cdn:      '#6366f1',
+} as const;
+
+const SERVICE_LABELS: Record<string, string> = {
+  compute:  'Compute',
+  storage:  'Storage',
+  network:  'Network',
+  database: 'Database',
+  cdn:      'CDN',
+};
+
+const COST_DRIVERS: CostDriver[] = [
+  { label: 'EC2 Instances',       amount: 4230, color: '#3b82f6' },
+  { label: 'RDS (PostgreSQL)',     amount: 1840, color: '#a855f7' },
+  { label: 'S3 + Glacier',        amount: 1120, color: '#22c55e' },
+  { label: 'CloudFront CDN',      amount:  890, color: '#6366f1' },
+  { label: 'Data Transfer',       amount:  640, color: '#eab308' },
+];
+
+const SAVINGS: SavingItem[] = [
+  { description: 'Right-size 6 over-provisioned EC2 instances',  saving: 1420 },
+  { description: 'Move cold S3 data to Glacier Instant Retrieval', saving: 1140 },
+  { description: 'Reserve 3 RDS instances (1-yr, no upfront)',    saving:  840 },
+];
+
+const DAYS = 30;
+const BUDGET_DAILY = 460;
+
+// ─── State ─────────────────────────────────────────────────────────────────────
+
+const canvas  = document.getElementById('cost-canvas') as HTMLCanvasElement;
+const ctx     = canvas.getContext('2d')!;
+const col     = canvas.parentElement as HTMLElement;
+
+let W = 0, H = 0, dpr = 1;
+let frame = 0;
+let animProgress = 0;
+
+const tooltip: TooltipState = { visible: false, x: 0, y: 0, dayIndex: -1 };
+
+// ─── Generate Data ─────────────────────────────────────────────────────────────
+
+function generateDays(): DayData[] {
+  const days: DayData[] = [];
+  const now = new Date();
+
+  let baseCompute  = 115;
+  let baseStorage  = 34;
+  let baseNetwork  = 22;
+  let baseDatabase = 52;
+  let baseCdn      = 18;
+
+  for (let i = DAYS - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+    // Gentle drift
+    baseCompute  += (Math.random() - 0.46) * 12;
+    baseStorage  += (Math.random() - 0.47) * 4;
+    baseNetwork  += (Math.random() - 0.47) * 3;
+    baseDatabase += (Math.random() - 0.46) * 6;
+    baseCdn      += (Math.random() - 0.47) * 2;
+
+    baseCompute  = Math.max(80,  Math.min(220, baseCompute));
+    baseStorage  = Math.max(20,  Math.min(70,  baseStorage));
+    baseNetwork  = Math.max(12,  Math.min(55,  baseNetwork));
+    baseDatabase = Math.max(30,  Math.min(100, baseDatabase));
+    baseCdn      = Math.max(8,   Math.min(40,  baseCdn));
+
+    // Occasional spike (anomaly)
+    const isAnomaly = Math.random() < 0.12;
+    const spike = isAnomaly ? 1 + Math.random() * 0.7 : 1;
+
+    days.push({
+      date:     label,
+      compute:  Math.round(baseCompute  * spike),
+      storage:  Math.round(baseStorage),
+      network:  Math.round(baseNetwork  * (isAnomaly ? 1 + Math.random() * 0.4 : 1)),
+      database: Math.round(baseDatabase * spike),
+      cdn:      Math.round(baseCdn),
+      isAnomaly,
+    });
+  }
+
+  return days;
+}
+
+const DAYS_DATA: DayData[] = generateDays();
+
+function dayTotal(d: DayData): number {
+  return d.compute + d.storage + d.network + d.database + d.cdn;
+}
+
+const MONTHLY_TOTAL = DAYS_DATA.reduce((s, d) => s + dayTotal(d), 0);
+const PREV_MONTH    = MONTHLY_TOTAL / 1.12;
+const TREND_PCT     = Math.round(((MONTHLY_TOTAL - PREV_MONTH) / PREV_MONTH) * 100);
+
+// ─── Canvas Setup ──────────────────────────────────────────────────────────────
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = col.getBoundingClientRect();
+  W = rect.width;
+  H = rect.height;
+  canvas.width  = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+}
+
+// ─── Drawing Helpers ───────────────────────────────────────────────────────────
+
+function roundRect(x: number, y: number, w: number, h: number, r: number): void {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function panel(x: number, y: number, w: number, h: number, accent = false): void {
+  roundRect(x, y, w, h, 8);
+  ctx.fillStyle = 'rgba(10,14,28,0.97)';
+  ctx.fill();
+  ctx.strokeStyle = accent ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+function sans(text: string, x: number, y: number, color: string, size: number, align: CanvasTextAlign = 'left', baseline: CanvasTextBaseline = 'middle'): void {
+  ctx.font = `500 ${size}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+  ctx.fillStyle = color;
+  ctx.textAlign = align;
+  ctx.textBaseline = baseline;
+  ctx.fillText(text, x, y);
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+}
+
+function mono(text: string, x: number, y: number, color: string, size: number, align: CanvasTextAlign = 'left', baseline: CanvasTextBaseline = 'middle'): void {
+  ctx.font = `500 ${size}px 'SF Mono', 'Fira Code', monospace`;
+  ctx.fillStyle = color;
+  ctx.textAlign = align;
+  ctx.textBaseline = baseline;
+  ctx.fillText(text, x, y);
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+}
+
+function fmtDollar(n: number): string {
+  return '$' + n.toLocaleString('en-US', { maximumFractionDigits: 0 });
+}
+
+// ─── Stacked Area Chart ────────────────────────────────────────────────────────
+
+function drawAreaChart(
+  px: number, py: number, pw: number, ph: number,
+  progress: number
+): void {
+  panel(px, py, pw, ph);
+
+  const SERVICES: (keyof typeof SERVICE_COLORS)[] = ['cdn', 'database', 'network', 'storage', 'compute'];
+  const days = DAYS_DATA;
+  const n = days.length;
+
+  // Max stack for scale
+  const maxStack = Math.max(...days.map(dayTotal));
+  const yScale = (ph - 60) / (maxStack * 1.15);
+
+  const chartX = px + 14;
+  const chartY = py + 36;
+  const chartW = pw - 28;
+  const chartH = ph - 60;
+
+  const xStep = chartW / (n - 1);
+
+  // Clip to chart area
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(chartX, chartY, chartW * progress, chartH);
+  ctx.clip();
+
+  // Draw each service layer bottom-up as stacked fill
+  for (let si = 0; si < SERVICES.length; si++) {
+    const service = SERVICES[si]!;
+    const color = SERVICE_COLORS[service];
+
+    ctx.beginPath();
+
+    // Bottom edge of this layer
+    const getBottom = (di: number): number => {
+      let sum = 0;
+      for (let k = 0; k < si; k++) {
+        const s = SERVICES[k]!;
+        sum += (days[di] as Record<string, number>)[s] ?? 0;
+      }
+      return sum;
+    };
+
+    const getTop = (di: number): number => {
+      return getBottom(di) + ((days[di] as Record<string, number>)[service] ?? 0);
+    };
+
+    // Move to first bottom point
+    ctx.moveTo(chartX, chartY + chartH - getBottom(0) * yScale);
+
+    // Top edge path (left to right)
+    for (let di = 0; di < n; di++) {
+      const tx = chartX + di * xStep;
+      const ty = chartY + chartH - getTop(di) * yScale;
+      if (di === 0) {
+        ctx.lineTo(tx, ty);
+      } else {
+        const prevTx = chartX + (di - 1) * xStep;
+        const prevTy = chartY + chartH - getTop(di - 1) * yScale;
+        const cpx = (prevTx + tx) / 2;
+        ctx.bezierCurveTo(cpx, prevTy, cpx, ty, tx, ty);
+      }
+    }
+
+    // Bottom edge path (right to left)
+    for (let di = n - 1; di >= 0; di--) {
+      const bx = chartX + di * xStep;
+      const by = chartY + chartH - getBottom(di) * yScale;
+      if (di === n - 1) {
+        ctx.lineTo(bx, by);
+      } else {
+        const nextDi = di + 1;
+        const prevBx = chartX + nextDi * xStep;
+        const prevBy = chartY + chartH - getBottom(nextDi) * yScale;
+        const cpx = (prevBx + bx) / 2;
+        ctx.bezierCurveTo(cpx, prevBy, cpx, by, bx, by);
+      }
+    }
+
+    ctx.closePath();
+
+    const grad = ctx.createLinearGradient(chartX, chartY, chartX, chartY + chartH);
+    const hex = color;
+    grad.addColorStop(0, hex + 'cc');
+    grad.addColorStop(1, hex + '44');
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Top stroke line
+    ctx.beginPath();
+    for (let di = 0; di < n; di++) {
+      const tx = chartX + di * xStep;
+      const ty = chartY + chartH - getTop(di) * yScale;
+      if (di === 0) {
+        ctx.moveTo(tx, ty);
+      } else {
+        const prevTx = chartX + (di - 1) * xStep;
+        const prevTy = chartY + chartH - getTop(di - 1) * yScale;
+        const cpx = (prevTx + tx) / 2;
+        ctx.bezierCurveTo(cpx, prevTy, cpx, ty, tx, ty);
+      }
+    }
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  }
+
+  ctx.restore();
+
+  // Budget line (dashed orange)
+  const budgetY = chartY + chartH - BUDGET_DAILY * yScale;
+  if (budgetY >= chartY && budgetY <= chartY + chartH) {
+    ctx.save();
+    ctx.setLineDash([5, 4]);
+    ctx.beginPath();
+    ctx.moveTo(chartX, budgetY);
+    ctx.lineTo(chartX + chartW * progress, budgetY);
+    ctx.strokeStyle = 'rgba(251,146,60,0.75)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.setLineDash([]);
+    if (progress > 0.95) {
+      sans('Budget', chartX + chartW - 4, budgetY - 7, 'rgba(251,146,60,0.85)', 9, 'right', 'bottom');
+    }
+    ctx.restore();
+  }
+
+  // Forecast dashed extension (days 26-32, synthetic)
+  if (progress > 0.85) {
+    const forecastAlpha = Math.min(1, (progress - 0.85) / 0.15);
+    ctx.save();
+    ctx.globalAlpha = forecastAlpha * 0.6;
+    ctx.setLineDash([4, 5]);
+
+    const lastIdx = n - 1;
+    const lastTotal = dayTotal(days[lastIdx]!);
+    const lastX = chartX + lastIdx * xStep;
+    const lastY = chartY + chartH - lastTotal * yScale;
+
+    // Simple linear forecast: slight uptrend
+    const forecastDays = 4;
+    const slope = (dayTotal(days[lastIdx]!) - dayTotal(days[lastIdx - 4]!)) / 4;
+
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    for (let fi = 1; fi <= forecastDays; fi++) {
+      const fx = lastX + fi * xStep;
+      const fVal = Math.max(0, lastTotal + slope * fi);
+      const fy = chartY + chartH - fVal * yScale;
+      ctx.lineTo(fx, fy);
+    }
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+    ctx.restore();
+
+    if (forecastAlpha > 0.5) {
+      sans('Forecast', lastX + xStep * 2.5, chartY + 6, 'rgba(255,255,255,0.35)', 9, 'center');
+    }
+  }
+
+  // Anomaly triangles
+  for (let di = 0; di < n; di++) {
+    if (!days[di]!.isAnomaly) continue;
+    if (di / n > progress) continue;
+    const tx = chartX + di * xStep;
+    const total = dayTotal(days[di]!);
+    const ty = chartY + chartH - total * yScale - 8;
+
+    const pulse = 0.6 + 0.4 * Math.abs(Math.sin(frame * 0.06 + di * 1.7));
+
+    ctx.save();
+    ctx.globalAlpha = pulse;
+    ctx.beginPath();
+    ctx.moveTo(tx, ty - 6);
+    ctx.lineTo(tx - 5, ty + 2);
+    ctx.lineTo(tx + 5, ty + 2);
+    ctx.closePath();
+    ctx.fillStyle = '#f97316';
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  // X axis date labels (every 5 days)
+  ctx.save();
+  ctx.font = '400 8px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.textBaseline = 'top';
+  ctx.textAlign = 'center';
+  for (let di = 0; di < n; di += 5) {
+    if (di / n > progress) break;
+    const lx = chartX + di * xStep;
+    ctx.fillText(days[di]!.date, lx, chartY + chartH + 5);
+  }
+  ctx.restore();
+
+  // Grid lines
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  const gridCount = 4;
+  for (let gi = 1; gi <= gridCount; gi++) {
+    const gy = chartY + (gi / gridCount) * chartH;
+    ctx.beginPath();
+    ctx.moveTo(chartX, gy);
+    ctx.lineTo(chartX + chartW, gy);
+    ctx.stroke();
+    const val = Math.round(maxStack * 1.15 * (1 - gi / gridCount));
+    mono(fmtDollar(val), chartX - 2, gy, 'rgba(255,255,255,0.2)', 8, 'right', 'middle');
+  }
+  ctx.restore();
+
+  // Panel header
+  sans('Daily Cloud Spend', px + 14, py + 18, 'rgba(255,255,255,0.75)', 11);
+
+  // Legend
+  const LEGEND_SERVICES: (keyof typeof SERVICE_COLORS)[] = ['compute', 'storage', 'network', 'database', 'cdn'];
+  let lx = px + pw - 14;
+  for (let li = LEGEND_SERVICES.length - 1; li >= 0; li--) {
+    const s = LEGEND_SERVICES[li]!;
+    const lLabel = SERVICE_LABELS[s] ?? s;
+    ctx.save();
+    ctx.font = '400 8.5px -apple-system, sans-serif';
+    const tw = ctx.measureText(lLabel).width;
+    lx -= tw + 14;
+    ctx.fillStyle = SERVICE_COLORS[s];
+    ctx.beginPath();
+    ctx.arc(lx, py + 18, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(lLabel, lx + 7, py + 18);
+    ctx.restore();
+    lx -= 6;
+  }
+
+  // Hover vertical line + tooltip trigger
+  if (tooltip.visible && tooltip.dayIndex >= 0 && tooltip.dayIndex < n) {
+    const hx = chartX + tooltip.dayIndex * xStep;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(hx, chartY);
+    ctx.lineTo(hx, chartY + chartH);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Dot at total
+    const totalH = dayTotal(days[tooltip.dayIndex]!);
+    const dotY = chartY + chartH - totalH * yScale;
+    ctx.beginPath();
+    ctx.arc(hx, dotY, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ─── Tooltip ──────────────────────────────────────────────────────────────────
+
+function drawTooltip(): void {
+  if (!tooltip.visible || tooltip.dayIndex < 0 || tooltip.dayIndex >= DAYS) return;
+
+  const day  = DAYS_DATA[tooltip.dayIndex]!;
+  const SERVICES: (keyof typeof SERVICE_COLORS)[] = ['compute', 'storage', 'network', 'database', 'cdn'];
+  const total = dayTotal(day);
+
+  const tw = 155;
+  const rowH = 16;
+  const th = 28 + SERVICES.length * rowH + 10;
+
+  let tx = tooltip.x + 14;
+  let ty = tooltip.y - th / 2;
+  if (tx + tw > W - 8)  tx = tooltip.x - tw - 14;
+  if (ty < 8)            ty = 8;
+  if (ty + th > H - 8)  ty = H - th - 8;
+
+  // Shadow
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.5)';
+  ctx.shadowBlur = 16;
+  roundRect(tx, ty, tw, th, 7);
+  ctx.fillStyle = 'rgba(12,16,32,0.98)';
+  ctx.fill();
+  ctx.restore();
+
+  roundRect(tx, ty, tw, th, 7);
+  ctx.strokeStyle = 'rgba(99,102,241,0.5)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  sans(day.date, tx + 10, ty + 14, 'rgba(255,255,255,0.9)', 10);
+  if (day.isAnomaly) {
+    sans('⚠ Anomaly', tx + tw - 10, ty + 14, '#f97316', 9, 'right');
+  }
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(tx + 8, ty + 23);
+  ctx.lineTo(tx + tw - 8, ty + 23);
+  ctx.stroke();
+
+  for (let i = 0; i < SERVICES.length; i++) {
+    const s   = SERVICES[i]!;
+    const val = (day as Record<string, number>)[s] ?? 0;
+    const ry  = ty + 30 + i * rowH;
+
+    ctx.beginPath();
+    ctx.arc(tx + 14, ry, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = SERVICE_COLORS[s];
+    ctx.fill();
+
+    sans(SERVICE_LABELS[s] ?? s, tx + 22, ry, 'rgba(255,255,255,0.65)', 9.5);
+    mono(fmtDollar(val), tx + tw - 10, ry, 'rgba(255,255,255,0.9)', 9.5, 'right');
+  }
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.beginPath();
+  ctx.moveTo(tx + 8, ty + 30 + SERVICES.length * rowH);
+  ctx.lineTo(tx + tw - 8, ty + 30 + SERVICES.length * rowH);
+  ctx.stroke();
+
+  sans('Total', tx + 14, ty + 30 + SERVICES.length * rowH + 7, 'rgba(255,255,255,0.45)', 9);
+  mono(fmtDollar(total), tx + tw - 10, ty + 30 + SERVICES.length * rowH + 7, '#fff', 10, 'right');
+}
+
+// ─── Panel: Monthly Total (top-right corner) ──────────────────────────────────
+
+function drawMonthlyTotal(px: number, py: number, pw: number, ph: number): void {
+  panel(px, py, pw, ph, true);
+
+  sans('This Month', px + pw / 2, py + 14, 'rgba(255,255,255,0.45)', 9.5, 'center');
+
+  const fontSize = pw < 130 ? 18 : 22;
+  ctx.font = `700 ${fontSize}px -apple-system, sans-serif`;
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(fmtDollar(MONTHLY_TOTAL), px + pw / 2, py + ph / 2 + 4);
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+
+  const trendColor = TREND_PCT > 0 ? '#f97316' : '#22c55e';
+  const trendLabel = `${TREND_PCT > 0 ? '↑' : '↓'}${Math.abs(TREND_PCT)}% vs last mo.`;
+  sans(trendLabel, px + pw / 2, py + ph - 14, trendColor, 9, 'center');
+}
+
+// ─── Panel: Cost Drivers (horizontal bar chart) ───────────────────────────────
+
+function drawCostDrivers(px: number, py: number, pw: number, ph: number): void {
+  panel(px, py, pw, ph);
+  sans('Top Cost Drivers', px + 12, py + 16, 'rgba(255,255,255,0.75)', 11);
+
+  const maxAmt = Math.max(...COST_DRIVERS.map(d => d.amount));
+  const barAreaW = pw - 24;
+  const rowH = (ph - 34) / COST_DRIVERS.length;
+
+  for (let i = 0; i < COST_DRIVERS.length; i++) {
+    const driver = COST_DRIVERS[i]!;
+    const ry = py + 30 + i * rowH;
+
+    // Label
+    sans(driver.label, px + 12, ry + rowH * 0.4, 'rgba(255,255,255,0.7)', 9.5);
+
+    // Bar background
+    const barY  = ry + rowH * 0.62;
+    const barH  = 5;
+    roundRect(px + 12, barY, barAreaW, barH, 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+    ctx.fill();
+
+    // Bar fill (animated with progress)
+    const fillW = (driver.amount / maxAmt) * barAreaW * animProgress;
+    if (fillW > 0) {
+      const grad = ctx.createLinearGradient(px + 12, barY, px + 12 + barAreaW, barY);
+      grad.addColorStop(0, driver.color + 'cc');
+      grad.addColorStop(1, driver.color + '55');
+      roundRect(px + 12, barY, fillW, barH, 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+
+    // Amount
+    mono(fmtDollar(driver.amount), px + pw - 12, ry + rowH * 0.4, 'rgba(255,255,255,0.55)', 9, 'right');
+  }
+}
+
+// ─── Panel: Savings ───────────────────────────────────────────────────────────
+
+function drawSavings(px: number, py: number, pw: number, ph: number): void {
+  panel(px, py, pw, ph);
+
+  // Accent top border
+  roundRect(px, py, pw, 3, 2);
+  ctx.fillStyle = 'rgba(34,197,94,0.6)';
+  ctx.fill();
+
+  sans('Optimisation Opportunities', px + 12, py + 16, 'rgba(255,255,255,0.75)', 10.5);
+
+  const totalSavings = SAVINGS.reduce((s, item) => s + item.saving, 0);
+  ctx.font = '700 16px -apple-system, sans-serif';
+  ctx.fillStyle = '#22c55e';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(fmtDollar(totalSavings) + '/mo', px + 12, py + 34);
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+
+  sans('potential savings identified', px + 12, py + 47, 'rgba(255,255,255,0.3)', 8.5);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(px + 8, py + 56);
+  ctx.lineTo(px + pw - 8, py + 56);
+  ctx.stroke();
+
+  const rowH = (ph - 64) / SAVINGS.length;
+  for (let i = 0; i < SAVINGS.length; i++) {
+    const item = SAVINGS[i]!;
+    const ry = py + 62 + i * rowH;
+
+    // Bullet dot
+    ctx.beginPath();
+    ctx.arc(px + 16, ry + rowH * 0.35, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#22c55e';
+    ctx.fill();
+
+    // Description (truncated)
+    ctx.font = '400 8.5px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.textBaseline = 'top';
+    const maxW = pw - 60;
+    let desc = item.description;
+    while (ctx.measureText(desc).width > maxW && desc.length > 10) {
+      desc = desc.slice(0, -4) + '…';
+    }
+    ctx.fillText(desc, px + 24, ry + 2);
+
+    // Saving amount
+    mono(fmtDollar(item.saving), px + pw - 12, ry + rowH * 0.35, '#22c55e', 9, 'right', 'middle');
+  }
+}
+
+// ─── Layout & Main Draw ────────────────────────────────────────────────────────
+
+function draw(): void {
+  ctx.clearRect(0, 0, W, H);
+
+  const pad   = 12;
+  const areaW = W - pad * 2;
+
+  // Layout:
+  // Row 1 (top): stacked area chart + monthly total badge
+  // Row 2 (bottom left): cost drivers | (bottom right): savings
+  const totalBadgeW = Math.min(160, areaW * 0.28);
+  const areaChartW  = areaW - totalBadgeW - pad;
+  const topH        = Math.round(H * 0.55);
+  const bottomH     = H - topH - pad * 3;
+  const halfBotW    = (areaW - pad) / 2;
+
+  drawAreaChart(pad, pad, areaChartW, topH, animProgress);
+  drawMonthlyTotal(pad + areaChartW + pad, pad, totalBadgeW, topH);
+  drawCostDrivers(pad, pad * 2 + topH, halfBotW, bottomH);
+  drawSavings(pad + halfBotW + pad, pad * 2 + topH, halfBotW, bottomH);
+
+  drawTooltip();
+}
+
+// ─── Hover Detection ──────────────────────────────────────────────────────────
+
+function resolveHover(mx: number, my: number): void {
+  const pad        = 12;
+  const areaW      = W - pad * 2;
+  const totalBadgeW = Math.min(160, areaW * 0.28);
+  const areaChartW  = areaW - totalBadgeW - pad;
+  const topH        = Math.round(H * 0.55);
+
+  const chartX = pad + 14;
+  const chartY = pad + 36;
+  const chartW = areaChartW - 28;
+  const chartH = topH - 60;
+
+  if (mx >= chartX && mx <= chartX + chartW && my >= chartY && my <= chartY + chartH) {
+    const di = Math.round(((mx - chartX) / chartW) * (DAYS - 1));
+    tooltip.visible   = true;
+    tooltip.x         = mx;
+    tooltip.y         = my;
+    tooltip.dayIndex  = Math.max(0, Math.min(DAYS - 1, di));
+  } else {
+    tooltip.visible  = false;
+    tooltip.dayIndex = -1;
+  }
+}
+
+// ─── Loop ─────────────────────────────────────────────────────────────────────
+
+function tick(): void {
+  frame++;
+  animProgress = Math.min(1, animProgress + 0.018);
+  draw();
+  requestAnimationFrame(tick);
+}
+
+// ─── Events ───────────────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => {
+  const rect = canvas.getBoundingClientRect();
+  resolveHover(e.clientX - rect.left, e.clientY - rect.top);
+});
+
+canvas.addEventListener('mouseleave', () => {
+  tooltip.visible  = false;
+  tooltip.dayIndex = -1;
+});
+
+const ro = new ResizeObserver(() => resize());
+ro.observe(col);
+
+// ─── Init ──────────────────────────────────────────────────────────────────────
+
+resize();
+tick();
+</script>

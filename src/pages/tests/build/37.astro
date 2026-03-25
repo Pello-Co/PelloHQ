@@ -1,0 +1,847 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloBuild — Sprint Board | Pello" description="PelloBuild delivers agile sprint management with real-time Kanban tracking — backlog, in progress, review, and done columns with WIP limits, velocity charts, and team assignment all in one visual board.">
+  <Header />
+  <main id="main-content">
+    <section class="sprint-section" aria-labelledby="sprint-headline">
+      <div class="sprint-layout">
+        <div class="sprint-text">
+          <span class="sprint-badge">PelloBuild</span>
+          <h1 id="sprint-headline">Agile Delivery. Always on Track.</h1>
+          <p>PelloBuild ships full product teams alongside your engineers — complete with sprint planning, Kanban tracking, WIP discipline, and velocity insights that keep every build moving forward.</p>
+          <ul class="sprint-pills" role="list">
+            <li>Full-stack development</li>
+            <li>Data infrastructure</li>
+            <li>Internal tooling</li>
+            <li>Systems integration</li>
+          </ul>
+        </div>
+        <div class="sprint-canvas-col">
+          <canvas id="sprint-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060a14; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .sprint-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .sprint-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .sprint-layout { grid-template-columns: 1fr; } }
+  .sprint-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .sprint-badge { display: inline-flex; align-items: center; padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6366f1; width: fit-content; }
+  .sprint-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .sprint-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .sprint-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .sprint-pills li { padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .sprint-canvas-col { position: relative; width: 100%; min-height: 580px; }
+  #sprint-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: default; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type Priority = 'high' | 'medium' | 'low';
+type Column = 'backlog' | 'in-progress' | 'review' | 'done';
+
+interface Ticket {
+  id: string;
+  title: string;
+  assignee: string;
+  points: number;
+  priority: Priority;
+  column: Column;
+  description: string;
+  checklist: { text: string; done: boolean }[];
+  // Animation state
+  x: number;
+  y: number;
+  targetX: number;
+  targetY: number;
+  alpha: number;
+  moving: boolean;
+  moveProgress: number;
+  startX: number;
+  startY: number;
+}
+
+interface ColumnMeta {
+  key: Column;
+  label: string;
+  wip: number;
+  wipLimit: number;
+  x: number;
+  w: number;
+}
+
+interface HoverState {
+  ticket: Ticket | null;
+  canvasX: number;
+  canvasY: number;
+}
+
+interface VelocityBar {
+  sprint: number;
+  points: number;
+}
+
+// ─── Data ─────────────────────────────────────────────────────────────────────
+
+const ASSIGNEE_COLORS: Record<string, string> = {
+  AK: '#6366f1',
+  SM: '#22d3ee',
+  JL: '#4ade80',
+  RB: '#f59e0b',
+};
+
+const PRIORITY_COLORS: Record<Priority, string> = {
+  high:   '#ef4444',
+  medium: '#f59e0b',
+  low:    '#4ade80',
+};
+
+const COLUMN_ORDER: Column[] = ['backlog', 'in-progress', 'review', 'done'];
+const NEXT_COLUMN: Record<Column, Column | null> = {
+  'backlog':     'in-progress',
+  'in-progress': 'review',
+  'review':      'done',
+  'done':        null,
+};
+
+const tickets: Ticket[] = [
+  {
+    id: 'BUILD-142', title: 'Implement OAuth flow', assignee: 'AK', points: 8,
+    priority: 'high', column: 'in-progress',
+    description: 'Add OAuth 2.0 with PKCE for third-party identity providers including Google and GitHub.',
+    checklist: [
+      { text: 'Define OAuth scopes', done: true },
+      { text: 'PKCE code challenge', done: true },
+      { text: 'Token refresh logic', done: false },
+      { text: 'Session persistence', done: false },
+    ],
+    x: 0, y: 0, targetX: 0, targetY: 0, alpha: 1, moving: false, moveProgress: 0, startX: 0, startY: 0,
+  },
+  {
+    id: 'BUILD-138', title: 'Fix payment webhook', assignee: 'SM', points: 5,
+    priority: 'high', column: 'review',
+    description: 'Stripe webhook signature verification failing intermittently under high load.',
+    checklist: [
+      { text: 'Reproduce locally', done: true },
+      { text: 'Add idempotency key', done: true },
+      { text: 'Write regression test', done: true },
+      { text: 'Load test verified', done: false },
+    ],
+    x: 0, y: 0, targetX: 0, targetY: 0, alpha: 1, moving: false, moveProgress: 0, startX: 0, startY: 0,
+  },
+  {
+    id: 'BUILD-149', title: 'Deploy to staging', assignee: 'JL', points: 2,
+    priority: 'medium', column: 'in-progress',
+    description: 'Configure GitHub Actions workflow for automated staging deployments on merge to dev.',
+    checklist: [
+      { text: 'Dockerfile updated', done: true },
+      { text: 'Env vars configured', done: false },
+      { text: 'Smoke test suite', done: false },
+    ],
+    x: 0, y: 0, targetX: 0, targetY: 0, alpha: 1, moving: false, moveProgress: 0, startX: 0, startY: 0,
+  },
+  {
+    id: 'BUILD-133', title: 'User permissions API', assignee: 'RB', points: 13,
+    priority: 'high', column: 'backlog',
+    description: 'Role-based access control endpoints — admin, editor, viewer roles with resource scoping.',
+    checklist: [
+      { text: 'Schema design', done: false },
+      { text: 'RBAC middleware', done: false },
+      { text: 'Unit tests', done: false },
+      { text: 'API docs', done: false },
+    ],
+    x: 0, y: 0, targetX: 0, targetY: 0, alpha: 1, moving: false, moveProgress: 0, startX: 0, startY: 0,
+  },
+  {
+    id: 'BUILD-156', title: 'Email notification service', assignee: 'AK', points: 5,
+    priority: 'medium', column: 'backlog',
+    description: 'Transactional email via SendGrid with template engine and delivery tracking.',
+    checklist: [
+      { text: 'SendGrid integration', done: false },
+      { text: 'Template system', done: false },
+      { text: 'Delivery webhooks', done: false },
+    ],
+    x: 0, y: 0, targetX: 0, targetY: 0, alpha: 1, moving: false, moveProgress: 0, startX: 0, startY: 0,
+  },
+  {
+    id: 'BUILD-127', title: 'Analytics dashboard', assignee: 'SM', points: 8,
+    priority: 'medium', column: 'done',
+    description: 'Real-time metrics dashboard using ClickHouse backend and Chart.js frontend.',
+    checklist: [
+      { text: 'ClickHouse schema', done: true },
+      { text: 'Query optimisation', done: true },
+      { text: 'Frontend charts', done: true },
+      { text: 'QA sign-off', done: true },
+    ],
+    x: 0, y: 0, targetX: 0, targetY: 0, alpha: 1, moving: false, moveProgress: 0, startX: 0, startY: 0,
+  },
+  {
+    id: 'BUILD-161', title: 'Rate limiting middleware', assignee: 'JL', points: 3,
+    priority: 'low', column: 'backlog',
+    description: 'Token bucket rate limiting per API key with Redis backend and 429 response headers.',
+    checklist: [
+      { text: 'Redis integration', done: false },
+      { text: 'Per-key limits', done: false },
+      { text: 'Headers spec', done: false },
+    ],
+    x: 0, y: 0, targetX: 0, targetY: 0, alpha: 1, moving: false, moveProgress: 0, startX: 0, startY: 0,
+  },
+  {
+    id: 'BUILD-144', title: 'DB migration runner', assignee: 'RB', points: 3,
+    priority: 'medium', column: 'review',
+    description: 'Zero-downtime schema migrations with rollback support using golang-migrate.',
+    checklist: [
+      { text: 'Migration scripts', done: true },
+      { text: 'Rollback tested', done: true },
+      { text: 'CI integration', done: false },
+    ],
+    x: 0, y: 0, targetX: 0, targetY: 0, alpha: 1, moving: false, moveProgress: 0, startX: 0, startY: 0,
+  },
+  {
+    id: 'BUILD-130', title: 'Search indexing pipeline', assignee: 'AK', points: 8,
+    priority: 'low', column: 'done',
+    description: 'Elasticsearch indexing pipeline with incremental sync and field mapping versioning.',
+    checklist: [
+      { text: 'Index mapping', done: true },
+      { text: 'Sync daemon', done: true },
+      { text: 'Query DSL', done: true },
+    ],
+    x: 0, y: 0, targetX: 0, targetY: 0, alpha: 1, moving: false, moveProgress: 0, startX: 0, startY: 0,
+  },
+  {
+    id: 'BUILD-151', title: 'CSV export endpoint', assignee: 'SM', points: 2,
+    priority: 'low', column: 'in-progress',
+    description: 'Streaming CSV export for large datasets with configurable column selection.',
+    checklist: [
+      { text: 'Streaming writer', done: true },
+      { text: 'Column config', done: false },
+    ],
+    x: 0, y: 0, targetX: 0, targetY: 0, alpha: 1, moving: false, moveProgress: 0, startX: 0, startY: 0,
+  },
+];
+
+const velocityHistory: VelocityBar[] = [
+  { sprint: 10, points: 34 },
+  { sprint: 11, points: 41 },
+  { sprint: 12, points: 38 },
+  { sprint: 13, points: 45 },
+  { sprint: 14, points: 29 },
+];
+
+// ─── Canvas State ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('sprint-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const col = canvas.parentElement as HTMLElement;
+
+let W = 0, H = 0, dpr = 1;
+let frame = 0;
+let hoverState: HoverState = { ticket: null, canvasX: 0, canvasY: 0 };
+let mouseCanvasX = -9999;
+let mouseCanvasY = -9999;
+
+// Card animation
+let lastMoveFrame = 0;
+const MOVE_INTERVAL = 210; // frames between card moves (~3.5s at 60fps)
+
+// ─── Canvas Setup ─────────────────────────────────────────────────────────────
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = col.getBoundingClientRect();
+  W = rect.width;
+  H = rect.height;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+  layoutTickets();
+}
+
+// ─── Layout ───────────────────────────────────────────────────────────────────
+
+const PAD = 10;
+const HEADER_H = 52; // sprint bar
+const COL_HEADER_H = 32;
+const CARD_H = 72;
+const CARD_GAP = 6;
+const VELOCITY_W = 90;
+const VELOCITY_H = 56;
+
+function getColumnMetas(): ColumnMeta[] {
+  const boardTop = HEADER_H + PAD;
+  const boardH = H - boardTop - PAD;
+  const colCount = 4;
+  const colW = (W - PAD * (colCount + 1)) / colCount;
+
+  return COLUMN_ORDER.map((key, i) => {
+    const colX = PAD + i * (colW + PAD);
+    const colTickets = tickets.filter(t => t.column === key && !t.moving);
+    return {
+      key,
+      label: key === 'in-progress' ? 'In Progress' : key.charAt(0).toUpperCase() + key.slice(1),
+      wip: colTickets.length,
+      wipLimit: key === 'in-progress' ? 4 : key === 'review' ? 3 : 99,
+      x: colX,
+      w: colW,
+    };
+  });
+}
+
+function layoutTickets(): void {
+  const metas = getColumnMetas();
+  const boardTop = HEADER_H + PAD + COL_HEADER_H + 6;
+
+  for (const meta of metas) {
+    let idx = 0;
+    for (const t of tickets) {
+      if (t.column !== meta.key || t.moving) continue;
+      const tx = meta.x + 6;
+      const ty = boardTop + idx * (CARD_H + CARD_GAP);
+      if (!t.moving) {
+        t.x = tx;
+        t.y = ty;
+        t.targetX = tx;
+        t.targetY = ty;
+      }
+      idx++;
+    }
+  }
+}
+
+// ─── Drawing Helpers ──────────────────────────────────────────────────────────
+
+function roundRect(x: number, y: number, w: number, h: number, r: number): void {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function txt(
+  text: string, x: number, y: number,
+  color = 'rgba(255,255,255,0.6)',
+  size = 10,
+  weight = '400',
+  align: CanvasTextAlign = 'left',
+  baseline: CanvasTextBaseline = 'middle',
+  mono = false
+): void {
+  const family = mono ? '"SF Mono","Fira Code",monospace' : '-apple-system,sans-serif';
+  ctx.font = `${weight} ${size}px ${family}`;
+  ctx.fillStyle = color;
+  ctx.textAlign = align;
+  ctx.textBaseline = baseline;
+  ctx.fillText(text, x, y);
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+}
+
+function avatar(x: number, y: number, initials: string, r = 10): void {
+  const bg = ASSIGNEE_COLORS[initials] ?? '#6366f1';
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fillStyle = bg + '33';
+  ctx.fill();
+  ctx.strokeStyle = bg;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  txt(initials, x, y, bg, 7, '700', 'center', 'middle');
+}
+
+function priorityDot(x: number, y: number, priority: Priority): void {
+  ctx.beginPath();
+  ctx.arc(x, y, 4, 0, Math.PI * 2);
+  ctx.fillStyle = PRIORITY_COLORS[priority];
+  ctx.fill();
+}
+
+// ─── Sprint Progress Bar ───────────────────────────────────────────────────────
+
+function drawSprintBar(): void {
+  const bx = PAD, by = PAD, bw = W - PAD * 2 - VELOCITY_W - 8, bh = HEADER_H - PAD;
+  roundRect(bx, by, bw, bh, 8);
+  ctx.fillStyle = 'rgba(12,16,30,0.95)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(99,102,241,0.25)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Sprint label
+  txt('Sprint 14', bx + 14, by + bh / 2 - 6, '#fff', 12, '600');
+  txt('Day 7 of 14', bx + 14, by + bh / 2 + 9, 'rgba(255,255,255,0.4)', 9);
+
+  // Progress bar track
+  const barX = bx + 100, barY = by + bh / 2 - 4, barW = bw - 200, barH = 7;
+  roundRect(barX, barY, barW, barH, 3);
+  ctx.fillStyle = 'rgba(255,255,255,0.07)';
+  ctx.fill();
+
+  // Progress fill
+  const progress = 0.68;
+  const shimmer = (Math.sin(frame * 0.04) + 1) / 2;
+  const grad = ctx.createLinearGradient(barX, 0, barX + barW * progress, 0);
+  grad.addColorStop(0, '#6366f1');
+  grad.addColorStop(0.7 + shimmer * 0.15, '#818cf8');
+  grad.addColorStop(1, '#a5b4fc');
+  roundRect(barX, barY, barW * progress, barH, 3);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Percent label
+  txt('68% complete', barX + barW + 10, by + bh / 2, 'rgba(255,255,255,0.5)', 9, '500');
+
+  // Right side stats
+  const doneCount = tickets.filter(t => t.column === 'done').length;
+  const totalPts = tickets.reduce((s, t) => s + (t.column === 'done' ? t.points : 0), 0);
+  txt(`${doneCount} tickets  ·  ${totalPts} pts`, bx + bw - 14, by + bh / 2, 'rgba(255,255,255,0.35)', 9, '400', 'right');
+}
+
+// ─── Velocity Mini-Chart ───────────────────────────────────────────────────────
+
+function drawVelocity(): void {
+  const vx = W - PAD - VELOCITY_W, vy = PAD, vw = VELOCITY_W, vh = HEADER_H - PAD;
+  roundRect(vx, vy, vw, vh, 8);
+  ctx.fillStyle = 'rgba(12,16,30,0.95)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  txt('Velocity', vx + vw / 2, vy + 9, 'rgba(255,255,255,0.4)', 8, '500', 'center', 'top');
+
+  const chartPad = 8;
+  const chartX = vx + chartPad;
+  const chartY = vy + 20;
+  const chartW = vw - chartPad * 2;
+  const chartH = vh - 28;
+  const barW = (chartW - (velocityHistory.length - 1) * 3) / velocityHistory.length;
+  const maxPts = Math.max(...velocityHistory.map(v => v.points));
+
+  for (let i = 0; i < velocityHistory.length; i++) {
+    const v = velocityHistory[i]!;
+    const bh = (v.points / maxPts) * chartH;
+    const bx = chartX + i * (barW + 3);
+    const by2 = chartY + chartH - bh;
+    const isLatest = i === velocityHistory.length - 1;
+    roundRect(bx, by2, barW, bh, 2);
+    ctx.fillStyle = isLatest ? '#6366f1' : 'rgba(99,102,241,0.3)';
+    ctx.fill();
+    if (isLatest) {
+      txt(String(v.points), bx + barW / 2, by2 - 4, '#a5b4fc', 7, '600', 'center', 'bottom');
+    }
+  }
+}
+
+// ─── Column Headers ───────────────────────────────────────────────────────────
+
+function drawColumnHeader(meta: ColumnMeta): void {
+  const headerY = HEADER_H + PAD;
+  roundRect(meta.x, headerY, meta.w, COL_HEADER_H, 6);
+  ctx.fillStyle = 'rgba(255,255,255,0.03)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Column name
+  const colColors: Record<Column, string> = {
+    'backlog': 'rgba(255,255,255,0.5)',
+    'in-progress': '#6366f1',
+    'review': '#f59e0b',
+    'done': '#4ade80',
+  };
+  txt(meta.label, meta.x + 10, headerY + COL_HEADER_H / 2, colColors[meta.key], 10, '600');
+
+  // WIP badge
+  if (meta.wipLimit < 99) {
+    const wipStr = `${meta.wip}/${meta.wipLimit}`;
+    const badgeW = 32;
+    const bx = meta.x + meta.w - badgeW - 6;
+    const by2 = headerY + 6;
+    const bh2 = COL_HEADER_H - 12;
+    roundRect(bx, by2, badgeW, bh2, 4);
+    const overWip = meta.wip >= meta.wipLimit;
+    ctx.fillStyle = overWip ? 'rgba(239,68,68,0.15)' : 'rgba(99,102,241,0.1)';
+    ctx.fill();
+    ctx.strokeStyle = overWip ? 'rgba(239,68,68,0.4)' : 'rgba(99,102,241,0.25)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    txt(wipStr, bx + badgeW / 2, by2 + bh2 / 2, overWip ? '#ef4444' : '#818cf8', 9, '600', 'center');
+  } else {
+    // Ticket count for no-limit cols
+    const countW = 20;
+    const bx = meta.x + meta.w - countW - 6;
+    const by2 = headerY + 8;
+    const bh2 = COL_HEADER_H - 16;
+    roundRect(bx, by2, countW, bh2, 4);
+    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+    ctx.fill();
+    txt(String(meta.wip), bx + countW / 2, by2 + bh2 / 2, 'rgba(255,255,255,0.4)', 9, '500', 'center');
+  }
+}
+
+// ─── Cards ────────────────────────────────────────────────────────────────────
+
+function isHovered(t: Ticket, cardW: number): boolean {
+  return (
+    mouseCanvasX > t.x &&
+    mouseCanvasX < t.x + cardW &&
+    mouseCanvasY > t.y &&
+    mouseCanvasY < t.y + CARD_H
+  );
+}
+
+function drawCard(t: Ticket, cardW: number): void {
+  const hov = isHovered(t, cardW);
+
+  ctx.globalAlpha = t.alpha;
+
+  // Card background
+  roundRect(t.x, t.y, cardW, CARD_H, 7);
+  ctx.fillStyle = hov ? 'rgba(20,24,48,0.98)' : 'rgba(14,18,36,0.95)';
+  ctx.fill();
+  ctx.strokeStyle = hov ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  if (hov) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(99,102,241,0.25)';
+    ctx.shadowBlur = 14;
+    roundRect(t.x, t.y, cardW, CARD_H, 7);
+    ctx.strokeStyle = 'rgba(99,102,241,0.3)';
+    ctx.stroke();
+    ctx.restore();
+    // Set hover state for expanded card rendering
+    hoverState = { ticket: t, canvasX: t.x, canvasY: t.y };
+  }
+
+  // Left priority stripe
+  ctx.fillStyle = PRIORITY_COLORS[t.priority];
+  ctx.beginPath();
+  ctx.moveTo(t.x, t.y + 7);
+  ctx.lineTo(t.x, t.y + CARD_H - 7);
+  ctx.quadraticCurveTo(t.x, t.y + CARD_H, t.x + 7, t.y + CARD_H);
+  // Actually just a thin left border
+  roundRect(t.x, t.y + 8, 3, CARD_H - 16, 2);
+  ctx.fillStyle = PRIORITY_COLORS[t.priority] + 'cc';
+  ctx.fill();
+
+  // Ticket ID
+  txt(t.id, t.x + 12, t.y + 14, 'rgba(99,102,241,0.8)', 8, '600', 'left', 'middle', true);
+
+  // Story points badge
+  const spStr = `${t.points}sp`;
+  const spW = 22;
+  roundRect(t.x + cardW - spW - 6, t.y + 7, spW, 15, 3);
+  ctx.fillStyle = 'rgba(99,102,241,0.12)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(99,102,241,0.25)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  txt(spStr, t.x + cardW - spW / 2 - 6, t.y + 14, '#818cf8', 8, '600', 'center');
+
+  // Title — truncated
+  const titleMaxW = cardW - 24;
+  ctx.font = '500 10px -apple-system,sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.88)';
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left';
+  const fullTitle = t.title;
+  let displayTitle = fullTitle;
+  while (ctx.measureText(displayTitle).width > titleMaxW && displayTitle.length > 4) {
+    displayTitle = displayTitle.slice(0, -4) + '...';
+  }
+  ctx.fillText(displayTitle, t.x + 12, t.y + 34);
+
+  // Bottom row: avatar + priority dot
+  avatar(t.x + 20, t.y + CARD_H - 14, t.assignee, 9);
+  priorityDot(t.x + 38, t.y + CARD_H - 14, t.priority);
+  txt(t.priority, t.x + 46, t.y + CARD_H - 14, 'rgba(255,255,255,0.3)', 8);
+
+  ctx.globalAlpha = 1;
+}
+
+// ─── Expanded Card Tooltip ─────────────────────────────────────────────────────
+
+function drawExpandedCard(t: Ticket, baseX: number, baseY: number, colW: number): void {
+  const EW = Math.min(220, W * 0.38);
+  const checkH = t.checklist.length * 16 + 8;
+  const EH = 40 + 32 + checkH + 8;
+
+  let ex = baseX + colW + 6;
+  if (ex + EW > W - PAD) ex = baseX - EW - 6;
+  let ey = baseY;
+  if (ey + EH > H - PAD) ey = H - PAD - EH;
+
+  // Shadow
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.6)';
+  ctx.shadowBlur = 20;
+  roundRect(ex, ey, EW, EH, 10);
+  ctx.fillStyle = 'rgba(16,20,44,0.98)';
+  ctx.fill();
+  ctx.restore();
+
+  ctx.strokeStyle = 'rgba(99,102,241,0.45)';
+  ctx.lineWidth = 1;
+  roundRect(ex, ey, EW, EH, 10);
+  ctx.stroke();
+
+  // Header
+  txt(t.id, ex + 12, ey + 14, '#6366f1', 9, '600', 'left', 'middle', true);
+  txt(`${t.points} story points`, ex + EW - 10, ey + 14, 'rgba(255,255,255,0.35)', 8, '400', 'right');
+
+  txt(t.title, ex + 12, ey + 28, '#fff', 10, '600');
+
+  // Divider
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(ex + 10, ey + 38);
+  ctx.lineTo(ex + EW - 10, ey + 38);
+  ctx.stroke();
+
+  // Description
+  ctx.font = '400 9px -apple-system,sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.textBaseline = 'top';
+  ctx.textAlign = 'left';
+  const words = t.description.split(' ');
+  let line = '';
+  let dy = ey + 44;
+  for (const word of words) {
+    const test = line + (line ? ' ' : '') + word;
+    if (ctx.measureText(test).width > EW - 24) {
+      ctx.fillText(line, ex + 12, dy);
+      line = word;
+      dy += 13;
+    } else {
+      line = test;
+    }
+  }
+  if (line) { ctx.fillText(line, ex + 12, dy); dy += 13; }
+
+  // Checklist
+  dy = Math.max(dy + 4, ey + 44 + 32);
+  for (const item of t.checklist) {
+    // Checkbox
+    roundRect(ex + 12, dy, 10, 10, 2);
+    ctx.fillStyle = item.done ? '#6366f1' : 'rgba(255,255,255,0.08)';
+    ctx.fill();
+    ctx.strokeStyle = item.done ? '#6366f1' : 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    if (item.done) {
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(ex + 14, dy + 5);
+      ctx.lineTo(ex + 16, dy + 7);
+      ctx.lineTo(ex + 20, dy + 3);
+      ctx.stroke();
+    }
+    ctx.font = '400 9px -apple-system,sans-serif';
+    ctx.fillStyle = item.done ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.65)';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.fillText(item.text, ex + 26, dy + 5);
+    dy += 16;
+  }
+}
+
+// ─── Column Lanes ─────────────────────────────────────────────────────────────
+
+function drawColumnLane(meta: ColumnMeta): void {
+  const laneY = HEADER_H + PAD + COL_HEADER_H + 4;
+  const laneH = H - laneY - PAD;
+  roundRect(meta.x, laneY, meta.w, laneH, 6);
+  ctx.fillStyle = 'rgba(255,255,255,0.015)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+// ─── Card Move Animation ───────────────────────────────────────────────────────
+
+function triggerCardMove(): void {
+  // Pick a random ticket that can move and isn't already moving
+  const moveable = tickets.filter(t => {
+    const next = NEXT_COLUMN[t.column];
+    if (!next || t.moving) return false;
+    // Check WIP limit
+    if (next === 'in-progress') {
+      const wipCount = tickets.filter(x => x.column === 'in-progress').length;
+      if (wipCount >= 4) return false;
+    }
+    if (next === 'review') {
+      const wipCount = tickets.filter(x => x.column === 'review').length;
+      if (wipCount >= 3) return false;
+    }
+    return true;
+  });
+  if (moveable.length === 0) return;
+
+  const t = moveable[Math.floor(Math.random() * moveable.length)]!;
+  const nextCol = NEXT_COLUMN[t.column]!;
+  const metas = getColumnMetas();
+  const targetMeta = metas.find(m => m.key === nextCol)!;
+
+  // Count cards already in target
+  const targetCount = tickets.filter(x => x.column === nextCol && !x.moving).length;
+  const boardTop = HEADER_H + PAD + COL_HEADER_H + 6;
+  const targetCardW = targetMeta.w - 12;
+
+  t.startX = t.x;
+  t.startY = t.y;
+  t.targetX = targetMeta.x + 6;
+  t.targetY = boardTop + targetCount * (CARD_H + CARD_GAP);
+  t.moving = true;
+  t.moveProgress = 0;
+  t.column = nextCol;
+}
+
+function updateMovingCards(): void {
+  for (const t of tickets) {
+    if (!t.moving) continue;
+    t.moveProgress += 0.035;
+    if (t.moveProgress >= 1) {
+      t.moveProgress = 1;
+      t.x = t.targetX;
+      t.y = t.targetY;
+      t.moving = false;
+      layoutTickets();
+    } else {
+      // Ease in-out cubic
+      const p = t.moveProgress;
+      const ease = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+      // Arc: lift up midway
+      const arc = Math.sin(p * Math.PI) * -30;
+      t.x = t.startX + (t.targetX - t.startX) * ease;
+      t.y = t.startY + (t.targetY - t.startY) * ease + arc;
+    }
+  }
+}
+
+// ─── Main Draw ────────────────────────────────────────────────────────────────
+
+function draw(): void {
+  ctx.clearRect(0, 0, W, H);
+
+  const metas = getColumnMetas();
+
+  // Sprint bar + velocity
+  drawSprintBar();
+  drawVelocity();
+
+  // Column lanes (background)
+  for (const meta of metas) {
+    drawColumnLane(meta);
+    drawColumnHeader(meta);
+  }
+
+  // Update WIP counts
+  for (const meta of metas) {
+    meta.wip = tickets.filter(t => t.column === meta.key && !t.moving).length;
+  }
+
+  // Reset hover state each frame
+  hoverState = { ticket: null, canvasX: 0, canvasY: 0 };
+
+  // Draw non-moving cards
+  for (const t of tickets) {
+    if (t.moving) continue;
+    const meta = metas.find(m => m.key === t.column)!;
+    const cardW = meta.w - 12;
+    drawCard(t, cardW);
+  }
+
+  // Draw moving cards on top (ghost trail effect)
+  for (const t of tickets) {
+    if (!t.moving) continue;
+    const srcMeta = metas[0]!; // Just need any meta for width
+    // Use source column width estimate
+    const anyMeta = metas.find(m => m.w > 0)!;
+    const cardW = anyMeta.w - 12;
+    // Ghost at source
+    ctx.globalAlpha = 0.18 * (1 - t.moveProgress);
+    roundRect(t.startX, t.startY, cardW, CARD_H, 7);
+    ctx.fillStyle = 'rgba(99,102,241,0.2)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(99,102,241,0.15)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // Moving card
+    drawCard(t, cardW);
+  }
+
+  // Draw expanded card tooltip after all cards
+  if (hoverState.ticket) {
+    const t = hoverState.ticket;
+    const meta = metas.find(m => m.key === t.column) ?? metas[0]!;
+    drawExpandedCard(t, t.x, t.y, meta.w - 12);
+  }
+}
+
+// ─── Loop ─────────────────────────────────────────────────────────────────────
+
+function tick(): void {
+  frame++;
+  updateMovingCards();
+
+  if (frame - lastMoveFrame > MOVE_INTERVAL && !tickets.some(t => t.moving)) {
+    triggerCardMove();
+    lastMoveFrame = frame;
+  }
+
+  draw();
+  requestAnimationFrame(tick);
+}
+
+// ─── Events ───────────────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => {
+  const rect = canvas.getBoundingClientRect();
+  mouseCanvasX = e.clientX - rect.left;
+  mouseCanvasY = e.clientY - rect.top;
+  canvas.style.cursor = 'default';
+});
+
+canvas.addEventListener('mouseleave', () => {
+  mouseCanvasX = -9999;
+  mouseCanvasY = -9999;
+  hoverState = { ticket: null, canvasX: 0, canvasY: 0 };
+});
+
+const ro = new ResizeObserver(() => resize());
+ro.observe(col);
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+resize();
+layoutTickets();
+tick();
+</script>

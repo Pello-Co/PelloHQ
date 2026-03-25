@@ -1,0 +1,670 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloBuild — Dependency Graph | Pello" description="PelloBuild maps every package, version, and transitive dependency across your entire project — visualise your bundle, surface vulnerabilities, and ship with confidence.">
+  <Header />
+  <main id="main-content">
+    <section class="dep-section" aria-labelledby="dep-headline">
+      <div class="dep-layout">
+        <div class="dep-text">
+          <span class="dep-badge">PelloBuild</span>
+          <h1 id="dep-headline">Every Dependency. Every Risk. Mapped.</h1>
+          <p>PelloBuild traces your entire dependency tree — direct packages, transitive chains, vulnerability exposure, and bundle weight — so you ship knowing exactly what's inside.</p>
+          <ul class="dep-pills" role="list">
+            <li>Full-stack development</li>
+            <li>Data infrastructure</li>
+            <li>Internal tooling</li>
+            <li>Systems integration</li>
+          </ul>
+        </div>
+        <div class="dep-canvas-col">
+          <canvas id="dep-canvas" aria-hidden="true"></canvas>
+          <div class="dep-tooltip" id="dep-tooltip"></div>
+          <div class="dep-stats-panel" id="dep-stats">
+            <div class="dep-stat-row">
+              <span class="dep-stat-label">Total deps</span>
+              <span class="dep-stat-value" id="dep-total">147</span>
+            </div>
+            <div class="dep-stat-row">
+              <span class="dep-stat-label">Bundle size</span>
+              <span class="dep-stat-value" id="dep-bundle">2.4 MB</span>
+            </div>
+            <div class="dep-stat-row dep-stat-warn">
+              <span class="dep-stat-label">Vulnerabilities</span>
+              <span class="dep-stat-value dep-stat-danger" id="dep-vulns">3</span>
+            </div>
+            <div class="dep-stat-row dep-stat-warn">
+              <span class="dep-stat-label">Outdated</span>
+              <span class="dep-stat-value dep-stat-amber" id="dep-outdated">12</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060a14; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+
+  .dep-section {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding: 6rem 0 4rem;
+  }
+
+  .dep-layout {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+  }
+
+  @media (max-width: 768px) {
+    .dep-layout { grid-template-columns: 1fr; }
+    .dep-canvas-col { min-height: 460px; }
+  }
+
+  .dep-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .dep-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.375rem 0.875rem;
+    background: rgba(99,102,241,0.12);
+    border: 1px solid rgba(99,102,241,0.3);
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6366f1;
+    width: fit-content;
+  }
+
+  .dep-text h1 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: #fff;
+  }
+
+  .dep-text p {
+    font-size: 1.0625rem;
+    line-height: 1.7;
+    color: rgba(255,255,255,0.65);
+    max-width: 44ch;
+  }
+
+  .dep-pills {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .dep-pills li {
+    padding: 0.375rem 0.875rem;
+    background: rgba(99,102,241,0.08);
+    border: 1px solid rgba(99,102,241,0.2);
+    border-radius: 100px;
+    font-size: 0.8125rem;
+    color: rgba(255,255,255,0.75);
+  }
+
+  .dep-canvas-col {
+    position: relative;
+    width: 100%;
+    min-height: 560px;
+  }
+
+  #dep-canvas {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    inset: 0;
+    cursor: default;
+    border-radius: 12px;
+  }
+
+  .dep-tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: rgba(6,10,20,0.97);
+    border: 1px solid rgba(99,102,241,0.4);
+    border-radius: 8px;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.75rem;
+    color: #fff;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 20;
+    min-width: 180px;
+    line-height: 1.7;
+    backdrop-filter: blur(8px);
+  }
+
+  .dep-tooltip.visible { opacity: 1; }
+
+  .dep-stats-panel {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    background: rgba(6,10,20,0.9);
+    border: 1px solid rgba(99,102,241,0.25);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    min-width: 164px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    backdrop-filter: blur(12px);
+    z-index: 10;
+  }
+
+  .dep-stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    font-size: 0.75rem;
+  }
+
+  .dep-stat-label {
+    color: rgba(255,255,255,0.45);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.6875rem;
+  }
+
+  .dep-stat-value {
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .dep-stat-danger { color: #f43f5e; }
+  .dep-stat-amber  { color: #fbbf24; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface DepNode {
+  id: string;
+  name: string;
+  version: string;
+  sizeKb: number;
+  license: string;
+  lastPublished: string;
+  weeklyDownloads: string;
+  depth: number; // 0 = root, 1 = direct, 2+ = transitive
+  vuln: 'none' | 'warning' | 'critical';
+  outdated: boolean;
+  x: number;
+  y: number;
+  tx: number; // target x (for float)
+  ty: number; // target y
+  floatPhase: number;
+  floatAmpX: number;
+  floatAmpY: number;
+  radius: number;
+  alpha: number; // fade-in 0→1
+  spawnDelay: number;
+  children: string[]; // child ids
+}
+
+interface DepEdge {
+  fromId: string;
+  toId: string;
+  alpha: number;
+  spawnDelay: number;
+  dashOffset: number;
+}
+
+interface Tooltip {
+  visible: boolean;
+  nodeId: string | null;
+  x: number;
+  y: number;
+}
+
+// ─── Data ─────────────────────────────────────────────────────────────────────
+
+const RAW_NODES: Omit<DepNode, 'x'|'y'|'tx'|'ty'|'floatPhase'|'floatAmpX'|'floatAmpY'|'alpha'|'radius'>[] = [
+  // root
+  { id: 'root',       name: 'my-app',         version: 'v2.4.1',  sizeKb: 0,    license: 'UNLICENSED',  lastPublished: '—',          weeklyDownloads: '—',         depth: 0, vuln: 'none',     outdated: false, spawnDelay: 0.0,  children: ['react','lodash','express','axios','moment','zod','prisma'] },
+  // direct deps
+  { id: 'react',      name: 'react',          version: '18.2.0',  sizeKb: 139,  license: 'MIT',         lastPublished: '8 mo ago',   weeklyDownloads: '22.4M',     depth: 1, vuln: 'none',     outdated: false, spawnDelay: 0.4,  children: ['react-dom','scheduler'] },
+  { id: 'lodash',     name: 'lodash',         version: '4.17.20', sizeKb: 531,  license: 'MIT',         lastPublished: '4 yr ago',   weeklyDownloads: '47.1M',     depth: 1, vuln: 'warning',  outdated: true,  spawnDelay: 0.5,  children: ['lodash-fp'] },
+  { id: 'express',    name: 'express',        version: '4.18.2',  sizeKb: 208,  license: 'MIT',         lastPublished: '1 yr ago',   weeklyDownloads: '32.8M',     depth: 1, vuln: 'none',     outdated: true,  spawnDelay: 0.6,  children: ['body-parser','cors','helmet'] },
+  { id: 'axios',      name: 'axios',          version: '1.4.0',   sizeKb: 43,   license: 'MIT',         lastPublished: '6 mo ago',   weeklyDownloads: '39.2M',     depth: 1, vuln: 'none',     outdated: true,  spawnDelay: 0.7,  children: ['follow-redirects'] },
+  { id: 'moment',     name: 'moment',         version: '2.29.4',  sizeKb: 4290, license: 'MIT',         lastPublished: '2 yr ago',   weeklyDownloads: '13.6M',     depth: 1, vuln: 'critical', outdated: true,  spawnDelay: 0.8,  children: [] },
+  { id: 'zod',        name: 'zod',            version: '3.21.4',  sizeKb: 53,   license: 'MIT',         lastPublished: '7 mo ago',   weeklyDownloads: '9.7M',      depth: 1, vuln: 'none',     outdated: false, spawnDelay: 0.9,  children: [] },
+  { id: 'prisma',     name: '@prisma/client', version: '5.1.1',   sizeKb: 712,  license: 'Apache-2.0',  lastPublished: '2 mo ago',   weeklyDownloads: '4.1M',      depth: 1, vuln: 'none',     outdated: false, spawnDelay: 1.0,  children: ['prisma-engines'] },
+  // transitive
+  { id: 'react-dom',      name: 'react-dom',      version: '18.2.0', sizeKb: 130,  license: 'MIT',        lastPublished: '8 mo ago',  weeklyDownloads: '21.8M',    depth: 2, vuln: 'none',     outdated: false, spawnDelay: 1.2, children: [] },
+  { id: 'scheduler',      name: 'scheduler',      version: '0.23.0', sizeKb: 12,   license: 'MIT',        lastPublished: '8 mo ago',  weeklyDownloads: '22.0M',    depth: 2, vuln: 'none',     outdated: false, spawnDelay: 1.3, children: [] },
+  { id: 'lodash-fp',      name: 'lodash/fp',      version: '4.17.20',sizeKb: 14,   license: 'MIT',        lastPublished: '4 yr ago',  weeklyDownloads: '2.1M',     depth: 2, vuln: 'warning',  outdated: true,  spawnDelay: 1.4, children: [] },
+  { id: 'body-parser',    name: 'body-parser',    version: '1.20.2', sizeKb: 89,   license: 'MIT',        lastPublished: '1 yr ago',  weeklyDownloads: '22.0M',    depth: 2, vuln: 'none',     outdated: false, spawnDelay: 1.5, children: [] },
+  { id: 'cors',           name: 'cors',           version: '2.8.5',  sizeKb: 17,   license: 'MIT',        lastPublished: '5 yr ago',  weeklyDownloads: '17.3M',    depth: 2, vuln: 'none',     outdated: true,  spawnDelay: 1.6, children: [] },
+  { id: 'helmet',         name: 'helmet',         version: '7.0.0',  sizeKb: 24,   license: 'MIT',        lastPublished: '8 mo ago',  weeklyDownloads: '3.8M',     depth: 2, vuln: 'none',     outdated: false, spawnDelay: 1.7, children: [] },
+  { id: 'follow-redirects',name:'follow-redirects',version:'1.15.2', sizeKb: 48,   license: 'MIT',        lastPublished: '5 mo ago',  weeklyDownloads: '29.4M',    depth: 2, vuln: 'critical', outdated: false, spawnDelay: 1.8, children: [] },
+  { id: 'prisma-engines',  name: '@prisma/engines',version:'5.1.1',  sizeKb: 52000,license:'Apache-2.0',  lastPublished: '2 mo ago',  weeklyDownloads: '4.0M',     depth: 2, vuln: 'none',     outdated: false, spawnDelay: 1.9, children: [] },
+];
+
+// ─── Canvas Setup ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('dep-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const colEl = canvas.parentElement as HTMLElement;
+const tooltipEl = document.getElementById('dep-tooltip') as HTMLElement;
+
+let W = 0, H = 0, dpr = 1;
+let mouse = { x: -9999, y: -9999 };
+let frame = 0;
+let startTime = performance.now();
+
+let nodes: DepNode[] = [];
+let edges: DepEdge[] = [];
+const tooltip: Tooltip = { visible: false, nodeId: null, x: 0, y: 0 };
+
+// ─── Layout ───────────────────────────────────────────────────────────────────
+
+function buildGraph(): void {
+  nodes = [];
+  edges = [];
+
+  const cx = W / 2;
+  const cy = H / 2;
+
+  // Radii for each depth
+  const depthRadius = [0, Math.min(W, H) * 0.28, Math.min(W, H) * 0.45];
+
+  // Node sizes
+  const depthNodeRadius = [28, 20, 13];
+
+  // Build nodes with positions
+  for (const raw of RAW_NODES) {
+    const r = depthRadius[raw.depth] ?? depthRadius[depthRadius.length - 1]!;
+    const peers = RAW_NODES.filter(n => n.depth === raw.depth);
+    const idx = peers.indexOf(raw);
+    const total = peers.length;
+
+    let angle = 0;
+    if (raw.depth === 0) {
+      angle = 0;
+    } else {
+      // Spread evenly around circle, offset per depth to avoid overlap
+      const offset = raw.depth === 1 ? -Math.PI / 2 : -Math.PI / 4;
+      angle = offset + (idx / total) * Math.PI * 2;
+    }
+
+    const tx = cx + Math.cos(angle) * r;
+    const ty = cy + Math.sin(angle) * r;
+
+    const nodeRadius = depthNodeRadius[raw.depth] ?? 10;
+
+    nodes.push({
+      ...raw,
+      x: cx, // start from center
+      y: cy,
+      tx,
+      ty,
+      radius: nodeRadius,
+      floatPhase: Math.random() * Math.PI * 2,
+      floatAmpX: 2 + Math.random() * 3,
+      floatAmpY: 2 + Math.random() * 3,
+      alpha: 0,
+    });
+  }
+
+  // Build edges
+  for (const node of nodes) {
+    for (const childId of node.children) {
+      edges.push({
+        fromId: node.id,
+        toId: childId,
+        alpha: 0,
+        spawnDelay: node.spawnDelay + 0.15,
+        dashOffset: 0,
+      });
+    }
+  }
+}
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = colEl.getBoundingClientRect();
+  W = rect.width;
+  H = rect.height || 560;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+  buildGraph();
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function nodeColor(node: DepNode): string {
+  if (node.depth === 0) return '#6366f1';
+  if (node.depth === 1) return '#818cf8';
+  return '#4b5563';
+}
+
+function nodeGlowColor(node: DepNode): string {
+  if (node.vuln === 'critical') return '#f43f5e';
+  if (node.vuln === 'warning')  return '#fbbf24';
+  if (node.outdated)            return '#fb923c';
+  return nodeColor(node);
+}
+
+function formatKb(kb: number): string {
+  if (kb >= 1000) return (kb / 1000).toFixed(1) + ' MB';
+  return kb + ' kB';
+}
+
+// ─── Drawing ──────────────────────────────────────────────────────────────────
+
+function drawBackground(): void {
+  ctx.fillStyle = '#060a14';
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle radial glow at center
+  const grd = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.min(W, H) * 0.55);
+  grd.addColorStop(0, 'rgba(99,102,241,0.05)');
+  grd.addColorStop(1, 'rgba(99,102,241,0)');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, W, H);
+}
+
+function drawEdge(edge: DepEdge, t: number): void {
+  const elapsed = t - edge.spawnDelay;
+  if (elapsed < 0) return;
+
+  edge.alpha = Math.min(1, elapsed / 0.5);
+
+  const fromNode = nodes.find(n => n.id === edge.fromId);
+  const toNode   = nodes.find(n => n.id === edge.toId);
+  if (!fromNode || !toNode) return;
+
+  const x1 = fromNode.x;
+  const y1 = fromNode.y;
+  const x2 = toNode.x;
+  const y2 = toNode.y;
+
+  // Bezier control point — curve outward slightly
+  const mx = (x1 + x2) / 2;
+  const my = (y1 + y2) / 2;
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  const perp = len > 0 ? 18 : 0;
+  const cpx = mx - (dy / len) * perp;
+  const cpy = my + (dx / len) * perp;
+
+  ctx.save();
+  ctx.globalAlpha = edge.alpha * 0.55;
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.quadraticCurveTo(cpx, cpy, x2, y2);
+  ctx.strokeStyle = toNode.vuln !== 'none' ? 'rgba(244,63,94,0.6)' : 'rgba(99,102,241,0.45)';
+  ctx.lineWidth = toNode.depth === 2 ? 0.75 : 1.25;
+  ctx.setLineDash([4, 5]);
+  edge.dashOffset -= 0.4;
+  ctx.lineDashOffset = edge.dashOffset;
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  // Animated dot traveling along edge
+  if (edge.alpha >= 1 && Math.random() < 0.004) {
+    // handled in drawEdgePulse
+  }
+}
+
+function drawNode(node: DepNode, t: number): void {
+  const elapsed = t - node.spawnDelay;
+  if (elapsed < 0) return;
+
+  // Fade and move to target
+  node.alpha = Math.min(1, elapsed / 0.6);
+  node.x += (node.tx - node.x) * 0.06;
+  node.y += (node.ty - node.y) * 0.06;
+
+  // Gentle float around target
+  const floatT = t * 0.8;
+  const fx = node.tx + Math.sin(floatT + node.floatPhase) * node.floatAmpX;
+  const fy = node.ty + Math.cos(floatT * 1.1 + node.floatPhase) * node.floatAmpY;
+
+  // Update actual position toward float target
+  node.x += (fx - node.x) * 0.03;
+  node.y += (fy - node.y) * 0.03;
+
+  const r = node.radius;
+  const col = nodeColor(node);
+  const glowCol = nodeGlowColor(node);
+
+  const rect = canvas.getBoundingClientRect();
+  const mx = mouse.x - rect.left;
+  const my = mouse.y - rect.top;
+  const dist = Math.sqrt((mx - node.x) ** 2 + (my - node.y) ** 2);
+  const isHov = dist < r + 8;
+
+  ctx.save();
+  ctx.globalAlpha = node.alpha;
+
+  // Glow
+  const glowR = isHov ? r * 2.8 : r * 1.8;
+  const grd = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, glowR);
+  grd.addColorStop(0, hexToRgba(glowCol, isHov ? 0.35 : 0.15));
+  grd.addColorStop(1, hexToRgba(glowCol, 0));
+  ctx.fillStyle = grd;
+  ctx.beginPath();
+  ctx.arc(node.x, node.y, glowR, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Node circle
+  ctx.beginPath();
+  ctx.arc(node.x, node.y, r, 0, Math.PI * 2);
+  ctx.fillStyle = node.depth === 0
+    ? 'rgba(15,18,35,1)'
+    : node.depth === 1
+      ? 'rgba(12,15,30,1)'
+      : 'rgba(10,12,24,1)';
+  ctx.fill();
+
+  // Border
+  ctx.strokeStyle = isHov ? glowCol : hexToRgba(col, node.depth === 2 ? 0.4 : 0.75);
+  ctx.lineWidth = isHov ? 2 : node.depth === 0 ? 2.5 : 1.5;
+  ctx.stroke();
+
+  // Label
+  if (node.depth <= 1) {
+    ctx.font = `${node.depth === 0 ? '700' : '600'} ${node.depth === 0 ? 11 : 9}px -apple-system, sans-serif`;
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const label = node.depth === 0 ? node.name : node.name.replace('@prisma/', '').replace('@', '');
+    ctx.fillText(label, node.x, node.y - 3);
+
+    if (node.depth === 1) {
+      ctx.font = '500 7.5px -apple-system, sans-serif';
+      ctx.fillStyle = hexToRgba(col, 0.75);
+      ctx.fillText(node.version, node.x, node.y + 7);
+    } else {
+      // root: show version below
+      ctx.font = '400 8px -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.fillText(node.version, node.x, node.y + 9);
+    }
+  } else {
+    // transitive: just a dot
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = hexToRgba(col, 0.6);
+    ctx.fill();
+  }
+
+  // Vulnerability / outdated badge
+  if (node.vuln !== 'none' || node.outdated) {
+    const badgeX = node.x + r * 0.65;
+    const badgeY = node.y - r * 0.65;
+    const bc = node.vuln === 'critical' ? '#f43f5e'
+              : node.vuln === 'warning'  ? '#fbbf24'
+              : '#fb923c';
+
+    // Shield
+    ctx.save();
+    ctx.translate(badgeX, badgeY);
+    ctx.scale(0.55, 0.55);
+    ctx.beginPath();
+    ctx.moveTo(0, -9);
+    ctx.lineTo(7, -5);
+    ctx.lineTo(7, 2);
+    ctx.quadraticCurveTo(7, 9, 0, 12);
+    ctx.quadraticCurveTo(-7, 9, -7, 2);
+    ctx.lineTo(-7, -5);
+    ctx.closePath();
+    ctx.fillStyle = bc;
+    ctx.globalAlpha = node.alpha * 0.9;
+    ctx.fill();
+    ctx.restore();
+
+    // Exclamation
+    ctx.save();
+    ctx.globalAlpha = node.alpha;
+    ctx.font = 'bold 5px sans-serif';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('!', badgeX, badgeY + 1);
+    ctx.restore();
+  }
+
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  // Tooltip
+  if (isHov && node.alpha > 0.8) {
+    tooltip.visible = true;
+    tooltip.nodeId = node.id;
+    tooltip.x = node.x + r + 10;
+    tooltip.y = node.y - 40;
+  }
+}
+
+function hexToRgba(hex: string, a: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function renderTooltip(): void {
+  if (!tooltip.visible || !tooltip.nodeId) {
+    tooltipEl.classList.remove('visible');
+    return;
+  }
+
+  const node = nodes.find(n => n.id === tooltip.nodeId);
+  if (!node) { tooltipEl.classList.remove('visible'); return; }
+
+  const col = nodeColor(node);
+  const vulnStr = node.vuln === 'critical'
+    ? `<span style="color:#f43f5e">&#9650; Critical vuln</span>`
+    : node.vuln === 'warning'
+      ? `<span style="color:#fbbf24">&#9651; Moderate vuln</span>`
+      : '';
+  const outdatedStr = node.outdated
+    ? `<span style="color:#fb923c">⟳ Outdated</span>`
+    : '';
+  const flags = [vulnStr, outdatedStr].filter(Boolean).join(' &nbsp; ');
+
+  const sizeStr = node.sizeKb > 0 ? formatKb(node.sizeKb) : '—';
+
+  tooltipEl.innerHTML = `
+    <div style="font-weight:700;color:${col};margin-bottom:3px">${node.name} <span style="color:rgba(255,255,255,0.35);font-weight:400">${node.version}</span></div>
+    ${node.depth === 0 ? '' : `<div style="display:flex;gap:8px;font-size:0.6875rem;margin-bottom:4px">${flags || '<span style="color:rgba(255,255,255,0.4)">No issues</span>'}</div>`}
+    <div style="color:rgba(255,255,255,0.5);font-size:0.6875rem;line-height:1.8">
+      Size: <span style="color:rgba(255,255,255,0.8)">${sizeStr}</span><br>
+      License: <span style="color:rgba(255,255,255,0.8)">${node.license}</span><br>
+      Published: <span style="color:rgba(255,255,255,0.8)">${node.lastPublished}</span><br>
+      Weekly dl: <span style="color:rgba(255,255,255,0.8)">${node.weeklyDownloads}</span>
+    </div>
+  `;
+
+  // Clamp position
+  const tipW = 210;
+  const tipH = 110;
+  let tx = tooltip.x;
+  let ty = tooltip.y;
+  if (tx + tipW > W - 12) tx = W - tipW - 12;
+  if (ty + tipH > H - 12) ty = H - tipH - 12;
+  if (ty < 8) ty = 8;
+
+  tooltipEl.style.left = tx + 'px';
+  tooltipEl.style.top  = ty + 'px';
+  tooltipEl.classList.add('visible');
+}
+
+// ─── Animation Loop ───────────────────────────────────────────────────────────
+
+function tick(): void {
+  frame++;
+  const t = (performance.now() - startTime) / 1000;
+
+  tooltip.visible = false;
+  tooltip.nodeId = null;
+
+  ctx.clearRect(0, 0, W, H);
+  drawBackground();
+
+  // Edges behind nodes
+  for (const edge of edges) drawEdge(edge, t);
+
+  // Nodes on top
+  for (const node of nodes) drawNode(node, t);
+
+  renderTooltip();
+
+  requestAnimationFrame(tick);
+}
+
+// ─── Events ───────────────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+});
+
+canvas.addEventListener('mouseleave', () => {
+  mouse.x = -9999;
+  mouse.y = -9999;
+});
+
+const ro = new ResizeObserver(() => {
+  startTime = performance.now();
+  resize();
+});
+ro.observe(colEl);
+resize();
+tick();
+</script>
