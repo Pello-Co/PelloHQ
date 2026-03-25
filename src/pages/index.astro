@@ -4440,8 +4440,8 @@ products, built for you.</h2>
     const color = section?.style.getPropertyValue('--product-color')
                || altColorEl?.style.getPropertyValue('--product-color')
                || '#6366f1';
-    card.style.background = `linear-gradient(135deg, ${color}08 0%, rgba(6, 7, 18, 0.75) 50%, ${color}05 100%)`;
-    card.style.borderColor = `${color}15`;
+    card.style.background = `linear-gradient(135deg, ${color}12 0%, rgba(6, 7, 18, 0.70) 50%, ${color}08 100%)`;
+    card.style.borderColor = `${color}30`;
 
     // Resize observer — watch soc-canvas-col for product 3, canvas for product 1, card otherwise
     const roTarget = i === 3 ? (card.querySelector('.soc-canvas-col') as HTMLElement || card)
