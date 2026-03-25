@@ -22,7 +22,7 @@ let frame = 0;
 function resize() {
   const par = canvas.parentElement!;
   W = Math.min(900, par.clientWidth - 32);
-  H = Math.round(W * 0.5);
+  H = Math.round(W * 0.52);
   canvas.width = W * dpr;
   canvas.height = H * dpr;
   canvas.style.width = W + 'px';
@@ -202,7 +202,7 @@ function drawSparkline(x: number, y: number, w: number, h: number, data: number[
 
 // ─── Layout Constants ─────────────────────────────────────────────────────────
 const PAD = 8;
-const STATS_H = 36;
+const STATS_H = 40;
 const GAP = 6;
 
 // ─── Stats Bar ────────────────────────────────────────────────────────────────
@@ -255,17 +255,17 @@ function drawStatsBar() {
     ctx.fill();
 
     // Label
-    ctx.font = '500 7px -apple-system, sans-serif';
-    ctx.fillStyle = s.accent + '80';
+    ctx.font = '500 8px -apple-system, sans-serif';
+    ctx.fillStyle = s.accent + '90';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText(s.label, cx + 20, PAD + 7);
+    ctx.fillText(s.label, cx + 20, PAD + 6);
 
     // Value
-    ctx.font = '700 12px -apple-system, sans-serif';
+    ctx.font = '700 14px -apple-system, sans-serif';
     ctx.fillStyle = BRIGHT;
     ctx.textBaseline = 'bottom';
-    ctx.fillText(s.value, cx + 20, PAD + STATS_H - 5);
+    ctx.fillText(s.value, cx + 20, PAD + STATS_H - 4);
 
     // Divider
     if (i < stats.length - 1) {
@@ -286,7 +286,7 @@ let hoveredCell: { row: number; col: number } | null = null;
 function drawGrid() {
   const gridTop = PAD + STATS_H + GAP;
   const gridH = H - gridTop - PAD;
-  const gridW = Math.floor(W * 0.6);
+  const gridW = Math.floor(W * 0.55);
 
   rr(PAD, gridTop, gridW, gridH, 8);
   ctx.fillStyle = PANEL;
@@ -302,7 +302,7 @@ function drawGrid() {
   const rowH = (gridH - headerH - 8) / CAMPAIGNS.length;
 
   // Title
-  ctx.font = '600 8px -apple-system, sans-serif';
+  ctx.font = '600 9px -apple-system, sans-serif';
   ctx.fillStyle = DIM;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
@@ -330,16 +330,16 @@ function drawGrid() {
     ctx.stroke();
     ctx.shadowBlur = 0;
     ctx.restore();
-    ctx.font = '700 7px -apple-system, sans-serif';
+    ctx.font = '700 8px -apple-system, sans-serif';
     ctx.fillStyle = p.color;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(p.abbr, px, py - 3.5);
 
     // Name below
-    ctx.font = '400 7px -apple-system, sans-serif';
-    ctx.fillStyle = DIM;
-    ctx.fillText(p.name, px, py + 9);
+    ctx.font = '500 8px -apple-system, sans-serif';
+    ctx.fillStyle = MID;
+    ctx.fillText(p.name, px, py + 10);
   }
 
   // Divider
@@ -381,14 +381,14 @@ function drawGrid() {
     }
 
     // Campaign name
-    ctx.font = '500 8px -apple-system, sans-serif';
+    ctx.font = '500 10px -apple-system, sans-serif';
     ctx.fillStyle = MID;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(camp.name, PAD + 20, dotY - 4);
-    ctx.font = '400 7px -apple-system, sans-serif';
+    ctx.font = '400 8px -apple-system, sans-serif';
     ctx.fillStyle = statusCol[camp.status] + 'bb';
-    ctx.fillText(camp.status.toUpperCase(), PAD + 20, dotY + 6);
+    ctx.fillText(camp.status.toUpperCase(), PAD + 20, dotY + 7);
 
     // Grid cells
     for (let c = 0; c < PLATFORMS.length; c++) {
@@ -429,7 +429,7 @@ function drawGrid() {
       }
 
       // CTR
-      ctx.font = `600 ${isHov ? 9 : 8}px -apple-system, sans-serif`;
+      ctx.font = `600 ${isHov ? 11 : 10}px -apple-system, sans-serif`;
       ctx.fillStyle = perfTextColor(cell.perf);
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
@@ -490,7 +490,7 @@ function drawCopyPanel(gridW: number, gridTop: number, gridH: number) {
   ctx.stroke();
 
   // Title
-  ctx.font = '600 8px -apple-system, sans-serif';
+  ctx.font = '600 9px -apple-system, sans-serif';
   ctx.fillStyle = DIM;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
@@ -566,24 +566,24 @@ function drawCopyPanel(gridW: number, gridTop: number, gridH: number) {
       ctx.fillStyle = GREEN;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('★ WINNER', cx + cw - 26, cy + 8);
+      ctx.fillText('★ WINNER', cx + cw - 26, cy + 9);
     }
 
     // Rank
-    ctx.font = '600 8px -apple-system, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.font = '600 9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText(`#${i + 1}`, cx + 6, cy + 4);
+    ctx.fillText(`#${i + 1}`, cx + 8, cy + 4);
 
     // Headline
-    ctx.font = '500 9px -apple-system, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    ctx.fillText(v.headline, cx + 22, cy + 4);
+    ctx.font = '600 10px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.fillText(v.headline, cx + 24, cy + 4);
 
     // CTR right-aligned
     const ctrColor = v.status === 'winner' ? GREEN : v.ctr > 2 ? '#a78bfa' : AMBER;
-    ctx.font = '700 9px -apple-system, sans-serif';
+    ctx.font = '700 11px -apple-system, sans-serif';
     ctx.fillStyle = ctrColor;
     ctx.textAlign = 'right';
     ctx.fillText(`${v.ctr}%`, cx + cw - (v.status === 'winner' ? 52 : 6), cy + 4);
@@ -619,12 +619,12 @@ function drawCopyPanel(gridW: number, gridTop: number, gridH: number) {
     }
 
     // Metrics row
-    ctx.font = '400 7px -apple-system, sans-serif';
+    ctx.font = '400 8px -apple-system, sans-serif';
     ctx.fillStyle = DIM;
     ctx.textAlign = 'left';
-    ctx.fillText(`ROAS ${v.roas}x  ·  ${v.conv} conv`, cx + 6, cy + 24);
+    ctx.fillText(`ROAS ${v.roas}x  ·  ${v.conv} conv`, cx + 8, cy + 25);
     ctx.textAlign = 'right';
-    ctx.fillText(`vs best: ${Math.round(v.bar * 100)}%`, cx + cw - 6, cy + 24);
+    ctx.fillText(`vs best: ${Math.round(v.bar * 100)}%`, cx + cw - 6, cy + 25);
   });
 
   // Divider before killed section
@@ -637,7 +637,7 @@ function drawCopyPanel(gridW: number, gridTop: number, gridH: number) {
   ctx.stroke();
 
   // Killed label
-  ctx.font = '600 7px -apple-system, sans-serif';
+  ctx.font = '600 8px -apple-system, sans-serif';
   ctx.fillStyle = RED + '80';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
@@ -670,8 +670,8 @@ function drawCopyPanel(gridW: number, gridTop: number, gridH: number) {
     ctx.beginPath(); ctx.moveTo(xc + 3, yc - 3); ctx.lineTo(xc - 3, yc + 3); ctx.stroke();
 
     // Headline with strikethrough
-    ctx.font = '400 8px -apple-system, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '400 9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(v.headline, kx + 20, ky + 9);
@@ -684,7 +684,7 @@ function drawCopyPanel(gridW: number, gridTop: number, gridH: number) {
     ctx.stroke();
 
     // Reason
-    ctx.font = '500 7px -apple-system, sans-serif';
+    ctx.font = '500 8px -apple-system, sans-serif';
     ctx.fillStyle = RED + '90';
     ctx.textAlign = 'right';
     ctx.fillText(v.killReason || '', kx + kw - 6, ky + 9);
