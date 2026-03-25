@@ -129,7 +129,7 @@ let mouse = { x: -9999, y: -9999 };
 let frame = 0;
 
 // Sim time: starts at 10:30, advances slowly
-let simHour = 10.5;
+let simHour = new Date().getHours() + new Date().getMinutes() / 60;
 const SIM_SPEED = 0.0003; // hours per frame at 60fps → ~1 hour per ~55 seconds
 
 // Interaction state
@@ -531,7 +531,7 @@ function drawDigitalReadout(simH: number) {
 
   ctx.font = `400 ${Math.round(innerClearR * 0.13)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
   ctx.fillStyle = 'rgba(165,180,252,0.6)';
-  ctx.fillText('SIMULATION', cx, tyBase + innerClearR * 0.25);
+  ctx.fillText('LIVE', cx, tyBase + innerClearR * 0.25);
 }
 
 // ─── Drawing: Legend ──────────────────────────────────────────────────────────
@@ -592,7 +592,8 @@ function drawLegend() {
     ctx.fillStyle = isDim ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.82)';
     ctx.fillText(agent.name, ix + dotR * 2 + 8, iy);
 
-    legendItems.push({ agent, x: ix + dotR, y: iy, r: dotR + 14 });
+    const textW = ctx.measureText(agent.name).width;
+    legendItems.push({ agent, x: ix, y: iy, r: dotR, w: dotR * 2 + 8 + textW + 8, h: itemH });
   }
 }
 
@@ -724,9 +725,8 @@ function updateInteraction() {
   // Check legend hover
   let newHoveredAgent: string | null = null;
   for (const item of legendItems) {
-    const dx = mouse.x - item.x;
-    const dy = mouse.y - item.y;
-    if (Math.sqrt(dx * dx + dy * dy) < item.r) {
+    if (mouse.x >= item.x && mouse.x <= item.x + item.w &&
+        mouse.y >= item.y - item.h / 2 && mouse.y <= item.y + item.h / 2) {
       newHoveredAgent = item.agent.id;
       break;
     }
@@ -765,7 +765,7 @@ function draw() {
   ctx.clearRect(0, 0, W, H);
 
   // Advance sim time
-  simHour = (simHour + SIM_SPEED) % 24;
+  simHour = new Date().getHours() + new Date().getMinutes() / 60;
 
   // Background radial glow
   const bgGrd = ctx.createRadialGradient(cx, cy, 0, cx, cy, outerR * 1.2);
