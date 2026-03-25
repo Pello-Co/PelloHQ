@@ -607,6 +607,16 @@ custom code.</h2>
   .product-card[data-product="5"] .ps-info .text-body-lg { background: rgba(124, 58, 237, 0.06) !important; border: 1px solid rgba(124, 58, 237, 0.15) !important; }
   .product-card[data-product="6"] .ps-info .text-body-lg { background: rgba(79, 70, 229, 0.06) !important; border: 1px solid rgba(79, 70, 229, 0.15) !important; }
   .product-card[data-product="7"] .ps-info .text-body-lg { background: rgba(99, 102, 241, 0.06) !important; border: 1px solid rgba(99, 102, 241, 0.15) !important; }
+
+  /* Explicit card tints for PelloFlow and PelloBuild */
+  .product-card[data-product="6"] {
+    background: linear-gradient(135deg, rgba(79,70,229,0.06) 0%, rgba(6,7,18,0.75) 50%, rgba(79,70,229,0.04) 100%) !important;
+    border-color: rgba(79,70,229,0.12) !important;
+  }
+  .product-card[data-product="7"] {
+    background: linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(6,7,18,0.75) 50%, rgba(99,102,241,0.04) 100%) !important;
+    border-color: rgba(99,102,241,0.12) !important;
+  }
   /* Prevent GSAP opacity animation from breaking backdrop-filter on product cards */
   .product-card .ps-visual,
   .product-card .ps-info,
@@ -4426,7 +4436,10 @@ custom code.</h2>
 
     // Apply product colour tint to card background
     const section = card.querySelector('.ps-section') as HTMLElement|null;
-    const color = section?.style.getPropertyValue('--product-color') || '#6366f1';
+    const altColorEl = card.querySelector('[style*="--product-color"]') as HTMLElement|null;
+    const color = section?.style.getPropertyValue('--product-color')
+               || altColorEl?.style.getPropertyValue('--product-color')
+               || '#6366f1';
     card.style.background = `linear-gradient(135deg, ${color}08 0%, rgba(6, 7, 18, 0.75) 50%, ${color}05 100%)`;
     card.style.borderColor = `${color}15`;
 
