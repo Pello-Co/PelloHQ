@@ -56,7 +56,7 @@ const TEXT_MID    = 'rgba(255,255,255,0.65)';
 const TEXT_BRIGHT = '#ffffff';
 const HEADER_H    = 50;      // stats bar
 const GAP         = 6;       // px between panels
-const SIM_START_H = 10.25;   // 10:15 in decimal hours
+const SIM_START_H = new Date().getHours() + new Date().getMinutes() / 60;
 
 // ─── Agent definitions ────────────────────────────────────────────────────────
 
@@ -78,6 +78,7 @@ const AGENTS: Agent[] = [
   { id: 'ops',     name: 'Operations', initials: 'OP', color: '#f59e0b', active: true,  tasksToday: 4, completed: 2, nextTask: 'Invoice Process',  nextIn: '45m' },
   { id: 'hr',      name: 'HR',         initials: 'HR', color: '#22c55e', active: true,  tasksToday: 3, completed: 1, nextTask: 'Payroll Sync',     nextIn: '1h 45m' },
   { id: 'reach',   name: 'Outreach',   initials: 'OT', color: '#3b82f6', active: false, tasksToday: 4, completed: 2, nextTask: 'Cold Email',       nextIn: '45m' },
+  { id: 'data',    name: 'Analytics',  initials: 'AN', color: '#a855f7', active: true,  tasksToday: 6, completed: 3, nextTask: 'Revenue Report',  nextIn: '22m' },
 ];
 
 // ─── Weekly calendar data ─────────────────────────────────────────────────────
@@ -92,13 +93,13 @@ interface DayData {
 }
 
 const WEEK: DayData[] = [
-  { label:'Mon', date:23, isToday:false, agentTasks:[2,2,1,1,2], total:8,  donePercent:100 },
-  { label:'Tue', date:24, isToday:false, agentTasks:[3,2,2,1,2], total:10, donePercent:100 },
-  { label:'Wed', date:25, isToday:true,  agentTasks:[5,5,4,3,4], total:21, donePercent:40  },
-  { label:'Thu', date:26, isToday:false, agentTasks:[3,3,2,2,3], total:13, donePercent:0   },
-  { label:'Fri', date:27, isToday:false, agentTasks:[2,3,2,2,2], total:11, donePercent:0   },
-  { label:'Sat', date:28, isToday:false, agentTasks:[0,1,1,0,0], total:2,  donePercent:0   },
-  { label:'Sun', date:29, isToday:false, agentTasks:[0,0,1,0,0], total:1,  donePercent:0   },
+  { label:'Mon', date:23, isToday:false, agentTasks:[2,2,1,1,2,3], total:11, donePercent:100 },
+  { label:'Tue', date:24, isToday:false, agentTasks:[3,2,2,1,2,4], total:14, donePercent:100 },
+  { label:'Wed', date:25, isToday:true,  agentTasks:[5,5,4,3,4,6], total:27, donePercent:40  },
+  { label:'Thu', date:26, isToday:false, agentTasks:[3,3,2,2,3,5], total:18, donePercent:0   },
+  { label:'Fri', date:27, isToday:false, agentTasks:[2,3,2,2,2,4], total:15, donePercent:0   },
+  { label:'Sat', date:28, isToday:false, agentTasks:[0,1,1,0,0,1], total:3,  donePercent:0   },
+  { label:'Sun', date:29, isToday:false, agentTasks:[0,0,1,0,0,1], total:2,  donePercent:0   },
 ];
 
 // ─── Timeline task data ───────────────────────────────────────────────────────
@@ -142,6 +143,14 @@ const TASKS: Task[] = [
   { id:'r2', agentIdx:4, label:'LinkedIn Seq',      startH:9.0,   endH:9.5,   records:'340 profiles', integrations:'LinkedIn + Expandi',    costPerRun:'$0.28', successRate:'98.7%' },
   { id:'r3', agentIdx:4, label:'Cold Email',        startH:11.0,  endH:11.75, records:'620 emails',   integrations:'Lemlist + Instantly',   costPerRun:'$0.44', successRate:'96.8%' },
   { id:'r4', agentIdx:4, label:'Warm Leads',        startH:16.0,  endH:16.5,  records:'88 leads',     integrations:'Apollo + HubSpot',      costPerRun:'$0.15', successRate:'99.2%' },
+  { id:'r5', agentIdx:4, label:'Reply Handler',     startH:13.5,  endH:14.0,  records:'67 replies',   integrations:'Instantly + Slack',      costPerRun:'$0.08', successRate:'99.8%' },
+  // Analytics (5)
+  { id:'d1', agentIdx:5, label:'Revenue Report',    startH:8.0,   endH:8.5,   records:'$1.2M tracked',integrations:'Stripe + QuickBooks',    costPerRun:'$0.23', successRate:'100%'  },
+  { id:'d2', agentIdx:5, label:'Funnel Analysis',   startH:10.0,  endH:10.75, records:'4 funnels',    integrations:'GA4 + Mixpanel',         costPerRun:'$0.31', successRate:'99.4%' },
+  { id:'d3', agentIdx:5, label:'Churn Prediction',  startH:12.5,  endH:13.25, records:'847 users',    integrations:'Segment + BigQuery',     costPerRun:'$0.52', successRate:'97.2%' },
+  { id:'d4', agentIdx:5, label:'KPI Dashboard',     startH:15.0,  endH:15.5,  records:'24 metrics',   integrations:'Looker + dbt',           costPerRun:'$0.14', successRate:'100%'  },
+  { id:'d5', agentIdx:5, label:'Cohort Report',     startH:17.5,  endH:18.25, records:'12 cohorts',   integrations:'Amplitude + BigQuery',   costPerRun:'$0.38', successRate:'99.1%' },
+  { id:'d6', agentIdx:5, label:'Attribution Model',  startH:19.0,  endH:19.5,  records:'3,420 events', integrations:'GA4 + HubSpot',          costPerRun:'$0.42', successRate:'98.6%' },
 ];
 
 // ─── Activity feed ────────────────────────────────────────────────────────────
@@ -178,6 +187,9 @@ const FEED_POOL: Omit<FeedItem,'timeAgo'|'age'>[] = [
   { agentIdx:1, action:'completed', taskName:'Social Posts',       records:'5 posts'        },
   { agentIdx:0, action:'completed', taskName:'Deal Score Refresh', records:'94 deals'       },
   { agentIdx:2, action:'failed',    taskName:'Invoice Export',     records:'retry queued'   },
+  { agentIdx:5, action:'completed', taskName:'Revenue Report',    records:'$1.2M tracked'  },
+  { agentIdx:5, action:'completed', taskName:'Funnel Analysis',   records:'4 funnels'      },
+  { agentIdx:5, action:'started',   taskName:'Churn Prediction',  records:'running'        },
 ];
 let poolIdx = 0;
 
@@ -275,11 +287,11 @@ function drawStatsBar() {
   ctx.beginPath(); ctx.moveTo(0, HEADER_H); ctx.lineTo(W, HEADER_H); ctx.stroke();
 
   const stats = [
-    { label:'Active Agents', value:'5', prefix:'● ' },
-    { label:'Tasks Today',   value:'47', prefix:'⚡ ' },
-    { label:'Completion',    value:'98.7%', prefix:'✓ ' },
-    { label:'Cost Today',    value:'$4.82', prefix:'💰 ' },
-    { label:'Avg Duration',  value:'28m', prefix:'⏱ ' },
+    { label:'Active Agents', value:'5', prefix:'' },
+    { label:'Tasks Today',   value:'47', prefix:'' },
+    { label:'Completion',    value:'98.7%', prefix:'' },
+    { label:'Cost Today',    value:'$4.82', prefix:'' },
+    { label:'Next Task',     value:'2m 14s', prefix:'' },
   ];
 
   const segW = W / (stats.length + 1);
@@ -724,49 +736,103 @@ function drawTimeline() {
 
 function drawTaskPopup(px:number, py:number, task:Task) {
   const agent = AGENTS[task.agentIdx];
-  const popW  = 190;
-  const popH  = 148;
-  let bx = px + 10;
+  const popW  = 230;
+  const lineH = 15;
+
+  // Determine status
+  const isComplete = simTime > task.endH;
+  const isRunning = !isComplete && simTime >= task.startH;
+  const statusText = isComplete ? '✓ Completed' : isRunning ? '● Running' : '◦ Scheduled';
+  const statusColor = isComplete ? '#4ade80' : isRunning ? '#fbbf24' : TEXT_DIM;
+
+  const lines: { label:string; value:string; color?:string }[] = [
+    { label:'Agent',        value: agent.name,         color: agent.color },
+    { label:'Status',       value: statusText,         color: statusColor },
+    { label:'Window',       value: `${fmtH(task.startH)} — ${fmtH(task.endH)}` },
+    { label:'Duration',     value: `${Math.round((task.endH - task.startH) * 60)} minutes` },
+    { label:'Processed',    value: task.records },
+    { label:'Integrations', value: task.integrations },
+    { label:'Success',      value: task.successRate,   color: parseFloat(task.successRate) >= 99 ? '#4ade80' : parseFloat(task.successRate) >= 95 ? '#fbbf24' : '#ef4444' },
+    { label:'Cost / run',   value: task.costPerRun },
+    { label:'Schedule',     value: task.id.endsWith('1') ? 'Daily' : task.id.endsWith('2') ? 'Continuous' : 'Every 2h' },
+  ];
+
+  const popH = 18 + lineH + 6 + lines.length * lineH + 12;
+
+  let bx = px + 12;
   let by = py - popH / 2;
-  if (bx + popW > W - 4) bx = px - popW - 10;
+  if (bx + popW > W - 4) bx = px - popW - 12;
   by = Math.max(4, Math.min(H - popH - 4, by));
 
-  roundRect(bx, by, popW, popH, 7);
-  ctx.fillStyle = '#141628';
+  // Shadow
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.5)';
+  ctx.shadowBlur = 20;
+  roundRect(bx, by, popW, popH, 8);
+  ctx.fillStyle = 'rgba(12,10,28,0.96)';
   ctx.fill();
-  ctx.strokeStyle = agent.color + '66';
+  ctx.shadowBlur = 0;
+  ctx.restore();
+
+  // Border
+  roundRect(bx, by, popW, popH, 8);
+  ctx.strokeStyle = agent.color + '30';
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  const lx = bx + 10;
-  let ly = by + 10;
+  // Top accent bar
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(bx + 8, by);
+  ctx.lineTo(bx + popW - 8, by);
+  ctx.strokeStyle = agent.color;
+  ctx.lineWidth = 2;
+  ctx.globalAlpha = 0.6;
+  ctx.stroke();
+  ctx.restore();
+
+  const lx = bx + 14;
+  let ly = by + 14;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
 
-  ctx.font = '700 11px -apple-system, sans-serif';
+  // Title
+  ctx.font = '700 12px -apple-system, sans-serif';
   ctx.fillStyle = TEXT_BRIGHT;
-  ctx.fillText(task.label, lx, ly); ly += 15;
+  ctx.fillText(task.label, lx, ly);
 
-  ctx.font = '500 9px -apple-system, sans-serif';
+  // Running indicator dot next to title
+  if (isRunning) {
+    const tw = ctx.measureText(task.label).width;
+    const pulse = 0.5 + 0.5 * Math.sin(Date.now() * 0.005);
+    ctx.beginPath();
+    ctx.arc(lx + tw + 10, ly + 6, 3, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(251,191,36,${pulse})`;
+    ctx.fill();
+  }
 
-  const lines: { label:string; value:string; color?:string }[] = [
-    { label:'Agent',      value: agent.name,     color: agent.color },
-    { label:'Time',       value: `${fmtH(task.startH)} – ${fmtH(task.endH)}` },
-    { label:'Status',     value: task.endH < simTime ? 'Completed' : task.startH <= simTime ? 'Running' : 'Scheduled' },
-    { label:'Records',    value: task.records },
-    { label:'Duration',   value: `${Math.round((task.endH - task.startH) * 60)}m` },
-    { label:'Success',    value: task.successRate },
-    { label:'Next run',   value: 'Tomorrow 08:00' },
-    { label:'Integrations', value: task.integrations },
-    { label:'Cost/run',   value: task.costPerRun },
-  ];
+  ly += lineH + 4;
 
+  // Divider
+  ctx.beginPath();
+  ctx.moveTo(lx, ly);
+  ctx.lineTo(bx + popW - 14, ly);
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ly += 6;
+
+  // Data rows
+  ctx.font = '500 9.5px -apple-system, sans-serif';
   lines.forEach(line => {
     ctx.fillStyle = TEXT_DIM;
-    ctx.fillText(line.label + ':', lx, ly);
+    ctx.textAlign = 'left';
+    ctx.fillText(line.label, lx, ly);
     ctx.fillStyle = line.color || TEXT_MID;
-    ctx.fillText(line.value, lx + 70, ly);
-    ly += 13;
+    ctx.textAlign = 'right';
+    ctx.fillText(line.value, bx + popW - 14, ly);
+    ctx.textAlign = 'left';
+    ly += lineH;
   });
 }
 
@@ -960,9 +1026,8 @@ function frame(ts: number) {
   const dt = (ts - lastTime) / 1000;
   lastTime = ts;
 
-  // Advance sim time slowly (1 sim-minute per ~6 real seconds)
-  simTime += dt * (1 / 360);
-  if (simTime > TL_END_H) simTime = TL_START_H;
+  // Use real device time
+  simTime = new Date().getHours() + new Date().getMinutes() / 60 + new Date().getSeconds() / 3600;
 
   // Lerp agent opacities
   AGENTS.forEach((_, ai) => {
