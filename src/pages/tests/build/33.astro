@@ -1,0 +1,429 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloBuild — Migration Progress | Pello" description="PelloBuild manages large-scale system migrations end-to-end — live data streams, integrity checks, rollback controls, and real-time stakeholder dashboards.">
+  <Header />
+  <main id="main-content">
+    <section class="build-section" aria-labelledby="build-headline">
+      <div class="build-layout">
+        <div class="build-text">
+          <span class="build-badge">PelloBuild</span>
+          <h1 id="build-headline">Zero-Downtime Migration. Fully Observed.</h1>
+          <p>PelloBuild orchestrates complex system migrations with live data streaming, integrity verification, rollback controls, and stakeholder-ready progress dashboards.</p>
+          <ul class="build-pills" role="list">
+            <li>Full-stack development</li>
+            <li>Data infrastructure</li>
+            <li>Internal tooling</li>
+            <li>Systems integration</li>
+          </ul>
+          <div class="build-meta-row">
+            <div class="build-meta-item">
+              <span class="build-meta-val" id="meta-records">0</span>
+              <span class="build-meta-lbl">Records Migrated</span>
+            </div>
+            <div class="build-meta-item">
+              <span class="build-meta-val" id="meta-eta">—</span>
+              <span class="build-meta-lbl">ETA Remaining</span>
+            </div>
+            <div class="build-meta-item">
+              <span class="build-meta-val" id="meta-rate">0</span>
+              <span class="build-meta-lbl">Records/sec</span>
+            </div>
+          </div>
+        </div>
+        <div class="build-canvas-col">
+          <canvas id="build-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .build-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .build-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1.15fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .build-layout { grid-template-columns: 1fr; } }
+  .build-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .build-badge { display: inline-flex; align-items: center; padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6366f1; width: fit-content; }
+  .build-text h1 { font-size: clamp(1.875rem, 3.5vw, 2.75rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .build-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.6); max-width: 44ch; }
+  .build-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .build-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.7); }
+  .build-canvas-col { position: relative; width: 100%; min-height: 560px; border-radius: 12px; overflow: hidden; background: #080b18; border: 1px solid rgba(99,102,241,0.15); }
+  #build-canvas { display: block; width: 100%; height: 100%; position: absolute; inset: 0; cursor: default; }
+  .build-meta-row { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+  .build-meta-item { display: flex; flex-direction: column; gap: 0.2rem; }
+  .build-meta-val { font-size: 1.25rem; font-weight: 700; color: #6366f1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1; }
+  .build-meta-lbl { font-size: 0.6875rem; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.06em; }
+</style>
+
+<script>
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+interface DataStream {
+  label: string;
+  color: string;
+  progress: number; // 0-1
+  target: number;   // 0-1 final target
+  totalRecords: number;
+  integrity: 'ok' | 'warn' | 'checking';
+  throughput: number; // records/sec
+  particles: Particle[];
+}
+
+interface Particle {
+  x: number;
+  progress: number; // 0–1 across stream path
+  speed: number;
+  size: number;
+  alpha: number;
+  lane: number; // 0–2 vertical offset
+}
+
+interface LogEntry {
+  ts: string;
+  msg: string;
+  level: 'info' | 'warn' | 'error';
+}
+
+// ─── Data ────────────────────────────────────────────────────────────────────
+
+const STREAMS: DataStream[] = [
+  { label:'Users',    color:'#6366f1', progress:0.98, target:0.98, totalRecords:2847392, integrity:'ok',       throughput:0, particles:[] },
+  { label:'Orders',   color:'#8b5cf6', progress:0.76, target:0.76, totalRecords:9234817, integrity:'warn',     throughput:0, particles:[] },
+  { label:'Products', color:'#06b6d4', progress:0.89, target:0.89, totalRecords:431024,  integrity:'ok',       throughput:0, particles:[] },
+  { label:'Config',   color:'#10b981', progress:1.00, target:1.00, totalRecords:14892,   integrity:'ok',       throughput:0, particles:[] },
+  { label:'Events',   color:'#f97316', progress:0.54, target:0.54, totalRecords:58193420,integrity:'checking', throughput:0, particles:[] },
+];
+
+const LOG_ENTRIES: LogEntry[] = [
+  { ts:'14:23:41', msg:'Users batch 284/292 completed — 2.8M records verified', level:'info' },
+  { ts:'14:23:38', msg:'Orders integrity check: 14 duplicate keys detected', level:'warn' },
+  { ts:'14:23:35', msg:'Products batch 89/100 completed — checksum OK', level:'info' },
+  { ts:'14:23:31', msg:'Config migration complete — all 14,892 entries verified', level:'info' },
+  { ts:'14:23:28', msg:'Events stream reconnected after 2s pause', level:'warn' },
+  { ts:'14:23:24', msg:'Rollback checkpoint saved — snapshot id: snap_2847', level:'info' },
+  { ts:'14:23:20', msg:'Orders dedup running — 14 rows flagged for review', level:'warn' },
+  { ts:'14:23:17', msg:'Events schema migration: adding index on user_id', level:'info' },
+];
+
+let logScroll = 0;
+let logScrollTarget = 0;
+
+const metaRecords = document.getElementById('meta-records') as HTMLElement;
+const metaEta = document.getElementById('meta-eta') as HTMLElement;
+const metaRate = document.getElementById('meta-rate') as HTMLElement;
+let displayedRecords = 0;
+let totalRate = 0;
+
+// ─── Canvas ───────────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('build-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const col = canvas.parentElement as HTMLElement;
+let W = 0, H = 0, dpr = 1;
+let frame = 0;
+let hoveredStream: number = -1;
+let mouse = { x: -9999, y: -9999 };
+
+function hexToRgb(hex: string): [number,number,number] {
+  return [parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)];
+}
+
+function rr(x:number,y:number,w:number,h:number,r:number): void {
+  ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+}
+
+// ─── Layout ───────────────────────────────────────────────────────────────────
+
+function getLayout() {
+  const pad = 12;
+  const sysBoxW = W * 0.2, sysBoxH = 70;
+  const legacyX = pad, legacyY = pad;
+  const newX = W - pad - sysBoxW, newY = pad;
+  const streamAreaX = pad + sysBoxW + 8;
+  const streamAreaW = W - pad*2 - sysBoxW*2 - 16;
+  const progressAreaY = pad + sysBoxH + 16;
+  const progressAreaH = H * 0.42;
+  const timelineY = progressAreaY + progressAreaH + 10;
+  const timelineH = 32;
+  const logY = timelineY + timelineH + 10;
+  const logH = H - logY - pad;
+  return { pad, sysBoxW, sysBoxH, legacyX, legacyY, newX, newY, streamAreaX, streamAreaW, progressAreaY, progressAreaH, timelineY, timelineH, logY, logH };
+}
+
+// ─── Particles ────────────────────────────────────────────────────────────────
+
+function spawnParticle(stream: DataStream): void {
+  if (stream.progress >= 1 && Math.random() < 0.7) return;
+  stream.particles.push({
+    x: 0, progress: 0,
+    speed: 0.004 + Math.random() * 0.006,
+    size: 1.5 + Math.random() * 2,
+    alpha: 0.6 + Math.random() * 0.4,
+    lane: Math.floor(Math.random() * 3),
+  });
+}
+
+function updateParticles(): void {
+  for (const s of STREAMS) {
+    if (frame % 3 === 0 && s.progress < 1) spawnParticle(s);
+    s.particles = s.particles.filter(p => {
+      p.progress += p.speed;
+      return p.progress < 1;
+    });
+  }
+}
+
+// ─── Drawing ──────────────────────────────────────────────────────────────────
+
+function drawSystemBox(x: number, y: number, w: number, h: number, label: string, sublabel: string, color: string): void {
+  const [r,g,b] = hexToRgb(color);
+  rr(x, y, w, h, 8);
+  ctx.fillStyle = `rgba(${r},${g},${b},0.08)`; ctx.fill();
+  ctx.strokeStyle = `rgba(${r},${g},${b},0.35)`; ctx.lineWidth = 1; ctx.stroke();
+  ctx.font = '600 10px -apple-system,sans-serif'; ctx.fillStyle = `rgba(${r},${g},${b},1)`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(label, x + w/2, y + h*0.38);
+  ctx.font = '8px -apple-system,sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.fillText(sublabel, x + w/2, y + h*0.65);
+}
+
+function drawStreams(): void {
+  const lay = getLayout();
+  const n = STREAMS.length;
+  const rowH = lay.progressAreaH / n;
+  const streamStartX = lay.legacyX + lay.sysBoxW + 8;
+  const streamEndX = lay.newX - 8;
+
+  ctx.save();
+
+  STREAMS.forEach((s, i) => {
+    const [r,g,b] = hexToRgb(s.color);
+    const midY = lay.progressAreaY + i * rowH + rowH * 0.35;
+    const laneSpacing = 4;
+    const laneY = (lane: number) => midY + (lane - 1) * laneSpacing;
+
+    const isHov = hoveredStream === i;
+
+    // Progress bar background
+    const barY = lay.progressAreaY + i * rowH + rowH * 0.6;
+    const barH = 6;
+    const barX = streamStartX;
+    const barW = streamEndX - streamStartX;
+    rr(barX, barY, barW, barH, 3);
+    ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fill();
+
+    // Progress fill
+    const fillW = barW * s.progress;
+    if (fillW > 6) {
+      rr(barX, barY, fillW, barH, 3);
+      ctx.fillStyle = s.progress >= 1 ? `rgba(16,185,129,0.8)` : `rgba(${r},${g},${b},0.8)`; ctx.fill();
+    }
+
+    // Percentage
+    ctx.font = `600 9px -apple-system,sans-serif`; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = s.progress >= 1 ? 'rgba(16,185,129,0.9)' : `rgba(${r},${g},${b},0.9)`;
+    ctx.fillText((s.progress * 100).toFixed(0) + '%', barX + barW, barY + barH / 2);
+
+    // Label + records
+    ctx.font = '600 9px -apple-system,sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.fillText(s.label, barX, barY + barH / 2 - 10);
+    ctx.font = '7.5px -apple-system,sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillText(s.totalRecords.toLocaleString() + ' records', barX + 40, barY + barH / 2 - 10);
+
+    // Integrity badge
+    const intColor = s.integrity === 'ok' ? '#10b981' : s.integrity === 'warn' ? '#f59e0b' : '#6366f1';
+    const intLabel = s.integrity === 'ok' ? '✓ OK' : s.integrity === 'warn' ? '⚠ WARN' : '◌ CHK';
+    const ibW = 36;
+    rr(barX + barW - ibW - 42, barY + barH/2 - 15, ibW, 12, 6);
+    ctx.fillStyle = `${intColor}22`; ctx.fill();
+    ctx.strokeStyle = `${intColor}66`; ctx.lineWidth = 0.5; ctx.stroke();
+    ctx.font = '7px -apple-system,sans-serif'; ctx.fillStyle = intColor;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(intLabel, barX + barW - ibW/2 - 42, barY + barH/2 - 9);
+
+    // Particles
+    s.particles.forEach(p => {
+      const px = streamStartX + p.progress * (streamEndX - streamStartX);
+      const py = laneY(p.lane);
+      ctx.beginPath(); ctx.arc(px, py, p.size, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(${r},${g},${b},${p.alpha * (1 - Math.abs(p.progress - 0.5) * 0.5)})`;
+      ctx.fill();
+    });
+
+    // Hover throughput tooltip
+    if (isHov) {
+      const tip = `${s.throughput.toFixed(0)} rec/s`;
+      const tw = ctx.measureText(tip).width + 14;
+      const tx = streamStartX + (streamEndX - streamStartX)/2 - tw/2;
+      const ty = midY - 20;
+      rr(tx, ty, tw, 16, 4);
+      ctx.fillStyle = 'rgba(15,18,35,0.95)'; ctx.fill();
+      ctx.strokeStyle = `rgba(${r},${g},${b},0.4)`; ctx.lineWidth = 1; ctx.stroke();
+      ctx.font = '700 8px -apple-system,sans-serif'; ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(tip, tx + tw/2, ty + 8);
+    }
+  });
+  ctx.restore();
+}
+
+function drawTimeline(): void {
+  const lay = getLayout();
+  const phases = ['Plan','Prep','Users','Orders','Products','Events','Verify','Cutover'];
+  const currentPhase = 4; // 0-indexed
+  const n = phases.length;
+  const tw = (lay.streamAreaW) / n;
+  const tx = lay.legacyX + lay.sysBoxW + 8;
+  const ty = lay.timelineY;
+
+  ctx.font = '8px -apple-system,sans-serif'; ctx.textBaseline = 'middle';
+  phases.forEach((ph, i) => {
+    const phX = tx + i * tw;
+    const dotX = phX + tw/2, dotY = ty + 12;
+    const done = i < currentPhase, active = i === currentPhase;
+    const color = done ? '#10b981' : active ? '#6366f1' : 'rgba(255,255,255,0.15)';
+
+    if (i < n-1) {
+      ctx.beginPath(); ctx.moveTo(dotX + 6, dotY); ctx.lineTo(dotX + tw - 6, dotY);
+      ctx.strokeStyle = done ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1; ctx.stroke();
+    }
+
+    ctx.beginPath(); ctx.arc(dotX, dotY, active ? 5 : 4, 0, Math.PI*2);
+    ctx.fillStyle = color; ctx.fill();
+    if (active) {
+      ctx.beginPath(); ctx.arc(dotX, dotY, 8, 0, Math.PI*2);
+      ctx.strokeStyle = 'rgba(99,102,241,0.3)'; ctx.lineWidth = 1; ctx.stroke();
+    }
+
+    ctx.textAlign = 'center'; ctx.fillStyle = active ? '#fff' : done ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)';
+    ctx.fillText(ph, dotX, ty + 26);
+  });
+}
+
+function drawLog(): void {
+  const lay = getLayout();
+  const entryH = 18;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(lay.pad, lay.logY, W - lay.pad*2, lay.logH); ctx.clip();
+
+  logScroll += (logScrollTarget - logScroll) * 0.1;
+  LOG_ENTRIES.forEach((entry, i) => {
+    const ey = lay.logY + i * entryH - logScroll;
+    if (ey < lay.logY - entryH || ey > lay.logY + lay.logH) return;
+    const color = entry.level === 'error' ? '#ef4444' : entry.level === 'warn' ? '#f59e0b' : 'rgba(255,255,255,0.2)';
+    ctx.font = '7.5px monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(99,102,241,0.5)'; ctx.fillText(entry.ts, lay.pad + 4, ey + entryH/2);
+    ctx.fillStyle = color; ctx.fillText(entry.msg, lay.pad + 52, ey + entryH/2);
+  });
+  ctx.restore();
+}
+
+function simulateMigration(): void {
+  let totalRecords = 0, totalRate2 = 0;
+  for (const s of STREAMS) {
+    if (s.progress < s.target) {
+      s.progress = Math.min(s.target, s.progress + 0.0002 + Math.random() * 0.0004);
+    }
+    const rate = 1200 + Math.random() * 800;
+    s.throughput = rate;
+    totalRate2 += rate;
+    totalRecords += Math.round(s.progress * s.totalRecords);
+  }
+  totalRate = totalRate2;
+  displayedRecords += (totalRecords - displayedRecords) * 0.05;
+  metaRecords.textContent = Math.round(displayedRecords).toLocaleString();
+  metaRate.textContent = Math.round(totalRate).toLocaleString();
+
+  // ETA calc
+  const remaining = STREAMS.reduce((acc, s) => acc + (1 - s.progress) * s.totalRecords, 0);
+  const etaSec = totalRate > 0 ? remaining / totalRate : 0;
+  const etaMin = Math.ceil(etaSec / 60);
+  metaEta.textContent = etaMin > 0 ? `${etaMin}m` : 'Complete';
+
+  // Slowly scroll log
+  logScrollTarget = Math.min((LOG_ENTRIES.length - 3) * 18, logScrollTarget + 0.15);
+  if (logScrollTarget >= (LOG_ENTRIES.length - 3) * 18) logScrollTarget = 0;
+}
+
+function tick(): void {
+  frame++;
+  ctx.clearRect(0, 0, W, H);
+
+  // Subtle grid
+  ctx.fillStyle = 'rgba(99,102,241,0.012)';
+  for (let xx = 0; xx < W; xx += 28) ctx.fillRect(xx, 0, 1, H);
+  for (let yy = 0; yy < H; yy += 28) ctx.fillRect(0, yy, W, 1);
+
+  const lay = getLayout();
+
+  if (frame % 4 === 0) simulateMigration();
+  updateParticles();
+
+  // System boxes
+  drawSystemBox(lay.legacyX, lay.legacyY, lay.sysBoxW, lay.sysBoxH, 'Legacy', 'PostgreSQL 11', '#ef4444');
+  drawSystemBox(lay.newX, lay.newY, lay.sysBoxW, lay.sysBoxH, 'New Platform', 'PostgreSQL 16', '#10b981');
+
+  // Arrow indicators
+  ctx.font = '600 14px -apple-system,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(99,102,241,0.5)';
+  ctx.fillText('→', W/2, lay.legacyY + lay.sysBoxH/2);
+
+  // Overall progress header
+  const totalPct = STREAMS.reduce((a,s) => a + s.progress * s.totalRecords, 0) /
+                   STREAMS.reduce((a,s) => a + s.totalRecords, 0) * 100;
+  ctx.font = '700 11px -apple-system,sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.fillText('Migration Progress', lay.pad, lay.progressAreaY - 10);
+  ctx.font = '600 10px -apple-system,sans-serif'; ctx.textAlign = 'right';
+  ctx.fillStyle = '#6366f1';
+  ctx.fillText(totalPct.toFixed(1) + '% overall', W - lay.pad, lay.progressAreaY - 10);
+
+  drawStreams();
+  drawTimeline();
+
+  // Log header
+  ctx.font = '700 9px -apple-system,sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.fillText('Error Log', lay.pad, lay.logY - 8);
+
+  // Mouse for hover detection
+  const rect = canvas.getBoundingClientRect();
+  const mx = mouse.x - rect.left, my = mouse.y - rect.top;
+  hoveredStream = -1;
+  const rowH2 = lay.progressAreaH / STREAMS.length;
+  STREAMS.forEach((_, i) => {
+    const sy = lay.progressAreaY + i * rowH2;
+    if (my >= sy && my < sy + rowH2) hoveredStream = i;
+  });
+
+  drawLog();
+  requestAnimationFrame(tick);
+}
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const r = col.getBoundingClientRect();
+  W = r.width; H = r.height;
+  canvas.width = Math.round(W*dpr); canvas.height = Math.round(H*dpr);
+  canvas.style.width = W+'px'; canvas.style.height = H+'px';
+  ctx.scale(dpr, dpr);
+}
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+canvas.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+const ro = new ResizeObserver(() => resize());
+ro.observe(col);
+resize();
+tick();
+</script>

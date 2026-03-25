@@ -1,0 +1,435 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloBuild — Monitoring Dashboard | Pello" description="PelloBuild instruments everything — real-time observability dashboards, alerting, and metric visualisation built directly into your production infrastructure.">
+  <Header />
+  <main id="main-content">
+    <section class="build-section" aria-labelledby="build-headline">
+      <div class="build-layout">
+        <div class="build-text">
+          <span class="build-badge">PelloBuild</span>
+          <h1 id="build-headline">Full Observability. Real-Time. Always On.</h1>
+          <p>PelloBuild instruments your infrastructure end-to-end — CPU, memory, network, error rates — all surfaced in production-grade dashboards your team actually uses.</p>
+          <ul class="build-pills" role="list">
+            <li>Full-stack development</li>
+            <li>Data infrastructure</li>
+            <li>Internal tooling</li>
+            <li>Systems integration</li>
+          </ul>
+          <div class="build-status-row">
+            <div class="build-status-dot" id="status-dot"></div>
+            <span class="build-status-text" id="status-text">All Systems Operational</span>
+          </div>
+        </div>
+        <div class="build-canvas-col">
+          <canvas id="build-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .build-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .build-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1.15fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .build-layout { grid-template-columns: 1fr; } }
+  .build-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .build-badge { display: inline-flex; align-items: center; padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6366f1; width: fit-content; }
+  .build-text h1 { font-size: clamp(1.875rem, 3.5vw, 2.75rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .build-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.6); max-width: 44ch; }
+  .build-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .build-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.7); }
+  .build-canvas-col { position: relative; width: 100%; min-height: 560px; border-radius: 12px; overflow: hidden; background: #080b18; border: 1px solid rgba(99,102,241,0.15); }
+  #build-canvas { display: block; width: 100%; height: 100%; position: absolute; inset: 0; cursor: crosshair; }
+  .build-status-row { display: flex; align-items: center; gap: 0.5rem; }
+  .build-status-dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px #10b981; animation: pulse-dot 2s infinite; }
+  @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.5} }
+  .build-status-text { font-size: 0.875rem; color: rgba(255,255,255,0.6); }
+</style>
+
+<script>
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+interface MetricPoint { v: number; t: number; }
+interface Panel {
+  id: string; title: string; unit: string; color: string;
+  threshold: number; data: MetricPoint[]; type: 'area'|'bar'|'line2'|'gauge'|'bignum';
+  value: number; alerting: boolean;
+  data2?: MetricPoint[]; label2?: string;
+}
+interface Crosshair { x: number; panelIdx: number; }
+
+// ─── Data ─────────────────────────────────────────────────────────────────────
+
+function makeData(n: number, base: number, amp: number): MetricPoint[] {
+  const pts: MetricPoint[] = [];
+  let v = base + Math.random() * amp;
+  for (let i = 0; i < n; i++) {
+    v = Math.max(0, Math.min(100, v + (Math.random() - 0.48) * amp * 0.4));
+    pts.push({ v, t: i });
+  }
+  return pts;
+}
+
+const PANELS: Panel[] = [
+  { id:'cpu',   title:'CPU Usage',         unit:'%',   color:'#6366f1', threshold:80, type:'area',   value:0, alerting:false, data: makeData(60,45,25) },
+  { id:'mem',   title:'Memory',            unit:'%',   color:'#8b5cf6', threshold:85, type:'gauge',  value:0, alerting:false, data: makeData(60,60,15) },
+  { id:'net',   title:'Network I/O',       unit:'MB/s',color:'#06b6d4', threshold:90, type:'line2',  value:0, alerting:false, data: makeData(60,20,18), data2: makeData(60,12,14), label2:'Out' },
+  { id:'err',   title:'Error Rate',        unit:'/min',color:'#ef4444', threshold:10, type:'bar',    value:0, alerting:false, data: makeData(60,2,8) },
+  { id:'conn',  title:'Active Connections',unit:'',    color:'#10b981', threshold:900,type:'bignum', value:0, alerting:false, data: makeData(60,600,200) },
+];
+
+// ─── Canvas ───────────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('build-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const col = canvas.parentElement as HTMLElement;
+let W = 0, H = 0, dpr = 1;
+let mouse = { x: -9999, y: -9999 };
+let frame = 0;
+let crosshair: Crosshair | null = null;
+let alertPulse = 0;
+
+const statusDot = document.getElementById('status-dot') as HTMLElement;
+const statusText = document.getElementById('status-text') as HTMLElement;
+
+// Layout: 2x3 grid with varied heights
+function getPanelRect(idx: number): { x:number; y:number; w:number; h:number } {
+  const pad = 12, gap = 8;
+  const usableW = W - pad*2, usableH = H - pad*2;
+  // Row 0: panels 0,1,2 (3 equal columns)
+  // Row 1: panels 3,4 (2 columns)
+  const row0H = usableH * 0.52;
+  const row1H = usableH - row0H - gap;
+  if (idx < 3) {
+    const cw = (usableW - gap*2) / 3;
+    return { x: pad + idx*(cw+gap), y: pad, w: cw, h: row0H };
+  } else {
+    const cw = (usableW - gap) / 2;
+    return { x: pad + (idx-3)*(cw+gap), y: pad + row0H + gap, w: cw, h: row1H };
+  }
+}
+
+// ─── Drawing ──────────────────────────────────────────────────────────────────
+
+function hexToRgb(hex: string): [number,number,number] {
+  return [parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)];
+}
+
+function rr(x:number,y:number,w:number,h:number,r:number): void {
+  ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+}
+
+function drawAreaChart(p: Panel, rect: { x:number;y:number;w:number;h:number }, alerting: boolean): void {
+  const { x, y, w, h } = rect;
+  const [r,g,b] = hexToRgb(p.color);
+  const hdrH = 30, padH = 10, chartH = h - hdrH - padH;
+  const data = p.data;
+  const n = data.length;
+  const maxV = 100;
+
+  // Grid lines
+  for (let i = 0; i <= 4; i++) {
+    const gy = y + hdrH + chartH - (i / 4) * chartH;
+    ctx.beginPath(); ctx.moveTo(x + 4, gy); ctx.lineTo(x + w - 4, gy);
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.font = '7px -apple-system,sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText((i * 25).toString(), x + 4, gy);
+  }
+
+  // Area fill
+  ctx.beginPath();
+  data.forEach((pt, i) => {
+    const px = x + 4 + (i / (n-1)) * (w - 8);
+    const py = y + hdrH + chartH - (pt.v / maxV) * chartH;
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  });
+  const lastX = x + 4 + w - 8, lastD = data[n-1]!;
+  ctx.lineTo(lastX, y + hdrH + chartH);
+  ctx.lineTo(x + 4, y + hdrH + chartH);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, y + hdrH, 0, y + hdrH + chartH);
+  grad.addColorStop(0, `rgba(${r},${g},${b},${alerting ? 0.4 : 0.2})`);
+  grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+  ctx.fillStyle = grad; ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  data.forEach((pt, i) => {
+    const px = x + 4 + (i / (n-1)) * (w - 8);
+    const py = y + hdrH + chartH - (pt.v / maxV) * chartH;
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  });
+  ctx.strokeStyle = `rgba(${r},${g},${b},${alerting ? 1 : 0.8})`; ctx.lineWidth = 1.5; ctx.stroke();
+
+  // Threshold line
+  const ty = y + hdrH + chartH - (p.threshold / maxV) * chartH;
+  ctx.beginPath(); ctx.moveTo(x+4, ty); ctx.lineTo(x+w-4, ty);
+  ctx.strokeStyle = 'rgba(239,68,68,0.3)'; ctx.lineWidth = 1; ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
+
+  // Current value dot
+  const curV = data[n-1]!.v;
+  const dotX = lastX, dotY = y + hdrH + chartH - (curV / maxV) * chartH;
+  ctx.beginPath(); ctx.arc(dotX, dotY, 3, 0, Math.PI*2);
+  ctx.fillStyle = `rgba(${r},${g},${b},1)`; ctx.fill();
+}
+
+function drawDualLine(p: Panel, rect: { x:number;y:number;w:number;h:number }): void {
+  const { x, y, w, h } = rect;
+  const [r,g,b] = hexToRgb(p.color);
+  const hdrH = 30, chartH = h - hdrH - 10;
+  const n = p.data.length;
+  const maxV = 50;
+  const data2 = p.data2!;
+
+  for (let i = 0; i <= 4; i++) {
+    const gy = y + hdrH + chartH - (i/4)*chartH;
+    ctx.beginPath(); ctx.moveTo(x+4, gy); ctx.lineTo(x+w-4, gy);
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1; ctx.stroke();
+  }
+
+  const drawLine = (data: typeof p.data, color: string, dash: boolean) => {
+    ctx.beginPath();
+    data.forEach((pt, i) => {
+      const px = x + 4 + (i/(n-1))*(w-8);
+      const py = y + hdrH + chartH - (pt.v/maxV)*chartH;
+      i===0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+    });
+    const [dr,dg,db] = hexToRgb(color);
+    ctx.strokeStyle = `rgba(${dr},${dg},${db},0.85)`; ctx.lineWidth = 1.5;
+    if (dash) ctx.setLineDash([4,3]); ctx.stroke(); ctx.setLineDash([]);
+  };
+  drawLine(p.data, p.color, false);
+  drawLine(data2, '#f97316', true);
+
+  // Legend
+  ctx.font = '7.5px -apple-system,sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = `rgba(${r},${g},${b},0.8)`; ctx.fillText('In', x + w - 22, y + hdrH - 8);
+  ctx.fillStyle = 'rgba(249,115,22,0.8)'; ctx.fillText(p.label2 ?? 'Out', x + w - 4, y + hdrH - 8);
+}
+
+function drawBarChart(p: Panel, rect: { x:number;y:number;w:number;h:number }, alerting: boolean): void {
+  const { x, y, w, h } = rect;
+  const [r,g,b] = hexToRgb(p.color);
+  const hdrH = 30, chartH = h - hdrH - 10;
+  const data = p.data;
+  const n = 20; // show last 20 bars
+  const slice = data.slice(-n);
+  const maxV = 20;
+  const bw = (w - 8) / n - 2;
+
+  slice.forEach((pt, i) => {
+    const bh = (pt.v / maxV) * chartH;
+    const bx = x + 4 + i * ((w-8)/n);
+    const by = y + hdrH + chartH - bh;
+    rr(bx, by, bw, bh, 2);
+    const bright = alerting && pt.v > p.threshold * 0.5;
+    ctx.fillStyle = bright ? `rgba(239,68,68,0.7)` : `rgba(${r},${g},${b},${0.5 + (pt.v/maxV)*0.4})`;
+    ctx.fill();
+  });
+}
+
+function drawGauge(p: Panel, rect: { x:number;y:number;w:number;h:number }): void {
+  const { x, y, w, h } = rect;
+  const [r,g,b] = hexToRgb(p.color);
+  const hdrH = 30;
+  const cx = x + w/2, cy = y + hdrH + (h - hdrH) * 0.56;
+  const radius = Math.min(w, h - hdrH) * 0.36;
+  const startA = Math.PI * 0.75, endA = Math.PI * 2.25;
+  const pct = p.value / 100;
+  const valueA = startA + pct * (endA - startA);
+
+  // Track
+  ctx.beginPath(); ctx.arc(cx, cy, radius, startA, endA);
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 8; ctx.stroke();
+
+  // Fill
+  ctx.beginPath(); ctx.arc(cx, cy, radius, startA, valueA);
+  const arcColor = p.value > p.threshold ? '#ef4444' : `rgba(${r},${g},${b},0.9)`;
+  ctx.strokeStyle = arcColor; ctx.lineWidth = 8;
+  ctx.lineCap = 'round'; ctx.stroke(); ctx.lineCap = 'butt';
+
+  // Value text
+  ctx.font = `700 ${Math.round(radius * 0.42)}px -apple-system,sans-serif`;
+  ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(Math.round(p.value).toString() + '%', cx, cy);
+  ctx.font = '8px -apple-system,sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.fillText('Used', cx, cy + radius * 0.42);
+
+  // Min/max labels
+  ctx.font = '7px -apple-system,sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.textAlign = 'center';
+  const lx = cx - Math.cos(startA) * (radius + 12), ly = cy - Math.sin(startA) * (radius + 12);
+  const rx = cx - Math.cos(endA) * (radius + 12), ry = cy - Math.sin(endA) * (radius + 12);
+  ctx.fillText('0', lx, ly); ctx.fillText('100', rx, ry);
+}
+
+function drawBigNum(p: Panel, rect: { x:number;y:number;w:number;h:number }): void {
+  const { x, y, w, h } = rect;
+  const [r,g,b] = hexToRgb(p.color);
+  const hdrH = 30;
+  const cy = y + hdrH + (h - hdrH) * 0.36;
+
+  ctx.font = `700 ${Math.round(Math.min(w,h)*0.18)}px -apple-system,sans-serif`;
+  ctx.fillStyle = `rgba(${r},${g},${b},1)`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(Math.round(p.value).toLocaleString(), x + w/2, cy);
+
+  // Sparkline
+  const data = p.data.slice(-30);
+  const n = data.length;
+  const sparkY = y + hdrH + (h - hdrH) * 0.62;
+  const sparkH = (h - hdrH) * 0.28;
+  const maxV = Math.max(...data.map(d => d.v));
+  ctx.beginPath();
+  data.forEach((pt, i) => {
+    const px = x + 8 + (i/(n-1))*(w-16);
+    const py = sparkY + sparkH - (pt.v/maxV)*sparkH;
+    i === 0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+  });
+  ctx.strokeStyle = `rgba(${r},${g},${b},0.5)`; ctx.lineWidth = 1.5; ctx.stroke();
+}
+
+function drawPanel(p: Panel, idx: number): void {
+  const rect = getPanelRect(idx);
+  const { x, y, w, h } = rect;
+  const [r,g,b] = hexToRgb(p.color);
+  const alerting = p.alerting;
+
+  // Background
+  rr(x, y, w, h, 6);
+  ctx.fillStyle = alerting ? `rgba(239,68,68,0.04)` : `rgba(255,255,255,0.02)`; ctx.fill();
+  ctx.strokeStyle = alerting ? `rgba(239,68,68,${0.4 + alertPulse * 0.3})` : `rgba(255,255,255,0.07)`; ctx.lineWidth = 1; ctx.stroke();
+
+  // Header
+  ctx.font = `600 9.5px -apple-system, sans-serif`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fillText(p.title, x + 8, y + 15);
+
+  // Alert badge
+  if (alerting) {
+    const aw = 38;
+    rr(x + w - aw - 6, y + 7, aw, 16, 8);
+    ctx.fillStyle = `rgba(239,68,68,${0.6 + alertPulse * 0.4})`; ctx.fill();
+    ctx.font = '600 7px -apple-system,sans-serif'; ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('ALERT', x + w - aw/2 - 6, y + 15);
+  } else {
+    // Current value small
+    ctx.font = '600 9px -apple-system,sans-serif'; ctx.textAlign = 'right';
+    ctx.fillStyle = `rgba(${r},${g},${b},0.9)`;
+    ctx.fillText(Math.round(p.value).toLocaleString() + p.unit, x + w - 8, y + 15);
+  }
+
+  // Chart
+  if (p.type === 'area') drawAreaChart(p, rect, alerting);
+  else if (p.type === 'line2') drawDualLine(p, rect);
+  else if (p.type === 'bar') drawBarChart(p, rect, alerting);
+  else if (p.type === 'gauge') drawGauge(p, rect);
+  else if (p.type === 'bignum') drawBigNum(p, rect);
+
+  // Crosshair
+  if (crosshair && crosshair.panelIdx === idx) {
+    const rect2 = getPanelRect(idx);
+    const data = p.data;
+    const n = data.length;
+    const hdrH = 30;
+    const relX = crosshair.x - rect2.x - 4;
+    const dataIdx = Math.min(n-1, Math.max(0, Math.round((relX / (rect2.w-8)) * (n-1))));
+    const pt = data[dataIdx]!;
+    const px2 = rect2.x + 4 + (dataIdx/(n-1))*(rect2.w-8);
+    const chartH = rect2.h - hdrH - 10;
+    const py2 = rect2.y + hdrH + chartH - (pt.v/100)*chartH;
+    ctx.beginPath(); ctx.moveTo(px2, rect2.y + hdrH); ctx.lineTo(px2, rect2.y + rect2.h - 10);
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.beginPath(); ctx.arc(px2, py2, 4, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(${r},${g},${b},1)`; ctx.fill();
+    // Tooltip
+    const tv = Math.round(pt.v).toString() + p.unit;
+    const tw = ctx.measureText(tv).width + 10;
+    const tx = Math.min(px2 - tw/2, rect2.x + rect2.w - tw - 4);
+    rr(tx, py2 - 20, tw, 14, 4);
+    ctx.fillStyle = '#1a1d2e'; ctx.fill();
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.5)`; ctx.lineWidth = 0.5; ctx.stroke();
+    ctx.font = '700 8px -apple-system,sans-serif'; ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(tv, tx + tw/2, py2 - 13);
+  }
+}
+
+// ─── Simulation ───────────────────────────────────────────────────────────────
+
+function simulateMetrics(): void {
+  for (const p of PANELS) {
+    const last = p.data[p.data.length-1]!;
+    const noise = (Math.random() - 0.48) * 8;
+    const newV = Math.max(0, Math.min(100, last.v + noise));
+    p.data.push({ v: newV, t: p.data.length });
+    if (p.data.length > 120) p.data.shift();
+    if (p.data2) {
+      const last2 = p.data2[p.data2.length-1]!;
+      p.data2.push({ v: Math.max(0, Math.min(50, last2.v + (Math.random()-0.48)*6)), t: p.data2.length });
+      if (p.data2.length > 120) p.data2.shift();
+    }
+    p.value += (newV - p.value) * 0.15;
+    p.alerting = newV > p.threshold;
+  }
+
+  const anyAlert = PANELS.some(p => p.alerting);
+  statusDot.style.background = anyAlert ? '#f59e0b' : '#10b981';
+  statusDot.style.boxShadow = anyAlert ? '0 0 6px #f59e0b' : '0 0 6px #10b981';
+  statusText.textContent = anyAlert ? 'Degraded Performance' : 'All Systems Operational';
+}
+
+// ─── Tick ─────────────────────────────────────────────────────────────────────
+
+function tick(): void {
+  frame++;
+  ctx.clearRect(0, 0, W, H);
+  alertPulse = (Math.sin(frame * 0.08) + 1) / 2;
+
+  if (frame % 6 === 0) simulateMetrics();
+
+  // Find crosshair panel
+  const rect2 = canvas.getBoundingClientRect();
+  const mx = mouse.x - rect2.left, my = mouse.y - rect2.top;
+  crosshair = null;
+  PANELS.forEach((p, idx) => {
+    const r = getPanelRect(idx);
+    if (mx >= r.x && mx <= r.x+r.w && my >= r.y && my <= r.y+r.h) {
+      crosshair = { x: mx, panelIdx: idx };
+    }
+  });
+
+  // Time range label
+  ctx.font = '8px -apple-system,sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+  ctx.fillText('Last 5m  ▾', W - 12, 8);
+
+  PANELS.forEach((p, idx) => drawPanel(p, idx));
+  requestAnimationFrame(tick);
+}
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const r = col.getBoundingClientRect();
+  W = r.width; H = r.height;
+  canvas.width = Math.round(W*dpr); canvas.height = Math.round(H*dpr);
+  canvas.style.width = W+'px'; canvas.style.height = H+'px';
+  ctx.scale(dpr, dpr);
+}
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+canvas.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+const ro = new ResizeObserver(() => resize());
+ro.observe(col);
+resize();
+tick();
+</script>

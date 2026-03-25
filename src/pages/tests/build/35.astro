@@ -1,0 +1,455 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloBuild — Webhook Events | Pello" description="PelloBuild builds real-time webhook infrastructure — live event streams, retry queues, delivery dashboards, and payload inspection for every integration you ship.">
+  <Header />
+  <main id="main-content">
+    <section class="build-section" aria-labelledby="build-headline">
+      <div class="build-layout">
+        <div class="build-text">
+          <span class="build-badge">PelloBuild</span>
+          <h1 id="build-headline">Every Event. Delivered. Inspectable.</h1>
+          <p>PelloBuild ships production webhook infrastructure — live event streams, automatic retries, endpoint health monitoring, and full payload inspection for every integration.</p>
+          <ul class="build-pills" role="list">
+            <li>Full-stack development</li>
+            <li>Data infrastructure</li>
+            <li>Internal tooling</li>
+            <li>Systems integration</li>
+          </ul>
+          <div class="build-whk-stats">
+            <div class="build-whk-stat">
+              <span class="build-whk-val" id="whk-total">0</span>
+              <span class="build-whk-lbl">Events / min</span>
+            </div>
+            <div class="build-whk-stat">
+              <span class="build-whk-val" id="whk-rate">0%</span>
+              <span class="build-whk-lbl">Delivery Rate</span>
+            </div>
+            <div class="build-whk-stat">
+              <span class="build-whk-val" id="whk-retrying">0</span>
+              <span class="build-whk-lbl">Retrying</span>
+            </div>
+          </div>
+        </div>
+        <div class="build-canvas-col">
+          <canvas id="build-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .build-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .build-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1.15fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .build-layout { grid-template-columns: 1fr; } }
+  .build-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .build-badge { display: inline-flex; align-items: center; padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6366f1; width: fit-content; }
+  .build-text h1 { font-size: clamp(1.875rem, 3.5vw, 2.75rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .build-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.6); max-width: 44ch; }
+  .build-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .build-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.7); }
+  .build-canvas-col { position: relative; width: 100%; min-height: 560px; border-radius: 12px; overflow: hidden; background: #080b18; border: 1px solid rgba(99,102,241,0.15); }
+  #build-canvas { display: block; width: 100%; height: 100%; position: absolute; inset: 0; cursor: default; }
+  .build-whk-stats { display: flex; gap: 1.5rem; }
+  .build-whk-stat { display: flex; flex-direction: column; gap: 0.2rem; }
+  .build-whk-val { font-size: 1.375rem; font-weight: 700; color: #6366f1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1; }
+  .build-whk-lbl { font-size: 0.6875rem; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.06em; }
+</style>
+
+<script>
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+interface WebhookEvent {
+  id: string;
+  type: string;
+  ts: string;        // display timestamp
+  status: 'delivered' | 'retrying' | 'failed';
+  responseTime: number;
+  attempt: number;
+  y: number;
+  targetY: number;
+  alpha: number;
+  age: number;
+}
+
+interface EndpointHealth {
+  url: string;
+  rate: number;       // delivery %
+  count: number;
+}
+
+interface RetryItem {
+  type: string;
+  attempts: number;
+  nextRetry: string;
+  color: string;
+}
+
+// ─── Data ────────────────────────────────────────────────────────────────────
+
+const EVENT_TYPES = [
+  { type: 'payment.completed',     color: '#10b981' },
+  { type: 'user.created',          color: '#6366f1' },
+  { type: 'subscription.updated',  color: '#8b5cf6' },
+  { type: 'order.shipped',         color: '#06b6d4' },
+  { type: 'invoice.paid',          color: '#10b981' },
+  { type: 'charge.failed',         color: '#ef4444' },
+  { type: 'customer.deleted',      color: '#f59e0b' },
+  { type: 'refund.created',        color: '#f97316' },
+  { type: 'webhook.test',          color: '#a78bfa' },
+  { type: 'session.expired',       color: '#64748b' },
+];
+
+const ENDPOINTS: EndpointHealth[] = [
+  { url: 'api.acme.co/hooks',        rate: 99.8, count: 4823 },
+  { url: 'hooks.myapp.io/events',    rate: 97.2, count: 2341 },
+  { url: 'staging.service.dev/wh',   rate: 88.4, count: 901  },
+];
+
+const RETRY_QUEUE: RetryItem[] = [
+  { type: 'charge.failed',       attempts: 2, nextRetry: '45s', color: '#ef4444' },
+  { type: 'webhook.test',        attempts: 1, nextRetry: '1m',  color: '#a78bfa' },
+  { type: 'customer.deleted',    attempts: 3, nextRetry: '5m',  color: '#f59e0b' },
+];
+
+// JSON payload preview map per event type
+const PAYLOADS: Record<string, string[]> = {
+  'payment.completed':   ['{ "id": "pay_9xB2kL",', '  "amount": 4999,', '  "currency": "usd",', '  "status": "succeeded" }'],
+  'user.created':        ['{ "id": "usr_3mQ8Xv",', '  "email": "j.smith@co.io",', '  "plan": "pro",', '  "created_at": 1732041600 }'],
+  'subscription.updated':['{ "id": "sub_7kR1Yz",', '  "status": "active",', '  "current_period_end": 1734633600,', '  "cancel_at_period_end": false }'],
+  'charge.failed':       ['{ "id": "ch_5wN6Pq",', '  "amount": 1999,', '  "failure_code": "card_declined",', '  "failure_message": "Insufficient funds" }'],
+};
+
+function getPayload(type: string): string[] {
+  return PAYLOADS[type] ?? ['{ "id": "evt_' + Math.random().toString(36).slice(2,8) + '",', '  "type": "' + type + '",', '  "livemode": true,', '  "created": ' + Date.now() + ' }'];
+}
+
+// ─── Canvas ───────────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('build-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const col = canvas.parentElement as HTMLElement;
+let W = 0, H = 0, dpr = 1;
+let frame = 0;
+let mouse = { x: -9999, y: -9999 };
+let hoveredEvent: WebhookEvent | null = null;
+
+const events: WebhookEvent[] = [];
+let eventCounter = 0;
+let totalEvents = 12847;
+let deliveredCount = 12801;
+
+const whkTotal = document.getElementById('whk-total') as HTMLElement;
+const whkRate = document.getElementById('whk-rate') as HTMLElement;
+const whkRetrying = document.getElementById('whk-retrying') as HTMLElement;
+
+// ─── Layout ──────────────────────────────────────────────────────────────────
+
+function getLayout() {
+  const pad = 10;
+  const mainW = W * 0.56;
+  const sideX = mainW + pad * 2;
+  const sideW = W - sideX - pad;
+  return { pad, mainW, sideX, sideW };
+}
+
+// ─── Spawn ────────────────────────────────────────────────────────────────────
+
+let nextSpawn = 30;
+
+function spawnEvent(): void {
+  const et = EVENT_TYPES[Math.floor(Math.random() * EVENT_TYPES.length)]!;
+  const rng = Math.random();
+  const status: WebhookEvent['status'] = rng < 0.85 ? 'delivered' : rng < 0.95 ? 'retrying' : 'failed';
+  const lay = getLayout();
+  const STREAM_TOP = 28;
+  const EVENT_H = 36;
+
+  // Shift existing events down
+  for (const ev of events) {
+    ev.targetY += EVENT_H + 4;
+  }
+
+  const now = new Date();
+  const ts = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+
+  events.unshift({
+    id: 'evt_' + Math.random().toString(36).slice(2, 10),
+    type: et.type,
+    ts,
+    status,
+    responseTime: 80 + Math.floor(Math.random() * 320),
+    attempt: status === 'retrying' ? 1 + Math.floor(Math.random() * 3) : 1,
+    y: STREAM_TOP,
+    targetY: STREAM_TOP,
+    alpha: 0,
+    age: 0,
+  });
+
+  // Remove old events
+  while (events.length > 12) events.pop();
+
+  totalEvents++;
+  if (status === 'delivered') deliveredCount++;
+  eventCounter++;
+}
+
+// ─── Drawing ──────────────────────────────────────────────────────────────────
+
+function hexToRgb(hex: string): [number,number,number] {
+  return [parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)];
+}
+
+function rr(x:number,y:number,w:number,h:number,r:number): void {
+  ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+}
+
+function statusIcon(status: WebhookEvent['status']): { icon: string; color: string } {
+  if (status === 'delivered') return { icon: '✓', color: '#10b981' };
+  if (status === 'retrying')  return { icon: '↻', color: '#f59e0b' };
+  return { icon: '✗', color: '#ef4444' };
+}
+
+function eventTypeColor(type: string): string {
+  return EVENT_TYPES.find(e => e.type === type)?.color ?? '#6366f1';
+}
+
+function drawEventRow(ev: WebhookEvent, x: number, w: number): void {
+  const EVENT_H = 36;
+  const y = ev.y;
+  const isHov = hoveredEvent === ev;
+  const color = eventTypeColor(ev.type);
+  const [r,g,b] = hexToRgb(color);
+  const a = ev.alpha;
+
+  // Background
+  rr(x, y, w, EVENT_H, 5);
+  ctx.fillStyle = isHov ? `rgba(${r},${g},${b},0.1)` : `rgba(255,255,255,${0.02 * a})`; ctx.fill();
+  ctx.strokeStyle = `rgba(255,255,255,${0.07 * a})`; ctx.lineWidth = 1; ctx.stroke();
+
+  // Left color border
+  rr(x, y, 3, EVENT_H, 3);
+  ctx.fillStyle = `rgba(${r},${g},${b},${a})`; ctx.fill();
+
+  // Status icon
+  const si = statusIcon(ev.status);
+  const [sr,sg,sb] = hexToRgb(si.color);
+  ctx.font = `700 10px -apple-system,sans-serif`; ctx.fillStyle = `rgba(${sr},${sg},${sb},${a})`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(si.icon, x + 16, y + EVENT_H/2);
+
+  // Event type
+  ctx.font = `600 8.5px monospace`; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillStyle = `rgba(255,255,255,${0.85 * a})`;
+  ctx.fillText(ev.type, x + 26, y + 7);
+
+  // Timestamp
+  ctx.font = `400 7.5px -apple-system,sans-serif`; ctx.fillStyle = `rgba(255,255,255,${0.3 * a})`;
+  ctx.fillText(ev.ts, x + 26, y + 20);
+
+  // Response time
+  ctx.font = `500 7.5px -apple-system,sans-serif`; ctx.textAlign = 'right';
+  ctx.fillStyle = `rgba(255,255,255,${0.35 * a})`;
+  ctx.fillText(`${ev.responseTime}ms`, x + w - 8, y + 7);
+
+  // Status label
+  ctx.font = `600 7px -apple-system,sans-serif`; ctx.fillStyle = `rgba(${sr},${sg},${sb},${0.8 * a})`;
+  ctx.fillText(ev.status, x + w - 8, y + 20);
+}
+
+function drawPayloadPreview(ev: WebhookEvent): void {
+  const lay = getLayout();
+  const PAY_X = lay.pad + 4, PAY_Y = lay.pad + 4;
+  // hover payload preview appears in top-left corner of main stream area
+  const pw = lay.mainW - 12, ph = 70;
+  // Check if we can fit it
+  const evBottom = ev.y + 36;
+  const fy = evBottom + 6 < PAY_Y + ph ? PAY_Y : evBottom + 6;
+
+  if (fy + ph > H - lay.pad) return;
+
+  rr(lay.pad + 2, fy, pw, ph, 6);
+  ctx.fillStyle = 'rgba(8,10,20,0.96)'; ctx.fill();
+  ctx.strokeStyle = `rgba(${hexToRgb(eventTypeColor(ev.type)).join(',')},0.35)`; ctx.lineWidth = 1; ctx.stroke();
+
+  const lines = getPayload(ev.type);
+  ctx.font = '8px monospace'; ctx.textBaseline = 'top';
+  const jsonColors: Record<string, string> = { string: '#a78bfa', number: '#f97316', bool: '#10b981', key: '#6366f1' };
+  lines.forEach((line, i) => {
+    const ly = fy + 8 + i * 13;
+    // Simple syntax highlighting: keys are before ':' - highlight them
+    const colonIdx = line.indexOf(':');
+    if (colonIdx > 0 && !line.trim().startsWith('{') && !line.trim().startsWith('}')) {
+      const key = line.slice(0, colonIdx + 1);
+      const val = line.slice(colonIdx + 1);
+      ctx.fillStyle = jsonColors.key; ctx.textAlign = 'left';
+      ctx.fillText(key, lay.pad + 8, ly);
+      const valColor = val.includes('"') ? jsonColors.string : /\d/.test(val) ? jsonColors.number : jsonColors.bool;
+      ctx.fillStyle = valColor;
+      ctx.fillText(val, lay.pad + 8 + ctx.measureText(key).width, ly);
+    } else {
+      ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.textAlign = 'left';
+      ctx.fillText(line, lay.pad + 8, ly);
+    }
+  });
+}
+
+function drawRetryQueue(): void {
+  const lay = getLayout();
+  const rx = lay.sideX, rw = lay.sideW;
+  const ry = lay.pad + 28;
+
+  ctx.font = '700 9px -apple-system,sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText('Retry Queue', rx, ry - 10);
+
+  RETRY_QUEUE.forEach((item, i) => {
+    const iy = ry + i * 40;
+    rr(rx, iy, rw, 34, 5);
+    ctx.fillStyle = 'rgba(255,255,255,0.02)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1; ctx.stroke();
+
+    const [r,g,b] = hexToRgb(item.color);
+    rr(rx, iy, 3, 34, 3);
+    ctx.fillStyle = `rgba(${r},${g},${b},0.8)`; ctx.fill();
+
+    ctx.font = '600 8px monospace'; ctx.fillStyle = `rgba(${r},${g},${b},0.9)`;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText(item.type, rx + 10, iy + 6);
+    ctx.font = '7.5px -apple-system,sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillText(`Attempt ${item.attempts} · next in ${item.nextRetry}`, rx + 10, iy + 19);
+  });
+}
+
+function drawEndpointHealth(): void {
+  const lay = getLayout();
+  const rx = lay.sideX, rw = lay.sideW;
+  const ry = lay.pad + 28 + RETRY_QUEUE.length * 40 + 24;
+
+  ctx.font = '700 9px -apple-system,sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText('Endpoint Health', rx, ry - 10);
+
+  ENDPOINTS.forEach((ep, i) => {
+    const iy = ry + i * 44;
+    rr(rx, iy, rw, 38, 5);
+    ctx.fillStyle = 'rgba(255,255,255,0.02)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1; ctx.stroke();
+
+    const rateColor = ep.rate >= 99 ? '#10b981' : ep.rate >= 95 ? '#f59e0b' : '#ef4444';
+    const [rr2,gg,bb] = hexToRgb(rateColor);
+    ctx.font = '600 8px monospace'; ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText(ep.url, rx + 8, iy + 6);
+
+    // Rate bar
+    const bx = rx + 8, by = iy + 20, bw = rw - 16, bh = 5;
+    rr(bx, by, bw, bh, 2.5);
+    ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fill();
+    rr(bx, by, bw * (ep.rate / 100), bh, 2.5);
+    ctx.fillStyle = `rgba(${rr2},${gg},${bb},0.8)`; ctx.fill();
+
+    ctx.font = '7px -apple-system,sans-serif';
+    ctx.fillStyle = `rgba(${rr2},${gg},${bb},0.9)`;
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText(`${ep.rate}%`, rx + rw - 4, iy + 22.5);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText(`${ep.count.toLocaleString()} delivered`, rx + 8, iy + 29);
+  });
+}
+
+function drawLiveCounter(): void {
+  const lay = getLayout();
+  ctx.font = '700 10px -apple-system,sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('Live Events', lay.pad, lay.pad + 14);
+
+  // Live dot
+  const pulse = (Math.sin(frame * 0.06) + 1) / 2;
+  ctx.beginPath(); ctx.arc(lay.pad + 84, lay.pad + 14, 3 + pulse * 1.5, 0, Math.PI*2);
+  ctx.fillStyle = `rgba(16,185,129,${0.5 + pulse * 0.5})`; ctx.fill();
+
+  // Counter
+  ctx.font = '600 9px -apple-system,sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.textAlign = 'right';
+  ctx.fillText(totalEvents.toLocaleString() + ' total', lay.mainW - 4, lay.pad + 14);
+}
+
+function tick(): void {
+  frame++;
+  ctx.clearRect(0, 0, W, H);
+
+  // Faint bg grid
+  ctx.fillStyle = 'rgba(99,102,241,0.01)';
+  for (let xx = 0; xx < W; xx += 28) ctx.fillRect(xx, 0, 1, H);
+  for (let yy = 0; yy < H; yy += 28) ctx.fillRect(0, yy, W, 1);
+
+  nextSpawn--;
+  if (nextSpawn <= 0) {
+    spawnEvent();
+    nextSpawn = 35 + Math.floor(Math.random() * 40);
+  }
+
+  // Animate events
+  const rect = canvas.getBoundingClientRect();
+  const mx = mouse.x - rect.left, my = mouse.y - rect.top;
+  hoveredEvent = null;
+  const lay = getLayout();
+
+  for (const ev of events) {
+    ev.y += (ev.targetY - ev.y) * 0.15;
+    ev.age++;
+    ev.alpha = Math.min(1, ev.age / 20);
+    const isHov = mx >= lay.pad && mx <= lay.pad + lay.mainW && my >= ev.y && my < ev.y + 36;
+    if (isHov) hoveredEvent = ev;
+  }
+
+  drawLiveCounter();
+
+  // Draw events
+  for (const ev of events) {
+    if (ev.y > 0 && ev.y < H - 20) {
+      drawEventRow(ev, lay.pad, lay.mainW - lay.pad);
+    }
+  }
+
+  if (hoveredEvent) drawPayloadPreview(hoveredEvent);
+
+  drawRetryQueue();
+  drawEndpointHealth();
+
+  // Update stats
+  const rate = deliveredCount / Math.max(1, totalEvents) * 100;
+  whkTotal.textContent = (eventCounter).toString();
+  whkRate.textContent = rate.toFixed(1) + '%';
+  whkRetrying.textContent = RETRY_QUEUE.length.toString();
+  if (frame % 300 === 0) eventCounter = 0;
+
+  requestAnimationFrame(tick);
+}
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const r = col.getBoundingClientRect();
+  W = r.width; H = r.height;
+  canvas.width = Math.round(W*dpr); canvas.height = Math.round(H*dpr);
+  canvas.style.width = W+'px'; canvas.style.height = H+'px';
+  ctx.scale(dpr, dpr);
+}
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+canvas.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+const ro = new ResizeObserver(() => resize());
+ro.observe(col);
+resize();
+tick();
+</script>
