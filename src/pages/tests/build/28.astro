@@ -1,0 +1,527 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloBuild — Test Suite Runner | Pello" description="PelloBuild ships code with comprehensive test coverage. Watch the full test suite run — unit tests, integration tests, coverage metrics — all wired into your CI pipeline from day one.">
+  <Header />
+  <main id="main-content">
+    <section class="build-section" aria-labelledby="build-headline">
+      <div class="build-layout">
+        <div class="build-text">
+          <span class="build-badge">PelloBuild</span>
+          <h1 id="build-headline">Ship With Confidence Every Time</h1>
+          <p>Production code backed by comprehensive test coverage. Unit tests, integration tests, E2E suites — all wired into CI from day one so every deploy is a safe deploy.</p>
+          <ul class="build-pills" role="list">
+            <li>Full-stack development</li>
+            <li>Data infrastructure</li>
+            <li>Internal tooling</li>
+            <li>Systems integration</li>
+          </ul>
+        </div>
+        <div class="build-canvas-col">
+          <canvas id="build-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .build-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .build-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .build-layout { grid-template-columns: 1fr; } }
+  .build-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .build-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6366f1; width: fit-content; }
+  .build-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .build-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .build-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .build-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .build-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #build-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: crosshair; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type TestStatus = 'pending' | 'running' | 'pass' | 'skip' | 'fail';
+
+interface TestCase {
+  name: string;
+  status: TestStatus;
+  duration: number;
+  runAt: number;
+}
+
+interface TestFile {
+  name: string;
+  tests: TestCase[];
+  expanded: boolean;
+  startFrame: number;
+  currentTest: number;
+}
+
+interface CoverageMetric {
+  label: string;
+  value: number;
+  color: string;
+}
+
+// ─── Data ─────────────────────────────────────────────────────────────────────
+
+const TEST_FILES_DATA = [
+  { name: 'auth.test.ts', tests: [
+    'should register new user', 'should login with valid credentials',
+    'should reject invalid password', 'should refresh JWT token',
+    'should logout and invalidate session',
+  ]},
+  { name: 'api.test.ts', tests: [
+    'GET /api/v1/users returns 200', 'POST /api/v1/users creates record',
+    'PUT /api/v1/users/:id updates fields', 'DELETE /api/v1/users/:id removes',
+    'GET /api/v1/users with pagination',
+  ]},
+  { name: 'payment.test.ts', tests: [
+    'should create payment intent', 'should confirm card payment',
+    'should handle declined card', 'should process refund',
+  ]},
+  { name: 'database.test.ts', tests: [
+    'migrations run in order', 'rollback on error',
+    'indexes are created', 'foreign keys enforced',
+  ]},
+  { name: 'middleware.test.ts', tests: [
+    'rate limiter blocks after 100req/min', 'CORS headers set correctly',
+    'request validation rejects bad schema', 'auth middleware verifies JWT',
+  ]},
+  { name: 'integration.test.ts', tests: [
+    'full checkout flow', 'user registration to order',
+    'payment failure recovery', 'session persistence across requests',
+  ]},
+];
+
+function buildFiles(): TestFile[] {
+  return TEST_FILES_DATA.map((f, fi) => ({
+    name: f.name,
+    expanded: fi === 0,
+    startFrame: fi * 120 + 30,
+    currentTest: 0,
+    tests: f.tests.map(name => ({
+      name,
+      status: 'pending' as TestStatus,
+      duration: 0,
+      runAt: 0,
+    })),
+  }));
+}
+
+const FILES: TestFile[] = buildFiles();
+
+const COVERAGE: CoverageMetric[] = [
+  { label: 'Lines',     value: 94.2, color: '#22c55e' },
+  { label: 'Branches',  value: 87.1, color: '#6366f1' },
+  { label: 'Functions', value: 96.3, color: '#22c55e' },
+  { label: 'Stmts',     value: 93.8, color: '#6366f1' },
+];
+
+const TERMINAL_LINES: string[] = [];
+const TERM_MSGS = [
+  '> vitest run --reporter verbose',
+  '',
+  'RUN  v1.4.2 /app',
+  '',
+  ' ✓ auth.test.ts (5 tests) 142ms',
+  ' ✓ api.test.ts (5 tests) 218ms',
+  ' ✓ payment.test.ts (4 tests) 334ms',
+  ' ✓ database.test.ts (4 tests) 89ms',
+  ' ✓ middleware.test.ts (4 tests) 67ms',
+  ' ✓ integration.test.ts (4 tests) 612ms',
+  '',
+  ' Test Files  6 passed (6)',
+  ' Tests       26 passed (26)',
+  ' Duration    1.46s',
+  '',
+  ' Coverage report generated.',
+];
+
+// ─── Canvas Setup ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('build-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const colEl = canvas.parentElement as HTMLElement;
+
+let W = 0, H = 0, dpr = 1, frame = 0;
+let hoveredFile: TestFile | null = null;
+let termLineIdx = 0;
+let lastTermLine = 0;
+let cycleStart = 0;
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = colEl.getBoundingClientRect();
+  W = rect.width;
+  H = rect.height;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+}
+
+function roundRect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
+  c.beginPath();
+  c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.quadraticCurveTo(x+w,y,x+w,y+r);
+  c.lineTo(x+w,y+h-r); c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  c.lineTo(x+r,y+h); c.quadraticCurveTo(x,y+h,x,y+h-r);
+  c.lineTo(x,y+r); c.quadraticCurveTo(x,y,x+r,y);
+  c.closePath();
+}
+
+// ─── Progress Bar ─────────────────────────────────────────────────────────────
+
+function drawProgressBar(): void {
+  const totalTests = FILES.reduce((s, f) => s + f.tests.length, 0);
+  const passedTests = FILES.reduce((s, f) => s + f.tests.filter(t => t.status === 'pass' || t.status === 'skip').length, 0);
+  const pct = totalTests > 0 ? passedTests / totalTests : 0;
+
+  const bx = 16, by = 16, bw = W - 32, bh = 6;
+
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  roundRect(ctx, bx, by, bw, bh, 3);
+  ctx.fill();
+
+  if (pct > 0) {
+    const grad = ctx.createLinearGradient(bx, 0, bx + bw * pct, 0);
+    grad.addColorStop(0, '#6366f1');
+    grad.addColorStop(1, '#22c55e');
+    ctx.fillStyle = grad;
+    roundRect(ctx, bx, by, bw * pct, bh, 3);
+    ctx.fill();
+  }
+
+  ctx.font = '600 9px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'right';
+  ctx.fillText(`${passedTests} / ${totalTests} tests`, bx + bw, by + bh / 2 + 14);
+  ctx.textAlign = 'left';
+}
+
+// ─── File List ────────────────────────────────────────────────────────────────
+
+const FILE_LIST_W = 180;
+const ROW_H = 28;
+const TEST_ROW_H = 20;
+
+function updateTestRun(): void {
+  for (const file of FILES) {
+    if (frame < file.startFrame) continue;
+    if (file.currentTest >= file.tests.length) continue;
+
+    const test = file.tests[file.currentTest]!;
+    if (test.status === 'pending') {
+      test.status = 'running';
+      test.runAt = frame;
+    } else if (test.status === 'running') {
+      const elapsed = frame - test.runAt;
+      const needed = 30 + Math.floor(Math.random() * 40);
+      if (elapsed >= needed) {
+        test.status = Math.random() < 0.94 ? 'pass' : Math.random() < 0.5 ? 'skip' : 'fail';
+        test.duration = elapsed * 3 + Math.floor(Math.random() * 80);
+        file.currentTest++;
+      }
+    }
+  }
+}
+
+function drawFileList(): void {
+  const startY = 42;
+  let y = startY;
+  const x = 16;
+
+  for (const file of FILES) {
+    const isHov = hoveredFile?.name === file.name;
+    const passCount = file.tests.filter(t => t.status === 'pass').length;
+    const total = file.tests.length;
+    const allDone = file.currentTest >= total;
+    const allPass = allDone && file.tests.every(t => t.status === 'pass' || t.status === 'skip');
+
+    // File row bg
+    if (isHov) {
+      ctx.fillStyle = 'rgba(99,102,241,0.08)';
+      roundRect(ctx, x, y, FILE_LIST_W, ROW_H, 4);
+      ctx.fill();
+    }
+
+    // Status icon
+    const iconX = x + 8;
+    const iconY = y + ROW_H / 2;
+
+    if (allPass) {
+      ctx.beginPath();
+      ctx.arc(iconX, iconY, 5, 0, Math.PI * 2);
+      ctx.fillStyle = '#22c55e';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(iconX - 3, iconY);
+      ctx.lineTo(iconX - 1, iconY + 2);
+      ctx.lineTo(iconX + 3, iconY - 2);
+      ctx.strokeStyle = '#060712';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    } else if (file.currentTest > 0) {
+      ctx.beginPath();
+      ctx.arc(iconX, iconY, 5, 0, Math.PI * 2);
+      ctx.strokeStyle = '#6366f1';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      const spinAngle = (frame * 0.08) % (Math.PI * 2);
+      ctx.beginPath();
+      ctx.arc(iconX, iconY, 5, spinAngle, spinAngle + Math.PI * 1.5);
+      ctx.strokeStyle = '#6366f1';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.arc(iconX, iconY, 4, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // File name
+    ctx.font = `500 9.5px ui-monospace, monospace`;
+    ctx.fillStyle = isHov ? '#fff' : 'rgba(255,255,255,0.75)';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.fillText(file.name, x + 20, y + ROW_H / 2);
+
+    // Count
+    ctx.font = '400 8px ui-monospace, monospace';
+    ctx.fillStyle = allPass ? '#22c55e' : 'rgba(255,255,255,0.35)';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${passCount}/${total}`, x + FILE_LIST_W - 4, y + ROW_H / 2);
+    ctx.textAlign = 'left';
+
+    y += ROW_H;
+
+    // Expanded tests (only first file expanded by default, or hovered)
+    if (file.expanded || isHov) {
+      for (const test of file.tests) {
+        if (test.status === 'pending' && file.currentTest < file.tests.indexOf(test)) {
+          y += TEST_ROW_H;
+          continue;
+        }
+
+        const color = test.status === 'pass' ? '#22c55e'
+          : test.status === 'fail' ? '#ef4444'
+          : test.status === 'skip' ? '#f59e0b'
+          : test.status === 'running' ? '#6366f1'
+          : 'rgba(255,255,255,0.2)';
+
+        // Icon
+        const tix = x + 24;
+        const tiy = y + TEST_ROW_H / 2;
+        if (test.status === 'pass') {
+          ctx.font = '600 9px -apple-system, sans-serif';
+          ctx.fillStyle = color;
+          ctx.textBaseline = 'middle';
+          ctx.fillText('✓', tix, tiy);
+        } else if (test.status === 'fail') {
+          ctx.font = '600 9px -apple-system, sans-serif';
+          ctx.fillStyle = color;
+          ctx.textBaseline = 'middle';
+          ctx.fillText('✗', tix, tiy);
+        } else if (test.status === 'skip') {
+          ctx.font = '600 9px -apple-system, sans-serif';
+          ctx.fillStyle = color;
+          ctx.textBaseline = 'middle';
+          ctx.fillText('–', tix, tiy);
+        } else if (test.status === 'running') {
+          ctx.beginPath();
+          const sp = (frame * 0.1) % (Math.PI * 2);
+          ctx.arc(tix + 4, tiy, 3.5, sp, sp + Math.PI * 1.5);
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        }
+
+        ctx.font = '400 8.5px ui-monospace, monospace';
+        ctx.fillStyle = test.status === 'pending' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.7)';
+        ctx.textBaseline = 'middle';
+        const maxW = FILE_LIST_W - 50;
+        let name = test.name;
+        ctx.font = '400 8.5px ui-monospace, monospace';
+        if (ctx.measureText(name).width > maxW) {
+          while (ctx.measureText(name + '…').width > maxW && name.length > 0) name = name.slice(0,-1);
+          name += '…';
+        }
+        ctx.fillText(name, tix + 12, tiy);
+
+        if (test.duration > 0) {
+          ctx.font = '400 7.5px ui-monospace, monospace';
+          ctx.fillStyle = 'rgba(255,255,255,0.3)';
+          ctx.textAlign = 'right';
+          ctx.fillText(`${test.duration}ms`, x + FILE_LIST_W - 4, tiy);
+          ctx.textAlign = 'left';
+        }
+
+        y += TEST_ROW_H;
+      }
+    }
+
+    y += 4;
+  }
+}
+
+// ─── Coverage Panel ───────────────────────────────────────────────────────────
+
+function drawCoverage(): void {
+  const px = W - 170, py = 42, pw = 154, ph = 120;
+  ctx.fillStyle = 'rgba(8,10,22,0.92)';
+  roundRect(ctx, px, py, pw, ph, 8);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(99,102,241,0.2)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.font = '600 9px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(99,102,241,0.8)';
+  ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'left';
+  ctx.fillText('COVERAGE', px + 10, py + 17);
+
+  COVERAGE.forEach((cov, i) => {
+    const ry = py + 32 + i * 24;
+    ctx.font = '400 8.5px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.fillText(cov.label, px + 10, ry + 8);
+
+    // Bar
+    const bx = px + 58, bw2 = pw - 68, bh = 4;
+    ctx.fillStyle = 'rgba(255,255,255,0.06)';
+    roundRect(ctx, bx, ry + 2, bw2, bh, 2);
+    ctx.fill();
+    const pct = (cov.value / 100) * bw2;
+    ctx.fillStyle = cov.color;
+    roundRect(ctx, bx, ry + 2, pct, bh, 2);
+    ctx.fill();
+
+    ctx.font = '600 8.5px -apple-system, sans-serif';
+    ctx.fillStyle = cov.color;
+    ctx.textAlign = 'right';
+    ctx.fillText(`${cov.value}%`, px + pw - 10, ry + 8);
+    ctx.textAlign = 'left';
+  });
+}
+
+// ─── Terminal ─────────────────────────────────────────────────────────────────
+
+function updateTerminal(): void {
+  if (frame - lastTermLine > 35 && termLineIdx < TERM_MSGS.length) {
+    TERMINAL_LINES.push(TERM_MSGS[termLineIdx]!);
+    termLineIdx++;
+    lastTermLine = frame;
+    if (TERMINAL_LINES.length > 8) TERMINAL_LINES.shift();
+  }
+}
+
+function drawTerminal(): void {
+  const th = 100;
+  const tx2 = 16, ty2 = H - th - 8, tw = W - 32;
+  ctx.fillStyle = 'rgba(4,5,12,0.94)';
+  roundRect(ctx, tx2, ty2, tw, th, 6);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(99,102,241,0.15)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.font = '600 8px ui-monospace, monospace';
+  ctx.fillStyle = 'rgba(99,102,241,0.6)';
+  ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'left';
+  ctx.fillText('TERMINAL', tx2 + 10, ty2 + 14);
+
+  TERMINAL_LINES.forEach((line, i) => {
+    ctx.font = '400 8.5px ui-monospace, monospace';
+    const isCmd = line.startsWith('>');
+    const isPass = line.startsWith(' ✓') || line.includes('passed');
+    ctx.fillStyle = isCmd ? '#6366f1' : isPass ? '#22c55e' : 'rgba(255,255,255,0.55)';
+    ctx.fillText(line || ' ', tx2 + 10, ty2 + 26 + i * 10);
+  });
+
+  // Cursor
+  const cursorX = tx2 + 10 + ctx.measureText((TERMINAL_LINES[TERMINAL_LINES.length - 1] ?? '') + ' ').width;
+  const cursorY = ty2 + 26 + (TERMINAL_LINES.length - 1) * 10;
+  if (frame % 60 < 30) {
+    ctx.fillStyle = 'rgba(99,102,241,0.8)';
+    ctx.fillRect(cursorX, cursorY - 8, 5, 9);
+  }
+}
+
+// ─── Tick ─────────────────────────────────────────────────────────────────────
+
+function tick(): void {
+  frame++;
+  ctx.clearRect(0, 0, W, H);
+
+  const bg = ctx.createRadialGradient(W*0.5, H*0.4, 0, W*0.5, H*0.4, W*0.8);
+  bg.addColorStop(0, 'rgba(11,13,26,1)');
+  bg.addColorStop(1, 'rgba(6,7,18,1)');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Cycle reset
+  const totalTests = FILES.reduce((s, f) => s + f.tests.length, 0);
+  const passedTests = FILES.reduce((s, f) => s + f.tests.filter(t => t.status === 'pass' || t.status === 'skip' || t.status === 'fail').length, 0);
+  if (passedTests === totalTests && frame - cycleStart > 200) {
+    cycleStart = frame;
+    const newFiles = buildFiles();
+    FILES.splice(0, FILES.length, ...newFiles);
+    TERMINAL_LINES.length = 0;
+    termLineIdx = 0;
+    lastTermLine = frame;
+    for (let i = 0; i < FILES.length; i++) {
+      FILES[i]!.startFrame = frame + i * 120 + 30;
+    }
+  }
+
+  updateTestRun();
+  drawProgressBar();
+  drawFileList();
+  drawCoverage();
+  updateTerminal();
+  drawTerminal();
+
+  requestAnimationFrame(tick);
+}
+
+// ─── Events ───────────────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  hoveredFile = null;
+  let y = 42;
+  for (const file of FILES) {
+    if (mx >= 16 && mx <= 16 + FILE_LIST_W && my >= y && my <= y + ROW_H) {
+      hoveredFile = file;
+      break;
+    }
+    y += ROW_H;
+    if (file.expanded) y += file.tests.length * TEST_ROW_H;
+    y += 4;
+  }
+});
+
+canvas.addEventListener('mouseleave', () => { hoveredFile = null; });
+
+const ro = new ResizeObserver(() => resize());
+ro.observe(colEl);
+
+resize();
+tick();
+</script>

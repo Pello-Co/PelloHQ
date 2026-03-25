@@ -1,0 +1,497 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloBuild — Infrastructure Map | Pello" description="PelloBuild deploys and monitors distributed infrastructure across global regions. Watch your systems come alive with real-time latency, uptime, and instance metrics.">
+  <Header />
+  <main id="main-content">
+    <section class="build-section" aria-labelledby="build-headline">
+      <div class="build-layout">
+        <div class="build-text">
+          <span class="build-badge">PelloBuild</span>
+          <h1 id="build-headline">Infrastructure at Global Scale</h1>
+          <p>Deploy, monitor, and orchestrate distributed systems across every major region. Real-time latency tracking, instant failover, and zero-downtime deployments — all from a single control plane.</p>
+          <ul class="build-pills" role="list">
+            <li>Full-stack development</li>
+            <li>Data infrastructure</li>
+            <li>Internal tooling</li>
+            <li>Systems integration</li>
+          </ul>
+        </div>
+        <div class="build-canvas-col">
+          <canvas id="build-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .build-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .build-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .build-layout { grid-template-columns: 1fr; } }
+  .build-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .build-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6366f1; width: fit-content; }
+  .build-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .build-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .build-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .build-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .build-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #build-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: crosshair; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Region {
+  id: string;
+  name: string;
+  shortName: string;
+  x: number; // 0-1 normalized
+  y: number; // 0-1 normalized
+  servers: number;
+  latency: number;
+  status: 'healthy' | 'degraded' | 'offline';
+  instances: number;
+  uptime: number;
+}
+
+interface Connection {
+  from: string;
+  to: string;
+  latency: number;
+  pulses: Pulse[];
+}
+
+interface Pulse {
+  t: number; // 0-1 progress along connection
+  speed: number;
+  alpha: number;
+}
+
+// ─── Data ─────────────────────────────────────────────────────────────────────
+
+const REGIONS: Region[] = [
+  { id: 'us-east',    name: 'US East',       shortName: 'US-E',  x: 0.22, y: 0.38, servers: 48, latency: 12,  status: 'healthy',  instances: 312, uptime: 99.98 },
+  { id: 'us-west',    name: 'US West',       shortName: 'US-W',  x: 0.09, y: 0.35, servers: 36, latency: 18,  status: 'healthy',  instances: 248, uptime: 99.97 },
+  { id: 'eu-west',    name: 'EU West',       shortName: 'EU-W',  x: 0.47, y: 0.28, servers: 42, latency: 8,   status: 'healthy',  instances: 286, uptime: 99.99 },
+  { id: 'eu-central', name: 'EU Central',    shortName: 'EU-C',  x: 0.52, y: 0.26, servers: 28, latency: 6,   status: 'healthy',  instances: 194, uptime: 99.99 },
+  { id: 'ap-south',   name: 'AP South',      shortName: 'AP-S',  x: 0.72, y: 0.52, servers: 24, latency: 22,  status: 'degraded', instances: 156, uptime: 99.82 },
+  { id: 'ap-east',    name: 'AP East',       shortName: 'AP-E',  x: 0.84, y: 0.38, servers: 32, latency: 15,  status: 'healthy',  instances: 218, uptime: 99.95 },
+  { id: 'ap-se',      name: 'AP Southeast',  shortName: 'AP-SE', x: 0.80, y: 0.55, servers: 18, latency: 28,  status: 'healthy',  instances: 124, uptime: 99.91 },
+  { id: 'sa-east',    name: 'SA East',       shortName: 'SA-E',  x: 0.28, y: 0.65, servers: 14, latency: 35,  status: 'healthy',  instances: 86,  uptime: 99.88 },
+];
+
+const CONNECTIONS: Connection[] = [
+  { from: 'us-east',    to: 'eu-west',    latency: 68,  pulses: [] },
+  { from: 'us-east',    to: 'us-west',    latency: 24,  pulses: [] },
+  { from: 'us-east',    to: 'sa-east',    latency: 92,  pulses: [] },
+  { from: 'eu-west',    to: 'eu-central', latency: 11,  pulses: [] },
+  { from: 'eu-west',    to: 'ap-south',   latency: 118, pulses: [] },
+  { from: 'eu-central', to: 'ap-south',   latency: 108, pulses: [] },
+  { from: 'ap-south',   to: 'ap-east',    latency: 42,  pulses: [] },
+  { from: 'ap-east',    to: 'ap-se',      latency: 28,  pulses: [] },
+  { from: 'us-west',    to: 'ap-east',    latency: 142, pulses: [] },
+];
+
+const STATUS_COLOR: Record<string, string> = {
+  healthy: '#22c55e',
+  degraded: '#f59e0b',
+  offline: '#ef4444',
+};
+
+// ─── Canvas Setup ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('build-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const col = canvas.parentElement as HTMLElement;
+
+let W = 0, H = 0, dpr = 1;
+let frame = 0;
+let mouse = { x: -9999, y: -9999 };
+let hoveredRegion: Region | null = null;
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = col.getBoundingClientRect();
+  W = rect.width;
+  H = rect.height;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+}
+
+function rx(n: number): number { return n * W; }
+function ry(n: number): number { return n * H; }
+
+// ─── World Map (simplified continent outlines) ────────────────────────────────
+
+function drawWorldMap(): void {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(99,102,241,0.12)';
+  ctx.lineWidth = 1;
+  ctx.fillStyle = 'rgba(99,102,241,0.04)';
+
+  // North America
+  ctx.beginPath();
+  ctx.moveTo(rx(0.05), ry(0.18));
+  ctx.lineTo(rx(0.28), ry(0.15));
+  ctx.lineTo(rx(0.30), ry(0.22));
+  ctx.lineTo(rx(0.32), ry(0.42));
+  ctx.lineTo(rx(0.28), ry(0.50));
+  ctx.lineTo(rx(0.22), ry(0.55));
+  ctx.lineTo(rx(0.14), ry(0.52));
+  ctx.lineTo(rx(0.06), ry(0.45));
+  ctx.lineTo(rx(0.04), ry(0.35));
+  ctx.lineTo(rx(0.05), ry(0.18));
+  ctx.fill();
+  ctx.stroke();
+
+  // South America
+  ctx.beginPath();
+  ctx.moveTo(rx(0.22), ry(0.56));
+  ctx.lineTo(rx(0.30), ry(0.55));
+  ctx.lineTo(rx(0.32), ry(0.62));
+  ctx.lineTo(rx(0.30), ry(0.78));
+  ctx.lineTo(rx(0.24), ry(0.85));
+  ctx.lineTo(rx(0.20), ry(0.80));
+  ctx.lineTo(rx(0.18), ry(0.68));
+  ctx.lineTo(rx(0.22), ry(0.56));
+  ctx.fill();
+  ctx.stroke();
+
+  // Europe
+  ctx.beginPath();
+  ctx.moveTo(rx(0.43), ry(0.15));
+  ctx.lineTo(rx(0.58), ry(0.13));
+  ctx.lineTo(rx(0.62), ry(0.22));
+  ctx.lineTo(rx(0.58), ry(0.32));
+  ctx.lineTo(rx(0.50), ry(0.35));
+  ctx.lineTo(rx(0.44), ry(0.30));
+  ctx.lineTo(rx(0.43), ry(0.15));
+  ctx.fill();
+  ctx.stroke();
+
+  // Africa
+  ctx.beginPath();
+  ctx.moveTo(rx(0.44), ry(0.36));
+  ctx.lineTo(rx(0.58), ry(0.34));
+  ctx.lineTo(rx(0.62), ry(0.44));
+  ctx.lineTo(rx(0.60), ry(0.62));
+  ctx.lineTo(rx(0.54), ry(0.72));
+  ctx.lineTo(rx(0.48), ry(0.70));
+  ctx.lineTo(rx(0.44), ry(0.58));
+  ctx.lineTo(rx(0.44), ry(0.36));
+  ctx.fill();
+  ctx.stroke();
+
+  // Asia
+  ctx.beginPath();
+  ctx.moveTo(rx(0.60), ry(0.12));
+  ctx.lineTo(rx(0.88), ry(0.12));
+  ctx.lineTo(rx(0.92), ry(0.22));
+  ctx.lineTo(rx(0.90), ry(0.40));
+  ctx.lineTo(rx(0.84), ry(0.48));
+  ctx.lineTo(rx(0.76), ry(0.52));
+  ctx.lineTo(rx(0.68), ry(0.48));
+  ctx.lineTo(rx(0.62), ry(0.38));
+  ctx.lineTo(rx(0.60), ry(0.28));
+  ctx.lineTo(rx(0.60), ry(0.12));
+  ctx.fill();
+  ctx.stroke();
+
+  // Australia
+  ctx.beginPath();
+  ctx.moveTo(rx(0.76), ry(0.60));
+  ctx.lineTo(rx(0.90), ry(0.58));
+  ctx.lineTo(rx(0.92), ry(0.70));
+  ctx.lineTo(rx(0.84), ry(0.76));
+  ctx.lineTo(rx(0.76), ry(0.72));
+  ctx.lineTo(rx(0.76), ry(0.60));
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+// ─── Connections ──────────────────────────────────────────────────────────────
+
+function getRegion(id: string): Region {
+  return REGIONS.find(r => r.id === id)!;
+}
+
+function drawConnections(): void {
+  for (const conn of CONNECTIONS) {
+    const a = getRegion(conn.from);
+    const b = getRegion(conn.to);
+    const ax = rx(a.x), ay = ry(a.y);
+    const bx = rx(b.x), by = ry(b.y);
+
+    // Curved line
+    const mx = (ax + bx) / 2;
+    const my = (ay + by) / 2 - Math.hypot(bx - ax, by - ay) * 0.18;
+
+    const isHovered = hoveredRegion?.id === conn.from || hoveredRegion?.id === conn.to;
+
+    ctx.beginPath();
+    ctx.moveTo(ax, ay);
+    ctx.quadraticCurveTo(mx, my, bx, by);
+    ctx.strokeStyle = isHovered ? 'rgba(99,102,241,0.5)' : 'rgba(99,102,241,0.2)';
+    ctx.lineWidth = isHovered ? 1.5 : 0.75;
+    ctx.stroke();
+
+    // Latency label at midpoint
+    const mt = 0.5;
+    const lx = (1 - mt) * (1 - mt) * ax + 2 * (1 - mt) * mt * mx + mt * mt * bx;
+    const ly = (1 - mt) * (1 - mt) * ay + 2 * (1 - mt) * mt * my + mt * mt * by;
+
+    if (isHovered) {
+      ctx.fillStyle = 'rgba(99,102,241,0.9)';
+      ctx.font = '600 9px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`${conn.latency}ms`, lx, ly - 8);
+    }
+
+    // Pulses
+    for (const pulse of conn.pulses) {
+      const pt = pulse.t;
+      const px = (1 - pt) * (1 - pt) * ax + 2 * (1 - pt) * pt * mx + pt * pt * bx;
+      const py = (1 - pt) * (1 - pt) * ay + 2 * (1 - pt) * pt * my + pt * pt * by;
+
+      const grad = ctx.createRadialGradient(px, py, 0, px, py, 5);
+      grad.addColorStop(0, `rgba(99,102,241,${pulse.alpha})`);
+      grad.addColorStop(1, 'rgba(99,102,241,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(px, py, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.textAlign = 'left';
+}
+
+function updatePulses(): void {
+  for (const conn of CONNECTIONS) {
+    for (const pulse of conn.pulses) {
+      pulse.t += pulse.speed;
+      if (pulse.t > 1) pulse.t -= 1;
+    }
+    // Spawn new pulses
+    if (Math.random() < 0.015 && conn.pulses.length < 3) {
+      conn.pulses.push({ t: 0, speed: 0.003 + Math.random() * 0.003, alpha: 0.8 + Math.random() * 0.2 });
+    }
+  }
+}
+
+// ─── Region Nodes ─────────────────────────────────────────────────────────────
+
+function drawRegions(): void {
+  for (const region of REGIONS) {
+    const x = rx(region.x);
+    const y = ry(region.y);
+    const isHovered = hoveredRegion?.id === region.id;
+    const color = STATUS_COLOR[region.status]!;
+
+    // Outer glow ring
+    const outerR = isHovered ? 20 : 14;
+    const grd = ctx.createRadialGradient(x, y, 0, x, y, outerR);
+    grd.addColorStop(0, `rgba(99,102,241,${isHovered ? 0.35 : 0.2})`);
+    grd.addColorStop(1, 'rgba(99,102,241,0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(x, y, outerR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Pulse ring (animated)
+    const pulseR = 8 + Math.sin(frame * 0.05 + region.x * 10) * 3;
+    ctx.beginPath();
+    ctx.arc(x, y, pulseR, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(99,102,241,${0.3 + Math.sin(frame * 0.05) * 0.1})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Core dot
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#6366f1';
+    ctx.fill();
+
+    // Status dot
+    ctx.beginPath();
+    ctx.arc(x + 5, y - 5, 3, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+
+    // Short name label
+    ctx.font = `600 9px -apple-system, sans-serif`;
+    ctx.fillStyle = isHovered ? '#fff' : 'rgba(255,255,255,0.7)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(region.shortName, x, y + 10);
+
+    // Expanded hover card
+    if (isHovered) {
+      const cw = 140, ch = 90;
+      let cx = x + 16;
+      let cy = y - ch / 2;
+      if (cx + cw > W - 10) cx = x - cw - 16;
+      if (cy < 10) cy = 10;
+      if (cy + ch > H - 10) cy = H - ch - 10;
+
+      ctx.fillStyle = 'rgba(8,10,22,0.96)';
+      roundRect(ctx, cx, cy, cw, ch, 8);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(99,102,241,0.5)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Left accent
+      ctx.beginPath();
+      ctx.moveTo(cx, cy + 8);
+      ctx.lineTo(cx, cy + ch - 8);
+      ctx.strokeStyle = '#6366f1';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+
+      ctx.font = '600 10px -apple-system, sans-serif';
+      ctx.fillStyle = '#fff';
+      ctx.fillText(region.name, cx + 10, cy + 18);
+
+      ctx.font = '400 9px -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.fillText(`${region.servers} servers  ·  ${region.instances} instances`, cx + 10, cy + 32);
+
+      ctx.font = '500 9px -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.fillText(`Avg latency: ${region.latency}ms`, cx + 10, cy + 48);
+      ctx.fillText(`Uptime: ${region.uptime}%`, cx + 10, cy + 62);
+
+      ctx.font = '600 9px -apple-system, sans-serif';
+      ctx.fillStyle = color;
+      ctx.fillText(region.status.toUpperCase(), cx + 10, cy + 78);
+    }
+  }
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+}
+
+// ─── Sidebar Panel ────────────────────────────────────────────────────────────
+
+function drawSidebar(): void {
+  const pw = 150, ph = 120;
+  const px = W - pw - 16;
+  const py = 16;
+
+  ctx.fillStyle = 'rgba(8,10,22,0.88)';
+  roundRect(ctx, px, py, pw, ph, 8);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(99,102,241,0.25)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  const metrics = [
+    { label: 'Global Uptime', value: '99.96%', color: '#22c55e' },
+    { label: 'Total Regions',  value: '8',       color: '#6366f1' },
+    { label: 'Active Instances', value: '1,624', color: '#6366f1' },
+  ];
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.font = '600 9px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(99,102,241,0.8)';
+  ctx.fillText('INFRASTRUCTURE', px + 12, py + 18);
+
+  metrics.forEach((m, i) => {
+    const my = py + 38 + i * 28;
+    ctx.font = '400 8.5px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fillText(m.label, px + 12, my);
+    ctx.font = '700 13px -apple-system, sans-serif';
+    ctx.fillStyle = m.color;
+    ctx.fillText(m.value, px + 12, my + 14);
+  });
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function roundRect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
+  c.beginPath();
+  c.moveTo(x + r, y);
+  c.lineTo(x + w - r, y);
+  c.quadraticCurveTo(x + w, y, x + w, y + r);
+  c.lineTo(x + w, y + h - r);
+  c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  c.lineTo(x + r, y + h);
+  c.quadraticCurveTo(x, y + h, x, y + h - r);
+  c.lineTo(x, y + r);
+  c.quadraticCurveTo(x, y, x + r, y);
+  c.closePath();
+}
+
+// ─── Animation Loop ───────────────────────────────────────────────────────────
+
+function tick(): void {
+  frame++;
+  ctx.clearRect(0, 0, W, H);
+
+  // Background gradient
+  const bg = ctx.createRadialGradient(W * 0.5, H * 0.5, 0, W * 0.5, H * 0.5, W * 0.7);
+  bg.addColorStop(0, 'rgba(15,18,40,1)');
+  bg.addColorStop(1, 'rgba(6,7,18,1)');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  drawWorldMap();
+  updatePulses();
+  drawConnections();
+  drawRegions();
+  drawSidebar();
+
+  requestAnimationFrame(tick);
+}
+
+// ─── Events ───────────────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+  const rect = canvas.getBoundingClientRect();
+  const mx = mouse.x - rect.left;
+  const my = mouse.y - rect.top;
+
+  hoveredRegion = null;
+  let closest = 24;
+  for (const region of REGIONS) {
+    const dx = rx(region.x) - mx;
+    const dy = ry(region.y) - my;
+    const dist = Math.hypot(dx, dy);
+    if (dist < closest) {
+      closest = dist;
+      hoveredRegion = region;
+    }
+  }
+});
+
+canvas.addEventListener('mouseleave', () => {
+  hoveredRegion = null;
+});
+
+const ro = new ResizeObserver(() => resize());
+ro.observe(col);
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+resize();
+tick();
+</script>

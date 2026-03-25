@@ -1,0 +1,484 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Header from '../../../components/layout/Header.astro';
+import Footer from '../../../components/layout/Footer.astro';
+---
+
+<Layout title="PelloBuild — Database Schema | Pello" description="PelloBuild designs and deploys production-grade database schemas with full ER diagrams, migration tracking, and relationship visualisation. Watch your data architecture come to life.">
+  <Header />
+  <main id="main-content">
+    <section class="build-section" aria-labelledby="build-headline">
+      <div class="build-layout">
+        <div class="build-text">
+          <span class="build-badge">PelloBuild</span>
+          <h1 id="build-headline">Data Architecture, Designed Right</h1>
+          <p>Production-grade database schemas built with precision. Entity relationships, index strategies, migration tracking — every design decision documented and versioned from day one.</p>
+          <ul class="build-pills" role="list">
+            <li>Full-stack development</li>
+            <li>Data infrastructure</li>
+            <li>Internal tooling</li>
+            <li>Systems integration</li>
+          </ul>
+        </div>
+        <div class="build-canvas-col">
+          <canvas id="build-canvas" aria-hidden="true"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #060712; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .build-section { min-height: 100vh; display: flex; align-items: center; padding: 6rem 0 4rem; }
+  .build-layout { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  @media (max-width: 768px) { .build-layout { grid-template-columns: 1fr; } }
+  .build-text { display: flex; flex-direction: column; gap: 1.5rem; }
+  .build-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.875rem; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3); border-radius: 100px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6366f1; width: fit-content; }
+  .build-text h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; color: #fff; }
+  .build-text p { font-size: 1.0625rem; line-height: 1.7; color: rgba(255,255,255,0.65); max-width: 44ch; }
+  .build-pills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .build-pills li { padding: 0.375rem 0.875rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.8125rem; color: rgba(255,255,255,0.75); }
+  .build-canvas-col { position: relative; width: 100%; min-height: 560px; }
+  #build-canvas { width: 100%; height: 100%; position: absolute; inset: 0; cursor: crosshair; }
+</style>
+
+<script>
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Column {
+  name: string;
+  type: string;
+  isPK?: boolean;
+  isFK?: boolean;
+  nullable?: boolean;
+}
+
+interface Table {
+  id: string;
+  name: string;
+  color: string;
+  columns: Column[];
+  targetX: number;
+  targetY: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  alpha: number;
+  entered: boolean;
+}
+
+interface Relation {
+  from: string;
+  to: string;
+  fromCol: string;
+  toCol: string;
+  type: 'one-to-many' | 'one-to-one';
+}
+
+interface MigrationEntry {
+  text: string;
+  age: number;
+}
+
+// ─── Data ─────────────────────────────────────────────────────────────────────
+
+const COL_W = 180;
+const COL_ROW_H = 22;
+const COL_HEADER_H = 32;
+
+function tableHeight(t: Table): number {
+  return COL_HEADER_H + t.columns.length * COL_ROW_H + 8;
+}
+
+const TABLES: Table[] = [
+  {
+    id: 'users',
+    name: 'users',
+    color: '#6366f1',
+    columns: [
+      { name: 'id',         type: 'uuid',      isPK: true },
+      { name: 'email',      type: 'varchar',   nullable: false },
+      { name: 'name',       type: 'varchar',   nullable: false },
+      { name: 'role',       type: 'enum',      nullable: false },
+      { name: 'created_at', type: 'timestamp', nullable: false },
+      { name: 'updated_at', type: 'timestamp', nullable: true },
+    ],
+    targetX: 0.08, targetY: 0.12, x: 0.08, y: 0.12, width: COL_W, height: 0, alpha: 0, entered: false,
+  },
+  {
+    id: 'orders',
+    name: 'orders',
+    color: '#8b5cf6',
+    columns: [
+      { name: 'id',          type: 'uuid',      isPK: true },
+      { name: 'user_id',     type: 'uuid',      isFK: true },
+      { name: 'status',      type: 'enum',      nullable: false },
+      { name: 'total',       type: 'numeric',   nullable: false },
+      { name: 'currency',    type: 'varchar',   nullable: false },
+      { name: 'created_at',  type: 'timestamp', nullable: false },
+    ],
+    targetX: 0.38, targetY: 0.08, x: 0.38, y: 0.08, width: COL_W, height: 0, alpha: 0, entered: false,
+  },
+  {
+    id: 'products',
+    name: 'products',
+    color: '#06b6d4',
+    columns: [
+      { name: 'id',          type: 'uuid',    isPK: true },
+      { name: 'name',        type: 'varchar', nullable: false },
+      { name: 'price',       type: 'numeric', nullable: false },
+      { name: 'stock',       type: 'integer', nullable: false },
+      { name: 'category_id', type: 'uuid',    isFK: true },
+    ],
+    targetX: 0.65, targetY: 0.06, x: 0.65, y: 0.06, width: COL_W, height: 0, alpha: 0, entered: false,
+  },
+  {
+    id: 'payments',
+    name: 'payments',
+    color: '#22c55e',
+    columns: [
+      { name: 'id',           type: 'uuid',      isPK: true },
+      { name: 'order_id',     type: 'uuid',      isFK: true },
+      { name: 'amount',       type: 'numeric',   nullable: false },
+      { name: 'method',       type: 'enum',      nullable: false },
+      { name: 'status',       type: 'enum',      nullable: false },
+      { name: 'processed_at', type: 'timestamp', nullable: true },
+    ],
+    targetX: 0.38, targetY: 0.52, x: 0.38, y: 0.52, width: COL_W, height: 0, alpha: 0, entered: false,
+  },
+  {
+    id: 'sessions',
+    name: 'sessions',
+    color: '#f59e0b',
+    columns: [
+      { name: 'id',         type: 'uuid',      isPK: true },
+      { name: 'user_id',    type: 'uuid',      isFK: true },
+      { name: 'token',      type: 'varchar',   nullable: false },
+      { name: 'ip',         type: 'inet',      nullable: true },
+      { name: 'expires_at', type: 'timestamp', nullable: false },
+    ],
+    targetX: 0.08, targetY: 0.56, x: 0.08, y: 0.56, width: COL_W, height: 0, alpha: 0, entered: false,
+  },
+];
+
+const RELATIONS: Relation[] = [
+  { from: 'users',    to: 'orders',   fromCol: 'id',       toCol: 'user_id',  type: 'one-to-many' },
+  { from: 'orders',   to: 'payments', fromCol: 'id',       toCol: 'order_id', type: 'one-to-many' },
+  { from: 'users',    to: 'sessions', fromCol: 'id',       toCol: 'user_id',  type: 'one-to-many' },
+  { from: 'orders',   to: 'products', fromCol: 'user_id',  toCol: 'id',       type: 'one-to-many' },
+];
+
+const MIGRATIONS: string[] = [
+  'CREATE TABLE users (id uuid PRIMARY KEY, email varchar NOT NULL)',
+  'CREATE TABLE orders (id uuid PRIMARY KEY, user_id uuid REFERENCES users(id))',
+  'CREATE TABLE products (id uuid PRIMARY KEY, name varchar NOT NULL, price numeric)',
+  'CREATE TABLE payments (id uuid PRIMARY KEY, order_id uuid REFERENCES orders(id))',
+  'CREATE TABLE sessions (id uuid PRIMARY KEY, user_id uuid REFERENCES users(id))',
+  'CREATE INDEX idx_users_email ON users(email)',
+  'CREATE INDEX idx_orders_user_id ON orders(user_id)',
+  'ALTER TABLE users ADD COLUMN updated_at timestamp',
+  'ALTER TABLE products ADD COLUMN stock integer DEFAULT 0',
+  'CREATE INDEX idx_sessions_token ON sessions(token)',
+  'ALTER TABLE orders ADD COLUMN currency varchar DEFAULT \'USD\'',
+  'CREATE INDEX idx_payments_order_id ON payments(order_id)',
+];
+
+// ─── Canvas Setup ─────────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('build-canvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const col = canvas.parentElement as HTMLElement;
+
+let W = 0, H = 0, dpr = 1, frame = 0;
+let hoveredTable: Table | null = null;
+const migrationLog: MigrationEntry[] = [];
+let migrationIdx = 0;
+let lastMigration = 0;
+
+function resize(): void {
+  dpr = window.devicePixelRatio || 1;
+  const rect = col.getBoundingClientRect();
+  W = rect.width;
+  H = rect.height;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+  for (const t of TABLES) {
+    t.height = tableHeight(t);
+  }
+}
+
+function tx(n: number): number { return n * W; }
+function ty(n: number): number { return n * H * 0.85 + 20; }
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function roundRect(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
+  c.beginPath();
+  c.moveTo(x + r, y);
+  c.lineTo(x + w - r, y);
+  c.quadraticCurveTo(x + w, y, x + w, y + r);
+  c.lineTo(x + w, y + h - r);
+  c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  c.lineTo(x + r, y + h);
+  c.quadraticCurveTo(x, y + h, x, y + h - r);
+  c.lineTo(x, y + r);
+  c.quadraticCurveTo(x, y, x + r, y);
+  c.closePath();
+}
+
+function hexToRgb(hex: string): [number, number, number] {
+  return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
+}
+
+// ─── Entry Animation ──────────────────────────────────────────────────────────
+
+function animateTables(): void {
+  for (let i = 0; i < TABLES.length; i++) {
+    const t = TABLES[i]!;
+    if (!t.entered && frame > i * 40 + 10) {
+      t.entered = true;
+    }
+    if (t.entered) {
+      t.alpha += (1 - t.alpha) * 0.06;
+    }
+    t.x += (t.targetX - t.x) * 0.08;
+    t.y += (t.targetY - t.y) * 0.08;
+  }
+}
+
+// ─── Draw Relations ───────────────────────────────────────────────────────────
+
+function drawRelations(): void {
+  for (const rel of RELATIONS) {
+    const a = TABLES.find(t => t.id === rel.from)!;
+    const b = TABLES.find(t => t.id === rel.to)!;
+    if (a.alpha < 0.05 || b.alpha < 0.05) continue;
+
+    const ax = tx(a.x) + a.width;
+    const ay = ty(a.y) + COL_HEADER_H / 2;
+    const bx = tx(b.x);
+    const by = ty(b.y) + COL_HEADER_H / 2;
+
+    const isHov = hoveredTable?.id === a.id || hoveredTable?.id === b.id;
+    const [r,g,bl] = hexToRgb(a.color);
+
+    ctx.beginPath();
+    ctx.moveTo(ax, ay);
+    const cx = (ax + bx) / 2;
+    ctx.bezierCurveTo(cx, ay, cx, by, bx, by);
+    ctx.strokeStyle = isHov ? `rgba(${r},${g},${bl},0.7)` : `rgba(${r},${g},${bl},${0.25 * Math.min(a.alpha, b.alpha)})`;
+    ctx.lineWidth = isHov ? 1.5 : 0.75;
+    ctx.stroke();
+
+    // Arrow head at b side
+    if (b.alpha > 0.5) {
+      const angle = Math.atan2(by - ay, bx - ax);
+      ctx.save();
+      ctx.translate(bx, by);
+      ctx.rotate(angle);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-8, -4);
+      ctx.lineTo(-8, 4);
+      ctx.closePath();
+      ctx.fillStyle = isHov ? `rgba(${r},${g},${bl},0.8)` : `rgba(${r},${g},${bl},${0.4 * Math.min(a.alpha, b.alpha)})`;
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+}
+
+// ─── Draw Tables ──────────────────────────────────────────────────────────────
+
+function drawTables(): void {
+  for (const table of TABLES) {
+    if (table.alpha < 0.01) continue;
+    const x = tx(table.x);
+    const y = ty(table.y);
+    const w = table.width;
+    const h = table.height;
+    const a = table.alpha;
+    const isHov = hoveredTable?.id === table.id;
+    const [r,g,b] = hexToRgb(table.color);
+
+    // Glow
+    if (isHov) {
+      const grd = ctx.createRadialGradient(x + w/2, y + h/2, 0, x + w/2, y + h/2, w * 0.8);
+      grd.addColorStop(0, `rgba(${r},${g},${b},0.12)`);
+      grd.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grd;
+      roundRect(ctx, x - 20, y - 20, w + 40, h + 40, 12);
+      ctx.fill();
+    }
+
+    // Card bg
+    ctx.globalAlpha = a;
+    roundRect(ctx, x, y, w, h, 8);
+    ctx.fillStyle = 'rgba(10,12,24,0.95)';
+    ctx.fill();
+    ctx.strokeStyle = isHov ? `rgba(${r},${g},${b},0.7)` : `rgba(${r},${g},${b},0.3)`;
+    ctx.lineWidth = isHov ? 1.5 : 1;
+    ctx.stroke();
+
+    // Header
+    roundRect(ctx, x, y, w, COL_HEADER_H, 8);
+    ctx.fillStyle = `rgba(${r},${g},${b},0.18)`;
+    ctx.fill();
+
+    // Table name
+    ctx.font = '700 11px ui-monospace, monospace';
+    ctx.fillStyle = `rgba(${r},${g},${b},0.95)`;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.fillText(table.name, x + 10, y + COL_HEADER_H / 2);
+
+    // Row indicator
+    ctx.font = '500 8px ui-monospace, monospace';
+    ctx.fillStyle = `rgba(${r},${g},${b},0.5)`;
+    ctx.textAlign = 'right';
+    ctx.fillText(`${table.columns.length} cols`, x + w - 10, y + COL_HEADER_H / 2);
+    ctx.textAlign = 'left';
+
+    // Columns
+    table.columns.forEach((colDef, i) => {
+      const ry2 = y + COL_HEADER_H + i * COL_ROW_H + 4;
+      const cy = ry2 + COL_ROW_H / 2;
+
+      // PK/FK indicator
+      if (colDef.isPK) {
+        ctx.fillStyle = `rgba(${r},${g},${b},0.7)`;
+        ctx.beginPath();
+        ctx.arc(x + 8, cy, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (colDef.isFK) {
+        ctx.strokeStyle = `rgba(${r},${g},${b},0.5)`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(x + 8, cy, 2.5, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // Column name
+      ctx.font = '500 9px ui-monospace, monospace';
+      ctx.fillStyle = colDef.isPK ? '#fff' : colDef.isFK ? `rgba(${r},${g},${b},0.85)` : 'rgba(255,255,255,0.7)';
+      ctx.fillText(colDef.name, x + 18, cy);
+
+      // Type badge
+      ctx.font = '400 8px ui-monospace, monospace';
+      ctx.fillStyle = `rgba(${r},${g},${b},0.55)`;
+      ctx.textAlign = 'right';
+      ctx.fillText(colDef.type, x + w - 8, cy);
+      ctx.textAlign = 'left';
+
+      // Row divider
+      if (i < table.columns.length - 1) {
+        ctx.beginPath();
+        ctx.moveTo(x + 4, ry2 + COL_ROW_H);
+        ctx.lineTo(x + w - 4, ry2 + COL_ROW_H);
+        ctx.strokeStyle = `rgba(${r},${g},${b},0.08)`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+    });
+
+    ctx.globalAlpha = 1;
+  }
+}
+
+// ─── Migration Log ────────────────────────────────────────────────────────────
+
+function updateMigrations(): void {
+  if (frame - lastMigration > 90 && migrationIdx < MIGRATIONS.length) {
+    migrationLog.push({ text: MIGRATIONS[migrationIdx]!, age: 0 });
+    migrationIdx++;
+    lastMigration = frame;
+    if (migrationLog.length > 5) migrationLog.shift();
+  }
+  for (const m of migrationLog) m.age++;
+}
+
+function drawMigrationLog(): void {
+  const lh = 18;
+  const pw = Math.min(W - 20, 440);
+  const ph = lh * migrationLog.length + 28;
+  const px = (W - pw) / 2;
+  const py = H - ph - 10;
+
+  if (migrationLog.length === 0) return;
+
+  ctx.fillStyle = 'rgba(6,7,18,0.92)';
+  roundRect(ctx, px, py, pw, ph, 6);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(99,102,241,0.2)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.font = '600 8px ui-monospace, monospace';
+  ctx.fillStyle = 'rgba(99,102,241,0.7)';
+  ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'left';
+  ctx.fillText('MIGRATION LOG', px + 10, py + 16);
+
+  migrationLog.forEach((m, i) => {
+    const a = Math.min(1, m.age / 20);
+    ctx.globalAlpha = a * (0.4 + (i / migrationLog.length) * 0.6);
+    ctx.font = '400 8.5px ui-monospace, monospace';
+    ctx.fillStyle = i === migrationLog.length - 1 ? '#22c55e' : 'rgba(255,255,255,0.5)';
+    const txt = m.text.length > 60 ? m.text.slice(0, 60) + '…' : m.text;
+    ctx.fillText(txt, px + 10, py + 28 + i * lh);
+    ctx.globalAlpha = 1;
+  });
+}
+
+// ─── Tick ─────────────────────────────────────────────────────────────────────
+
+function tick(): void {
+  frame++;
+  ctx.clearRect(0, 0, W, H);
+
+  const bg = ctx.createRadialGradient(W*0.5, H*0.4, 0, W*0.5, H*0.4, W*0.8);
+  bg.addColorStop(0, 'rgba(12,14,28,1)');
+  bg.addColorStop(1, 'rgba(6,7,18,1)');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  animateTables();
+  drawRelations();
+  drawTables();
+  updateMigrations();
+  drawMigrationLog();
+
+  requestAnimationFrame(tick);
+}
+
+// ─── Events ───────────────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  hoveredTable = null;
+  for (const t of TABLES) {
+    const x = tx(t.x), y = ty(t.y);
+    if (mx >= x && mx <= x + t.width && my >= y && my <= y + t.height) {
+      hoveredTable = t;
+      break;
+    }
+  }
+});
+
+canvas.addEventListener('mouseleave', () => { hoveredTable = null; });
+
+const ro = new ResizeObserver(() => resize());
+ro.observe(col);
+
+resize();
+tick();
+</script>
