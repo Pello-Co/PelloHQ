@@ -1,0 +1,314 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="PelloAds — Design 8 | Pello" description="PelloAds test design 8 — Real-Time Bidding Dashboard">
+  <div style="min-height:100vh;background:#060712;display:flex;flex-direction:column;align-items:center;padding:2rem;">
+    <h1 style="color:#7c3aed;font:700 1.5rem/1.3 -apple-system,sans-serif;margin-bottom:0.5rem;letter-spacing:-0.02em;">PelloAds</h1>
+    <p style="color:rgba(255,255,255,0.5);font:400 0.85rem/1.4 -apple-system,sans-serif;margin-bottom:1.5rem;">Design 8 — Real-Time Bidding Dashboard</p>
+    <canvas id="ads-canvas-8" style="width:100%;max-width:960px;border-radius:12px;cursor:crosshair;display:block;"></canvas>
+  </div>
+</Layout>
+
+<script>
+(function() {
+  const canvas = document.getElementById('ads-canvas-8') as HTMLCanvasElement;
+  const ctx = canvas.getContext('2d')!;
+  const DPR = window.devicePixelRatio || 1;
+  let W = 0, H = 0, frame = 0;
+  const mouse = { x: -1, y: -1 };
+
+  function resize() {
+    const w = canvas.parentElement!.clientWidth;
+    const h = Math.round(w * 0.62);
+    canvas.width = Math.round(w * DPR);
+    canvas.height = Math.round(h * DPR);
+    canvas.style.height = h + 'px';
+    ctx.scale(DPR, DPR);
+    W = w; H = h;
+  }
+
+  const PLATFORMS = [
+    { name: 'Google', color: '#4285f4', short: 'GGL' },
+    { name: 'Meta', color: '#1877f2', short: 'META' },
+    { name: 'TikTok', color: '#00f2ea', short: 'TKTK' },
+    { name: 'LinkedIn', color: '#0a66c2', short: 'LKDN' },
+  ];
+
+  interface BidEvent {
+    platform: typeof PLATFORMS[0];
+    won: boolean;
+    bid: number;
+    audience: string;
+    placement: string;
+    timestamp: number;
+    y: number;
+    alpha: number;
+  }
+
+  const AUDIENCES = ['Tech Founders', 'SaaS Leaders', 'E-comm Owners', 'DTC Brands', 'SMB Owners'];
+  const PLACEMENTS = ['Feed', 'Stories', 'Search', 'Display', 'Sponsored'];
+
+  let events: BidEvent[] = [];
+  let eventsScrollY = 0;
+  let totalWins = 3847;
+  let totalBids = 4210;
+  let totalSpend = 14280;
+  let currentAuction = { active: false, bids: [] as { platform: typeof PLATFORMS[0]; amount: number; lead: boolean }[], countdown: 0, winner: typeof PLATFORMS[0] | null };
+
+  // Spawn events
+  let lastEventFrame = 0;
+  function maybeSpawnEvent() {
+    if (frame - lastEventFrame < 18 + Math.random() * 12) return;
+    lastEventFrame = frame;
+    const pl = PLATFORMS[Math.floor(Math.random() * PLATFORMS.length)];
+    const won = Math.random() < 0.72;
+    const ev: BidEvent = {
+      platform: pl,
+      won,
+      bid: +(0.8 + Math.random() * 3.2).toFixed(2),
+      audience: AUDIENCES[Math.floor(Math.random() * AUDIENCES.length)],
+      placement: PLACEMENTS[Math.floor(Math.random() * PLACEMENTS.length)],
+      timestamp: Date.now(),
+      y: 0,
+      alpha: 1,
+    };
+    events.unshift(ev);
+    if (won) { totalWins++; totalSpend += ev.bid * 100; }
+    totalBids++;
+    if (events.length > 28) events = events.slice(0, 28);
+  }
+
+  // Auction state machine
+  let auctionTimer = 0;
+  let auctionPhase: 'idle' | 'bidding' | 'reveal' = 'idle';
+  let auctionBids: { platform: typeof PLATFORMS[0]; amount: number; progress: number }[] = [];
+  let auctionWinner: typeof PLATFORMS[0] | null = null;
+  let auctionRevealTimer = 0;
+
+  function updateAuction() {
+    auctionTimer++;
+    if (auctionPhase === 'idle') {
+      if (auctionTimer > 80) { auctionTimer = 0; auctionPhase = 'bidding'; auctionBids = PLATFORMS.map(p => ({ platform: p, amount: 0, progress: 0 })); }
+    } else if (auctionPhase === 'bidding') {
+      for (const b of auctionBids) {
+        if (b.progress < 1) b.progress = Math.min(1, b.progress + 0.025 + Math.random() * 0.015);
+        b.amount = +(b.progress * (1.2 + Math.random() * 2.8)).toFixed(2);
+      }
+      if (auctionBids.every(b => b.progress >= 1)) {
+        auctionPhase = 'reveal';
+        auctionRevealTimer = 0;
+        const sorted = [...auctionBids].sort((a, b) => b.amount - a.amount);
+        auctionWinner = sorted[0].platform;
+      }
+    } else if (auctionPhase === 'reveal') {
+      auctionRevealTimer++;
+      if (auctionRevealTimer > 120) { auctionPhase = 'idle'; auctionTimer = 0; auctionBids = []; auctionWinner = null; }
+    }
+  }
+
+  function hexToRgba(hex: string, a: number) {
+    const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+    return `rgba(${r},${g},${b},${a})`;
+  }
+  function roundRect(c: CanvasRenderingContext2D, x:number,y:number,w:number,h:number,r:number){
+    c.beginPath();c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.quadraticCurveTo(x+w,y,x+w,y+r);c.lineTo(x+w,y+h-r);c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);c.lineTo(x+r,y+h);c.quadraticCurveTo(x,y+h,x,y+h-r);c.lineTo(x,y+r);c.quadraticCurveTo(x,y,x+r,y);c.closePath();
+  }
+
+  const PAD = 16, TITLE_H = 44;
+
+  function drawTitle() {
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.font = `600 13px -apple-system,sans-serif`;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText('Real-Time Bidding Dashboard', PAD, TITLE_H/2+4);
+    const pulse = 0.5+0.5*Math.sin(frame*0.08);
+    ctx.beginPath(); ctx.arc(W-PAD-8,TITLE_H/2+4,4,0,Math.PI*2);
+    ctx.fillStyle=`rgba(34,197,94,${0.6+pulse*0.4})`; ctx.fill();
+    ctx.font=`11px -apple-system,sans-serif`; ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.textAlign='right';
+    ctx.fillText('LIVE AUCTION', W-PAD-18, TITLE_H/2+4);
+    ctx.restore();
+  }
+
+  function drawFeedPanel() {
+    const panelX = PAD, panelY = TITLE_H + 4;
+    const panelW = W * 0.3 - PAD * 1.5, panelH = H - TITLE_H - PAD - 4;
+    ctx.save();
+    roundRect(ctx, panelX, panelY, panelW, panelH, 8);
+    ctx.fillStyle = '#0d0f1f'; ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth=1; ctx.stroke();
+    // Header
+    ctx.font=`600 11px -apple-system,sans-serif`; ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.textAlign='left';
+    ctx.fillText('BID STREAM', panelX+10, panelY+18);
+    ctx.font=`10px -apple-system,sans-serif`; ctx.fillStyle='rgba(255,255,255,0.25)'; ctx.textAlign='right';
+    ctx.fillText(`${totalBids.toLocaleString()} total`, panelX+panelW-8, panelY+18);
+    // Clip
+    ctx.beginPath(); ctx.rect(panelX+1, panelY+28, panelW-2, panelH-36); ctx.clip();
+    const ROW_H = 28;
+    events.forEach((ev, i) => {
+      const ey = panelY + 32 + i * ROW_H;
+      if (ey > panelY + panelH - 4) return;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, 1 - i * 0.06);
+      // Platform dot
+      ctx.beginPath(); ctx.arc(panelX+16, ey+8, 3, 0, Math.PI*2);
+      ctx.fillStyle = ev.platform.color; ctx.fill();
+      // Platform name
+      ctx.font=`600 10px -apple-system,sans-serif`; ctx.fillStyle=ev.platform.color; ctx.textAlign='left';
+      ctx.fillText(ev.platform.short, panelX+24, ey+12);
+      // Audience
+      ctx.font=`10px -apple-system,sans-serif`; ctx.fillStyle='rgba(255,255,255,0.55)';
+      ctx.fillText(ev.audience.split(' ')[0], panelX+56, ey+12);
+      // Won/lost + bid
+      ctx.textAlign='right';
+      ctx.fillStyle=ev.won?'#22c55e':'#ef4444';
+      ctx.font=`600 10px -apple-system,sans-serif`;
+      ctx.fillText(ev.won?'WON':'LOST', panelX+panelW-34, ey+12);
+      ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.font=`10px -apple-system,sans-serif`;
+      ctx.fillText(`$${ev.bid}`, panelX+panelW-8, ey+12);
+      // Separator
+      ctx.strokeStyle='rgba(255,255,255,0.04)'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(panelX+8, ey+25); ctx.lineTo(panelX+panelW-8, ey+25); ctx.stroke();
+      ctx.restore();
+    });
+    ctx.restore();
+  }
+
+  function drawAuctionPanel() {
+    const panelX = PAD + W * 0.3, panelY = TITLE_H + 4;
+    const panelW = W * 0.4 - PAD, panelH = H - TITLE_H - PAD - 4;
+    ctx.save();
+    roundRect(ctx, panelX, panelY, panelW, panelH, 8);
+    ctx.fillStyle = '#0d0f1f'; ctx.fill();
+    ctx.strokeStyle = auctionPhase==='reveal' ? 'rgba(124,58,237,0.4)' : 'rgba(255,255,255,0.07)';
+    ctx.lineWidth = auctionPhase==='reveal' ? 1.5 : 1; ctx.stroke();
+    ctx.font=`600 11px -apple-system,sans-serif`; ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.textAlign='left';
+    ctx.fillText('CURRENT AUCTION', panelX+10, panelY+18);
+    if (auctionPhase === 'idle') {
+      const prog = auctionTimer / 80;
+      ctx.font=`12px -apple-system,sans-serif`; ctx.fillStyle='rgba(255,255,255,0.25)'; ctx.textAlign='center';
+      ctx.fillText('Next auction in...', panelX+panelW/2, panelY+panelH/2-16);
+      ctx.font=`600 28px -apple-system,sans-serif`; ctx.fillStyle='rgba(255,255,255,0.4)';
+      ctx.fillText(`${(((80-auctionTimer)/80)*2.5).toFixed(1)}s`, panelX+panelW/2, panelY+panelH/2+16);
+      // Countdown ring
+      ctx.beginPath(); ctx.arc(panelX+panelW/2, panelY+panelH/2+48, 18, -Math.PI/2, -Math.PI/2+prog*Math.PI*2);
+      ctx.strokeStyle='#7c3aed'; ctx.lineWidth=3; ctx.stroke();
+    } else {
+      const bx = panelX + 20, bw = panelW - 40;
+      auctionBids.forEach((b, i) => {
+        const by = panelY + 36 + i * 52;
+        const isWin = auctionPhase==='reveal' && auctionWinner === b.platform;
+        // Row bg
+        roundRect(ctx, bx, by, bw, 40, 6);
+        ctx.fillStyle = isWin ? hexToRgba(b.platform.color, 0.18) : 'rgba(255,255,255,0.03)'; ctx.fill();
+        if (isWin) { ctx.strokeStyle=hexToRgba(b.platform.color,0.5); ctx.lineWidth=1; ctx.stroke(); }
+        // Platform color bar
+        ctx.fillStyle = b.platform.color;
+        roundRect(ctx, bx, by, 4, 40, 3); ctx.fill();
+        // Name
+        ctx.font=`600 11px -apple-system,sans-serif`; ctx.fillStyle='rgba(255,255,255,0.85)'; ctx.textAlign='left';
+        ctx.fillText(b.platform.name, bx+12, by+14);
+        if (isWin) { ctx.fillStyle='#22c55e'; ctx.font=`600 10px -apple-system,sans-serif`; ctx.fillText('★ WINNER', bx+12, by+29); }
+        // Bid amount
+        ctx.font=`600 13px -apple-system,sans-serif`; ctx.fillStyle=b.platform.color; ctx.textAlign='right';
+        ctx.fillText(`$${b.amount.toFixed(2)}`, bx+bw-8, by+14);
+        // Progress bar
+        const barY = by+30, barH = 4;
+        roundRect(ctx, bx+12, barY, bw-20, barH, 2);
+        ctx.fillStyle='rgba(255,255,255,0.08)'; ctx.fill();
+        roundRect(ctx, bx+12, barY, (bw-20)*b.progress, barH, 2);
+        ctx.fillStyle=hexToRgba(b.platform.color,0.85); ctx.fill();
+      });
+    }
+    ctx.restore();
+  }
+
+  function drawMetricsPanel() {
+    const panelX = PAD + W * 0.7 + PAD * 0.5, panelY = TITLE_H + 4;
+    const panelW = W * 0.3 - PAD * 2.5, panelH = H - TITLE_H - PAD - 4;
+    ctx.save();
+    roundRect(ctx, panelX, panelY, panelW, panelH, 8);
+    ctx.fillStyle='#0d0f1f'; ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.07)'; ctx.lineWidth=1; ctx.stroke();
+    ctx.font=`600 11px -apple-system,sans-serif`; ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.textAlign='left';
+    ctx.fillText('METRICS', panelX+10, panelY+18);
+
+    // Win rate gauge
+    const winRate = totalWins / totalBids;
+    const cx = panelX + panelW/2, gaugeY = panelY + 60;
+    const r = Math.min(panelW*0.36, 44);
+    ctx.beginPath(); ctx.arc(cx, gaugeY, r, Math.PI, 2*Math.PI);
+    ctx.strokeStyle='rgba(255,255,255,0.1)'; ctx.lineWidth=8; ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, gaugeY, r, Math.PI, Math.PI + winRate * Math.PI);
+    ctx.strokeStyle='#22c55e'; ctx.lineWidth=8; ctx.stroke();
+    ctx.font=`700 16px -apple-system,sans-serif`; ctx.fillStyle='#fff'; ctx.textAlign='center';
+    ctx.fillText(`${(winRate*100).toFixed(1)}%`, cx, gaugeY+6);
+    ctx.font=`10px -apple-system,sans-serif`; ctx.fillStyle='rgba(255,255,255,0.4)';
+    ctx.fillText('WIN RATE', cx, gaugeY+22);
+
+    // Spend & CPC
+    const sy = gaugeY + 50;
+    const metrics = [
+      { label: 'Total Spend', value: `$${(totalSpend/100).toFixed(0)}`, color: '#7c3aed' },
+      { label: 'Avg CPC', value: `$${(1.2+Math.sin(frame*0.01)*0.3).toFixed(2)}`, color: '#f59e0b' },
+      { label: 'Bids/sec', value: `${(totalBids/Math.max(1,(Date.now()%100000)/1000)).toFixed(0)}`, color: '#0ea5e9' },
+    ];
+    metrics.forEach((m, i) => {
+      const my = sy + i * 36;
+      ctx.fillStyle='rgba(255,255,255,0.06)'; roundRect(ctx,panelX+8,my,panelW-16,30,5); ctx.fill();
+      ctx.font=`10px -apple-system,sans-serif`; ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.textAlign='left';
+      ctx.fillText(m.label, panelX+14, my+12);
+      ctx.font=`600 13px -apple-system,sans-serif`; ctx.fillStyle=m.color; ctx.textAlign='right';
+      ctx.fillText(m.value, panelX+panelW-12, my+20);
+    });
+
+    // Platform distribution donut
+    const donutY = sy + metrics.length * 36 + 28;
+    const donutR = Math.min(panelW * 0.32, 38);
+    const donutCX = panelX + panelW/2;
+    const shares = [0.34, 0.28, 0.22, 0.16];
+    let startAngle = -Math.PI/2;
+    PLATFORMS.forEach((p, i) => {
+      const end = startAngle + shares[i] * Math.PI * 2;
+      ctx.beginPath(); ctx.moveTo(donutCX, donutY);
+      ctx.arc(donutCX, donutY, donutR, startAngle, end);
+      ctx.fillStyle = hexToRgba(p.color, 0.85); ctx.fill();
+      startAngle = end;
+    });
+    ctx.beginPath(); ctx.arc(donutCX, donutY, donutR * 0.55, 0, Math.PI*2);
+    ctx.fillStyle='#0d0f1f'; ctx.fill();
+    ctx.font=`9px -apple-system,sans-serif`; ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.textAlign='center';
+    ctx.fillText('PLATFORMS', donutCX, donutY+4);
+    // Legend
+    PLATFORMS.forEach((p, i) => {
+      const lx = panelX + (i%2) * (panelW/2) + 10;
+      const ly = donutY + donutR + 16 + Math.floor(i/2) * 16;
+      ctx.beginPath(); ctx.arc(lx+4, ly-3, 3, 0, Math.PI*2); ctx.fillStyle=p.color; ctx.fill();
+      ctx.font=`9px -apple-system,sans-serif`; ctx.fillStyle='rgba(255,255,255,0.45)'; ctx.textAlign='left';
+      ctx.fillText(p.name, lx+10, ly);
+    });
+    ctx.restore();
+  }
+
+  function draw() {
+    frame++;
+    maybeSpawnEvent();
+    updateAuction();
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle='#060712'; ctx.fillRect(0,0,W,H);
+    drawTitle();
+    drawFeedPanel();
+    drawAuctionPanel();
+    drawMetricsPanel();
+    requestAnimationFrame(draw);
+  }
+
+  canvas.addEventListener('mousemove', e => {
+    const r = canvas.getBoundingClientRect();
+    mouse.x = (e.clientX - r.left)*(W/r.width); mouse.y = (e.clientY - r.top)*(H/r.height);
+  });
+  canvas.addEventListener('mouseleave', () => { mouse.x=-1; mouse.y=-1; });
+  new ResizeObserver(resize).observe(canvas.parentElement!);
+  resize(); draw();
+})();
+</script>

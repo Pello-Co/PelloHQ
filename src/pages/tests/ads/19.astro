@@ -1,0 +1,376 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="PelloAds — Design 19" description="PelloAds test design 19">
+  <div style="min-height:100vh;background:#060712;display:flex;flex-direction:column;align-items:center;padding:2rem;">
+    <h1 style="color:#7c3aed;font:700 1.5rem/1.3 -apple-system,sans-serif;margin-bottom:0.5rem;letter-spacing:-0.02em;">PelloAds</h1>
+    <p style="color:rgba(255,255,255,0.5);font:400 0.85rem/1.4 -apple-system,sans-serif;margin-bottom:1.5rem;">Design 19 — Automated Rules Engine</p>
+    <canvas id="ads-canvas-19" style="width:100%;max-width:900px;border-radius:12px;cursor:crosshair;"></canvas>
+  </div>
+</Layout>
+
+<script>
+const canvas = document.getElementById('ads-canvas-19') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const dpr = window.devicePixelRatio || 1;
+
+const W = 900, H = 620;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+canvas.style.height = H + 'px';
+ctx.scale(dpr, dpr);
+
+// --- Rules data ---
+const rules = [
+  { id: 1, cond: 'IF CPC > $2.50',           action: 'PAUSE variant',        type: 'pause',    triggers: 12, color: '#f59e0b' },
+  { id: 2, cond: 'IF ROAS > 3x',             action: 'INCREASE budget 20%',  type: 'increase', triggers: 8,  color: '#10b981' },
+  { id: 3, cond: 'IF CTR < 0.5%',            action: 'KILL variant',         type: 'kill',     triggers: 23, color: '#ef4444' },
+  { id: 4, cond: 'IF Impr > 10k AND CTR < 1%', action: 'REDUCE bid 15%',   type: 'reduce',   triggers: 5,  color: '#f59e0b' },
+  { id: 5, cond: 'IF Conv Rate > 5%',        action: 'SCALE spend 2x',       type: 'scale',    triggers: 3,  color: '#10b981' },
+  { id: 6, cond: 'IF CPC trending 3 days',   action: 'ROTATE creative',      type: 'rotate',   triggers: 7,  color: '#7c3aed' },
+];
+
+// Flash state per rule
+const ruleFlash: number[] = rules.map(() => 0); // 0..1 fade
+const ruleNotif: { rule: number; alpha: number; variantId: number; offsetY: number }[] = [];
+
+// Log entries
+interface LogEntry {
+  time: string;
+  text: string;
+  color: string;
+  y: number;
+}
+const logEntries: LogEntry[] = [];
+let logScrollOffset = 0;
+
+function rndTime(): string {
+  const h = 14;
+  const m = Math.floor(Math.random() * 60).toString().padStart(2, '0');
+  const s = Math.floor(Math.random() * 60).toString().padStart(2, '0');
+  return `${h}:${m}:${s}`;
+}
+
+function addLogEntry() {
+  const r = rules[Math.floor(Math.random() * rules.length)];
+  const vid = Math.floor(Math.random() * 500) + 100;
+  let text = '';
+  if (r.type === 'kill')     text = `Rule ${r.id} killed variant #${vid} — CTR was 0.3%`;
+  else if (r.type === 'pause')    text = `Rule ${r.id} paused variant #${vid} — CPC was $2.87`;
+  else if (r.type === 'increase') text = `Rule ${r.id} increased budget for #${vid} — ROAS 3.4x`;
+  else if (r.type === 'reduce')   text = `Rule ${r.id} reduced bid for #${vid} — low CTR`;
+  else if (r.type === 'scale')    text = `Rule ${r.id} scaled spend for #${vid} — Conv 6.2%`;
+  else                            text = `Rule ${r.id} rotated creative for #${vid} — CPC ↑ 3d`;
+  logEntries.unshift({ time: rndTime(), text, color: r.color, y: 0 });
+  if (logEntries.length > 20) logEntries.pop();
+}
+
+// Pre-populate log
+for (let i = 0; i < 8; i++) addLogEntry();
+
+// Layout
+const CARD_COLS = 3, CARD_ROWS = 2;
+const cardPadX = 20, cardPadY = 20;
+const cardsTop = cardPadY;
+const cardW = (W - cardPadX * 2 - (CARD_COLS - 1) * 10) / CARD_COLS;
+const cardH = 108;
+const statsY = cardsTop + CARD_ROWS * cardH + CARD_ROWS * 10 + 8;
+const statsH = 40;
+const logTop = statsY + statsH + 12;
+const logH = H - logTop - 16;
+const logLineH = 20;
+const LOG_VISIBLE = Math.floor((logH - 30) / logLineH);
+
+function drawRR(x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// Draw rule icons
+function drawRuleIcon(type: string, cx: number, cy: number, color: string) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  const s = 8;
+  if (type === 'pause') {
+    // Two vertical bars
+    ctx.beginPath(); ctx.moveTo(cx - 4, cy - s); ctx.lineTo(cx - 4, cy + s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + 2, cy - s); ctx.lineTo(cx + 2, cy + s); ctx.stroke();
+  } else if (type === 'increase') {
+    // Up arrow
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - s);
+    ctx.lineTo(cx - s * 0.6, cy);
+    ctx.moveTo(cx, cy - s);
+    ctx.lineTo(cx + s * 0.6, cy);
+    ctx.moveTo(cx, cy - s);
+    ctx.lineTo(cx, cy + s);
+    ctx.stroke();
+  } else if (type === 'kill') {
+    // X
+    ctx.beginPath(); ctx.moveTo(cx - s, cy - s); ctx.lineTo(cx + s, cy + s); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + s, cy - s); ctx.lineTo(cx - s, cy + s); ctx.stroke();
+  } else if (type === 'reduce') {
+    // Down arrow
+    ctx.beginPath();
+    ctx.moveTo(cx, cy + s);
+    ctx.lineTo(cx - s * 0.6, cy);
+    ctx.moveTo(cx, cy + s);
+    ctx.lineTo(cx + s * 0.6, cy);
+    ctx.moveTo(cx, cy + s);
+    ctx.lineTo(cx, cy - s);
+    ctx.stroke();
+  } else if (type === 'scale') {
+    // Double up arrows
+    ctx.beginPath();
+    ctx.moveTo(cx - 4, cy); ctx.lineTo(cx - 4, cy - s); ctx.moveTo(cx - 4, cy - s); ctx.lineTo(cx - 8, cy - s + 4);
+    ctx.moveTo(cx - 4, cy - s); ctx.lineTo(cx, cy - s + 4);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx + 4, cy + 2); ctx.lineTo(cx + 4, cy - s + 2); ctx.moveTo(cx + 4, cy - s + 2); ctx.lineTo(cx, cy - s + 6);
+    ctx.moveTo(cx + 4, cy - s + 2); ctx.lineTo(cx + 8, cy - s + 6);
+    ctx.stroke();
+  } else if (type === 'rotate') {
+    // Circular arrow
+    ctx.beginPath();
+    ctx.arc(cx, cy, s * 0.8, -Math.PI * 0.2, Math.PI * 1.6);
+    ctx.stroke();
+    // Arrowhead
+    ctx.beginPath();
+    ctx.moveTo(cx + s * 0.8, cy - 3);
+    ctx.lineTo(cx + s * 0.8 + 5, cy);
+    ctx.lineTo(cx + s * 0.8 - 3, cy + 2);
+    ctx.stroke();
+  }
+}
+
+// Trigger logic
+let triggerTimer = 0;
+let lastTs = 0;
+
+function triggerRule(ruleIdx: number) {
+  ruleFlash[ruleIdx] = 1;
+  const vid = Math.floor(Math.random() * 500) + 100;
+  // Card position
+  const col = ruleIdx % CARD_COLS;
+  const row = Math.floor(ruleIdx / CARD_COLS);
+  const cx = cardPadX + col * (cardW + 10) + cardW * 0.5;
+  const cy = cardsTop + row * (cardH + 10) + cardH * 0.4;
+  ruleNotif.push({ rule: ruleIdx, alpha: 1, variantId: vid, offsetY: 0 });
+  // Add log
+  const r = rules[ruleIdx];
+  let text = '';
+  if (r.type === 'kill')          text = `Rule ${r.id} killed variant #${vid} — CTR was 0.3%`;
+  else if (r.type === 'pause')    text = `Rule ${r.id} paused variant #${vid} — CPC was $2.87`;
+  else if (r.type === 'increase') text = `Rule ${r.id} increased budget for #${vid}`;
+  else if (r.type === 'reduce')   text = `Rule ${r.id} reduced bid for #${vid}`;
+  else if (r.type === 'scale')    text = `Rule ${r.id} scaled spend for #${vid}`;
+  else                            text = `Rule ${r.id} rotated creative for #${vid}`;
+  logEntries.unshift({ time: rndTime(), text, color: r.color, y: 0 });
+  if (logEntries.length > 20) logEntries.pop();
+}
+
+function draw(ts: number) {
+  const dt = Math.min((ts - lastTs) / 1000, 0.05);
+  lastTs = ts;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, W, H);
+
+  // Trigger interval
+  triggerTimer += dt;
+  if (triggerTimer > 1.5 + Math.random() * 1.5) {
+    triggerTimer = 0;
+    triggerRule(Math.floor(Math.random() * rules.length));
+  }
+
+  // Fade flashes
+  for (let i = 0; i < ruleFlash.length; i++) {
+    ruleFlash[i] = Math.max(0, ruleFlash[i] - dt * 1.5);
+  }
+
+  // Update notifications
+  for (let i = ruleNotif.length - 1; i >= 0; i--) {
+    ruleNotif[i].alpha -= dt * 0.8;
+    ruleNotif[i].offsetY += dt * 30;
+    if (ruleNotif[i].alpha <= 0) ruleNotif.splice(i, 1);
+  }
+
+  // === RULE CARDS ===
+  rules.forEach((rule, i) => {
+    const col = i % CARD_COLS;
+    const row = Math.floor(i / CARD_COLS);
+    const cx = cardPadX + col * (cardW + 10);
+    const cy = cardsTop + row * (cardH + 10);
+    const flash = ruleFlash[i];
+
+    // Card bg
+    drawRR(cx, cy, cardW, cardH, 10);
+    ctx.fillStyle = flash > 0
+      ? `rgba(${flash > 0.5 ? '20,15,5' : '10,12,26'},1)`
+      : '#0d0f1f';
+    ctx.fill();
+
+    // Flash border
+    if (flash > 0) {
+      ctx.strokeStyle = rule.color + Math.round(flash * 255).toString(16).padStart(2, '0');
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      // Flash overlay glow
+      const glowGrad = ctx.createRadialGradient(cx + cardW / 2, cy + cardH / 2, 0, cx + cardW / 2, cy + cardH / 2, cardW * 0.6);
+      glowGrad.addColorStop(0, rule.color + Math.round(flash * 30).toString(16).padStart(2, '0'));
+      glowGrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = glowGrad;
+      drawRR(cx, cy, cardW, cardH, 10);
+      ctx.fill();
+    } else {
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Status dot
+    ctx.beginPath();
+    ctx.arc(cx + cardW - 16, cy + 16, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#10b981';
+    ctx.fill();
+
+    // Icon
+    drawRuleIcon(rule.type, cx + 22, cy + 28, rule.color);
+
+    // Trigger count badge
+    const bdgW = 36, bdgH = 18;
+    drawRR(cx + cardW - bdgW - 8, cy + 32, bdgW, bdgH, 9);
+    ctx.fillStyle = rule.color + '25';
+    ctx.fill();
+    ctx.fillStyle = rule.color;
+    ctx.font = '700 10px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${rule.triggers}×`, cx + cardW - bdgW / 2 - 8, cy + 41);
+
+    // Condition text (amber)
+    ctx.fillStyle = '#f59e0b';
+    ctx.font = '600 9.5px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    // Truncate if needed
+    let condText = rule.cond;
+    if (condText.length > 22) condText = condText.slice(0, 22) + '…';
+    ctx.fillText(condText, cx + 10, cy + 60);
+
+    // Arrow →
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '400 9px -apple-system, sans-serif';
+    ctx.fillText('→', cx + 10, cy + 76);
+
+    // Action text
+    ctx.fillStyle = rule.type === 'kill' || rule.type === 'pause' ? '#ef4444' : '#10b981';
+    ctx.font = '600 9.5px -apple-system, sans-serif';
+    ctx.fillText(rule.action, cx + 20, cy + 76);
+  });
+
+  // === NOTIFICATIONS ===
+  ruleNotif.forEach((notif) => {
+    const col = notif.rule % CARD_COLS;
+    const row = Math.floor(notif.rule / CARD_COLS);
+    const cx = cardPadX + col * (cardW + 10) + cardW / 2;
+    const cy = cardsTop + row * (cardH + 10) - notif.offsetY - 8;
+    const r = rules[notif.rule];
+    const alpha = notif.alpha;
+
+    ctx.globalAlpha = alpha;
+    const ttW = 180, ttH = 22;
+    drawRR(cx - ttW / 2, cy - ttH, ttW, ttH, 11);
+    ctx.fillStyle = '#13152e';
+    ctx.fill();
+    ctx.strokeStyle = r.color + '80';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.font = '10px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`→ Applied to variant #${notif.variantId}`, cx, cy - ttH / 2);
+    ctx.globalAlpha = 1;
+  });
+
+  // === STATS ROW ===
+  const statsItems = [
+    { label: 'Rules fired today', val: '58',    color: '#7c3aed' },
+    { label: 'Budget saved',      val: '$4,280', color: '#10b981' },
+    { label: 'Variants killed',   val: '23',    color: '#ef4444' },
+    { label: 'Winners scaled',    val: '11',    color: '#10b981' },
+  ];
+  const statsItemW = (W - cardPadX * 2 - 30) / statsItems.length;
+  statsItems.forEach((s, i) => {
+    const sx = cardPadX + i * (statsItemW + 10);
+    drawRR(sx, statsY, statsItemW, statsH, 8);
+    ctx.fillStyle = '#0d0f1f';
+    ctx.fill();
+    ctx.fillStyle = s.color;
+    ctx.font = '700 14px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(s.val, sx + 10, statsY + 5);
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.font = '400 9px -apple-system, sans-serif';
+    ctx.fillText(s.label, sx + 10, statsY + 22);
+  });
+
+  // === LOG PANEL ===
+  drawRR(cardPadX, logTop, W - cardPadX * 2, logH, 10);
+  ctx.fillStyle = '#0a0c1a';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Log header
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.font = '700 9px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('RULE EXECUTION LOG', cardPadX + 14, logTop + 8);
+
+  // Scrolling log lines — clip to log panel
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(cardPadX + 1, logTop + 26, W - cardPadX * 2 - 2, logH - 28);
+  ctx.clip();
+
+  const visibleCount = Math.min(logEntries.length, LOG_VISIBLE);
+  logEntries.slice(0, visibleCount).forEach((entry, i) => {
+    const ly = logTop + 28 + i * logLineH;
+    const alpha = i === 0 ? 1 : i < 3 ? 0.9 : 0.6 - i * 0.03;
+
+    ctx.globalAlpha = Math.max(0.1, alpha);
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.font = '10px "SF Mono", "Fira Mono", monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(entry.time, cardPadX + 14, ly);
+
+    ctx.fillStyle = entry.color;
+    ctx.font = '600 10px "SF Mono", "Fira Mono", monospace';
+    ctx.fillText(entry.text, cardPadX + 74, ly);
+  });
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  requestAnimationFrame(draw);
+}
+
+lastTs = performance.now();
+requestAnimationFrame(draw);
+</script>

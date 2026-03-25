@@ -1,0 +1,420 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="PelloAds — Design 18" description="PelloAds test design 18">
+  <div style="min-height:100vh;background:#060712;display:flex;flex-direction:column;align-items:center;padding:2rem;">
+    <h1 style="color:#7c3aed;font:700 1.5rem/1.3 -apple-system,sans-serif;margin-bottom:0.5rem;letter-spacing:-0.02em;">PelloAds</h1>
+    <p style="color:rgba(255,255,255,0.5);font:400 0.85rem/1.4 -apple-system,sans-serif;margin-bottom:1.5rem;">Design 18 — Placement Distribution Sunburst</p>
+    <canvas id="ads-canvas-18" style="width:100%;max-width:900px;border-radius:12px;cursor:crosshair;"></canvas>
+  </div>
+</Layout>
+
+<script>
+const canvas = document.getElementById('ads-canvas-18') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const dpr = window.devicePixelRatio || 1;
+
+const W = 900, H = 580;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+canvas.style.height = H + 'px';
+ctx.scale(dpr, dpr);
+
+// Chart centre
+const CX = 310, CY = H / 2;
+
+// Platforms (inner ring)
+const platforms = [
+  { name: 'Google',   pct: 0.35, color: '#4285f4', spend: '$8,694' },
+  { name: 'Meta',     pct: 0.30, color: '#60a5fa', spend: '$7,452' },
+  { name: 'TikTok',   pct: 0.20, color: '#f43f5e', spend: '$4,968' },
+  { name: 'LinkedIn', pct: 0.15, color: '#38bdf8', spend: '$3,726' },
+];
+
+// Middle ring placements (index = platform index)
+const placements = [
+  [
+    { name: 'Search Feed', pct: 0.60 },
+    { name: 'Display',     pct: 0.40 },
+  ],
+  [
+    { name: 'Stories', pct: 0.45 },
+    { name: 'Reels',   pct: 0.35 },
+    { name: 'Feed',    pct: 0.20 },
+  ],
+  [
+    { name: 'Video',    pct: 0.70 },
+    { name: 'Discover', pct: 0.30 },
+  ],
+  [
+    { name: 'Feed',    pct: 0.55 },
+    { name: 'InMail',  pct: 0.45 },
+  ],
+];
+
+// Outer ring — ad variants (roas -> brightness modifier)
+const outerVariants = [
+  { pPlatIdx: 0, pPctShare: 0.50, roas: 5.1, name: 'V01' },
+  { pPlatIdx: 0, pPctShare: 0.50, roas: 3.8, name: 'V02' },
+  { pPlatIdx: 1, pPctShare: 0.40, roas: 4.2, name: 'V03' },
+  { pPlatIdx: 1, pPctShare: 0.30, roas: 2.9, name: 'V04' },
+  { pPlatIdx: 1, pPctShare: 0.30, roas: 1.8, name: 'V05' },
+  { pPlatIdx: 2, pPctShare: 0.60, roas: 3.5, name: 'V06' },
+  { pPlatIdx: 2, pPctShare: 0.40, roas: 2.1, name: 'V07' },
+  { pPlatIdx: 3, pPctShare: 0.55, roas: 4.7, name: 'V08' },
+  { pPlatIdx: 3, pPctShare: 0.45, roas: 3.3, name: 'V09' },
+];
+
+// Radii
+const innerR = 80;    // centre circle
+const r1 = 120;       // inner ring inner radius
+const r2 = 165;       // inner ring outer
+const r3 = 210;       // middle ring outer
+const r4 = 255;       // outer ring outer
+
+// Animation state
+let globalAngle = 0;  // slow rotation
+let t = 0;
+let centreStatIdx = 0;
+let centreStatAlpha = 1;
+let centreStatTimer = 0;
+const centreStats = ['Total Spend\n$24,840', 'Avg ROAS\n3.2x', 'Active Variants\n47'];
+
+// Pulse state for outperforming segments (platform indices 0 and 3)
+const outperformingPlatforms = [0, 3];
+let pulsePhase = 0;
+
+// Hover state
+let hoveredPlatform = -1;
+let hoveredOuterVariant = -1;
+let mouseX = 0, mouseY = 0;
+
+function hexToRgb(hex: string) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return { r, g, b };
+}
+
+function brightenColor(hex: string, factor: number): string {
+  const { r, g, b } = hexToRgb(hex);
+  const f = Math.min(2, Math.max(0.3, factor));
+  return `rgb(${Math.min(255, Math.round(r * f))},${Math.min(255, Math.round(g * f))},${Math.min(255, Math.round(b * f))})`;
+}
+
+// Build arc segments with rotation applied
+function buildArcs(rotation: number) {
+  // Inner ring
+  let startAngle = rotation;
+  const innerArcs = platforms.map(p => {
+    const span = p.pct * Math.PI * 2;
+    const arc = { startAngle, endAngle: startAngle + span, color: p.color };
+    startAngle += span;
+    return arc;
+  });
+
+  // Middle ring
+  const midArcs: { startAngle: number; endAngle: number; color: string; name: string }[] = [];
+  let midStart = rotation;
+  platforms.forEach((plat, pi) => {
+    const platSpan = plat.pct * Math.PI * 2;
+    let segStart = midStart;
+    placements[pi].forEach(pl => {
+      const segSpan = platSpan * pl.pct;
+      midArcs.push({
+        startAngle: segStart,
+        endAngle: segStart + segSpan,
+        color: brightenColor(plat.color, 0.85),
+        name: pl.name,
+      });
+      segStart += segSpan;
+    });
+    midStart += platSpan;
+  });
+
+  // Outer ring
+  let outerStart = rotation;
+  const outerArcs = outerVariants.map((v, i) => {
+    const platSpan = platforms[v.pPlatIdx].pct * Math.PI * 2;
+    const segSpan = platSpan * v.pPctShare;
+    // We need to place this at the right position within the platform's arc
+    // Build cumulative start offsets for each platform
+    let platStart = rotation;
+    for (let p = 0; p < v.pPlatIdx; p++) platStart += platforms[p].pct * Math.PI * 2;
+    // Within the platform, apportion sequentially
+    let inPlatStart = platStart;
+    for (let j = 0; j < i; j++) {
+      if (outerVariants[j].pPlatIdx === v.pPlatIdx) {
+        inPlatStart += platforms[v.pPlatIdx].pct * Math.PI * 2 * outerVariants[j].pPctShare;
+      }
+    }
+    const bright = 0.5 + (v.roas / 5.1) * 1.0;
+    const color = brightenColor(platforms[v.pPlatIdx].color, bright);
+    return {
+      startAngle: inPlatStart,
+      endAngle: inPlatStart + segSpan,
+      color,
+      roas: v.roas,
+      name: v.name,
+      pPlatIdx: v.pPlatIdx,
+    };
+  });
+
+  return { innerArcs, midArcs, outerArcs };
+}
+
+function drawAnnularArc(
+  cx: number, cy: number,
+  innerRadius: number, outerRadius: number,
+  startAngle: number, endAngle: number,
+  color: string,
+  extraOuter = 0
+) {
+  ctx.beginPath();
+  ctx.arc(cx, cy, outerRadius + extraOuter, startAngle, endAngle);
+  ctx.arc(cx, cy, innerRadius, endAngle, startAngle, true);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+function isMouseInAnnularArc(
+  mx: number, my: number,
+  cx: number, cy: number,
+  innerRadius: number, outerRadius: number,
+  startAngle: number, endAngle: number
+): boolean {
+  const dx = mx - cx, dy = my - cy;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist < innerRadius || dist > outerRadius) return false;
+  let angle = Math.atan2(dy, dx);
+  // Normalise
+  const normStart = ((startAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  const normEnd = ((endAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  const normAngle = ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  if (normStart < normEnd) return normAngle >= normStart && normAngle <= normEnd;
+  return normAngle >= normStart || normAngle <= normEnd;
+}
+
+function draw(ts: number) {
+  t = ts * 0.001;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, W, H);
+
+  // Slow rotation
+  globalAngle = (t / 30) * Math.PI * 2;
+  pulsePhase = t * 2;
+
+  // Centre stat cycling
+  centreStatTimer += 1 / 60;
+  if (centreStatTimer > 2) {
+    centreStatTimer = 0;
+    centreStatIdx = (centreStatIdx + 1) % centreStats.length;
+  }
+  centreStatAlpha = centreStatTimer < 0.3
+    ? centreStatTimer / 0.3
+    : centreStatTimer > 1.7 ? 1 - (centreStatTimer - 1.7) / 0.3
+    : 1;
+
+  const { innerArcs, midArcs, outerArcs } = buildArcs(globalAngle);
+
+  // Draw gap between rings
+  const gap = 3;
+
+  // === INNER RING ===
+  innerArcs.forEach((arc, i) => {
+    const isHov = hoveredPlatform === i;
+    const isOutperf = outperformingPlatforms.includes(i);
+    const pulse = isOutperf ? Math.sin(pulsePhase + i * 1.5) * 4 : 0;
+    const extra = isHov ? 8 : pulse > 0 ? pulse : 0;
+    drawAnnularArc(CX, CY, r1 + gap, r2, arc.startAngle, arc.endAngle, platforms[i].color, extra);
+    // Stroke
+    ctx.strokeStyle = '#060712';
+    ctx.lineWidth = gap;
+    ctx.stroke();
+  });
+
+  // === MIDDLE RING ===
+  midArcs.forEach((arc) => {
+    drawAnnularArc(CX, CY, r2 + gap, r3, arc.startAngle, arc.endAngle, arc.color, 0);
+    ctx.strokeStyle = '#060712';
+    ctx.lineWidth = gap;
+    ctx.stroke();
+  });
+
+  // === OUTER RING ===
+  outerArcs.forEach((arc, i) => {
+    const isHov = hoveredOuterVariant === i;
+    const extra = isHov ? 6 : 0;
+    drawAnnularArc(CX, CY, r3 + gap, r4, arc.startAngle, arc.endAngle, arc.color, extra);
+    ctx.strokeStyle = '#060712';
+    ctx.lineWidth = gap;
+    ctx.stroke();
+  });
+
+  // === CENTRE CIRCLE ===
+  ctx.beginPath();
+  ctx.arc(CX, CY, innerR, 0, Math.PI * 2);
+  ctx.fillStyle = '#0d0f1f';
+  ctx.fill();
+  ctx.strokeStyle = '#7c3aed40';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Centre stat text
+  ctx.globalAlpha = centreStatAlpha;
+  const statLines = centreStats[centreStatIdx].split('\n');
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.font = '400 9px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(statLines[0], CX, CY - 12);
+  ctx.fillStyle = '#fff';
+  ctx.font = '700 18px -apple-system, sans-serif';
+  ctx.fillText(statLines[1], CX, CY + 6);
+  ctx.globalAlpha = 1;
+
+  // === HOVER TOOLTIP ===
+  if (hoveredPlatform >= 0) {
+    const p = platforms[hoveredPlatform];
+    const ttW = 160, ttH = 70, ttR = 8;
+    let ttX = mouseX + 14, ttY = mouseY - ttH / 2;
+    if (ttX + ttW > W - 10) ttX = mouseX - ttW - 14;
+    if (ttY < 8) ttY = 8;
+    if (ttY + ttH > H - 8) ttY = H - ttH - 8;
+
+    ctx.beginPath();
+    ctx.roundRect(ttX, ttY, ttW, ttH, ttR);
+    ctx.fillStyle = '#13152e';
+    ctx.fill();
+    ctx.strokeStyle = p.color + '80';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = p.color;
+    ctx.font = '700 12px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(p.name, ttX + 12, ttY + 10);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.fillText(`Share: ${Math.round(p.pct * 100)}%`, ttX + 12, ttY + 28);
+    ctx.fillText(`Spend: ${p.spend}`, ttX + 12, ttY + 46);
+  }
+
+  if (hoveredOuterVariant >= 0) {
+    const v = outerVariants[hoveredOuterVariant];
+    const arc = outerArcs[hoveredOuterVariant];
+    const ttW = 140, ttH = 56, ttR = 8;
+    let ttX = mouseX + 14, ttY = mouseY - ttH / 2;
+    if (ttX + ttW > W - 10) ttX = mouseX - ttW - 14;
+    if (ttY < 8) ttY = 8;
+
+    ctx.beginPath();
+    ctx.roundRect(ttX, ttY, ttW, ttH, ttR);
+    ctx.fillStyle = '#13152e';
+    ctx.fill();
+    ctx.strokeStyle = arc.color + '80';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = arc.color;
+    ctx.font = '700 11px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(`Variant ${v.name} — ${platforms[v.pPlatIdx].name}`, ttX + 10, ttY + 10);
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.fillText(`ROAS: ${v.roas.toFixed(1)}x`, ttX + 10, ttY + 30);
+  }
+
+  // === LEGEND (right side) ===
+  const legX = CX + r4 + 28, legY = 60;
+
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.font = '700 9px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('PLATFORMS', legX, legY);
+
+  platforms.forEach((p, i) => {
+    const ly = legY + 20 + i * 28;
+    ctx.beginPath();
+    ctx.arc(legX + 7, ly + 7, 6, 0, Math.PI * 2);
+    ctx.fillStyle = p.color;
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.font = '600 12px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(p.name, legX + 18, ly);
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '400 11px -apple-system, sans-serif';
+    ctx.fillText(`${Math.round(p.pct * 100)}%  •  ${p.spend}`, legX + 18, ly + 14);
+  });
+
+  // Stats below legend
+  const statsY = legY + 20 + platforms.length * 28 + 20;
+  const statsItems = [
+    { label: 'Total Variants', val: '47' },
+    { label: 'Platforms',      val: '4'  },
+    { label: 'Best ROAS',      val: '5.1x' },
+  ];
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(legX, statsY - 10);
+  ctx.lineTo(legX + 180, statsY - 10);
+  ctx.stroke();
+
+  statsItems.forEach((s, i) => {
+    const sy = statsY + i * 30;
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '400 10px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(s.label, legX, sy);
+    ctx.fillStyle = '#7c3aed';
+    ctx.font = '700 14px -apple-system, sans-serif';
+    ctx.fillText(s.val, legX + 110, sy - 1);
+  });
+
+  requestAnimationFrame(draw);
+}
+
+requestAnimationFrame(draw);
+
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - rect.left) * (W / rect.width);
+  mouseY = (e.clientY - rect.top) * (H / rect.height);
+
+  const { innerArcs, outerArcs } = buildArcs(globalAngle);
+
+  hoveredPlatform = -1;
+  hoveredOuterVariant = -1;
+
+  // Check inner ring
+  innerArcs.forEach((arc, i) => {
+    if (isMouseInAnnularArc(mouseX, mouseY, CX, CY, r1, r2 + 8, arc.startAngle, arc.endAngle)) {
+      hoveredPlatform = i;
+    }
+  });
+
+  // Check outer ring
+  outerArcs.forEach((arc, i) => {
+    if (isMouseInAnnularArc(mouseX, mouseY, CX, CY, r3, r4 + 8, arc.startAngle, arc.endAngle)) {
+      hoveredOuterVariant = i;
+    }
+  });
+});
+
+canvas.addEventListener('mouseleave', () => {
+  hoveredPlatform = -1;
+  hoveredOuterVariant = -1;
+});
+
+</script>
