@@ -279,7 +279,22 @@ Zero effort.</h2>
           </section>
         </div>
       </div>
-      <div class="product-card build-card" data-product="5">
+      <div class="product-card" data-product="5">
+        <canvas class="product-bg" aria-hidden="true"></canvas>
+        <div class="product-card-content">
+          <ProductSection productIndex={5} flip={true} />
+        </div>
+      </div>            </a>
+          </div>
+        </div>
+      </div>
+      <div class="product-card" data-product="6">
+        <canvas class="product-bg" aria-hidden="true"></canvas>
+        <div class="product-card-content">
+          <ProductSection productIndex={6} flip={false} />
+        </div>
+      </div>
+      <div class="product-card build-card" data-product="7">
         <canvas class="product-bg" aria-hidden="true"></canvas>
         <div class="build-layout">
           <!-- Left: dashboard canvas in window frame -->
@@ -322,18 +337,6 @@ custom code.</h2>
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </a>
           </div>
-        </div>
-      </div>
-      <div class="product-card" data-product="6">
-        <canvas class="product-bg" aria-hidden="true"></canvas>
-        <div class="product-card-content">
-          <ProductSection productIndex={6} flip={false} />
-        </div>
-      </div>
-      <div class="product-card" data-product="7">
-        <canvas class="product-bg" aria-hidden="true"></canvas>
-        <div class="product-card-content">
-          <ProductSection productIndex={7} flip={true} />
         </div>
       </div>
     </div>
@@ -2402,6 +2405,26 @@ custom code.</h2>
   }
 
   // ── Product 5: Ads Equalizer Bars ────────────────────────────────────────
+  function drawBars(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, _state: Record<string, unknown>) {
+    const [r,g,b]=PV_RGB[5];
+    const numBars=40, barW=3, barGap=2, totalW=barW+barGap;
+    const startX=(w-numBars*totalW)/2;
+    const centerY=h*0.62;
+    for (let i=0;i<numBars;i++) {
+      const x=startX+i*totalW;
+      const bCx=x+barW/2;
+      const n=(noise2(i*0.15+t*0.4, t*0.6+i*0.05)+1)*0.5;
+      let barH=4+n*30;
+      if (hasMouse) {
+        const dx=Math.abs(mx-bCx);
+        if (dx<60) barH=Math.max(barH, Math.pow(1-dx/60,2)*35);
+      }
+      const alpha=0.25+(barH/34)*0.25;
+      ctx.fillStyle=`rgba(${r},${g},${b},${alpha})`;
+      ctx.fillRect(x, centerY-barH, barW, barH);
+    }
+  }
+
   function initMatrix(w: number, h: number) {
     const colW = 7;
     const cols = Math.ceil(w / colW);
@@ -2551,9 +2574,9 @@ custom code.</h2>
       case 1: return initReach(w,h);
       case 2: return initRain(w,h);
       case 3: return initSocial(w,h);
-      case 5: return initMatrix(w,h);
+      case 7: return initMatrix(w,h);
       case 6: return initParticles(w,h);
-      case 7: return initBlueprint();
+      
       default: return {};
     }
   }
@@ -2570,9 +2593,9 @@ custom code.</h2>
       case 2: drawRain(ctx,w,h,t,lx,ly,hasMouse,state); break;
       case 3: drawSocial(ctx,w,h,t,lx,ly,hasMouse,state); break;
       case 4: drawTopo(ctx,w,h,t,lx,ly,hasMouse,state); break;
-      case 5: drawMatrix(ctx,w,h,t,lx,ly,hasMouse,state); break;
+      case 5: drawBars(ctx,w,h,t,lx,ly,hasMouse,state); break;
       case 6: drawParticles(ctx,w,h,t,lx,ly,hasMouse,state); break;
-      case 7: drawBlueprint(ctx,w,h,t,lx,ly,hasMouse,state); break;
+      case 7: drawMatrix(ctx,w,h,t,lx,ly,hasMouse,state); break;
     }
   }
 
@@ -4382,7 +4405,7 @@ custom code.</h2>
     const bgCtx = bgCanvas.getContext('2d')!;
     const halfDpr = Math.max(1.0, (window.devicePixelRatio||1) * 1.0);
     const sizeEl = i === 3 ? (card.querySelector('.soc-canvas-col') as HTMLElement || card)
-                 : i === 5 ? (card.querySelector('.build-window-body') as HTMLElement || card)
+                 : i === 7 ? (card.querySelector('.build-window-body') as HTMLElement || card)
                  : i === 2 ? (card.querySelector('.pub-canvas-col') as HTMLElement || card)
                  : i === 1 ? (card.querySelector('.reach-canvas-col') as HTMLElement || card)
                  : card;
