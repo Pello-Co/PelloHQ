@@ -337,7 +337,48 @@ products, built for you.</h2>
       <div class="product-card" data-product="6">
         <canvas class="product-bg" aria-hidden="true"></canvas>
         <div class="product-card-content">
-          <ProductSection productIndex={6} flip={false} />
+        <div class="build-layout">
+          <!-- Left: text -->
+          <div class="build-text ps-info flex flex-col" style="--product-color:#4f46e5;">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:#4f46e518;border:1px solid #4f46e528;color:#4f46e5;" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="5" cy="5" r="2" fill="currentColor" opacity="0.3"/><circle cx="19" cy="5" r="2" fill="currentColor" opacity="0.3"/><circle cx="12" cy="19" r="2" fill="currentColor" opacity="0.3"/><path d="M7 5h10M5 7v10a2 2 0 0 0 2 2h3M19 7v3" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>
+              </div>
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-widest" style="color:#4f46e5;">PelloFlow</p>
+                <p class="text-xs text-zinc-500">Your business. Fully automated.</p>
+              </div>
+            </div>
+            <h2 class="text-headline text-white mb-5" style="white-space:pre-line;">Any process. Any complexity.
+Automated.</h2>
+            <p class="text-body-lg text-zinc-400 mb-8 leading-relaxed">PelloFlow builds custom automation workflows and AI agents designed specifically for your business. From lead routing to data processing to customer onboarding — if it&apos;s a process, PelloFlow automates it. Custom-built, maintained, and evolved as your business grows.</p>
+            <ul class="flex flex-wrap gap-2 mb-10 list-none m-0 p-0" role="list">
+              <li class="feature-pill" style="background:#4f46e50d;color:#4f46e5;border-color:#4f46e525;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Custom AI agents</li>
+              <li class="feature-pill" style="background:#4f46e50d;color:#4f46e5;border-color:#4f46e525;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>End-to-end process automation</li>
+              <li class="feature-pill" style="background:#4f46e50d;color:#4f46e5;border-color:#4f46e525;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>API & webhook integration</li>
+              <li class="feature-pill" style="background:#4f46e50d;color:#4f46e5;border-color:#4f46e525;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Ongoing maintenance</li>
+            </ul>
+            <a href="#contact" class="btn-primary self-start" style="background:linear-gradient(135deg,#4f46e5 0%,#4f46e5cc 100%);">
+              Learn More
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+          </div>
+          <!-- Right: dashboard canvas in window frame -->
+          <div class="build-canvas-col">
+            <div class="build-window" style="border-color:rgba(79,70,229,0.15);">
+              <div class="build-window-bar">
+                <span class="bw-dot" style="background:#ef4444;"></span>
+                <span class="bw-dot" style="background:#f59e0b;"></span>
+                <span class="bw-dot" style="background:#4ade80;"></span>
+                <span class="bw-title">PelloFlow Command Centre</span>
+                <span class="bw-live"><span class="bw-live-dot"></span>LIVE</span>
+              </div>
+              <div class="build-window-body">
+                <canvas id="flow-dash-canvas" aria-hidden="true"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
         </div>
       </div>
     </div>
@@ -786,7 +827,8 @@ products, built for you.</h2>
     position: relative;
     height: 400px;
   }
-  .build-window-body #build-dash-canvas {
+  .build-window-body #build-dash-canvas,
+  .build-window-body #flow-dash-canvas {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -3318,6 +3360,1267 @@ products, built for you.</h2>
     resize();
     tick();
   })();
+
+
+  // ── PelloFlow Dashboard Canvas ──────────────────────────────────────────
+  (function() {
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const BRAND       = '#4f46e5';
+const BG          = '#060712';
+const PANEL_BG    = '#0d0f1f';
+const PANEL_BORDER= 'rgba(255,255,255,0.08)';
+const TEXT_DIM    = 'rgba(255,255,255,0.4)';
+const TEXT_MID    = 'rgba(255,255,255,0.65)';
+const TEXT_BRIGHT = '#ffffff';
+const HEADER_H    = 54;      // stats bar
+const GAP         = 6;       // px between panels
+const SIM_START_H = new Date().getHours() + new Date().getMinutes() / 60;
+
+// ─── Agent definitions ────────────────────────────────────────────────────────
+
+interface Agent {
+  id: string;
+  name: string;
+  initials: string;
+  color: string;
+  active: boolean;
+  tasksToday: number;
+  completed: number;
+  nextTask: string;
+  nextIn: string;
+}
+
+const AGENTS: Agent[] = [
+  { id: 'sales',   name: 'Sales',      initials: 'SA', color: '#6366f1', active: true,  tasksToday: 5, completed: 1, nextTask: 'Pipeline Update', nextIn: '12m' },
+  { id: 'mkt',     name: 'Marketing',  initials: 'MK', color: '#ec4899', active: false, tasksToday: 5, completed: 0, nextTask: 'Email Blast',      nextIn: '35m' },
+  { id: 'ops',     name: 'Operations', initials: 'OP', color: '#f59e0b', active: true,  tasksToday: 4, completed: 2, nextTask: 'Invoice Process',  nextIn: '45m' },
+  { id: 'hr',      name: 'HR',         initials: 'HR', color: '#22c55e', active: true,  tasksToday: 3, completed: 1, nextTask: 'Payroll Sync',     nextIn: '1h 45m' },
+  { id: 'reach',   name: 'Outreach',   initials: 'OT', color: '#3b82f6', active: false, tasksToday: 4, completed: 2, nextTask: 'Cold Email',       nextIn: '45m' },
+  { id: 'data',    name: 'Analytics',  initials: 'AN', color: '#a855f7', active: true,  tasksToday: 6, completed: 3, nextTask: 'Revenue Report',  nextIn: '22m' },
+];
+
+// ─── Weekly calendar data ─────────────────────────────────────────────────────
+
+interface DayData {
+  label: string;
+  date: number;
+  isToday: boolean;
+  agentTasks: number[]; // per agent
+  total: number;
+  donePercent: number;
+}
+
+const WEEK: DayData[] = [
+  { label:'Mon', date:23, isToday:false, agentTasks:[2,2,1,1,2,3], total:11, donePercent:100 },
+  { label:'Tue', date:24, isToday:false, agentTasks:[3,2,2,1,2,4], total:14, donePercent:100 },
+  { label:'Wed', date:25, isToday:true,  agentTasks:[5,5,4,3,4,6], total:27, donePercent:40  },
+  { label:'Thu', date:26, isToday:false, agentTasks:[3,3,2,2,3,5], total:18, donePercent:0   },
+  { label:'Fri', date:27, isToday:false, agentTasks:[2,3,2,2,2,4], total:15, donePercent:0   },
+  { label:'Sat', date:28, isToday:false, agentTasks:[0,1,1,0,0,1], total:3,  donePercent:0   },
+  { label:'Sun', date:29, isToday:false, agentTasks:[0,0,1,0,0,1], total:2,  donePercent:0   },
+];
+
+// ─── Timeline task data ───────────────────────────────────────────────────────
+
+interface Task {
+  id: string;
+  agentIdx: number;
+  label: string;
+  startH: number;
+  endH: number;
+  records: string;
+  integrations: string;
+  costPerRun: string;
+  successRate: string;
+}
+
+const TASKS: Task[] = [
+  // Sales (0)
+  { id:'s1', agentIdx:0, label:'Lead Sync',        startH:9.0,   endH:9.5,   records:'847 leads',    integrations:'Salesforce',            costPerRun:'$0.18', successRate:'99.1%' },
+  { id:'s2', agentIdx:0, label:'Pipeline Update',  startH:10.0,  endH:10.75, records:'214 deals',    integrations:'Salesforce + HubSpot',   costPerRun:'$0.32', successRate:'98.4%' },
+  { id:'s3', agentIdx:0, label:'Follow-up',         startH:13.0,  endH:13.33, records:'56 contacts',  integrations:'HubSpot',               costPerRun:'$0.09', successRate:'97.8%' },
+  { id:'s4', agentIdx:0, label:'Deal Analysis',     startH:15.0,  endH:15.67, records:'94 deals',     integrations:'Salesforce + Slack',    costPerRun:'$0.27', successRate:'100%'  },
+  { id:'s5', agentIdx:0, label:'CRM Backup',        startH:18.0,  endH:18.25, records:'12,400 rows',  integrations:'Salesforce + S3',       costPerRun:'$0.04', successRate:'100%'  },
+  // Marketing (1)
+  { id:'m1', agentIdx:1, label:'Email Blast',       startH:10.83, endH:11.5,  records:'8,320 emails', integrations:'Mailchimp + Segment',   costPerRun:'$0.54', successRate:'96.2%' },
+  { id:'m2', agentIdx:1, label:'Social Posts',      startH:11.0,  endH:11.25, records:'5 posts',      integrations:'Buffer',                costPerRun:'$0.06', successRate:'100%'  },
+  { id:'m3', agentIdx:1, label:'Campaign Metrics',  startH:14.0,  endH:14.5,  records:'42 campaigns', integrations:'GA4 + HubSpot',         costPerRun:'$0.21', successRate:'99.5%' },
+  { id:'m4', agentIdx:1, label:'A/B Analysis',      startH:15.75, endH:16.25, records:'3 variants',   integrations:'Optimizely',            costPerRun:'$0.14', successRate:'98.9%' },
+  { id:'m5', agentIdx:1, label:'Newsletter',        startH:17.0,  endH:17.75, records:'4,210 subs',   integrations:'Mailchimp',             costPerRun:'$0.38', successRate:'99.7%' },
+  // Operations (2)
+  { id:'o1', agentIdx:2, label:'Data Cleanup',      startH:8.5,   endH:9.25,  records:'14,320 rows',  integrations:'PostgreSQL',            costPerRun:'$0.41', successRate:'100%'  },
+  { id:'o2', agentIdx:2, label:'System Health',     startH:9.0,   endH:9.08,  records:'12 checks',    integrations:'Datadog + PagerDuty',   costPerRun:'$0.02', successRate:'100%'  },
+  { id:'o3', agentIdx:2, label:'Invoice Process',   startH:11.0,  endH:12.0,  records:'38 invoices',  integrations:'QuickBooks + Stripe',   costPerRun:'$0.63', successRate:'97.4%' },
+  { id:'o4', agentIdx:2, label:'Resource Audit',    startH:14.5,  endH:15.0,  records:'7 resources',  integrations:'AWS + Terraform',       costPerRun:'$0.17', successRate:'100%'  },
+  // HR (3)
+  { id:'h1', agentIdx:3, label:'Onboarding',        startH:9.5,   endH:10.0,  records:'3 candidates', integrations:'BambooHR + Slack',      costPerRun:'$0.22', successRate:'100%'  },
+  { id:'h2', agentIdx:3, label:'Payroll Sync',      startH:12.0,  endH:12.5,  records:'64 employees', integrations:'Gusto + QuickBooks',    costPerRun:'$0.19', successRate:'99.8%' },
+  { id:'h3', agentIdx:3, label:'Perf Reports',      startH:14.0,  endH:15.0,  records:'28 reviews',   integrations:'BambooHR + Notion',     costPerRun:'$0.35', successRate:'98.1%' },
+  // Outreach (4)
+  { id:'r1', agentIdx:4, label:'Prospect Scrape',   startH:8.0,   endH:8.75,  records:'1,240 records',integrations:'LinkedIn + Apollo',     costPerRun:'$0.71', successRate:'95.3%' },
+  { id:'r2', agentIdx:4, label:'LinkedIn Seq',      startH:9.0,   endH:9.5,   records:'340 profiles', integrations:'LinkedIn + Expandi',    costPerRun:'$0.28', successRate:'98.7%' },
+  { id:'r3', agentIdx:4, label:'Cold Email',        startH:11.0,  endH:11.75, records:'620 emails',   integrations:'Lemlist + Instantly',   costPerRun:'$0.44', successRate:'96.8%' },
+  { id:'r4', agentIdx:4, label:'Warm Leads',        startH:16.0,  endH:16.5,  records:'88 leads',     integrations:'Apollo + HubSpot',      costPerRun:'$0.15', successRate:'99.2%' },
+  { id:'r5', agentIdx:4, label:'Reply Handler',     startH:13.5,  endH:14.0,  records:'67 replies',   integrations:'Instantly + Slack',      costPerRun:'$0.08', successRate:'99.8%' },
+  // Analytics (5)
+  { id:'d1', agentIdx:5, label:'Revenue Report',    startH:8.0,   endH:8.5,   records:'$1.2M tracked',integrations:'Stripe + QuickBooks',    costPerRun:'$0.23', successRate:'100%'  },
+  { id:'d2', agentIdx:5, label:'Funnel Analysis',   startH:10.0,  endH:10.75, records:'4 funnels',    integrations:'GA4 + Mixpanel',         costPerRun:'$0.31', successRate:'99.4%' },
+  { id:'d3', agentIdx:5, label:'Churn Prediction',  startH:12.5,  endH:13.25, records:'847 users',    integrations:'Segment + BigQuery',     costPerRun:'$0.52', successRate:'97.2%' },
+  { id:'d4', agentIdx:5, label:'KPI Dashboard',     startH:15.0,  endH:15.5,  records:'24 metrics',   integrations:'Looker + dbt',           costPerRun:'$0.14', successRate:'100%'  },
+  { id:'d5', agentIdx:5, label:'Cohort Report',     startH:17.5,  endH:18.25, records:'12 cohorts',   integrations:'Amplitude + BigQuery',   costPerRun:'$0.38', successRate:'99.1%' },
+  { id:'d6', agentIdx:5, label:'Attribution Model',  startH:19.0,  endH:19.5,  records:'3,420 events', integrations:'GA4 + HubSpot',          costPerRun:'$0.42', successRate:'98.6%' },
+];
+
+// ─── Activity feed ────────────────────────────────────────────────────────────
+
+interface FeedItem {
+  agentIdx: number;
+  action: 'completed' | 'started' | 'failed';
+  taskName: string;
+  timeAgo: string;
+  records: string;
+  age: number; // seconds ago (for display cycling)
+}
+
+let feedItems: FeedItem[] = [
+  { agentIdx:4, action:'completed', taskName:'LinkedIn Sequence', timeAgo:'just now',  records:'340 records',   age:0   },
+  { agentIdx:0, action:'started',   taskName:'Pipeline Update',   timeAgo:'1m ago',    records:'running',       age:60  },
+  { agentIdx:2, action:'completed', taskName:'System Health',     timeAgo:'3m ago',    records:'12 checks',     age:180 },
+  { agentIdx:3, action:'completed', taskName:'Onboarding Flow',   timeAgo:'5m ago',    records:'3 candidates',  age:300 },
+  { agentIdx:0, action:'completed', taskName:'Lead Sync',         timeAgo:'8m ago',    records:'847 leads',     age:480 },
+  { agentIdx:4, action:'completed', taskName:'Prospect Scrape',   timeAgo:'12m ago',   records:'1,240 records', age:720 },
+  { agentIdx:2, action:'completed', taskName:'Data Cleanup',      timeAgo:'20m ago',   records:'14,320 rows',   age:1200},
+  { agentIdx:1, action:'completed', taskName:'Daily Summary',     timeAgo:'25m ago',   records:'1 report',      age:1500},
+  { agentIdx:4, action:'completed', taskName:'Prospect Scrape',   timeAgo:'32m ago',   records:'980 records',   age:1920},
+  { agentIdx:0, action:'completed', taskName:'Lead Sync',         timeAgo:'38m ago',   records:'712 leads',     age:2280},
+];
+
+// New feed items cycling pool
+const FEED_POOL: Omit<FeedItem,'timeAgo'|'age'>[] = [
+  { agentIdx:0, action:'completed', taskName:'CRM Tag Update',     records:'1,102 contacts' },
+  { agentIdx:1, action:'started',   taskName:'Campaign Metrics',   records:'running'        },
+  { agentIdx:2, action:'completed', taskName:'Log Rotation',       records:'2.4 GB cleared' },
+  { agentIdx:3, action:'completed', taskName:'Benefits Sync',      records:'64 employees'   },
+  { agentIdx:4, action:'started',   taskName:'Cold Email',         records:'running'        },
+  { agentIdx:1, action:'completed', taskName:'Social Posts',       records:'5 posts'        },
+  { agentIdx:0, action:'completed', taskName:'Deal Score Refresh', records:'94 deals'       },
+  { agentIdx:2, action:'failed',    taskName:'Invoice Export',     records:'retry queued'   },
+  { agentIdx:5, action:'completed', taskName:'Revenue Report',    records:'$1.2M tracked'  },
+  { agentIdx:5, action:'completed', taskName:'Funnel Analysis',   records:'4 funnels'      },
+  { agentIdx:5, action:'started',   taskName:'Churn Prediction',  records:'running'        },
+];
+let poolIdx = 0;
+
+// ─── Canvas + state ───────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('flow-dash-canvas') as HTMLCanvasElement;
+    if (!canvas) return;
+const ctx    = canvas.getContext('2d')!;
+
+let W = 0, H = 0;
+let simTime = SIM_START_H; // advances slowly each frame
+let hoveredAgent: number | null = null;       // agent index or null
+let agentOpacity: number[] = [1,1,1,1,1];    // lerp targets per agent
+let agentOpacityNow: number[] = [1,1,1,1,1]; // current displayed opacity
+
+let hoveredTask: Task | null = null;
+let hoveredTaskX = 0, hoveredTaskY = 0;
+let hoveredDay: number | null = null;
+let hoveredDayX = 0, hoveredDayY = 0;
+
+let lastFeedTime = 0;
+let feedOffsets: number[] = feedItems.map(() => 0); // y-offset for slide animations, 0 = settled
+let feedOpacities: number[] = feedItems.map(() => 1);
+
+// Rects for hit-testing
+interface Rect { x:number; y:number; w:number; h:number; }
+let taskRects: { task: Task; rect: Rect }[] = [];
+let agentCardRects: { agentIdx: number; rect: Rect }[] = [];
+let dayColRects:  { dayIdx: number; rect: Rect }[] = [];
+
+function lerp(a:number, b:number, t:number): number { return a + (b - a) * t; }
+
+// ─── Resize ───────────────────────────────────────────────────────────────────
+
+function resize() {
+  const col = canvas.parentElement!;
+  W = col.clientWidth;
+  H = col.clientHeight || 620;
+  canvas.width  = W * devicePixelRatio;
+  canvas.height = H * devicePixelRatio;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+
+// ─── Layout helpers ───────────────────────────────────────────────────────────
+
+function panelRect(col: 0|1, row: 0|1): Rect {
+  const halfW = (W - GAP) / 2;
+  const contentH = H - HEADER_H - GAP;
+  const halfH = (contentH - GAP) / 2;
+  return {
+    x: col === 0 ? 0 : halfW + GAP,
+    y: HEADER_H + GAP + (row === 0 ? 0 : halfH + GAP),
+    w: halfW,
+    h: halfH,
+  };
+}
+
+// ─── Drawing helpers ──────────────────────────────────────────────────────────
+
+function roundRect(x:number, y:number, w:number, h:number, r:number) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y);
+  ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+  ctx.lineTo(x+w, y+h-r);
+  ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+  ctx.lineTo(x+r, y+h);
+  ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+  ctx.lineTo(x, y+r);
+  ctx.quadraticCurveTo(x, y, x+r, y);
+  ctx.closePath();
+}
+
+function drawPanel(x:number, y:number, w:number, h:number) {
+  roundRect(x, y, w, h, 8);
+  ctx.fillStyle = PANEL_BG;
+  ctx.fill();
+  ctx.strokeStyle = PANEL_BORDER;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+function agentAlpha(idx:number): number {
+  return agentOpacityNow[idx];
+}
+
+// ─── Panel 0: Stats header ────────────────────────────────────────────────────
+
+function drawStatsBar() {
+  // Background with subtle gradient
+  const bgGrad = ctx.createLinearGradient(0, 0, W, 0);
+  bgGrad.addColorStop(0, 'rgba(79,70,229,0.06)');
+  bgGrad.addColorStop(0.5, 'rgba(10,12,30,0.95)');
+  bgGrad.addColorStop(1, 'rgba(34,197,94,0.04)');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, HEADER_H);
+
+  // Bottom border with gradient
+  const borderGrad = ctx.createLinearGradient(0, 0, W, 0);
+  borderGrad.addColorStop(0, 'rgba(79,70,229,0.3)');
+  borderGrad.addColorStop(0.5, 'rgba(255,255,255,0.06)');
+  borderGrad.addColorStop(1, 'rgba(34,197,94,0.2)');
+  ctx.strokeStyle = borderGrad;
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, HEADER_H); ctx.lineTo(W, HEADER_H); ctx.stroke();
+
+  const stats = [
+    { label:'AGENTS',     value:'5',     accent: '#818cf8', icon: '◆' },
+    { label:'TASKS',      value:'47',    accent: '#a78bfa', icon: '⚡' },
+    { label:'SUCCESS',    value:'98.7%', accent: '#4ade80', icon: '✓' },
+    { label:'COST',       value:'$4.82', accent: '#fbbf24', icon: '◈' },
+    { label:'NEXT IN',    value:'2m 14s',accent: '#22d3ee', icon: '◷' },
+  ];
+
+  const totalStats = stats.length + 1; // +1 for running indicator
+  const segW = W / totalStats;
+  const cardPad = 4;
+  const cardH = HEADER_H - 8;
+
+  stats.forEach((s, i) => {
+    const cx = segW * i + segW / 2;
+    const cardX = segW * i + cardPad;
+    const cardY = 4;
+    const cardW = segW - cardPad * 2;
+
+    // Card background
+    roundRect(cardX, cardY, cardW, cardH, 6);
+    ctx.fillStyle = 'rgba(255,255,255,0.02)';
+    ctx.fill();
+
+    // Accent dot
+    ctx.beginPath();
+    ctx.arc(cardX + 12, cardY + cardH / 2, 3, 0, Math.PI * 2);
+    ctx.fillStyle = s.accent + '60';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cardX + 12, cardY + cardH / 2, 1.5, 0, Math.PI * 2);
+    ctx.fillStyle = s.accent;
+    ctx.fill();
+
+    // Label
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.font = '500 7px -apple-system, sans-serif';
+    ctx.fillStyle = s.accent + '90';
+    ctx.letterSpacing = '0.08em';
+    ctx.fillText(s.label, cardX + 22, cardY + 8);
+
+    // Value
+    ctx.font = '700 14px -apple-system, sans-serif';
+    ctx.fillStyle = TEXT_BRIGHT;
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(s.value, cardX + 22, cardY + cardH - 6);
+
+    // Reset letter spacing
+    ctx.letterSpacing = '0em';
+  });
+
+  // Running indicator — special card with pulse
+  const ri = stats.length;
+  const rcx = segW * ri + segW / 2;
+  const rcardX = segW * ri + cardPad;
+  const rcardY = 4;
+  const rcardW = segW - cardPad * 2;
+
+  // Pulsing background
+  const pulse = 0.5 + 0.5 * Math.sin(Date.now() * 0.003);
+  roundRect(rcardX, rcardY, rcardW, cardH, 6);
+  ctx.fillStyle = `rgba(34,197,94,${0.03 + pulse * 0.04})`;
+  ctx.fill();
+  ctx.strokeStyle = `rgba(34,197,94,${0.15 + pulse * 0.15})`;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Pulsing dot
+  ctx.beginPath();
+  ctx.arc(rcardX + 12, rcardY + cardH / 2, 4, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(34,197,94,${0.3 + pulse * 0.5})`;
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(rcardX + 12, rcardY + cardH / 2, 2, 0, Math.PI * 2);
+  ctx.fillStyle = '#22c55e';
+  ctx.fill();
+
+  // Label
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.font = '500 7px -apple-system, sans-serif';
+  ctx.fillStyle = '#22c55e90';
+  ctx.fillText('RUNNING', rcardX + 22, rcardY + 8);
+
+  // Value
+  ctx.font = '700 14px -apple-system, sans-serif';
+  ctx.fillStyle = '#22c55e';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('3', rcardX + 22, rcardY + cardH - 6);
+
+  // "agents" suffix
+  ctx.font = '400 9px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(34,197,94,0.5)';
+  ctx.fillText('agents', rcardX + 38, rcardY + cardH - 8);
+}
+
+// ─── Panel 1: Mini Weekly Calendar (top-left) ─────────────────────────────────
+
+function drawCalendar() {
+  const p = panelRect(0, 0);
+  drawPanel(p.x, p.y, p.w, p.h);
+
+  dayColRects = [];
+
+  const PAD = 10;
+  const titleH = 22;
+  ctx.fillStyle = TEXT_BRIGHT;
+  ctx.font = '600 11px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('WEEK  Mar 23 – 29, 2026', p.x + PAD, p.y + PAD + titleH * 0.5);
+
+  const colW   = (p.w - PAD * 2) / 7;
+  const startY = p.y + PAD + titleH + 6;
+  const rowH   = p.h - PAD * 2 - titleH - 6;
+
+  WEEK.forEach((day, di) => {
+    const cx = p.x + PAD + di * colW;
+    const rect: Rect = { x: cx, y: startY, w: colW, h: rowH };
+    dayColRects.push({ dayIdx: di, rect });
+
+    const agentFilter = hoveredAgent;
+    const dimDay = agentFilter !== null && day.agentTasks[agentFilter] === 0;
+    const alpha   = dimDay ? 0.2 : 1;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    // Highlight today
+    if (day.isToday) {
+      roundRect(cx + 2, startY + 2, colW - 4, rowH - 4, 5);
+      ctx.fillStyle = 'rgba(99,102,241,0.12)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(99,102,241,0.5)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Hover highlight
+    if (hoveredDay === di) {
+      roundRect(cx + 2, startY + 2, colW - 4, rowH - 4, 5);
+      ctx.fillStyle = 'rgba(255,255,255,0.05)';
+      ctx.fill();
+    }
+
+    // Day label
+    ctx.textAlign = 'center';
+    ctx.font = '500 9px -apple-system, sans-serif';
+    ctx.fillStyle = day.isToday ? '#818cf8' : TEXT_DIM;
+    ctx.textBaseline = 'top';
+    ctx.fillText(day.label, cx + colW / 2, startY + 4);
+
+    // Date number
+    ctx.font = '700 13px -apple-system, sans-serif';
+    ctx.fillStyle = day.isToday ? TEXT_BRIGHT : TEXT_MID;
+    ctx.fillText(String(day.date), cx + colW / 2, startY + 16);
+
+    // Stacked bar chart per day — each agent gets a segment
+    const chartTop = startY + 36;
+    const chartBot = startY + rowH - 10;
+    const chartH = chartBot - chartTop;
+    const maxTotal = Math.max(...WEEK.map(d => d.total), 1);
+    const barW = colW - 10;
+    const barX = cx + 5;
+    
+    // Background bar
+    roundRect(barX, chartTop, barW, chartH, 3);
+    ctx.fillStyle = 'rgba(255,255,255,0.03)';
+    ctx.fill();
+
+    // Stacked segments
+    const totalH = (day.total / maxTotal) * chartH;
+    let segY = chartBot;
+    for (let ai = 0; ai < AGENTS.length; ai++) {
+      const tasks = day.agentTasks[ai] || 0;
+      if (tasks === 0) continue;
+      const segH = (tasks / day.total) * totalH;
+      const isDimAgent = agentFilter !== null && agentFilter !== ai;
+
+      ctx.globalAlpha = isDimAgent ? 0.15 : alpha;
+      roundRect(barX + 1, segY - segH, barW - 2, segH - 1, 2);
+      ctx.fillStyle = AGENTS[ai].color;
+      ctx.fill();
+      ctx.globalAlpha = alpha;
+      segY -= segH;
+    }
+
+    // Task count at bottom
+    ctx.font = '600 8px -apple-system, sans-serif';
+    ctx.fillStyle = day.isToday ? '#a5b4fc' : TEXT_DIM;
+    ctx.textBaseline = 'top';
+    ctx.fillText(String(day.total), cx + colW / 2, chartBot + 3);
+
+    // Completion indicator
+    if (day.donePercent === 100) {
+      ctx.font = '500 7px -apple-system, sans-serif';
+      ctx.fillStyle = '#22c55e';
+      ctx.fillText('✓', cx + colW / 2, chartBot + 13);
+    } else if (day.donePercent > 0) {
+      ctx.font = '500 7px -apple-system, sans-serif';
+      ctx.fillStyle = TEXT_DIM;
+      ctx.fillText(day.donePercent + '%', cx + colW / 2, chartBot + 13);
+    }
+
+    ctx.restore();
+  });
+
+}
+
+function drawDayPopup(px:number, py:number, day:DayData) {
+  const activeAgents = AGENTS.filter((_, ai) => (day.agentTasks[ai] || 0) > 0);
+  const lineH = 16;
+  const popW = 200;
+  const headerH = 36;
+  const agentSectionH = activeAgents.length * lineH + 8;
+  const footerH = 28;
+  const popH = headerH + agentSectionH + footerH;
+
+  let bx = px - popW / 2;
+  let by = py - popH - 12;
+  bx = Math.max(4, Math.min(W - popW - 4, bx));
+  by = Math.max(4, by);
+
+  // Shadow
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.6)';
+  ctx.shadowBlur = 24;
+  roundRect(bx, by, popW, popH, 8);
+  ctx.fillStyle = 'rgba(12,10,28,0.96)';
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.restore();
+
+  roundRect(bx, by, popW, popH, 8);
+  ctx.strokeStyle = 'rgba(99,102,241,0.25)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Top accent
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(bx + 8, by); ctx.lineTo(bx + popW - 8, by);
+  ctx.strokeStyle = day.isToday ? BRAND : 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 2; ctx.globalAlpha = 0.7; ctx.stroke();
+  ctx.restore();
+
+  let ly = by + 12;
+  const lx = bx + 14;
+
+  // Day title
+  ctx.font = '700 12px -apple-system, sans-serif';
+  ctx.fillStyle = TEXT_BRIGHT;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText(day.label + ' Mar ' + day.date, lx, ly);
+
+  // Today badge
+  if (day.isToday) {
+    const tw = ctx.measureText(day.label + ' Mar ' + day.date).width;
+    roundRect(lx + tw + 8, ly, 38, 14, 7);
+    ctx.fillStyle = 'rgba(99,102,241,0.25)'; ctx.fill();
+    ctx.font = '600 8px -apple-system, sans-serif';
+    ctx.fillStyle = '#818cf8'; ctx.textAlign = 'center';
+    ctx.fillText('TODAY', lx + tw + 27, ly + 3);
+    ctx.textAlign = 'left';
+  }
+
+  // Task count + completion
+  ctx.font = '500 9px -apple-system, sans-serif';
+  ctx.fillStyle = TEXT_DIM; ctx.textAlign = 'right';
+  ctx.fillText(day.total + ' tasks · ' + day.donePercent + '%', bx + popW - 14, ly + 2);
+  ctx.textAlign = 'left';
+
+  ly += headerH - 6;
+
+  // Divider
+  ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(bx + popW - 14, ly);
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1; ctx.stroke();
+  ly += 8;
+
+  // Per-agent breakdown
+  activeAgents.forEach(agent => {
+    const ai = AGENTS.indexOf(agent);
+    const tasks = day.agentTasks[ai] || 0;
+
+    // Agent dot + name
+    ctx.beginPath();
+    ctx.arc(lx + 4, ly + 5, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = agent.color; ctx.fill();
+
+    ctx.font = '500 9px -apple-system, sans-serif';
+    ctx.fillStyle = TEXT_MID;
+    ctx.fillText(agent.name, lx + 14, ly);
+
+    // Task count + mini bar
+    ctx.textAlign = 'right';
+    ctx.fillStyle = TEXT_DIM;
+    ctx.fillText(tasks + (tasks === 1 ? ' task' : ' tasks'), bx + popW - 14, ly);
+    ctx.textAlign = 'left';
+
+    // Mini progress bar
+    const barX = lx + 65;
+    const barW = popW - 110;
+    const barY = ly + 10;
+    roundRect(barX, barY, barW, 2, 1);
+    ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fill();
+    roundRect(barX, barY, barW * (tasks / Math.max(...day.agentTasks)), 2, 1);
+    ctx.fillStyle = agent.color + '80'; ctx.fill();
+
+    ly += lineH;
+  });
+
+  // Footer — completion bar
+  ly += 2;
+  ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(bx + popW - 14, ly);
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1; ctx.stroke();
+  ly += 8;
+
+  const footBarW = popW - 28;
+  roundRect(lx, ly, footBarW, 4, 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fill();
+  if (day.donePercent > 0) {
+    roundRect(lx, ly, footBarW * (day.donePercent / 100), 4, 2);
+    ctx.fillStyle = day.donePercent === 100 ? '#22c55e' : BRAND; ctx.fill();
+  }
+  ctx.font = '500 8px -apple-system, sans-serif';
+  ctx.fillStyle = TEXT_DIM;
+  ctx.fillText(day.donePercent === 100 ? 'All complete' : day.donePercent + '% complete', lx, ly + 8);
+}
+
+// ─── Panel 2: Agent Status Cards (top-right) ──────────────────────────────────
+
+function drawAgentCards() {
+  const p = panelRect(1, 0);
+  drawPanel(p.x, p.y, p.w, p.h);
+  agentCardRects = [];
+
+  const PAD = 10;
+  const titleH = 22;
+
+  ctx.fillStyle = TEXT_BRIGHT;
+  ctx.font = '600 11px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('AGENT STATUS', p.x + PAD, p.y + PAD + titleH * 0.5);
+
+  const cardH = (p.h - PAD * 2 - titleH - 6) / AGENTS.length - 3;
+  const startY = p.y + PAD + titleH + 6;
+
+  AGENTS.forEach((agent, ai) => {
+    const cy = startY + ai * (cardH + 3);
+    const rect: Rect = { x: p.x + PAD, y: cy, w: p.w - PAD * 2, h: cardH };
+    agentCardRects.push({ agentIdx: ai, rect });
+
+    const alpha = agentOpacityNow[ai];
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    // Card bg
+    const isHovered = hoveredAgent === ai;
+    roundRect(rect.x, rect.y, rect.w, rect.h, 5);
+    ctx.fillStyle = isHovered ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)';
+    ctx.fill();
+    ctx.strokeStyle = isHovered ? agent.color + '55' : PANEL_BORDER;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Agent circle
+    const circR = Math.min(14, rect.h * 0.3);
+    const circX = rect.x + 14 + circR;
+    const circY = rect.y + rect.h / 2;
+    ctx.beginPath();
+    ctx.arc(circX, circY, circR, 0, Math.PI * 2);
+    ctx.fillStyle = agent.color + '30';
+    ctx.fill();
+    ctx.strokeStyle = agent.color;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = agent.color;
+    ctx.font = '700 10px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(agent.initials, circX, circY);
+
+    // Active pulse ring
+    if (agent.active) {
+      const pulse = 0.3 + 0.4 * Math.abs(Math.sin(Date.now() * 0.003 + ai));
+      ctx.beginPath();
+      ctx.arc(circX, circY, circR + 4, 0, Math.PI * 2);
+      ctx.strokeStyle = agent.color + Math.round(pulse * 255).toString(16).padStart(2,'0');
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Name + task count on same line
+    const tx = circX + circR + 8;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    const nameY = rect.y + rect.h * 0.3;
+    ctx.font = '600 10px -apple-system, sans-serif';
+    ctx.fillStyle = TEXT_BRIGHT;
+    ctx.fillText(agent.name, tx, nameY);
+
+    // Task count right-aligned
+    ctx.textAlign = 'right';
+    ctx.font = '500 8px -apple-system, sans-serif';
+    ctx.fillStyle = TEXT_DIM;
+    ctx.fillText(`${agent.completed}/${agent.tasksToday}`, rect.x + rect.w - 8, nameY);
+    ctx.textAlign = 'left';
+
+    // Status + progress bar on second line
+    const statusY = rect.y + rect.h * 0.65;
+    ctx.font = '500 8px -apple-system, sans-serif';
+    ctx.fillStyle = agent.active ? '#22c55e' : TEXT_DIM;
+    ctx.fillText(agent.active ? '● Active' : '◦ Idle', tx, statusY);
+
+    // Progress bar after status text
+    const barX2 = tx + 42;
+    const barW = rect.x + rect.w - barX2 - 8;
+    const barY2 = statusY - 1.5;
+    roundRect(barX2, barY2, barW, 3, 1.5);
+    ctx.fillStyle = 'rgba(255,255,255,0.06)';
+    ctx.fill();
+    const pct = agent.tasksToday > 0 ? agent.completed / agent.tasksToday : 0;
+    if (pct > 0) {
+      roundRect(barX2, barY2, Math.max(3, barW * pct), 3, 1.5);
+      ctx.fillStyle = agent.color;
+      ctx.fill();
+    }
+
+    ctx.restore();
+  });
+}
+
+// ─── Panel 3: Today's Timeline (bottom-left) ──────────────────────────────────
+
+const TL_START_H = 8;
+const TL_END_H   = 20;
+
+function timeToX(h:number, x:number, w:number): number {
+  return x + (h - TL_START_H) / (TL_END_H - TL_START_H) * w;
+}
+
+function drawTimeline() {
+  const p = panelRect(0, 1);
+  drawPanel(p.x, p.y, p.w, p.h);
+  taskRects = [];
+
+  const PAD    = 10;
+  const titleH = 22;
+  const headerH2 = 16; // hour labels row
+  const rowH   = (p.h - PAD * 2 - titleH - 6 - headerH2) / AGENTS.length;
+  const trackX = p.x + PAD + 46;
+  const trackW = p.w - PAD * 2 - 46;
+  const trackY = p.y + PAD + titleH + 6;
+
+  ctx.fillStyle = TEXT_BRIGHT;
+  ctx.font = '600 11px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText("TODAY'S TIMELINE", p.x + PAD, p.y + PAD + titleH * 0.5);
+
+  // Hour labels
+  for (let h = TL_START_H; h <= TL_END_H; h += 2) {
+    const hx = timeToX(h, trackX, trackW);
+    ctx.fillStyle = TEXT_DIM;
+    ctx.font = '500 8px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(`${h}:00`, hx, trackY);
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([2, 4]);
+    ctx.beginPath();
+    ctx.moveTo(hx, trackY + headerH2);
+    ctx.lineTo(hx, trackY + headerH2 + rowH * AGENTS.length);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Agent rows + task blocks
+  AGENTS.forEach((agent, ai) => {
+    const ry = trackY + headerH2 + ai * rowH;
+    const alpha = agentOpacityNow[ai];
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    // Color strip + name
+    ctx.fillStyle = agent.color;
+    ctx.fillRect(p.x + PAD, ry + 2, 3, rowH - 4);
+
+    ctx.fillStyle = agent.color;
+    ctx.font = '500 9px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(agent.initials, p.x + PAD + 6, ry + rowH / 2);
+
+    // Row separator
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(trackX, ry + rowH);
+    ctx.lineTo(trackX + trackW, ry + rowH);
+    ctx.stroke();
+
+    // Task blocks for this agent
+    const agentTasks = TASKS.filter(t => t.agentIdx === ai);
+    agentTasks.forEach(task => {
+      const tx1 = timeToX(task.startH, trackX, trackW);
+      const tx2 = timeToX(task.endH,   trackX, trackW);
+      const bw  = Math.max(tx2 - tx1, 2);
+      const bh  = rowH - 8;
+      const by  = ry + 4;
+
+      const isDone = task.endH < simTime;
+      const isRunning = task.startH <= simTime && task.endH >= simTime;
+
+      roundRect(tx1, by, bw, bh, 3);
+      if (isDone) {
+        ctx.fillStyle = agent.color + '40';
+      } else if (isRunning) {
+        ctx.fillStyle = agent.color + 'cc';
+      } else {
+        ctx.fillStyle = agent.color + '70';
+      }
+      ctx.fill();
+
+      // Label if wide enough
+      if (bw > 28) {
+        ctx.fillStyle = isDone ? agent.color + '99' : TEXT_BRIGHT;
+        ctx.font = '500 8px -apple-system, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(tx1 + 2, by, bw - 4, bh);
+        ctx.clip();
+        ctx.fillText(task.label, tx1 + 3, by + bh / 2);
+        ctx.restore();
+      }
+
+      // Checkmark on done tasks
+      if (isDone && bw > 10) {
+        ctx.fillStyle = '#22c55e';
+        ctx.font = '600 8px -apple-system, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('✓', tx1 + bw - 2, by + bh / 2);
+      }
+
+      taskRects.push({ task, rect: { x: tx1, y: by, w: bw, h: bh } });
+    });
+
+    ctx.restore();
+  });
+
+  // NOW marker
+  const nowX = timeToX(simTime, trackX, trackW);
+  const nowTop = trackY + headerH2;
+  const nowBot = nowTop + rowH * AGENTS.length;
+
+  const pulse2 = 0.6 + 0.4 * Math.sin(Date.now() * 0.005);
+  ctx.strokeStyle = `rgba(239,68,68,${pulse2})`;
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath();
+  ctx.moveTo(nowX, nowTop);
+  ctx.lineTo(nowX, nowBot);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = '#ef4444';
+  ctx.beginPath();
+  ctx.arc(nowX, nowTop, 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#ef4444';
+  ctx.font = '600 8px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('NOW', nowX, nowTop - 1);
+
+
+}
+
+function drawTaskPopup(px:number, py:number, task:Task) {
+  const agent = AGENTS[task.agentIdx];
+  const popW = 260;
+  const lineH = 16;
+
+  const isComplete = simTime > task.endH;
+  const isRunning = !isComplete && simTime >= task.startH;
+  const statusText = isComplete ? '✓ Completed' : isRunning ? '● Running' : '◦ Scheduled';
+  const statusColor = isComplete ? '#4ade80' : isRunning ? '#fbbf24' : TEXT_DIM;
+  const durMin = Math.round((task.endH - task.startH) * 60);
+
+  // Task description based on agent + task type
+  const descriptions: Record<string, string> = {
+    'Lead Sync': 'Syncs new leads from all sources into CRM with dedup and scoring',
+    'Pipeline Update': 'Reviews all active deals, updates stages, flags at-risk opportunities',
+    'Follow-up': 'Sends personalised follow-ups to contacts with no response in 48h',
+    'Deal Analysis': 'AI analysis of won/lost patterns, updates forecasting model',
+    'CRM Backup': 'Full incremental backup of CRM data to S3 with encryption',
+    'Email Blast': 'Sends segmented campaign emails with A/B subject line testing',
+    'Social Posts': 'Publishes pre-scheduled content across LinkedIn, X, Instagram',
+    'Campaign Metrics': 'Aggregates cross-channel campaign data into unified dashboard',
+    'A/B Analysis': 'Statistical analysis of running experiments, auto-promotes winners',
+    'Newsletter': 'Compiles weekly newsletter from top content, personalises per segment',
+    'Data Cleanup': 'Removes duplicates, fixes formatting, validates email addresses',
+    'System Health': 'Runs 12-point health check across all infrastructure endpoints',
+    'Invoice Process': 'OCR + validation of incoming invoices, routes for approval',
+    'Resource Audit': 'Scans cloud resources for unused instances, suggests savings',
+    'Onboarding': 'Sends welcome sequence, provisions accounts, schedules intro calls',
+    'Payroll Sync': 'Syncs hours, PTO, and benefits data between HR and payroll systems',
+    'Perf Reports': 'Compiles 360° performance reviews from peer feedback and OKRs',
+    'Prospect Scrape': 'Scrapes LinkedIn and Apollo for ICP-matching prospect data',
+    'LinkedIn Seq': 'Manages multi-step LinkedIn outreach sequences with smart delays',
+    'Cold Email': 'Sends personalised cold emails across warmed domains at scale',
+    'Warm Leads': 'Re-engages leads who showed interest but went quiet',
+    'Reply Handler': 'Classifies and routes email replies: interested, not now, unsubscribe',
+    'Revenue Report': 'Real-time revenue tracking across all payment processors',
+    'Funnel Analysis': 'Maps conversion rates at every funnel stage, identifies drop-offs',
+    'Churn Prediction': 'ML model scores users by churn risk, triggers retention flows',
+    'KPI Dashboard': 'Updates all executive KPI dashboards with latest metrics',
+    'Cohort Report': 'Analyses user cohorts by signup month, tracks retention curves',
+    'Attribution Model': 'Multi-touch attribution across all marketing channels',
+  };
+  const desc = descriptions[task.label] || 'Automated workflow task';
+
+  // Wrap description
+  ctx.font = '400 9px -apple-system, sans-serif';
+  const descWords = desc.split(' ');
+  const descLines: string[] = [];
+  let currentLine = '';
+  for (const word of descWords) {
+    const test = currentLine ? currentLine + ' ' + word : word;
+    if (ctx.measureText(test).width > popW - 30) {
+      descLines.push(currentLine);
+      currentLine = word;
+    } else {
+      currentLine = test;
+    }
+  }
+  if (currentLine) descLines.push(currentLine);
+
+  const dataRows = [
+    { label: 'Agent',        value: agent.name,                        color: agent.color },
+    { label: 'Status',       value: statusText,                        color: statusColor },
+    { label: 'Window',       value: fmtH(task.startH) + ' — ' + fmtH(task.endH) },
+    { label: 'Duration',     value: durMin + ' minutes' },
+    { label: 'Processed',    value: task.records },
+    { label: 'Integrations', value: task.integrations },
+    { label: 'Success Rate', value: task.successRate,                  color: parseFloat(task.successRate) >= 99 ? '#4ade80' : parseFloat(task.successRate) >= 95 ? '#fbbf24' : '#ef4444' },
+    { label: 'Cost / Run',   value: task.costPerRun },
+  ];
+
+  const headerH = 20;
+  const descH = descLines.length * 13 + 8;
+  const dividers = 12;
+  const dataH = dataRows.length * lineH;
+  const progressH = isRunning ? 22 : 0;
+  const popH = 14 + headerH + descH + dividers + dataH + progressH + 14;
+
+  let bx = px + 14;
+  let by = py - popH / 2;
+  if (bx + popW > W - 4) bx = px - popW - 14;
+  by = Math.max(4, Math.min(H - popH - 4, by));
+
+  // Shadow
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.6)';
+  ctx.shadowBlur = 28;
+  roundRect(bx, by, popW, popH, 10);
+  ctx.fillStyle = 'rgba(10,8,24,0.97)';
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.restore();
+
+  // Border
+  roundRect(bx, by, popW, popH, 10);
+  ctx.strokeStyle = agent.color + '25';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Top accent line
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(bx + 10, by); ctx.lineTo(bx + popW - 10, by);
+  ctx.strokeStyle = agent.color; ctx.lineWidth = 2; ctx.globalAlpha = 0.6; ctx.stroke();
+  ctx.restore();
+
+  const lx = bx + 14;
+  let ly = by + 14;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+
+  // Title
+  ctx.font = '700 13px -apple-system, sans-serif';
+  ctx.fillStyle = TEXT_BRIGHT;
+  ctx.fillText(task.label, lx, ly);
+
+  // Running pulse
+  if (isRunning) {
+    const tw = ctx.measureText(task.label).width;
+    const pulse = 0.4 + 0.6 * Math.sin(Date.now() * 0.005);
+    ctx.beginPath(); ctx.arc(lx + tw + 12, ly + 7, 4, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(251,191,36,' + pulse + ')'; ctx.fill();
+  }
+
+  ly += headerH;
+
+  // Description
+  ctx.font = '400 9px -apple-system, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  for (const dl of descLines) {
+    ctx.fillText(dl, lx, ly);
+    ly += 13;
+  }
+  ly += 4;
+
+  // Divider
+  ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(bx + popW - 14, ly);
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1; ctx.stroke();
+  ly += 8;
+
+  // Data rows
+  ctx.font = '500 9.5px -apple-system, sans-serif';
+  for (const row of dataRows) {
+    ctx.fillStyle = TEXT_DIM;
+    ctx.textAlign = 'left';
+    ctx.fillText(row.label, lx, ly);
+    ctx.fillStyle = row.color || TEXT_MID;
+    ctx.textAlign = 'right';
+    ctx.fillText(row.value, bx + popW - 14, ly);
+    ly += lineH;
+  }
+
+  // Running progress bar
+  if (isRunning) {
+    ly += 4;
+    ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(bx + popW - 14, ly);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1; ctx.stroke();
+    ly += 6;
+    const elapsed = simTime - task.startH;
+    const total = task.endH - task.startH;
+    const pct = Math.min(1, elapsed / total);
+    const progW = popW - 28;
+    roundRect(lx, ly, progW, 4, 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fill();
+    roundRect(lx, ly, progW * pct, 4, 2);
+    ctx.fillStyle = '#fbbf24'; ctx.fill();
+    ctx.textAlign = 'left';
+    ctx.font = '500 8px -apple-system, sans-serif';
+    ctx.fillStyle = '#fbbf24';
+    ctx.fillText(Math.round(pct * 100) + '% complete', lx, ly + 7);
+  }
+
+  ctx.textAlign = 'left';
+}
+function fmtH(h:number): string {
+  const hours   = Math.floor(h);
+  const minutes = Math.round((h - hours) * 60);
+  return `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}`;
+}
+
+// ─── Panel 4: Activity Feed (bottom-right) ────────────────────────────────────
+
+function drawFeed() {
+  const p = panelRect(1, 1);
+  drawPanel(p.x, p.y, p.w, p.h);
+
+  const PAD    = 10;
+  const titleH = 22;
+
+  ctx.fillStyle = TEXT_BRIGHT;
+  ctx.font = '600 11px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('LIVE ACTIVITY', p.x + PAD, p.y + PAD + titleH * 0.5);
+
+  // Pulse dot
+  const dotPulse = 0.5 + 0.5 * Math.sin(Date.now() * 0.004);
+  ctx.beginPath();
+  ctx.arc(p.x + PAD + 98, p.y + PAD + titleH * 0.5, 4, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(34,197,94,${0.5 + 0.5 * dotPulse})`;
+  ctx.fill();
+
+  const itemH  = (p.h - PAD * 2 - titleH - 6) / 10;
+  const startY = p.y + PAD + titleH + 6;
+
+  // Clip to feed area
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(p.x + PAD, startY, p.w - PAD * 2, p.h - PAD * 2 - titleH - 6);
+  ctx.clip();
+
+  feedItems.slice(0, 10).forEach((item, fi) => {
+    const alpha = agentOpacityNow[item.agentIdx];
+    const iy = startY + fi * itemH + (feedOffsets[fi] || 0);
+    if (iy + itemH < startY || iy > startY + p.h) return;
+
+    ctx.save();
+    ctx.globalAlpha = alpha * (feedOpacities[fi] || 1);
+
+    const agent = AGENTS[item.agentIdx];
+
+    // Row bg
+    if (fi === 0) {
+      roundRect(p.x + PAD, iy, p.w - PAD * 2, itemH - 2, 4);
+      ctx.fillStyle = 'rgba(255,255,255,0.04)';
+      ctx.fill();
+    }
+
+    // Colored dot
+    const dotX = p.x + PAD + 7;
+    const dotY = iy + itemH / 2;
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, 4, 0, Math.PI * 2);
+    ctx.fillStyle = agent.color;
+    ctx.fill();
+
+    // Status icon
+    const iconX = p.x + p.w - PAD - 10;
+    ctx.font = '700 11px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    if (item.action === 'completed') {
+      ctx.fillStyle = '#22c55e';
+      ctx.fillText('✓', iconX, dotY);
+    } else if (item.action === 'started') {
+      ctx.fillStyle = '#3b82f6';
+      ctx.fillText('▶', iconX, dotY);
+    } else {
+      ctx.fillStyle = '#ef4444';
+      ctx.fillText('✕', iconX, dotY);
+    }
+
+    // Text
+    const tx2 = p.x + PAD + 16;
+    ctx.textAlign = 'left';
+    ctx.font = '600 9px -apple-system, sans-serif';
+    ctx.fillStyle = agent.color;
+    ctx.textBaseline = 'top';
+    ctx.fillText(agent.name, tx2, iy + 3);
+
+    ctx.fillStyle = TEXT_MID;
+    ctx.font = '500 9px -apple-system, sans-serif';
+    const actionVerb = item.action === 'completed' ? 'completed' : item.action === 'started' ? 'started' : 'failed';
+    const agentNameW = ctx.measureText(agent.name).width + 4;
+    ctx.fillText(`${actionVerb} ${item.taskName}`, tx2 + agentNameW, iy + 3);
+
+    ctx.fillStyle = TEXT_DIM;
+    ctx.font = '500 8px -apple-system, sans-serif';
+    ctx.fillText(`${item.timeAgo}  ·  ${item.records}`, tx2, iy + 14);
+
+    ctx.restore();
+  });
+
+  ctx.restore();
+}
+
+// ─── Feed animation: insert new item ─────────────────────────────────────────
+
+function injectFeedItem(now: number) {
+  if (now - lastFeedTime < 4000) return;
+  lastFeedTime = now;
+
+  const tpl = FEED_POOL[poolIdx % FEED_POOL.length];
+  poolIdx++;
+
+  const newItem: FeedItem = {
+    ...tpl,
+    timeAgo: 'just now',
+    age: 0,
+  };
+
+  // Age existing items
+  feedItems.forEach(item => {
+    item.age += 4;
+    const m = Math.floor(item.age / 60);
+    item.timeAgo = m === 0 ? 'just now' : `${m}m ago`;
+  });
+
+  feedItems.unshift(newItem);
+  feedItems = feedItems.slice(0, 12);
+
+  // Rebuild offsets — new item slides down from -itemH
+  feedOffsets = feedItems.map((_, i) => i === 0 ? -24 : 0);
+  feedOpacities = feedItems.map((_, i) => i === 0 ? 0 : 1);
+}
+
+// ─── Mouse handling ───────────────────────────────────────────────────────────
+
+canvas.addEventListener('mousemove', (e: MouseEvent) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  // Reset
+  hoveredTask = null;
+  hoveredDay  = null;
+  let newHover: number | null = null;
+
+  // Check agent cards
+  for (const { agentIdx, rect: r } of agentCardRects) {
+    if (mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h) {
+      newHover = agentIdx;
+      break;
+    }
+  }
+
+  // Check task blocks in timeline
+  for (const { task, rect: r } of taskRects) {
+    if (mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h) {
+      hoveredTask  = task;
+      hoveredTaskX = mx;
+      hoveredTaskY = my;
+      if (newHover === null) newHover = task.agentIdx;
+      break;
+    }
+  }
+
+  // Check calendar day columns
+  for (const { dayIdx, rect: r } of dayColRects) {
+    if (mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h) {
+      hoveredDay  = dayIdx;
+      hoveredDayX = mx;
+      hoveredDayY = my;
+      break;
+    }
+  }
+
+  hoveredAgent = newHover;
+});
+
+canvas.addEventListener('mouseleave', () => {
+  hoveredAgent = null;
+  hoveredTask  = null;
+  hoveredDay   = null;
+});
+
+// ─── Main loop ────────────────────────────────────────────────────────────────
+
+let lastTime = 0;
+
+function frame(ts: number) {
+  const dt = (ts - lastTime) / 1000;
+  lastTime = ts;
+
+  // Use real device time
+  simTime = new Date().getHours() + new Date().getMinutes() / 60 + new Date().getSeconds() / 3600;
+
+  // Lerp agent opacities
+  AGENTS.forEach((_, ai) => {
+    const target = hoveredAgent === null ? 1 : (hoveredAgent === ai ? 1 : 0.2);
+    agentOpacity[ai] = target;
+    agentOpacityNow[ai] = lerp(agentOpacityNow[ai], agentOpacity[ai], 0.1);
+  });
+
+  // Lerp feed slide-in
+  feedOffsets = feedOffsets.map(off => lerp(off, 0, 0.12));
+  feedOpacities = feedOpacities.map(op => lerp(op, 1, 0.1));
+
+  // Inject new feed items
+  injectFeedItem(ts);
+
+  // Clear
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, W, H);
+
+  // Draw all panels
+  drawStatsBar();
+  drawCalendar();
+  drawAgentCards();
+  drawTimeline();
+  drawFeed();
+
+  // Draw popups LAST so they render on top of everything
+  if (hoveredDay !== null) {
+    drawDayPopup(hoveredDayX, hoveredDayY, WEEK[hoveredDay]);
+  }
+  if (hoveredTask) {
+    drawTaskPopup(hoveredTaskX, hoveredTaskY, hoveredTask);
+  }
+
+  requestAnimationFrame(frame);
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+function init() {
+  resize();
+  window.addEventListener('resize', () => { resize(); });
+  requestAnimationFrame(frame);
+}
+
+init();
+
+  })();
+
 
   // ── PelloPublish Flow Canvas (full interactive version) ─────────────────
   (function() {
