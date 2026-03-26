@@ -101,7 +101,6 @@ Zero effort.</h2>
         </div>
       </div>
       <div class="product-card soc-card" data-product="3">
-        <canvas class="product-bg" aria-hidden="true"></canvas>
         <div class="soc-layout">
           <!-- Left: text -->
           <div class="soc-text ps-info flex flex-col" style="--product-color:#c026d3;">
@@ -2101,199 +2100,524 @@ Automated.</h2>
   }
 
   function initSocial(w: number, h: number): Record<string,unknown> {
-    interface SocBubble { x:number; y:number; vx:number; vy:number; icon:string; color:string; r:number; phase:number; opacity:number; }
-    const bubbles: SocBubble[] = [];
-    const icons = ['♥','✦','↗','●','◆','▲','★'];
-    const colors = ['#c026d3','#ec4899','#f43f5e','#a855f7','#06b6d4','#22c55e','#f59e0b'];
-    for (let i = 0; i < 30; i++) {
-      bubbles.push({
-        x: Math.random() * w, y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.15,
-        vy: -0.1 - Math.random() * 0.3, // float upward
-        icon: icons[Math.floor(Math.random() * icons.length)],
-        color: colors[Math.floor(Math.random() * colors.length)],
-        r: 6 + Math.random() * 8,
-        phase: Math.random() * Math.PI * 2,
-        opacity: 0.08 + Math.random() * 0.12,
-      });
+    const GLOBE_R=Math.min(w,h)*(w<600?0.42:0.38);
+    const GLOBE_CX=w*0.50, GLOBE_CY=h*0.50;
+    // Fibonacci sphere 800 dots
+    const globeDots: SocGlobeDot[]=[];
+    { const gr2=(1+Math.sqrt(5))/2;
+      for (let i=0;i<800;i++) {
+        const theta=2*Math.PI*i/gr2, phi=Math.acos(1-2*(i+0.5)/800);
+        const x=Math.sin(phi)*Math.cos(theta), y=Math.cos(phi), z=Math.sin(phi)*Math.sin(theta);
+        const lat=90-(phi*180/Math.PI);
+        const lon=((theta*180/Math.PI)%360+360)%360-180;
+        globeDots.push({x,y,z,isLand:socIsLand(lat,lon)});
+      }
     }
-    return { socBubbles: bubbles };
+    // Phones
+    const socPhones: PhoneSocNode[]=[];
+    let pNum=1;
+    for (const city of SOC_CITIES) {
+      for (let i=0;i<city.count;i++) {
+        const spread=city.name==='Singapore'?0.5:1.5;
+        const lat=city.lat+socRRange(-spread,spread), lon=city.lon+socRRange(-spread,spread);
+        const [x3d,y3d,z3d]=socLatLonTo3D(lat,lon);
+        const n=Math.floor(socR01()*2)+2;
+        const accs: SocAccount[]=[];
+        for (let a=0;a<n;a++) {
+          const pl=socRPick(SOC_PLATFORMS);
+          const fol=Math.floor(socRRange(1000,80000));
+          accs.push({platform:pl.name,color:pl.color,username:`@${socRPick(SOC_FNAMES)}_${socRPick(SOC_NICHES)}_${city.code.toLowerCase()}`,followers:fol>=1000?`${(fol/1000).toFixed(1)}k`:`${fol}`});
+        }
+        socPhones.push({lat,lon,x3d,y3d,z3d,phoneNum:pNum++,model:socRPick(SOC_MODELS),city:city.name,accounts:accs,status:socRPick(SOC_STATUSES),phase:socR01()*Math.PI*2,postsToday:Math.floor(socRRange(5,80))});
+      }
+    }
+    const totalPhones=socPhones.length;
+    const totalAccounts=socPhones.reduce((s,p)=>s+p.accounts.length,0);
+    return {
+      GLOBE_R,GLOBE_CX,GLOBE_CY,rotY:0,
+      globeDots,socPhones,totalPhones,totalAccounts,
+      activityPulses:[] as SocActivityPulse[],lastPulseSpawn:0,
+      hoveredPhone:null as PhoneSocNode|null,stickyPhone:null as PhoneSocNode|null,
+      autoHoverIdx:0,autoHoverTimer:0,
+    };
   }
-  function drawSocial(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
-    const st = state as { socBubbles: { x:number; y:number; vx:number; vy:number; icon:string; color:string; r:number; phase:number; opacity:number; }[] };
-    const [r,g,b]=PV_RGB[3];
 
-    for (const bub of st.socBubbles) {
-      // Float upward with gentle sway
-      bub.phase += 0.01;
-      bub.x += bub.vx + Math.sin(bub.phase) * 0.15;
-      bub.y += bub.vy;
+  function drawSocTooltip(c: CanvasRenderingContext2D, phone: PhoneSocNode, sx: number, sy: number, W: number, H: number) {
+    const pad=12, lineH=16;
+    const tooltipW=280, tooltipH=pad*2+lineH*(phone.accounts.length+3)+10;
+    let tx=sx+16, ty=sy-tooltipH/2;
+    if (tx+tooltipW>W-8) tx=sx-tooltipW-16;
+    tx=Math.max(8,Math.min(W-tooltipW-8,tx));
+    ty=Math.max(8,Math.min(H-tooltipH-8,ty));
+    c.save();
+    c.shadowColor='rgba(0,242,234,0.25)'; c.shadowBlur=24;
+    rrect(c,tx,ty,tooltipW,tooltipH,8); c.fillStyle='rgba(4,12,18,0.45)'; c.fill(); c.shadowBlur=0;
+    rrect(c,tx,ty,tooltipW,tooltipH,8); c.fillStyle='rgba(0,242,234,0.06)'; c.fill();
+    c.save(); c.beginPath(); c.rect(tx,ty,tooltipW,tooltipH); c.clip();
+    c.lineWidth=0.5;
+    for (let y2=ty;y2<ty+tooltipH;y2+=3) {
+      c.globalAlpha=0.03; c.strokeStyle='#00f2ea';
+      c.beginPath(); c.moveTo(tx,y2); c.lineTo(tx+tooltipW,y2); c.stroke();
+    }
+    c.restore();
+    rrect(c,tx,ty,tooltipW,tooltipH,8); c.strokeStyle='rgba(0,242,234,0.25)'; c.lineWidth=1; c.stroke();
+    c.globalAlpha=0.6; c.fillStyle='rgba(0,242,234,0.5)';
+    rrect(c,tx,ty,tooltipW,3,3); c.fill(); c.globalAlpha=1;
+    let cy3=ty+pad+11;
+    c.globalAlpha=1; c.textAlign='left';
+    c.fillStyle='#00f2ea'; c.font='bold 10px "SF Mono","Fira Code",monospace';
+    c.fillText(`PHONE #${phone.phoneNum}  //  ${phone.model}`,tx+pad,cy3); cy3+=lineH;
+    c.fillStyle='rgba(0,242,234,0.45)'; c.font='9px "SF Mono","Fira Code",monospace';
+    c.fillText(`>> ${phone.city}`,tx+pad,cy3); cy3+=lineH+3;
+    const groups=new Map<string,{color:[number,number,number];entries:{u:string;f:string}[]}>();
+    for (const acc of phone.accounts) {
+      if (!groups.has(acc.platform)) groups.set(acc.platform,{color:acc.color,entries:[]});
+      groups.get(acc.platform)!.entries.push({u:acc.username,f:acc.followers});
+    }
+    for (const [,{color,entries}] of groups) {
+      const [r2,g2,b2]=color;
+      c.fillStyle=`rgb(${r2},${g2},${b2})`;
+      c.beginPath(); c.arc(tx+pad+4,cy3-3,3,0,Math.PI*2); c.fill();
+      const cnt=entries.length>1?`${entries.length}x `:'   ';
+      const line=`${cnt}${entries.map(e=>`${e.u} (${e.f})`).join('  ')}`;
+      c.fillStyle='rgba(200,255,255,0.85)'; c.font='9px "SF Mono","Fira Code",monospace';
+      c.save(); c.beginPath(); c.rect(tx+pad+12,cy3-12,tooltipW-pad-20,15); c.clip();
+      c.fillText(line,tx+pad+12,cy3); c.restore(); cy3+=lineH;
+    }
+    cy3+=3;
+    const sc=phone.status==='Active'?'rgba(74,222,128,0.9)':phone.status==='Posting'?'rgba(0,242,234,0.9)':'rgba(251,191,36,0.8)';
+    c.fillStyle=sc; c.font='9px "SF Mono","Fira Code",monospace';
+    c.fillText(`[ ${phone.status} ]  ${phone.accounts.length} accts  //  ${phone.postsToday} posts`,tx+pad,cy3);
+    c.restore();
+  }
 
-      // Wrap
-      if (bub.y < -20) { bub.y = h + 20; bub.x = Math.random() * w; }
-      if (bub.x < -20) bub.x += w + 40;
-      if (bub.x > w + 20) bub.x -= w + 40;
+  function drawSocial(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, state: Record<string,unknown>) {
+    const st=state as {
+      GLOBE_R:number;GLOBE_CX:number;GLOBE_CY:number;rotY:number;
+      globeDots:SocGlobeDot[];socPhones:PhoneSocNode[];
+      totalPhones:number;totalAccounts:number;
+      activityPulses:SocActivityPulse[];lastPulseSpawn:number;
+      hoveredPhone:PhoneSocNode|null;stickyPhone:PhoneSocNode|null;
+      autoHoverIdx:number;autoHoverTimer:number;
+    };
+    st.rotY+=0.005;
+    const { GLOBE_R, GLOBE_CX, GLOBE_CY } = st;
+    const rotY=st.rotY;
+    function proj(x: number, y: number, z: number) { return socProject(x,y,z,rotY,GLOBE_R,GLOBE_CX,GLOBE_CY); }
 
-      let alpha = bub.opacity;
-      // Mouse proximity — brighten
+    // Scan beam
+    const beamY=GLOBE_CY-GLOBE_R+((t%5)/5)*(GLOBE_R*2);
+
+    // Globe ambient glow
+    const breathe=0.03+Math.sin(t*0.5)*0.008;
+    const grd=ctx.createRadialGradient(GLOBE_CX,GLOBE_CY,0,GLOBE_CX,GLOBE_CY,GLOBE_R*1.5);
+    grd.addColorStop(0,`rgba(0,242,234,${breathe})`);
+    grd.addColorStop(0.5,`rgba(0,242,234,${breathe*0.4})`);
+    grd.addColorStop(1,'rgba(0,242,234,0)');
+    ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(GLOBE_CX,GLOBE_CY,GLOBE_R*1.5,0,Math.PI*2); ctx.fill();
+
+    // Edge ring
+    ctx.save();
+    ctx.strokeStyle=`rgba(0,242,234,${0.12+Math.sin(t*0.3)*0.04})`; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(GLOBE_CX,GLOBE_CY,GLOBE_R,0,Math.PI*2); ctx.stroke();
+    ctx.restore();
+
+    // Scan lines
+    ctx.lineWidth=0.5;
+    for (let y=GLOBE_CY-GLOBE_R;y<GLOBE_CY+GLOBE_R;y+=4) {
+      const dy=y-GLOBE_CY, cr=Math.sqrt(Math.max(0,GLOBE_R*GLOBE_R-dy*dy));
+      if (cr<2) continue;
+      const near=Math.abs(y-beamY)<8;
+      ctx.globalAlpha=near?0.20:0.035; ctx.strokeStyle='#00f2ea';
+      ctx.beginPath(); ctx.moveTo(GLOBE_CX-cr,y); ctx.lineTo(GLOBE_CX+cr,y); ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+    if (beamY>GLOBE_CY-GLOBE_R&&beamY<GLOBE_CY+GLOBE_R) {
+      const dy=beamY-GLOBE_CY, cr=Math.sqrt(Math.max(0,GLOBE_R*GLOBE_R-dy*dy));
+      for (let offset=-10;offset<=0;offset+=2) {
+        const trailY=beamY+offset, tdy=trailY-GLOBE_CY;
+        const tcr=Math.sqrt(Math.max(0,GLOBE_R*GLOBE_R-tdy*tdy));
+        if (tcr<2) continue;
+        ctx.globalAlpha=0.03*(1+offset/10); ctx.strokeStyle='#00f2ea'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(GLOBE_CX-tcr,trailY); ctx.lineTo(GLOBE_CX+tcr,trailY); ctx.stroke();
+      }
+      const bg=ctx.createLinearGradient(GLOBE_CX-cr,0,GLOBE_CX+cr,0);
+      bg.addColorStop(0,'rgba(0,242,234,0)'); bg.addColorStop(0.3,'rgba(0,242,234,0.25)');
+      bg.addColorStop(0.5,'rgba(0,242,234,0.35)'); bg.addColorStop(0.7,'rgba(0,242,234,0.25)');
+      bg.addColorStop(1,'rgba(0,242,234,0)');
+      ctx.globalAlpha=1; ctx.lineWidth=2; ctx.strokeStyle=bg;
+      ctx.beginPath(); ctx.moveTo(GLOBE_CX-cr,beamY); ctx.lineTo(GLOBE_CX+cr,beamY); ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+
+    // Globe dots — 4 passes
+    for (const dot of st.globeDots) {
+      if (!dot.isLand) continue;
+      const [rx,ry,rz]=socApplyRotations(dot.x,dot.y,dot.z,rotY);
+      if (rz>=-0.05) continue;
+      const sx=GLOBE_CX+rx*GLOBE_R, sy=GLOBE_CY-ry*GLOBE_R;
+      const bd=Math.max(0,-rz-0.05);
+      ctx.globalAlpha=0.12+bd*0.10; ctx.fillStyle='rgb(0,200,195)';
+      ctx.beginPath(); ctx.arc(sx,sy,0.8+bd*0.4,0,Math.PI*2); ctx.fill();
+    }
+    for (const dot of st.globeDots) {
+      if (dot.isLand) continue;
+      const [rx,ry,rz]=socApplyRotations(dot.x,dot.y,dot.z,rotY);
+      if (rz>=-0.05) continue;
+      const sx=GLOBE_CX+rx*GLOBE_R, sy=GLOBE_CY-ry*GLOBE_R;
+      ctx.globalAlpha=0.015; ctx.fillStyle='rgb(0,70,68)';
+      ctx.beginPath(); ctx.arc(sx,sy,0.4,0,Math.PI*2); ctx.fill();
+    }
+    for (const dot of st.globeDots) {
+      if (dot.isLand) continue;
+      const [rx,ry,rz]=socApplyRotations(dot.x,dot.y,dot.z,rotY);
+      if (rz<-0.05) continue;
+      const sx=GLOBE_CX+rx*GLOBE_R, sy=GLOBE_CY-ry*GLOBE_R;
+      const depth=Math.max(0,rz), nearBeam=Math.abs(sy-beamY)<8;
+      ctx.globalAlpha=nearBeam?0.10:(0.015+depth*0.025); ctx.fillStyle='rgb(0,80,78)';
+      ctx.beginPath(); ctx.arc(sx,sy,0.5,0,Math.PI*2); ctx.fill();
+    }
+    ctx.save(); ctx.shadowColor='rgba(0,242,234,0.35)'; ctx.shadowBlur=3;
+    for (const dot of st.globeDots) {
+      if (!dot.isLand) continue;
+      const [rx,ry,rz]=socApplyRotations(dot.x,dot.y,dot.z,rotY);
+      if (rz<-0.05) continue;
+      const sx=GLOBE_CX+rx*GLOBE_R, sy=GLOBE_CY-ry*GLOBE_R;
+      const depth=Math.max(0,rz), nearBeam=Math.abs(sy-beamY)<10;
+      const flicker=0.92+Math.sin(t*8+dot.x*20+dot.y*30)*0.08;
+      const baseAlpha=(0.28+depth*0.45)*flicker;
+      ctx.globalAlpha=nearBeam?Math.min(1,baseAlpha+0.45):baseAlpha;
+      ctx.fillStyle=nearBeam?'rgb(150,255,252)':'rgb(0,242,234)';
+      const rad=(1.0+depth*0.9)*(nearBeam?1.4:1);
+      ctx.beginPath(); ctx.arc(sx,sy,rad,0,Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+
+    // Activity pulses
+    if (t-st.lastPulseSpawn>0.6) {
+      st.lastPulseSpawn=t;
+      const cands: {sx:number;sy:number}[]=[];
+      for (const p of st.socPhones) { const pp=proj(p.x3d,p.y3d,p.z3d); if (pp.visible) cands.push({sx:pp.sx,sy:pp.sy}); }
+      if (cands.length>0) {
+        const cc2=cands[Math.floor(Math.random()*cands.length)];
+        const acct=st.socPhones[Math.floor(Math.random()*st.socPhones.length)].accounts[0];
+        st.activityPulses.push({sx:cc2.sx+(Math.random()-0.5)*12,sy:cc2.sy+(Math.random()-0.5)*12,born:t,duration:1.2,color:acct.color});
+      }
+    }
+    for (let i=st.activityPulses.length-1;i>=0;i--) {
+      const pulse=st.activityPulses[i], age=t-pulse.born;
+      if (age>pulse.duration) { st.activityPulses.splice(i,1); continue; }
+      const progress=age/pulse.duration;
+      const [pr2,pg2,pb2]=pulse.color;
+      ctx.globalAlpha=(1-progress)*0.25; ctx.strokeStyle=`rgb(${pr2},${pg2},${pb2})`; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(pulse.sx,pulse.sy,3+progress*15,0,Math.PI*2); ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+
+    // Hover: user mouse > sticky (3s) > auto-hover (4s cycle)
+    if (hasMouse) {
+      let best: PhoneSocNode|null=null, bestD=25;
+      for (const p of st.socPhones) {
+        const pp=proj(p.x3d,p.y3d,p.z3d); if (!pp.visible) continue;
+        const d=Math.sqrt((pp.sx-mx)**2+(pp.sy-my)**2);
+        if (d<bestD){bestD=d;best=p;}
+      }
+      if (best) { st.stickyPhone=best; st.hoveredPhone=best; }
+      else {
+        if (st.stickyPhone) {
+          const pp=proj(st.stickyPhone.x3d,st.stickyPhone.y3d,st.stickyPhone.z3d);
+          st.hoveredPhone=(pp.visible&&pp.depth>0.05)?st.stickyPhone:null;
+          if (!st.hoveredPhone) st.stickyPhone=null;
+        } else { st.hoveredPhone=null; }
+      }
+    } else {
+      // No mouse — use sticky or auto-hover
+      if (st.stickyPhone) {
+        const pp=proj(st.stickyPhone.x3d,st.stickyPhone.y3d,st.stickyPhone.z3d);
+        if (pp.visible && pp.depth > 0.05) {
+          st.hoveredPhone = st.stickyPhone;
+        } else {
+          // Sticky phone rotated out — clear it and immediately pick a new auto target
+          st.stickyPhone = null;
+          st.hoveredPhone = null;
+          st.autoHoverTimer = 0; // force immediate auto-pick
+        }
+      }
+      if (!st.hoveredPhone) {
+        // Auto-hover: pick a visible phone, rotate every 4s or immediately if none shown
+        if (t - st.autoHoverTimer > 4 || !st.socPhones[st.autoHoverIdx] || !proj(st.socPhones[st.autoHoverIdx].x3d, st.socPhones[st.autoHoverIdx].y3d, st.socPhones[st.autoHoverIdx].z3d).visible) {
+          st.autoHoverTimer = t;
+          // Find a visible phone
+          let found = false;
+          for (let tries = 0; tries < st.socPhones.length; tries++) {
+            st.autoHoverIdx = (st.autoHoverIdx + 1) % st.socPhones.length;
+            const pp = proj(st.socPhones[st.autoHoverIdx].x3d, st.socPhones[st.autoHoverIdx].y3d, st.socPhones[st.autoHoverIdx].z3d);
+            if (pp.visible && pp.depth > 0.15) { found = true; break; }
+          }
+          if (!found) st.autoHoverIdx = 0; // fallback
+        }
+        const ap = st.socPhones[st.autoHoverIdx];
+        if (ap) {
+          const apr = proj(ap.x3d, ap.y3d, ap.z3d);
+          st.hoveredPhone = (apr.visible && apr.depth > 0.1) ? ap : null;
+        }
+      }
+    }
+
+    // Phone nodes
+    for (const phone of st.socPhones) {
+      const p=proj(phone.x3d,phone.y3d,phone.z3d);
+      if (!p.visible) {
+        ctx.globalAlpha=0.04; ctx.fillStyle='#00f2ea';
+        ctx.beginPath(); ctx.arc(p.sx,p.sy,1,0,Math.PI*2); ctx.fill();
+        ctx.globalAlpha=1; continue;
+      }
+      const hov=st.hoveredPhone===phone;
+      const depth=Math.max(0.2,p.depth);
+      let alpha=0.5*depth, rad=4;
+      const nearBeam=Math.abs(p.sy-beamY)<12;
+      if (nearBeam) alpha=Math.min(0.95,alpha+0.35);
+      if (phone.status==='Posting') alpha=Math.max(alpha,0.4+Math.sin(t*3+phone.phase)*0.15);
+      if (hov){alpha=1;rad=8;}
+      ctx.globalAlpha=alpha*0.4; ctx.strokeStyle='#00f2ea'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(p.sx,p.sy,rad+3,0,Math.PI*2); ctx.stroke();
+      ctx.globalAlpha=alpha*0.15; ctx.fillStyle='#00f2ea';
+      ctx.beginPath(); ctx.arc(p.sx,p.sy,rad+5,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha=alpha; ctx.fillStyle='#00f2ea';
+      ctx.beginPath(); ctx.arc(p.sx,p.sy,rad,0,Math.PI*2); ctx.fill();
+      const [pr3,pg3,pb3]=phone.accounts[0].color;
+      ctx.globalAlpha=hov?1:alpha*0.9; ctx.fillStyle=`rgb(${pr3},${pg3},${pb3})`;
+      ctx.beginPath(); ctx.arc(p.sx,p.sy,hov?4:2,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha=1;
+    }
+
+    if (st.hoveredPhone) {
+      const p=proj(st.hoveredPhone.x3d,st.hoveredPhone.y3d,st.hoveredPhone.z3d);
+      drawSocTooltip(ctx,st.hoveredPhone,p.sx,p.sy,w,h);
+    }
+
+    // ── HUD panel — position glass div + render HTML text inside ──
+    const BOX_W=190, BOX_H_EST=260;
+    const bx=GLOBE_CX-BOX_W/2, by=GLOBE_CY-BOX_H_EST/2;
+
+    const glassEl = document.getElementById('soc-hud-glass');
+    if (glassEl) {
+      const card = glassEl.parentElement!;
+      const cardRect = card.getBoundingClientRect();
+      const canvasEl = card.querySelector('.product-bg') as HTMLElement;
+      const canvasRect = canvasEl?.getBoundingClientRect();
+      if (canvasRect) {
+        const offX = canvasRect.left - cardRect.left;
+        const offY = canvasRect.top - cardRect.top;
+        glassEl.style.display = 'block';
+        glassEl.style.left = `${offX + bx}px`;
+        glassEl.style.top = `${offY + by}px`;
+        glassEl.style.width = `${BOX_W}px`;
+
+        // Build HTML content (only rebuild occasionally to avoid DOM thrash)
+        if (!glassEl.dataset.built) {
+          glassEl.dataset.built = '1';
+          const queueVal = 47;
+          glassEl.innerHTML = `
+            <div class="soc-hud-section">
+              <div class="soc-hud-title">INFRASTRUCTURE</div>
+              <div class="soc-hud-sep"></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">PHONES</span><span class="soc-hud-val">${st.totalPhones}</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">ACTIVE</span><span class="soc-hud-val">${st.totalPhones-3}/${st.totalPhones}</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">CITIES</span><span class="soc-hud-val">12</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">UPTIME</span><span class="soc-hud-val">99.7%</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">LATENCY</span><span class="soc-hud-val">&lt; 14ms</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">SYNC</span><span class="soc-hud-val">REAL-TIME</span></div>
+            </div>
+            <div class="soc-hud-section">
+              <div class="soc-hud-title">OPERATIONS</div>
+              <div class="soc-hud-sep"></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">ACCOUNTS</span><span class="soc-hud-val">${st.totalAccounts}</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">POSTS/DAY</span><span class="soc-hud-val">1,247</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">PLATFORMS</span><span class="soc-hud-val">5 active</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">QUEUE</span><span class="soc-hud-val" id="soc-hud-queue">${queueVal} pending</span></div>
+              <div class="soc-hud-row"><span class="soc-hud-label">ENGAGEMENT</span><span class="soc-hud-val">6.8% avg</span></div>
+            </div>
+            <div class="soc-hud-status" id="soc-hud-status">● ALL SYSTEMS OPERATIONAL ●</div>
+          `;
+        }
+        // Update dynamic values
+        const queueEl = document.getElementById('soc-hud-queue');
+        if (queueEl) queueEl.textContent = `${Math.floor(47+Math.sin(t*0.3)*12)} pending`;
+        const statusEl = document.getElementById('soc-hud-status');
+        if (statusEl) {
+          const flash = Math.floor(t*2)%2===0;
+          statusEl.textContent = `${flash?'●':'○'}  ALL SYSTEMS OPERATIONAL  ${flash?'●':'○'}`;
+        }
+      }
+    }
+  }
+
+  // ── Product 4: Pitch Topo Contours ───────────────────────────────────────
+  function drawTopo(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, _state: Record<string, unknown>) {
+    const [r,g,b]=PV_RGB[4];
+    const step=8;
+    const cols=Math.ceil(w/step)+1, rows=Math.ceil(h/step)+1;
+    const grid: number[][]=[];
+    for (let row=0;row<rows;row++) {
+      grid[row]=[];
+      for (let col=0;col<cols;col++) {
+        const x=col*step, y=row*step;
+        let v=noise2(x*0.020+t*0.2, y*0.020+t*0.15);
+        if (hasMouse) {
+          const dx=x-mx, dy=y-my, d2=dx*dx+dy*dy;
+          v+=Math.exp(-d2/15000)*0.4;
+        }
+        grid[row][col]=v;
+      }
+    }
+    const levels=[-0.5,-0.3,-0.1,0.1,0.3,0.5];
+    const alphas=[0.20,0.25,0.30,0.35,0.40,0.45];
+    for (let li=0;li<levels.length;li++) {
+      const level=levels[li];
+      ctx.strokeStyle=`rgba(${r},${g},${b},${alphas[li]})`;
+      ctx.lineWidth=1;
+      ctx.beginPath();
+      for (let row=0;row<rows-1;row++) for (let col=0;col<cols-1;col++) {
+        const tl=grid[row][col], tr=grid[row][col+1];
+        const bl=grid[row+1][col], br=grid[row+1][col+1];
+        const x0=col*step, y0=row*step;
+        const cr: [number,number][]=[];
+        if ((tl<level)!==(tr<level)) { const tt=(level-tl)/(tr-tl); cr.push([x0+tt*step, y0]); }
+        if ((tr<level)!==(br<level)) { const tt=(level-tr)/(br-tr); cr.push([x0+step, y0+tt*step]); }
+        if ((bl<level)!==(br<level)) { const tt=(level-bl)/(br-bl); cr.push([x0+tt*step, y0+step]); }
+        if ((tl<level)!==(bl<level)) { const tt=(level-tl)/(bl-tl); cr.push([x0, y0+tt*step]); }
+        if (cr.length===2) {
+          ctx.moveTo(cr[0][0],cr[0][1]); ctx.lineTo(cr[1][0],cr[1][1]);
+        } else if (cr.length===4) {
+          ctx.moveTo(cr[0][0],cr[0][1]); ctx.lineTo(cr[3][0],cr[3][1]);
+          ctx.moveTo(cr[1][0],cr[1][1]); ctx.lineTo(cr[2][0],cr[2][1]);
+        }
+      }
+      ctx.stroke();
+    }
+  }
+
+  // ── Product 5: Ads Equalizer Bars ────────────────────────────────────────
+  function drawBars(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, _state: Record<string, unknown>) {
+    const [r,g,b]=PV_RGB[5];
+    const numBars=40, barW=3, barGap=2, totalW=barW+barGap;
+    const startX=(w-numBars*totalW)/2;
+    const centerY=h*0.62;
+    for (let i=0;i<numBars;i++) {
+      const x=startX+i*totalW;
+      const bCx=x+barW/2;
+      const n=(noise2(i*0.15+t*0.4, t*0.6+i*0.05)+1)*0.5;
+      let barH=4+n*30;
       if (hasMouse) {
-        const dx = bub.x - mx, dy = bub.y - my;
-        const d = Math.sqrt(dx*dx + dy*dy);
-        if (d < 80) alpha += (1 - d/80) * 0.15;
+        const dx=Math.abs(mx-bCx);
+        if (dx<60) barH=Math.max(barH, Math.pow(1-dx/60,2)*35);
+      }
+      const alpha=0.25+(barH/34)*0.25;
+      ctx.fillStyle=`rgba(${r},${g},${b},${alpha})`;
+      ctx.fillRect(x, centerY-barH, barW, barH);
+    }
+  }
+
+  function initMatrix(w: number, h: number) {
+    const colW = 7;
+    const cols = Math.ceil(w / colW);
+    const drops: number[] = [];
+    const speeds: number[] = [];
+    const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン01{}()[];:<>=+-*/&|!?#$%@^~`const function return async await import export class interface type let var if else for while switch case break new this true false null undefined void delete typeof instanceof in of do try catch finally throw yields';
+    for (let i = 0; i < cols; i++) {
+      drops.push(Math.random() * -50);
+      speeds.push(0.5 + Math.random() * 1.2);
+    }
+    return { drops, speeds, chars, colW, cols };
+  }
+  function drawMatrix(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
+    const [r,g,b]=PV_RGB[5];
+    const st = state as { drops: number[]; speeds: number[]; chars: string; colW: number; cols: number };
+    const fontSize = 9;
+    ctx.font = `${fontSize}px "SF Mono", "Fira Code", monospace`;
+
+    for (let i = 0; i < st.cols; i++) {
+      const x = i * st.colW;
+      st.drops[i] += st.speeds[i];
+
+      // Draw trail of characters
+      const trailLen = 25;
+      for (let j = 0; j < trailLen; j++) {
+        const y = (st.drops[i] - j) * fontSize;
+        if (y < 0 || y > h) continue;
+
+        // Pick a pseudo-random character
+        const ci = Math.floor((t * 3 + i * 7 + j * 13) % st.chars.length);
+        const ch = st.chars[ci];
+
+        // Head character is brightest
+        let alpha: number;
+        if (j === 0) {
+          alpha = 0.9;
+          ctx.fillStyle = `rgba(255,255,255,0.85)`;
+        } else {
+          alpha = Math.max(0.03, (1 - j / trailLen) * 0.4);
+          ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+        }
+
+        // Mouse proximity brightens
+        if (hasMouse) {
+          const dx = Math.abs(mx - x), dy = Math.abs(my - y);
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < 80) {
+            const boost = (1 - dist / 80) * 0.3;
+            ctx.fillStyle = `rgba(${r},${g},${b},${Math.min(0.85, alpha + boost)})`;
+          }
+        }
+
+        ctx.fillText(ch, x, y);
       }
 
-      // Pulse
-      const pulse = 0.7 + 0.3 * Math.sin(t * 2 + bub.phase);
-
-      // Outer glow
-      ctx.beginPath();
-      ctx.arc(bub.x, bub.y, bub.r + 4, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${r},${g},${b},${alpha * 0.15 * pulse})`;
-      ctx.fill();
-
-      // Circle
-      ctx.beginPath();
-      ctx.arc(bub.x, bub.y, bub.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${r},${g},${b},${alpha * 0.3})`;
-      ctx.fill();
-
-      // Icon
-      ctx.font = `${bub.r * 0.9}px -apple-system, sans-serif`;
-      ctx.fillStyle = `rgba(${r},${g},${b},${alpha * 1.5 * pulse})`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(bub.icon, bub.x, bub.y);
-    }
-
-    // Connecting lines between nearby bubbles
-    for (let i = 0; i < st.socBubbles.length; i++) {
-      for (let j = i + 1; j < st.socBubbles.length; j++) {
-        const a = st.socBubbles[i], b2 = st.socBubbles[j];
-        const dx = a.x - b2.x, dy = a.y - b2.y;
-        const d = Math.sqrt(dx*dx + dy*dy);
-        if (d < 100) {
-          const la = (1 - d/100) * 0.04;
-          ctx.strokeStyle = `rgba(${r},${g},${b},${la})`;
-          ctx.lineWidth = 0.5;
-          ctx.beginPath();
-          ctx.moveTo(a.x, a.y);
-          ctx.lineTo(b2.x, b2.y);
-          ctx.stroke();
-        }
+      // Reset when off screen
+      if (st.drops[i] * fontSize > h + trailLen * fontSize) {
+        st.drops[i] = Math.random() * -10;
+        st.speeds[i] = 0.5 + Math.random() * 1.2;
       }
     }
   }
 
   // ── Product 6: Flow Particles ─────────────────────────────────────────────
   interface FParticle { x:number; y:number; trail:{x:number;y:number}[]; }
-  function initFlowAnim(w: number, h: number) {
-    // Create a network of nodes with flowing data particles between them
-    interface FlowNode { x:number; y:number; r:number; pulse:number; speed:number; }
-    interface FlowEdge { from:number; to:number; particles: { pos:number; speed:number; }[]; }
-    const nodes: FlowNode[] = [];
-    const numNodes = 12;
-    for (let i = 0; i < numNodes; i++) {
-      nodes.push({
-        x: 30 + Math.random() * (w - 60),
-        y: 30 + Math.random() * (h - 60),
-        r: 3 + Math.random() * 4,
-        pulse: Math.random() * Math.PI * 2,
-        speed: 0.5 + Math.random() * 1.5,
-      });
-    }
-    // Connect nearby nodes
-    const edges: FlowEdge[] = [];
-    for (let i = 0; i < nodes.length; i++) {
-      for (let j = i + 1; j < nodes.length; j++) {
-        const dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
-        const d = Math.sqrt(dx*dx + dy*dy);
-        if (d < Math.max(w, h) * 0.4) {
-          const numP = 1 + Math.floor(Math.random() * 2);
-          const particles = [];
-          for (let p = 0; p < numP; p++) {
-            particles.push({ pos: Math.random(), speed: 0.002 + Math.random() * 0.003 });
-          }
-          edges.push({ from: i, to: j, particles });
-        }
-      }
-    }
-    return { flowNodes: nodes, flowEdges: edges };
+  function initParticles(w: number, h: number) {
+    const particles: FParticle[]=[];
+    for (let i=0;i<60;i++) particles.push({ x:Math.random()*w, y:Math.random()*h, trail:[] });
+    return { particles };
   }
-  function drawFlowAnim(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
-    const st = state as { flowNodes: { x:number; y:number; r:number; pulse:number; speed:number; }[]; flowEdges: { from:number; to:number; particles: { pos:number; speed:number; }[]; }[] };
+  function drawParticles(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
+    const { particles } = state as { particles: FParticle[] };
     const [r,g,b]=PV_RGB[6];
-
-    // Draw edges with flowing particles
-    for (const edge of st.flowEdges) {
-      const a = st.flowNodes[edge.from], b2 = st.flowNodes[edge.to];
-      // Edge line
-      ctx.strokeStyle = `rgba(${r},${g},${b},0.08)`;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b2.x, b2.y);
-      ctx.stroke();
-
-      // Flowing particles along edges
-      for (const p of edge.particles) {
-        p.pos += p.speed;
-        if (p.pos > 1) p.pos -= 1;
-        const px = a.x + (b2.x - a.x) * p.pos;
-        const py = a.y + (b2.y - a.y) * p.pos;
-        
-        // Glow trail
-        const trailLen = 0.08;
-        const trailStart = Math.max(0, p.pos - trailLen);
-        const tsx = a.x + (b2.x - a.x) * trailStart;
-        const tsy = a.y + (b2.y - a.y) * trailStart;
-        const grad = ctx.createLinearGradient(tsx, tsy, px, py);
-        grad.addColorStop(0, `rgba(${r},${g},${b},0)`);
-        grad.addColorStop(1, `rgba(${r},${g},${b},0.3)`);
-        ctx.strokeStyle = grad;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(tsx, tsy);
-        ctx.lineTo(px, py);
-        ctx.stroke();
-
-        // Particle dot
-        ctx.fillStyle = `rgba(${r},${g},${b},0.6)`;
-        ctx.beginPath();
-        ctx.arc(px, py, 2, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    // Draw nodes with pulsing glow
-    for (const node of st.flowNodes) {
-      node.pulse += 0.02 * node.speed;
-      const pulse = 0.5 + 0.5 * Math.sin(node.pulse);
-
-      // Mouse proximity brightens nodes
-      let brightness = 0.15;
+    const s=0.018;
+    for (const p of particles) {
+      const n_py=noise2(p.x*s, (p.y+1)*s+t*0.1);
+      const n_ny=noise2(p.x*s, (p.y-1)*s+t*0.1);
+      const n_px=noise2((p.x+1)*s, p.y*s+t*0.1);
+      const n_nx=noise2((p.x-1)*s, p.y*s+t*0.1);
+      let vx=(n_py-n_ny)/2;
+      let vy=-(n_px-n_nx)/2;
+      const vmag=Math.sqrt(vx*vx+vy*vy)||0.001;
+      vx=(vx/vmag)*0.5; vy=(vy/vmag)*0.5;
       if (hasMouse) {
-        const dx = node.x - mx, dy = node.y - my;
-        const d = Math.sqrt(dx*dx + dy*dy);
-        if (d < 120) brightness = 0.15 + (1 - d/120) * 0.25;
+        const dx=p.x-mx, dy=p.y-my, d=Math.sqrt(dx*dx+dy*dy);
+        if (d<150&&d>0) { const str=(1-d/150)*1.5; vx+=(-dy/d)*str; vy+=(dx/d)*str; }
       }
-
-      // Outer glow
-      ctx.beginPath();
-      ctx.arc(node.x, node.y, node.r + 6 + pulse * 3, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${r},${g},${b},${brightness * 0.2 * pulse})`;
-      ctx.fill();
-
-      // Node circle
-      ctx.beginPath();
-      ctx.arc(node.x, node.y, node.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${r},${g},${b},${brightness + pulse * 0.1})`;
-      ctx.fill();
-
-      // Inner bright dot
-      ctx.beginPath();
-      ctx.arc(node.x, node.y, node.r * 0.4, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${r},${g},${b},${brightness * 2 + pulse * 0.2})`;
-      ctx.fill();
+      p.trail.push({x:p.x,y:p.y});
+      if (p.trail.length>5) p.trail.shift();
+      p.x+=vx; p.y+=vy;
+      if (p.x<0) p.x+=w; if (p.x>w) p.x-=w;
+      if (p.y<0) p.y+=h; if (p.y>h) p.y-=h;
+      for (let ti=1;ti<p.trail.length;ti++) {
+        ctx.strokeStyle=`rgba(${r},${g},${b},${(ti/p.trail.length)*0.25})`;
+        ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(p.trail[ti-1].x,p.trail[ti-1].y); ctx.lineTo(p.trail[ti].x,p.trail[ti].y); ctx.stroke();
+      }
+      ctx.fillStyle=`rgba(${r},${g},${b},0.40)`;
+      ctx.beginPath(); ctx.arc(p.x,p.y,1,0,Math.PI*2); ctx.fill();
     }
   }
 
@@ -2344,9 +2668,8 @@ Automated.</h2>
       case 1: return initReach(w,h);
       case 2: return initRain(w,h);
       case 3: return initSocial(w,h);
-      case 5: return initAdsAnim(w,h);
       case 7: return initMatrix(w,h);
-      case 6: return initFlowAnim(w,h);
+      case 6: return initParticles(w,h);
       
       default: return {};
     }
@@ -2364,8 +2687,8 @@ Automated.</h2>
       case 2: drawRain(ctx,w,h,t,lx,ly,hasMouse,state); break;
       case 3: drawSocial(ctx,w,h,t,lx,ly,hasMouse,state); break;
       case 4: drawTopo(ctx,w,h,t,lx,ly,hasMouse,state); break;
-      case 5: drawAdsAnim(ctx,w,h,t,lx,ly,hasMouse,state); break;
-      case 6: drawFlowAnim(ctx,w,h,t,lx,ly,hasMouse,state); break;
+      case 5: drawBars(ctx,w,h,t,lx,ly,hasMouse,state); break;
+      case 6: drawParticles(ctx,w,h,t,lx,ly,hasMouse,state); break;
       case 7: drawMatrix(ctx,w,h,t,lx,ly,hasMouse,state); break;
     }
   }
