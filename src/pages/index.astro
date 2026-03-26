@@ -284,7 +284,48 @@ Zero effort.</h2>
       <div class="product-card" data-product="5">
         <canvas class="product-bg" aria-hidden="true"></canvas>
         <div class="product-card-content">
-          <ProductSection productIndex={5} flip={true} />
+        <div class="build-layout">
+          <!-- Left: text -->
+          <div class="build-text ps-info flex flex-col" style="--product-color:#7c3aed;">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:#7c3aed18;border:1px solid #7c3aed28;color:#7c3aed;" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" fill="currentColor" opacity="0.3"/><rect x="14" y="3" width="7" height="7" rx="1" fill="currentColor" opacity="0.2"/><rect x="3" y="14" width="7" height="7" rx="1" fill="currentColor" opacity="0.2"/><rect x="14" y="14" width="7" height="7" rx="1" fill="currentColor" opacity="0.15"/><path d="M7 10v4M17 10v4M10 7h4M10 17h4" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>
+              </div>
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-widest" style="color:#7c3aed;">PelloAds</p>
+                <p class="text-xs text-zinc-500">Test thousands. Scale the winners.</p>
+              </div>
+            </div>
+            <h2 class="text-headline text-white mb-5" style="white-space:pre-line;">Thousands of ads.
+One click.</h2>
+            <p class="text-body-lg text-zinc-400 mb-8 leading-relaxed">Most ad teams test 10–20 variants per campaign. PelloAds tests thousands — different creatives, copy, audiences, and placements — simultaneously. Losers get killed automatically. Winners get budget. Every dollar goes further.</p>
+            <ul class="flex flex-wrap gap-2 mb-10 list-none m-0 p-0" role="list">
+              <li class="feature-pill" style="background:#7c3aed0d;color:#7c3aed;border-color:#7c3aed25;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Thousands of variants tested</li>
+              <li class="feature-pill" style="background:#7c3aed0d;color:#7c3aed;border-color:#7c3aed25;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Automated budget reallocation</li>
+              <li class="feature-pill" style="background:#7c3aed0d;color:#7c3aed;border-color:#7c3aed25;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Multi-platform campaigns</li>
+              <li class="feature-pill" style="background:#7c3aed0d;color:#7c3aed;border-color:#7c3aed25;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Real-time ROI optimisation</li>
+            </ul>
+            <a href="#contact" class="btn-primary self-start" style="background:linear-gradient(135deg,#7c3aed 0%,#7c3aedcc 100%);">
+              Learn More
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+          </div>
+          <!-- Right: dashboard canvas in window frame -->
+          <div class="build-canvas-col">
+            <div class="build-window" style="border-color:rgba(124,58,237,0.15);">
+              <div class="build-window-bar">
+                <span class="bw-dot" style="background:#ef4444;"></span>
+                <span class="bw-dot" style="background:#f59e0b;"></span>
+                <span class="bw-dot" style="background:#4ade80;"></span>
+                <span class="bw-title">PelloAds Campaign Manager</span>
+                <span class="bw-live"><span class="bw-live-dot"></span>LIVE</span>
+              </div>
+              <div class="build-window-body">
+                <canvas id="ads-dash-canvas" aria-hidden="true"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
         </div>
       </div>
       <div class="product-card" data-product="7">
@@ -827,7 +868,8 @@ Automated.</h2>
     height: 320px;
   }
   .build-window-body #build-dash-canvas,
-  .build-window-body #flow-dash-canvas {
+  .build-window-body #flow-dash-canvas,
+  .build-window-body #ads-dash-canvas {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -2650,6 +2692,870 @@ Automated.</h2>
       case 7: drawMatrix(ctx,w,h,t,lx,ly,hasMouse,state); break;
     }
   }
+
+
+  // ── PelloAds Dashboard Canvas ──────────────────────────────────────────
+  (function() {
+const canvas = document.getElementById('ads-dash-canvas') as HTMLCanvasElement;
+if (!canvas) throw new Error('no canvas');
+const ctx = canvas.getContext('2d')!;
+const dpr = window.devicePixelRatio || 1;
+
+let W = 0, H = 0;
+let mouseX = -1, mouseY = -1;
+let frame = 0;
+
+function resize() {
+  const par = canvas.parentElement!;
+  W = Math.min(900, par.clientWidth - 32);
+  H = Math.round(W * 0.56);
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+resize();
+window.addEventListener('resize', resize);
+
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - r.left) * (W / r.width);
+  mouseY = (e.clientY - r.top) * (H / r.height);
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
+
+// ─── Colour Constants ─────────────────────────────────────────────────────────
+const BRAND   = '#7c3aed';
+const BG      = '#060712';
+const PANEL   = '#0d0f1f';
+const BORDER  = 'rgba(255,255,255,0.06)';
+const DIM     = 'rgba(255,255,255,0.35)';
+const MID     = 'rgba(255,255,255,0.6)';
+const BRIGHT  = '#ffffff';
+const GREEN   = '#22c55e';
+const RED     = '#ef4444';
+const AMBER   = '#f59e0b';
+
+// ─── Data ─────────────────────────────────────────────────────────────────────
+
+interface Platform { name: string; abbr: string; color: string; }
+const PLATFORMS: Platform[] = [
+  { name: 'Google',   abbr: 'G',  color: '#4285F4' },
+  { name: 'Meta',     abbr: 'M',  color: '#1877F2' },
+  { name: 'TikTok',   abbr: 'T',  color: '#69C9D0' },
+  { name: 'LinkedIn', abbr: 'Li', color: '#0A66C2' },
+  { name: 'X',        abbr: 'X',  color: '#E7E9EA' },
+];
+
+interface CellData {
+  ctr: number; cpc: number; roas: number; spend: number;
+  perf: number; // 0..1
+  spark: number[];
+}
+
+interface Campaign {
+  name: string;
+  status: 'live' | 'learning' | 'paused';
+  cells: CellData[];
+}
+
+function randBetween(a: number, b: number) { return a + Math.random() * (b - a); }
+
+function makeSpark(perf: number): number[] {
+  const arr: number[] = [];
+  let v = 0.3 + perf * 0.4;
+  for (let i = 0; i < 8; i++) {
+    v += (Math.random() - 0.5) * 0.12;
+    v = Math.max(0.05, Math.min(0.95, v));
+    arr.push(v);
+  }
+  return arr;
+}
+
+function makeCell(): CellData {
+  const perf = Math.random();
+  return {
+    ctr: +(0.5 + perf * 7).toFixed(1),
+    cpc: +(0.3 + (1 - perf) * 4.5).toFixed(2),
+    roas: +(0.8 + perf * 5).toFixed(1),
+    spend: +randBetween(400, 8000).toFixed(0),
+    perf,
+    spark: makeSpark(perf),
+  };
+}
+
+const CAMPAIGNS: Campaign[] = [
+  { name: 'Summer Sale',       status: 'live',     cells: PLATFORMS.map(() => makeCell()) },
+  { name: 'Brand Awareness',   status: 'live',     cells: PLATFORMS.map(() => makeCell()) },
+  { name: 'Retargeting Cart',  status: 'learning', cells: PLATFORMS.map(() => makeCell()) },
+  { name: 'New User Acq.',     status: 'live',     cells: PLATFORMS.map(() => makeCell()) },
+  { name: 'Product Launch',    status: 'learning', cells: PLATFORMS.map(() => makeCell()) },
+];
+
+// ─── Ad Copy Variants (right panel) ──────────────────────────────────────────
+
+interface Variant {
+  headline: string;
+  ctr: number; roas: number; conv: number;
+  bar: number; barTarget: number;
+  status: 'active' | 'winner' | 'killed';
+  killReason?: string;
+}
+
+const VARIANTS: Variant[] = [
+  { headline: 'Scale 10x Faster',       ctr: 4.2, roas: 5.1, conv: 342, bar: 0, barTarget: 1.00, status: 'winner' },
+  { headline: 'Crush Your CPC',         ctr: 3.4, roas: 4.2, conv: 278, bar: 0, barTarget: 0.81, status: 'active' },
+  { headline: 'Your Growth Engine',     ctr: 2.8, roas: 3.3, conv: 214, bar: 0, barTarget: 0.67, status: 'active' },
+  { headline: 'ROI You Can Measure',    ctr: 2.1, roas: 2.4, conv: 156, bar: 0, barTarget: 0.50, status: 'active' },
+  { headline: 'Beat Competitors Now',   ctr: 1.6, roas: 1.9, conv: 112, bar: 0, barTarget: 0.38, status: 'active' },
+  { headline: 'Zero Wasted Budget',     ctr: 0.4, roas: 0.7, conv: 18,  bar: 0, barTarget: 0.10, status: 'killed', killReason: 'CTR < 0.5%' },
+  { headline: 'Click Here Now',         ctr: 0.2, roas: 0.3, conv: 6,   bar: 0, barTarget: 0.05, status: 'killed', killReason: 'ROAS < 1x' },
+  { headline: 'Try It Free Today',      ctr: 0.3, roas: 0.5, conv: 9,   bar: 0, barTarget: 0.07, status: 'killed', killReason: 'CPC > $5.00' },
+  { headline: 'Results Guaranteed',     ctr: 0.1, roas: 0.2, conv: 3,   bar: 0, barTarget: 0.03, status: 'killed', killReason: 'Conv < 10' },
+  { headline: 'Unlimited Growth',       ctr: 0.3, roas: 0.4, conv: 11,  bar: 0, barTarget: 0.06, status: 'killed', killReason: 'CTR < 0.5%' },
+];
+
+// 7-day sparkline for winner
+const winnerSpark = [0.48, 0.55, 0.61, 0.69, 0.76, 0.85, 1.0];
+
+// Drift bars periodically
+setInterval(() => {
+  VARIANTS.forEach((v, i) => {
+    if (v.status !== 'active') return;
+    v.barTarget = Math.max(0.15, Math.min(0.95, v.barTarget + (Math.random() - 0.5) * 0.01));
+  });
+  // Drift sparklines
+  CAMPAIGNS.forEach(c => c.cells.forEach(cell => {
+    cell.spark = cell.spark.map(v => Math.max(0.05, Math.min(0.95, v + (Math.random() - 0.5) * 0.03)));
+  }));
+}, 1500);
+
+// ─── Drawing Helpers ──────────────────────────────────────────────────────────
+
+function rr(x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function perfColor(p: number): string {
+  if (p > 0.65) return BRAND;
+  if (p > 0.35) return AMBER;
+  return RED;
+}
+
+function perfTextColor(p: number): string {
+  if (p > 0.65) return '#a78bfa';
+  if (p > 0.35) return '#fbbf24';
+  return '#f87171';
+}
+
+function drawSparkline(x: number, y: number, w: number, h: number, data: number[], color: string, fill = true) {
+  if (data.length < 2) return;
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  for (let i = 0; i < data.length; i++) {
+    const px = x + (i / (data.length - 1)) * w;
+    const py = y + h - data[i] * h;
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+  if (fill) {
+    const grad = ctx.createLinearGradient(x, y, x, y + h);
+    grad.addColorStop(0, color + '25');
+    grad.addColorStop(1, color + '03');
+    ctx.lineTo(x + w, y + h);
+    ctx.lineTo(x, y + h);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+  }
+  // End dot (latest value)
+  const lastX = x + w;
+  const lastY = y + h - data[data.length - 1] * h;
+  ctx.beginPath();
+  ctx.arc(lastX, lastY, 2, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.restore();
+}
+
+// ─── Layout Constants ─────────────────────────────────────────────────────────
+const PAD = 8;
+const STATS_H = 40;
+const GAP = 6;
+
+// ─── Stats Bar ────────────────────────────────────────────────────────────────
+function drawStatsBar() {
+  // Gradient background
+  const bgGrad = ctx.createLinearGradient(PAD, 0, W - PAD, 0);
+  bgGrad.addColorStop(0, 'rgba(124,58,237,0.05)');
+  bgGrad.addColorStop(0.5, '#0d0f1f');
+  bgGrad.addColorStop(1, 'rgba(34,197,94,0.04)');
+  rr(PAD, PAD, W - PAD * 2, STATS_H, 8);
+  ctx.fillStyle = bgGrad;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  const stats = [
+    { label: 'VARIANTS',  value: '2,847',  accent: BRAND,    icon: '◆' },
+    { label: 'WINNERS',   value: '23',     accent: GREEN,    icon: '✓' },
+    { label: 'KILLED',    value: '2,109',  accent: RED,      icon: '✕' },
+    { label: 'AVG ROAS',  value: '3.8x',   accent: AMBER,    icon: '◈' },
+    { label: 'SAVED',     value: '$14.2k',  accent: '#22d3ee', icon: '◇' },
+  ];
+
+  const segW = (W - PAD * 2) / stats.length;
+  stats.forEach((s, i) => {
+    const cx = PAD + segW * i + 8;
+    const cardW = segW - 6;
+
+    // Subtle card bg
+    rr(cx, PAD + 3, cardW, STATS_H - 6, 6);
+    ctx.fillStyle = 'rgba(255,255,255,0.015)';
+    ctx.fill();
+
+    // Pulsing glow dot
+    const dotX = cx + 10;
+    const dotY = PAD + STATS_H / 2;
+    const pulse = 0.4 + 0.6 * Math.abs(Math.sin(Date.now() * 0.002 + i * 1.2));
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, 6, 0, Math.PI * 2);
+    ctx.fillStyle = s.accent + Math.round(pulse * 15).toString(16).padStart(2, '0');
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, 3, 0, Math.PI * 2);
+    ctx.fillStyle = s.accent + '60';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, 1.5, 0, Math.PI * 2);
+    ctx.fillStyle = s.accent;
+    ctx.fill();
+
+    // Label
+    ctx.font = '500 8px -apple-system, sans-serif';
+    ctx.fillStyle = s.accent + '90';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(s.label, cx + 20, PAD + 6);
+
+    // Value
+    ctx.font = '700 14px -apple-system, sans-serif';
+    ctx.fillStyle = BRIGHT;
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(s.value, cx + 20, PAD + STATS_H - 4);
+
+    // Divider
+    if (i < stats.length - 1) {
+      ctx.beginPath();
+      ctx.moveTo(cx + cardW + 3, PAD + 10);
+      ctx.lineTo(cx + cardW + 3, PAD + STATS_H - 10);
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+  });
+}
+
+// ─── Campaign Grid (left panel) ──────────────────────────────────────────────
+
+let hoveredCell: { row: number; col: number } | null = null;
+
+function drawGrid() {
+  const gridTop = PAD + STATS_H + GAP;
+  const gridH = H - gridTop - PAD;
+  const gridW = Math.floor(W * 0.55);
+
+  rr(PAD, gridTop, gridW, gridH, 8);
+  ctx.fillStyle = PANEL;
+  ctx.fill();
+  ctx.strokeStyle = BRAND + '10';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  const headerH = 28;
+  const leftW = Math.floor(gridW * 0.24);
+  const cellAreaW = gridW - leftW - 12;
+  const colW = cellAreaW / PLATFORMS.length;
+  const rowH = (gridH - headerH - 8) / CAMPAIGNS.length;
+
+  // Title
+  ctx.font = '600 9px -apple-system, sans-serif';
+  ctx.fillStyle = DIM;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('CAMPAIGNS', PAD + 10, gridTop + headerH / 2);
+
+  // Platform headers
+  for (let c = 0; c < PLATFORMS.length; c++) {
+    const p = PLATFORMS[c];
+    const px = PAD + leftW + c * colW + colW / 2;
+    const py = gridTop + headerH / 2;
+
+    // Icon circle with glow
+    ctx.save();
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = p.color + '30';
+    ctx.beginPath();
+    ctx.arc(px, py - 4, 9, 0, Math.PI * 2);
+    const iconGrad = ctx.createRadialGradient(px, py - 4, 2, px, py - 4, 9);
+    iconGrad.addColorStop(0, p.color + '30');
+    iconGrad.addColorStop(1, p.color + '10');
+    ctx.fillStyle = iconGrad;
+    ctx.fill();
+    ctx.strokeStyle = p.color + '50';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.restore();
+    ctx.font = '700 8px -apple-system, sans-serif';
+    ctx.fillStyle = p.color;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(p.abbr, px, py - 3.5);
+
+    // Name below
+    ctx.font = '500 8px -apple-system, sans-serif';
+    ctx.fillStyle = MID;
+    ctx.fillText(p.name, px, py + 10);
+  }
+
+  // Divider
+  ctx.beginPath();
+  ctx.moveTo(PAD + 8, gridTop + headerH);
+  ctx.lineTo(PAD + gridW - 8, gridTop + headerH);
+  ctx.strokeStyle = BORDER;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Status colours
+  const statusCol: Record<string, string> = { live: GREEN, learning: AMBER, paused: '#6b7280' };
+  hoveredCell = null;
+
+  for (let r = 0; r < CAMPAIGNS.length; r++) {
+    const camp = CAMPAIGNS[r];
+    const rowY = gridTop + headerH + r * rowH;
+
+    // Alternating stripe
+    if (r % 2 === 0) {
+      ctx.fillStyle = 'rgba(255,255,255,0.012)';
+      ctx.fillRect(PAD + 4, rowY, gridW - 8, rowH);
+    }
+
+    // Status dot
+    const dotX = PAD + 12;
+    const dotY = rowY + rowH / 2;
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, 3, 0, Math.PI * 2);
+    ctx.fillStyle = statusCol[camp.status];
+    ctx.fill();
+    if (camp.status === 'live') {
+      const pulse = 0.3 + 0.7 * Math.abs(Math.sin(Date.now() * 0.003 + r));
+      ctx.beginPath();
+      ctx.arc(dotX, dotY, 3 + 3 * pulse, 0, Math.PI * 2);
+      ctx.strokeStyle = statusCol[camp.status] + '30';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Campaign name
+    ctx.font = '600 10px -apple-system, sans-serif';
+    ctx.fillStyle = MID;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(camp.name, PAD + 20, dotY - 4);
+    ctx.font = '400 8px -apple-system, sans-serif';
+    ctx.fillStyle = statusCol[camp.status] + 'bb';
+    ctx.fillText(camp.status.toUpperCase(), PAD + 20, dotY + 7);
+
+    // Grid cells
+    for (let c = 0; c < PLATFORMS.length; c++) {
+      const cell = camp.cells[c];
+      const cx = PAD + leftW + c * colW + 3;
+      const cy = rowY + 3;
+      const cw = colW - 6;
+      const ch = rowH - 6;
+
+      // Hit test
+      if (mouseX >= cx && mouseX <= cx + cw && mouseY >= cy && mouseY <= cy + ch) {
+        hoveredCell = { row: r, col: c };
+      }
+      const isHov = hoveredCell?.row === r && hoveredCell?.col === c;
+
+      // Cell bg with gradient
+      rr(cx, cy, cw, ch, 5);
+      const cellGrad = ctx.createLinearGradient(cx, cy, cx, cy + ch);
+      cellGrad.addColorStop(0, perfColor(cell.perf) + (isHov ? '30' : '12'));
+      cellGrad.addColorStop(1, perfColor(cell.perf) + '05');
+      ctx.fillStyle = cellGrad;
+      ctx.fill();
+      ctx.strokeStyle = perfColor(cell.perf) + (isHov ? '60' : '15');
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Top performer glow
+      if (cell.perf > 0.75) {
+        ctx.save();
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = perfColor(cell.perf) + '30';
+        rr(cx, cy, cw, ch, 5);
+        ctx.strokeStyle = perfColor(cell.perf) + '20';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.restore();
+      }
+
+      // CTR
+      ctx.font = `700 ${isHov ? 12 : 11}px -apple-system, sans-serif`;
+      ctx.fillStyle = perfTextColor(cell.perf);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(`${cell.ctr}%`, cx + cw / 2, cy + 2);
+
+      // Sparkline
+      drawSparkline(cx + 2, cy + 13, cw - 4, ch - 16, cell.spark, perfTextColor(cell.perf));
+    }
+
+    // Row divider
+    if (r < CAMPAIGNS.length - 1) {
+      ctx.beginPath();
+      ctx.moveTo(PAD + 8, rowY + rowH);
+      ctx.lineTo(PAD + gridW - 8, rowY + rowH);
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+  }
+
+  // Column dividers
+  for (let c = 1; c < PLATFORMS.length; c++) {
+    const dx = PAD + leftW + c * colW;
+    ctx.beginPath();
+    ctx.moveTo(dx, gridTop + headerH);
+    ctx.lineTo(dx, gridTop + gridH - 4);
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Left col divider
+  ctx.beginPath();
+  ctx.moveTo(PAD + leftW, gridTop + 4);
+  ctx.lineTo(PAD + leftW, gridTop + gridH - 4);
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  return { gridW, gridTop, gridH };
+}
+
+// ─── Ad Copy Panel (right panel) ─────────────────────────────────────────────
+
+let hoveredVariant = -1;
+
+function drawCopyPanel(gridW: number, gridTop: number, gridH: number) {
+  const panelX = PAD + gridW + GAP;
+  const panelW = W - panelX - PAD;
+  const panelY = gridTop;
+  const panelH = gridH;
+
+  rr(panelX, panelY, panelW, panelH, 8);
+  ctx.fillStyle = PANEL;
+  ctx.fill();
+  ctx.strokeStyle = BRAND + '10';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Title
+  ctx.font = '600 9px -apple-system, sans-serif';
+  ctx.fillStyle = DIM;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('AD COPY TESTING', panelX + 10, panelY + 8);
+
+  // Active count badge
+  const activeCount = VARIANTS.filter(v => v.status !== 'killed').length;
+  rr(panelX + panelW - 50, panelY + 5, 40, 13, 6);
+  ctx.fillStyle = GREEN + '18';
+  ctx.fill();
+  ctx.strokeStyle = GREEN + '30';
+  ctx.lineWidth = 0.5;
+  ctx.stroke();
+  ctx.font = '600 7px -apple-system, sans-serif';
+  ctx.fillStyle = GREEN;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(`${activeCount} active`, panelX + panelW - 30, panelY + 11);
+
+  const startY = panelY + 24;
+  const activeVars = VARIANTS.filter(v => v.status !== 'killed');
+  const killedVars = VARIANTS.filter(v => v.status === 'killed');
+  const cardH = Math.min(36, (panelH - 26 - killedVars.length * 22 - 22) / activeVars.length - 2);
+
+  hoveredVariant = -1;
+
+  // Active variants
+  activeVars.forEach((v, i) => {
+    const cy = startY + i * (cardH + 2);
+    const cx = panelX + 6;
+    const cw = panelW - 12;
+
+    // Hit test
+    if (mouseX >= cx && mouseX <= cx + cw && mouseY >= cy && mouseY <= cy + cardH) {
+      hoveredVariant = VARIANTS.indexOf(v);
+    }
+    const isHov = hoveredVariant === VARIANTS.indexOf(v);
+
+    // Animate bar
+    v.bar += (v.barTarget - v.bar) * 0.05;
+
+    // Card bg with gradient
+    rr(cx, cy, cw, cardH, 5);
+    const cardGrad = ctx.createLinearGradient(cx, cy, cx + cw, cy);
+    const cardAccent = v.status === 'winner' ? GREEN : BRAND;
+    cardGrad.addColorStop(0, cardAccent + (isHov ? '12' : '06'));
+    cardGrad.addColorStop(1, isHov ? '#161930' : '#0a0c1a');
+    ctx.fillStyle = cardGrad;
+    ctx.fill();
+    ctx.strokeStyle = cardAccent + (isHov ? '40' : '10');
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Left accent bar
+    ctx.fillStyle = cardAccent + (isHov ? '80' : '30');
+    ctx.fillRect(cx + 1, cy + 4, 2, cardH - 8);
+
+    // Winner badge with glow
+    if (v.status === 'winner') {
+      const wp = 0.5 + 0.5 * Math.sin(Date.now() * 0.003);
+      ctx.save();
+      ctx.shadowBlur = 8 + wp * 4;
+      ctx.shadowColor = GREEN + '40';
+      rr(cx + cw - 48, cy + 2, 44, 12, 6);
+      ctx.fillStyle = GREEN + '18';
+      ctx.fill();
+      ctx.strokeStyle = GREEN + '50';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.restore();
+      ctx.font = '700 7px -apple-system, sans-serif';
+      ctx.fillStyle = GREEN;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('★ WINNER', cx + cw - 26, cy + 9);
+    }
+
+    // Rank
+    ctx.font = '600 9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(`#${i + 1}`, cx + 8, cy + 4);
+
+    // Headline
+    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    ctx.fillText(v.headline, cx + 24, cy + 4);
+
+    // CTR right-aligned
+    const ctrColor = v.status === 'winner' ? GREEN : v.ctr > 2 ? '#a78bfa' : AMBER;
+    ctx.font = '700 11px -apple-system, sans-serif';
+    ctx.fillStyle = ctrColor;
+    ctx.textAlign = 'right';
+    ctx.fillText(`${v.ctr}%`, cx + cw - (v.status === 'winner' ? 52 : 6), cy + 4);
+
+    // Progress bar
+    const barX = cx + 6;
+    const barY = cy + 16;
+    const barW = cw - 12;
+    const barH = 3;
+    rr(barX, barY, barW, barH, 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.03)';
+    ctx.fill();
+    const fillW = barW * v.bar;
+    if (fillW > 2) {
+      const barColor = v.status === 'winner' ? GREEN : BRAND;
+      const barGrad = ctx.createLinearGradient(barX, 0, barX + fillW, 0);
+      barGrad.addColorStop(0, barColor + '40');
+      barGrad.addColorStop(0.5, barColor + 'cc');
+      barGrad.addColorStop(1, barColor);
+      rr(barX, barY, fillW, barH, 2);
+      ctx.fillStyle = barGrad;
+      ctx.fill();
+      // Glow at tip
+      ctx.save();
+      ctx.shadowBlur = 6;
+      ctx.shadowColor = barColor + '60';
+      ctx.beginPath();
+      ctx.arc(barX + fillW, barY + barH / 2, 2, 0, Math.PI * 2);
+      ctx.fillStyle = barColor;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+
+    // Metrics row
+    ctx.font = '500 9px -apple-system, sans-serif';
+    ctx.fillStyle = DIM;
+    ctx.textAlign = 'left';
+    ctx.fillText(`ROAS ${v.roas}x  ·  ${v.conv} conv`, cx + 8, cy + 25);
+    ctx.textAlign = 'right';
+    ctx.fillText(`vs best: ${Math.round(v.bar * 100)}%`, cx + cw - 6, cy + 25);
+  });
+
+  // Divider before killed section
+  const killedTop = startY + activeVars.length * (cardH + 2) + 4;
+  ctx.beginPath();
+  ctx.moveTo(panelX + 10, killedTop);
+  ctx.lineTo(panelX + panelW - 10, killedTop);
+  ctx.strokeStyle = RED + '25';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Killed label
+  ctx.font = '600 9px -apple-system, sans-serif';
+  ctx.fillStyle = RED + '90';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('KILLED', panelX + 10, killedTop + 4);
+  ctx.textAlign = 'right';
+  ctx.fillText(killedVars.length + ' killed', panelX + panelW - 10, killedTop + 4);
+
+  // Killed variants
+  killedVars.forEach((v, i) => {
+    const ky = killedTop + 18 + i * 23;
+    const kx = panelX + 6;
+    const kw = panelW - 12;
+
+    rr(kx, ky, kw, 20, 4);
+    const killGrad = ctx.createLinearGradient(kx, ky, kx + kw, ky);
+    killGrad.addColorStop(0, RED + '10');
+    killGrad.addColorStop(1, RED + '03');
+    ctx.fillStyle = killGrad;
+    ctx.fill();
+    ctx.strokeStyle = RED + '12';
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+
+    // X icon
+    ctx.strokeStyle = RED + '80';
+    ctx.lineWidth = 1.5;
+    ctx.lineCap = 'round';
+    const xc = kx + 10, yc = ky + 9;
+    ctx.beginPath(); ctx.moveTo(xc - 3, yc - 3); ctx.lineTo(xc + 3, yc + 3); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(xc + 3, yc - 3); ctx.lineTo(xc - 3, yc + 3); ctx.stroke();
+
+    // Headline with strikethrough
+    ctx.font = '500 10px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(v.headline, kx + 20, ky + 9);
+    const tw = ctx.measureText(v.headline).width;
+    ctx.beginPath();
+    ctx.moveTo(kx + 20, ky + 9);
+    ctx.lineTo(kx + 20 + tw, ky + 9);
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Reason
+    ctx.font = '600 9px -apple-system, sans-serif';
+    ctx.fillStyle = RED + '90';
+    ctx.textAlign = 'right';
+    ctx.fillText(v.killReason || '', kx + kw - 6, ky + 9);
+  });
+
+  return { panelX, panelY, panelW, panelH };
+}
+
+// ─── Tooltip ──────────────────────────────────────────────────────────────────
+
+function drawGridTooltip() {
+  if (!hoveredCell) return;
+  const { row, col } = hoveredCell;
+  const cell = CAMPAIGNS[row].cells[col];
+  const plat = PLATFORMS[col];
+  const camp = CAMPAIGNS[row];
+
+  const tw = 170, th = 110;
+  let tx = mouseX + 12;
+  let ty = mouseY - th / 2;
+  if (tx + tw > W - 8) tx = mouseX - tw - 12;
+  if (ty < 8) ty = 8;
+  if (ty + th > H - 8) ty = H - th - 8;
+
+  ctx.save();
+  ctx.shadowBlur = 20;
+  ctx.shadowColor = 'rgba(0,0,0,0.6)';
+  rr(tx, ty, tw, th, 8);
+  ctx.fillStyle = 'rgba(13,10,28,0.96)';
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.restore();
+
+  // Accent bar
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(tx + 8, ty); ctx.lineTo(tx + tw - 8, ty);
+  ctx.strokeStyle = plat.color;
+  ctx.lineWidth = 2;
+  ctx.globalAlpha = 0.6;
+  ctx.stroke();
+  ctx.restore();
+
+  rr(tx, ty, tw, th, 8);
+  ctx.strokeStyle = BRAND + '20';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  const lx = tx + 10;
+  let ly = ty + 10;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+
+  // Platform + Campaign
+  ctx.font = '600 10px -apple-system, sans-serif';
+  ctx.fillStyle = plat.color;
+  ctx.fillText(plat.name, lx, ly);
+  ctx.font = '400 9px -apple-system, sans-serif';
+  ctx.fillStyle = DIM;
+  ctx.fillText('·  ' + camp.name, lx + ctx.measureText(plat.name).width + 4, ly + 1);
+  ly += 18;
+
+  // Divider
+  ctx.beginPath();
+  ctx.moveTo(lx, ly); ctx.lineTo(tx + tw - 10, ly);
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ly += 6;
+
+  // Data rows
+  const rows = [
+    { label: 'CTR',   value: `${cell.ctr}%`,   color: perfTextColor(cell.perf) },
+    { label: 'CPC',   value: `$${cell.cpc}`,    color: MID },
+    { label: 'ROAS',  value: `${cell.roas}x`,   color: cell.roas >= 3 ? GREEN : cell.roas >= 2 ? AMBER : RED },
+    { label: 'Spend', value: `$${cell.spend.toLocaleString()}`, color: MID },
+    { label: 'Status',value: CAMPAIGNS[row].status.toUpperCase(), color: CAMPAIGNS[row].status === 'live' ? GREEN : AMBER },
+  ];
+
+  ctx.font = '400 9px -apple-system, sans-serif';
+  rows.forEach(r => {
+    ctx.fillStyle = DIM;
+    ctx.textAlign = 'left';
+    ctx.fillText(r.label, lx, ly);
+    ctx.fillStyle = r.color;
+    ctx.textAlign = 'right';
+    ctx.fillText(r.value, tx + tw - 10, ly);
+    ly += 15;
+  });
+}
+
+function drawVariantTooltip() {
+  if (hoveredVariant < 0) return;
+  const v = VARIANTS[hoveredVariant];
+
+  const tw = 180, th = 90;
+  let tx = mouseX + 12;
+  let ty = mouseY - th / 2;
+  if (tx + tw > W - 8) tx = mouseX - tw - 12;
+  if (ty < 8) ty = 8;
+  if (ty + th > H - 8) ty = H - th - 8;
+
+  ctx.save();
+  ctx.shadowBlur = 20;
+  ctx.shadowColor = 'rgba(0,0,0,0.6)';
+  rr(tx, ty, tw, th, 8);
+  ctx.fillStyle = 'rgba(13,10,28,0.96)';
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.restore();
+
+  const accentCol = v.status === 'winner' ? GREEN : BRAND;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(tx + 8, ty); ctx.lineTo(tx + tw - 8, ty);
+  ctx.strokeStyle = accentCol;
+  ctx.lineWidth = 2;
+  ctx.globalAlpha = 0.6;
+  ctx.stroke();
+  ctx.restore();
+
+  rr(tx, ty, tw, th, 8);
+  ctx.strokeStyle = BRAND + '20';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  const lx = tx + 10;
+  let ly = ty + 10;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+
+  ctx.font = '600 10px -apple-system, sans-serif';
+  ctx.fillStyle = BRIGHT;
+  ctx.fillText(v.headline, lx, ly);
+  ly += 16;
+
+  ctx.beginPath();
+  ctx.moveTo(lx, ly); ctx.lineTo(tx + tw - 10, ly);
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ly += 6;
+
+  const rows = [
+    { label: 'CTR',  value: `${v.ctr}%`,  color: v.ctr > 3 ? GREEN : BRAND },
+    { label: 'ROAS', value: `${v.roas}x`, color: v.roas > 3 ? GREEN : AMBER },
+    { label: 'Conv', value: `${v.conv}`,   color: MID },
+  ];
+  ctx.font = '400 9px -apple-system, sans-serif';
+  rows.forEach(r => {
+    ctx.fillStyle = DIM;
+    ctx.textAlign = 'left';
+    ctx.fillText(r.label, lx, ly);
+    ctx.fillStyle = r.color;
+    ctx.textAlign = 'right';
+    ctx.fillText(r.value, tx + tw - 10, ly);
+    ly += 15;
+  });
+}
+
+// ─── Main Draw ────────────────────────────────────────────────────────────────
+
+function draw() {
+  frame++;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, W, H);
+
+  drawStatsBar();
+  const { gridW, gridTop, gridH } = drawGrid();
+  drawCopyPanel(gridW, gridTop, gridH);
+
+  // Tooltips last (on top)
+  drawGridTooltip();
+  drawVariantTooltip();
+
+  requestAnimationFrame(draw);
+}
+
+requestAnimationFrame(draw);
+
+  })();
 
   // ── PelloBuild Dashboard Canvas ──────────────────────────────────────────
   (function() {
