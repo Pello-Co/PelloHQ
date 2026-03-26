@@ -22,7 +22,7 @@ let frame = 0;
 function resize() {
   const par = canvas.parentElement!;
   W = Math.min(900, par.clientWidth - 32);
-  H = Math.round(W * 0.52);
+  H = Math.round(W * 0.56);
   canvas.width = W * dpr;
   canvas.height = H * dpr;
   canvas.style.width = W + 'px';
@@ -125,6 +125,9 @@ const VARIANTS: Variant[] = [
   { headline: 'Beat Competitors Now',   ctr: 1.6, roas: 1.9, conv: 112, bar: 0, barTarget: 0.38, status: 'active' },
   { headline: 'Zero Wasted Budget',     ctr: 0.4, roas: 0.7, conv: 18,  bar: 0, barTarget: 0.10, status: 'killed', killReason: 'CTR < 0.5%' },
   { headline: 'Click Here Now',         ctr: 0.2, roas: 0.3, conv: 6,   bar: 0, barTarget: 0.05, status: 'killed', killReason: 'ROAS < 1x' },
+  { headline: 'Try It Free Today',      ctr: 0.3, roas: 0.5, conv: 9,   bar: 0, barTarget: 0.07, status: 'killed', killReason: 'CPC > $5.00' },
+  { headline: 'Results Guaranteed',     ctr: 0.1, roas: 0.2, conv: 3,   bar: 0, barTarget: 0.03, status: 'killed', killReason: 'Conv < 10' },
+  { headline: 'Unlimited Growth',       ctr: 0.3, roas: 0.4, conv: 11,  bar: 0, barTarget: 0.06, status: 'killed', killReason: 'CTR < 0.5%' },
 ];
 
 // 7-day sparkline for winner
@@ -222,7 +225,7 @@ function drawStatsBar() {
   const stats = [
     { label: 'VARIANTS',  value: '2,847',  accent: BRAND,    icon: '◆' },
     { label: 'WINNERS',   value: '23',     accent: GREEN,    icon: '✓' },
-    { label: 'KILLED',    value: '2,104',  accent: RED,      icon: '✕' },
+    { label: 'KILLED',    value: '2,109',  accent: RED,      icon: '✕' },
     { label: 'AVG ROAS',  value: '3.8x',   accent: AMBER,    icon: '◈' },
     { label: 'SAVED',     value: '$14.2k',  accent: '#22d3ee', icon: '◇' },
   ];
@@ -381,7 +384,7 @@ function drawGrid() {
     }
 
     // Campaign name
-    ctx.font = '500 10px -apple-system, sans-serif';
+    ctx.font = '600 10px -apple-system, sans-serif';
     ctx.fillStyle = MID;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
@@ -429,7 +432,7 @@ function drawGrid() {
       }
 
       // CTR
-      ctx.font = `600 ${isHov ? 11 : 10}px -apple-system, sans-serif`;
+      ctx.font = `700 ${isHov ? 12 : 11}px -apple-system, sans-serif`;
       ctx.fillStyle = perfTextColor(cell.perf);
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
@@ -577,8 +580,8 @@ function drawCopyPanel(gridW: number, gridTop: number, gridH: number) {
     ctx.fillText(`#${i + 1}`, cx + 8, cy + 4);
 
     // Headline
-    ctx.font = '600 10px -apple-system, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
     ctx.fillText(v.headline, cx + 24, cy + 4);
 
     // CTR right-aligned
@@ -619,7 +622,7 @@ function drawCopyPanel(gridW: number, gridTop: number, gridH: number) {
     }
 
     // Metrics row
-    ctx.font = '400 8px -apple-system, sans-serif';
+    ctx.font = '500 9px -apple-system, sans-serif';
     ctx.fillStyle = DIM;
     ctx.textAlign = 'left';
     ctx.fillText(`ROAS ${v.roas}x  ·  ${v.conv} conv`, cx + 8, cy + 25);
@@ -637,21 +640,21 @@ function drawCopyPanel(gridW: number, gridTop: number, gridH: number) {
   ctx.stroke();
 
   // Killed label
-  ctx.font = '600 8px -apple-system, sans-serif';
-  ctx.fillStyle = RED + '80';
+  ctx.font = '600 9px -apple-system, sans-serif';
+  ctx.fillStyle = RED + '90';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
   ctx.fillText('KILLED', panelX + 10, killedTop + 4);
   ctx.textAlign = 'right';
-  ctx.fillText(killedVars.length + ' today', panelX + panelW - 10, killedTop + 4);
+  ctx.fillText(killedVars.length + ' killed', panelX + panelW - 10, killedTop + 4);
 
   // Killed variants
   killedVars.forEach((v, i) => {
-    const ky = killedTop + 16 + i * 20;
+    const ky = killedTop + 18 + i * 23;
     const kx = panelX + 6;
     const kw = panelW - 12;
 
-    rr(kx, ky, kw, 18, 4);
+    rr(kx, ky, kw, 20, 4);
     const killGrad = ctx.createLinearGradient(kx, ky, kx + kw, ky);
     killGrad.addColorStop(0, RED + '10');
     killGrad.addColorStop(1, RED + '03');
@@ -670,8 +673,8 @@ function drawCopyPanel(gridW: number, gridTop: number, gridH: number) {
     ctx.beginPath(); ctx.moveTo(xc + 3, yc - 3); ctx.lineTo(xc - 3, yc + 3); ctx.stroke();
 
     // Headline with strikethrough
-    ctx.font = '400 9px -apple-system, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.font = '500 10px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(v.headline, kx + 20, ky + 9);
@@ -684,7 +687,7 @@ function drawCopyPanel(gridW: number, gridTop: number, gridH: number) {
     ctx.stroke();
 
     // Reason
-    ctx.font = '500 8px -apple-system, sans-serif';
+    ctx.font = '600 9px -apple-system, sans-serif';
     ctx.fillStyle = RED + '90';
     ctx.textAlign = 'right';
     ctx.fillText(v.killReason || '', kx + kw - 6, ky + 9);
