@@ -2701,27 +2701,34 @@ if (!canvas) throw new Error('no canvas');
 const ctx = canvas.getContext('2d')!;
 const dpr = window.devicePixelRatio || 1;
 
-let W = 0, H = 0;
+const VW = 900, VH = Math.round(900 * 0.56);
+let W = VW, H = VH;
+let scale = 1;
 let mouseX = -1, mouseY = -1;
 let frame = 0;
 
 function resize() {
   const par = canvas.parentElement!;
-  W = Math.min(900, par.clientWidth - 32);
-  H = Math.round(W * 0.56);
-  canvas.width = W * dpr;
-  canvas.height = H * dpr;
-  canvas.style.width = W + 'px';
-  canvas.style.height = H + 'px';
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const pw = par.clientWidth || VW;
+  const ph = par.clientHeight || VH;
+  scale = Math.min(pw / VW, ph / VH, 1);
+  const cw = Math.round(VW * scale);
+  const ch = Math.round(VH * scale);
+  canvas.width = cw * dpr;
+  canvas.height = ch * dpr;
+  canvas.style.width = cw + 'px';
+  canvas.style.height = ch + 'px';
+  ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
+  W = VW;
+  H = VH;
 }
 resize();
 window.addEventListener('resize', resize);
 
 canvas.addEventListener('mousemove', e => {
   const r = canvas.getBoundingClientRect();
-  mouseX = (e.clientX - r.left) * (W / r.width);
-  mouseY = (e.clientY - r.top) * (H / r.height);
+  mouseX = (e.clientX - r.left) / scale;
+  mouseY = (e.clientY - r.top) / scale;
 });
 canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
 
