@@ -1,0 +1,98 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="PelloSocial BG — Signal Ripples" description="PelloSocial background test 1 — Signal Ripples">
+  <div style="min-height:100vh;background:#060712;display:flex;flex-direction:column;align-items:center;padding:2rem;">
+    <h1 style="color:#c026d3;font:700 1.5rem/1.3 -apple-system,sans-serif;margin-bottom:0.5rem;letter-spacing:-0.02em;">PelloSocial Background</h1>
+    <p style="color:rgba(255,255,255,0.5);font:400 0.85rem/1.4 -apple-system,sans-serif;margin-bottom:1.5rem;">Design 1 — Signal Ripples</p>
+    <canvas id="social-bg-1" style="width:100%;max-width:900px;border-radius:12px;cursor:crosshair;"></canvas>
+  </div>
+</Layout>
+
+<script>
+const canvas = document.getElementById('social-bg-1') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const dpr = window.devicePixelRatio || 1;
+
+const W = 900, H = 560;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+ctx.scale(dpr, dpr);
+
+let mouseX = -1, mouseY = -1;
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - r.left) * (W / r.width);
+  mouseY = (e.clientY - r.top) * (H / r.height);
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
+
+const R = 192, G = 38, B = 211;
+
+interface Ripple { cx:number; cy:number; born:number; maxR:number; }
+const ripples: Ripple[] = [];
+let lastSpawn = 0;
+
+let t = 0;
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, W, H);
+  t += 0.01;
+  const now = performance.now();
+
+  // Spawn ripples from random points
+  if (now - lastSpawn > 800 + Math.random() * 1200) {
+    ripples.push({ cx: Math.random() * W, cy: Math.random() * H, born: now, maxR: 80 + Math.random() * 120 });
+    lastSpawn = now;
+  }
+  // Mouse click spawns too
+  if (mouseX > 0 && now - lastSpawn > 200) {
+    // passive — just proximity spawns
+    const d = Math.sqrt((mouseX - W/2)**2 + (mouseY - H/2)**2);
+    if (d < 200 && Math.random() > 0.95) {
+      ripples.push({ cx: mouseX + (Math.random()-0.5)*40, cy: mouseY + (Math.random()-0.5)*40, born: now, maxR: 60 + Math.random() * 80 });
+    }
+  }
+
+  // Draw ripples
+  for (let i = ripples.length - 1; i >= 0; i--) {
+    const rip = ripples[i];
+    const age = (now - rip.born) / 2000;
+    if (age > 1) { ripples.splice(i, 1); continue; }
+    const radius = age * rip.maxR;
+    const alpha = (1 - age) * 0.15;
+
+    // Multiple concentric rings per ripple
+    for (let ring = 0; ring < 3; ring++) {
+      const rr = radius * (1 - ring * 0.2);
+      if (rr < 1) continue;
+      const ra = alpha * (1 - ring * 0.3);
+      ctx.beginPath();
+      ctx.arc(rip.cx, rip.cy, rr, 0, Math.PI * 2);
+      ctx.strokeStyle = \`rgba(\${R},\${G},\${B},\${ra})\`;
+      ctx.lineWidth = 1.5 - ring * 0.4;
+      ctx.stroke();
+    }
+
+    // Center dot fades
+    ctx.beginPath();
+    ctx.arc(rip.cx, rip.cy, 2 * (1 - age), 0, Math.PI * 2);
+    ctx.fillStyle = \`rgba(\${R},\${G},\${B},\${alpha * 2})\`;
+    ctx.fill();
+  }
+
+  // Mouse glow
+  if (mouseX > 0) {
+    const grad = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, 100);
+    grad.addColorStop(0, \`rgba(\${R},\${G},\${B},0.06)\`);
+    grad.addColorStop(1, \`rgba(\${R},\${G},\${B},0)\`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  requestAnimationFrame(draw);
+}
+draw();
+
+</script>

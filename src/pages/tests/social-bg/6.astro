@@ -1,0 +1,98 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="PelloSocial BG — DNA Helix" description="PelloSocial background test 6 — DNA Helix">
+  <div style="min-height:100vh;background:#060712;display:flex;flex-direction:column;align-items:center;padding:2rem;">
+    <h1 style="color:#c026d3;font:700 1.5rem/1.3 -apple-system,sans-serif;margin-bottom:0.5rem;letter-spacing:-0.02em;">PelloSocial Background</h1>
+    <p style="color:rgba(255,255,255,0.5);font:400 0.85rem/1.4 -apple-system,sans-serif;margin-bottom:1.5rem;">Design 6 — DNA Helix</p>
+    <canvas id="social-bg-6" style="width:100%;max-width:900px;border-radius:12px;cursor:crosshair;"></canvas>
+  </div>
+</Layout>
+
+<script>
+const canvas = document.getElementById('social-bg-6') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const dpr = window.devicePixelRatio || 1;
+
+const W = 900, H = 560;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+ctx.scale(dpr, dpr);
+
+let mouseX = -1, mouseY = -1;
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - r.left) * (W / r.width);
+  mouseY = (e.clientY - r.top) * (H / r.height);
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
+
+const R = 192, G = 38, B = 211;
+
+let t = 0;
+const numPoints = 60;
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, W, H);
+  t += 0.015;
+
+  const cx = W/2, amplitude = 120;
+
+  for (let strand = 0; strand < 2; strand++) {
+    const offset = strand * Math.PI;
+    ctx.beginPath();
+    for (let i = 0; i < numPoints; i++) {
+      const frac = i / (numPoints - 1);
+      const y = frac * H;
+      const x = cx + Math.sin(frac * 6 + t * 2 + offset) * amplitude;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = \`rgba(\${R},\${G},\${B},0.1)\`;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Dots along strand
+    for (let i = 0; i < numPoints; i += 3) {
+      const frac = i / (numPoints - 1);
+      const y = frac * H;
+      const x = cx + Math.sin(frac * 6 + t * 2 + offset) * amplitude;
+      const depth = Math.cos(frac * 6 + t * 2 + offset);
+      const alpha = 0.05 + (depth * 0.5 + 0.5) * 0.15;
+
+      ctx.beginPath();
+      ctx.arc(x, y, 2 + (depth * 0.5 + 0.5) * 3, 0, Math.PI * 2);
+      ctx.fillStyle = \`rgba(\${R},\${G},\${B},\${alpha})\`;
+      ctx.fill();
+    }
+  }
+
+  // Rungs connecting strands
+  for (let i = 0; i < numPoints; i += 2) {
+    const frac = i / (numPoints - 1);
+    const y = frac * H;
+    const x1 = cx + Math.sin(frac * 6 + t * 2) * amplitude;
+    const x2 = cx + Math.sin(frac * 6 + t * 2 + Math.PI) * amplitude;
+    const depth = Math.abs(Math.cos(frac * 6 + t * 2));
+    ctx.strokeStyle = \`rgba(\${R},\${G},\${B},\${depth * 0.06})\`;
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(x1, y); ctx.lineTo(x2, y);
+    ctx.stroke();
+  }
+
+  // Mouse glow
+  if (mouseX > 0) {
+    const grad = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, 120);
+    grad.addColorStop(0, \`rgba(\${R},\${G},\${B},0.06)\`);
+    grad.addColorStop(1, \`rgba(\${R},\${G},\${B},0)\`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  requestAnimationFrame(draw);
+}
+draw();
+
+</script>

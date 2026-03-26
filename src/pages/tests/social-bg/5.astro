@@ -1,0 +1,70 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="PelloSocial BG — Pulse Grid" description="PelloSocial background test 5 — Pulse Grid">
+  <div style="min-height:100vh;background:#060712;display:flex;flex-direction:column;align-items:center;padding:2rem;">
+    <h1 style="color:#c026d3;font:700 1.5rem/1.3 -apple-system,sans-serif;margin-bottom:0.5rem;letter-spacing:-0.02em;">PelloSocial Background</h1>
+    <p style="color:rgba(255,255,255,0.5);font:400 0.85rem/1.4 -apple-system,sans-serif;margin-bottom:1.5rem;">Design 5 — Pulse Grid</p>
+    <canvas id="social-bg-5" style="width:100%;max-width:900px;border-radius:12px;cursor:crosshair;"></canvas>
+  </div>
+</Layout>
+
+<script>
+const canvas = document.getElementById('social-bg-5') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const dpr = window.devicePixelRatio || 1;
+
+const W = 900, H = 560;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+ctx.scale(dpr, dpr);
+
+let mouseX = -1, mouseY = -1;
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - r.left) * (W / r.width);
+  mouseY = (e.clientY - r.top) * (H / r.height);
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
+
+const R = 192, G = 38, B = 211;
+
+let t = 0;
+const dotSpacing = 28;
+const dotR = 1.5;
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, W, H);
+  t += 0.02;
+
+  for (let x = dotSpacing/2; x < W; x += dotSpacing) {
+    for (let y = dotSpacing/2; y < H; y += dotSpacing) {
+      const dx = x - W/2, dy = y - H/2;
+      const d = Math.sqrt(dx*dx + dy*dy);
+      const wave = Math.sin(d * 0.015 - t * 2) * 0.5 + 0.5;
+      let alpha = 0.03 + wave * 0.08;
+      let size = dotR + wave * 1.5;
+
+      if (mouseX > 0) {
+        const md = Math.sqrt((x - mouseX)**2 + (y - mouseY)**2);
+        if (md < 100) {
+          const boost = (1 - md/100);
+          alpha += boost * 0.12;
+          size += boost * 2;
+        }
+      }
+
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, Math.PI * 2);
+      ctx.fillStyle = \`rgba(\${R},\${G},\${B},\${alpha})\`;
+      ctx.fill();
+    }
+  }
+
+  requestAnimationFrame(draw);
+}
+draw();
+
+</script>

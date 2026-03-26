@@ -1,0 +1,82 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="PelloSocial BG — Engagement Waves" description="PelloSocial background test 9 — Engagement Waves">
+  <div style="min-height:100vh;background:#060712;display:flex;flex-direction:column;align-items:center;padding:2rem;">
+    <h1 style="color:#c026d3;font:700 1.5rem/1.3 -apple-system,sans-serif;margin-bottom:0.5rem;letter-spacing:-0.02em;">PelloSocial Background</h1>
+    <p style="color:rgba(255,255,255,0.5);font:400 0.85rem/1.4 -apple-system,sans-serif;margin-bottom:1.5rem;">Design 9 — Engagement Waves</p>
+    <canvas id="social-bg-9" style="width:100%;max-width:900px;border-radius:12px;cursor:crosshair;"></canvas>
+  </div>
+</Layout>
+
+<script>
+const canvas = document.getElementById('social-bg-9') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const dpr = window.devicePixelRatio || 1;
+
+const W = 900, H = 560;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+ctx.scale(dpr, dpr);
+
+let mouseX = -1, mouseY = -1;
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - r.left) * (W / r.width);
+  mouseY = (e.clientY - r.top) * (H / r.height);
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
+
+const R = 192, G = 38, B = 211;
+
+let t = 0;
+interface EWave { y: number; amplitude: number; frequency: number; speed: number; alpha: number; }
+const waves: EWave[] = [];
+for (let i = 0; i < 8; i++) {
+  waves.push({
+    y: H * (0.15 + i * 0.1),
+    amplitude: 15 + Math.random() * 30,
+    frequency: 0.004 + Math.random() * 0.006,
+    speed: 0.5 + Math.random() * 1.5,
+    alpha: 0.03 + Math.random() * 0.04,
+  });
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, W, H);
+  t += 0.015;
+
+  for (const wave of waves) {
+    ctx.beginPath();
+    for (let x = 0; x <= W; x += 2) {
+      const y = wave.y + Math.sin(x * wave.frequency + t * wave.speed) * wave.amplitude
+                       + Math.sin(x * wave.frequency * 2.3 + t * wave.speed * 0.7) * wave.amplitude * 0.3;
+      x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+
+    let alpha = wave.alpha;
+    if (mouseX > 0) {
+      const d = Math.abs(mouseY - wave.y);
+      if (d < 60) alpha += (1 - d/60) * 0.06;
+    }
+
+    ctx.strokeStyle = \`rgba(\${R},\${G},\${B},\${alpha * 2})\`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Fill below
+    ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
+    const grad = ctx.createLinearGradient(0, wave.y - wave.amplitude, 0, wave.y + wave.amplitude * 3);
+    grad.addColorStop(0, \`rgba(\${R},\${G},\${B},\${alpha})\`);
+    grad.addColorStop(1, \`rgba(\${R},\${G},\${B},0)\`);
+    ctx.fillStyle = grad;
+    ctx.fill();
+  }
+
+  requestAnimationFrame(draw);
+}
+draw();
+
+</script>
