@@ -1,0 +1,110 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="PelloFlow BG — Rotating Gears" description="PelloFlow background test 3 — Rotating Gears">
+  <div style="min-height:100vh;background:#060712;display:flex;flex-direction:column;align-items:center;padding:2rem;">
+    <h1 style="color:#4f46e5;font:700 1.5rem/1.3 -apple-system,sans-serif;margin-bottom:0.5rem;letter-spacing:-0.02em;">PelloFlow Background</h1>
+    <p style="color:rgba(255,255,255,0.5);font:400 0.85rem/1.4 -apple-system,sans-serif;margin-bottom:1.5rem;">Design 3 — Rotating Gears</p>
+    <canvas id="flow-bg-3" style="width:100%;max-width:900px;border-radius:12px;cursor:crosshair;"></canvas>
+  </div>
+</Layout>
+
+<script>
+const canvas = document.getElementById('flow-bg-3') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const dpr = window.devicePixelRatio || 1;
+
+const W = 900, H = 560;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+ctx.scale(dpr, dpr);
+
+let mouseX = -1, mouseY = -1;
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - r.left) * (W / r.width);
+  mouseY = (e.clientY - r.top) * (H / r.height);
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
+
+const R = 79, G = 70, B = 229;
+
+let t = 0;
+interface Gear { cx:number; cy:number; r:number; teeth:number; speed:number; phase:number; }
+const gears: Gear[] = [];
+for (let i = 0; i < 12; i++) {
+  gears.push({
+    cx: Math.random() * W, cy: Math.random() * H,
+    r: 15 + Math.random() * 35,
+    teeth: 6 + Math.floor(Math.random() * 8),
+    speed: (0.2 + Math.random() * 0.6) * (Math.random() > 0.5 ? 1 : -1),
+    phase: Math.random() * Math.PI * 2,
+  });
+}
+
+function drawGear(cx: number, cy: number, r: number, teeth: number, rotation: number, alpha: number) {
+  const innerR = r * 0.7;
+  const toothH = r * 0.25;
+  ctx.beginPath();
+  for (let i = 0; i < teeth * 2; i++) {
+    const angle = rotation + (Math.PI * 2 / (teeth * 2)) * i;
+    const rad = i % 2 === 0 ? r + toothH : r;
+    const x = cx + Math.cos(angle) * rad;
+    const y = cy + Math.sin(angle) * rad;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.strokeStyle = `rgba(${R},${G},${B},${alpha})`;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Inner circle
+  ctx.beginPath();
+  ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+  ctx.strokeStyle = `rgba(${R},${G},${B},${alpha * 0.6})`;
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+
+  // Center dot
+  ctx.beginPath();
+  ctx.arc(cx, cy, 2.5, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(${R},${G},${B},${alpha * 1.5})`;
+  ctx.fill();
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, W, H);
+  t += 0.01;
+
+  for (const gear of gears) {
+    let alpha = 0.06;
+    if (mouseX > 0) {
+      const d = Math.sqrt((gear.cx - mouseX)**2 + (gear.cy - mouseY)**2);
+      if (d < gear.r + 50) alpha += (1 - d/(gear.r + 50)) * 0.1;
+    }
+    drawGear(gear.cx, gear.cy, gear.r, gear.teeth, t * gear.speed + gear.phase, alpha);
+  }
+
+  // Connecting lines between nearby gears
+  for (let i = 0; i < gears.length; i++) {
+    for (let j = i + 1; j < gears.length; j++) {
+      const dx = gears[i].cx - gears[j].cx, dy = gears[i].cy - gears[j].cy;
+      const d = Math.sqrt(dx*dx + dy*dy);
+      if (d < gears[i].r + gears[j].r + 40) {
+        ctx.strokeStyle = `rgba(${R},${G},${B},0.03)`;
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(gears[i].cx, gears[i].cy);
+        ctx.lineTo(gears[j].cx, gears[j].cy);
+        ctx.stroke();
+      }
+    }
+  }
+
+  requestAnimationFrame(draw);
+}
+draw();
+
+</script>

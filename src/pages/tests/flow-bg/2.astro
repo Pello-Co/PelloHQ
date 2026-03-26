@@ -1,0 +1,129 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="PelloFlow BG — Pipeline Flow" description="PelloFlow background test 2 — Pipeline Flow">
+  <div style="min-height:100vh;background:#060712;display:flex;flex-direction:column;align-items:center;padding:2rem;">
+    <h1 style="color:#4f46e5;font:700 1.5rem/1.3 -apple-system,sans-serif;margin-bottom:0.5rem;letter-spacing:-0.02em;">PelloFlow Background</h1>
+    <p style="color:rgba(255,255,255,0.5);font:400 0.85rem/1.4 -apple-system,sans-serif;margin-bottom:1.5rem;">Design 2 — Pipeline Flow</p>
+    <canvas id="flow-bg-2" style="width:100%;max-width:900px;border-radius:12px;cursor:crosshair;"></canvas>
+  </div>
+</Layout>
+
+<script>
+const canvas = document.getElementById('flow-bg-2') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const dpr = window.devicePixelRatio || 1;
+
+const W = 900, H = 560;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+ctx.scale(dpr, dpr);
+
+let mouseX = -1, mouseY = -1;
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - r.left) * (W / r.width);
+  mouseY = (e.clientY - r.top) * (H / r.height);
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
+
+const R = 79, G = 70, B = 229;
+
+let t = 0;
+interface Pipe { y:number; x1:number; x2:number; nodeX:number[]; particles:{pos:number;speed:number}[]; }
+const pipes: Pipe[] = [];
+for (let i = 0; i < 10; i++) {
+  const y = H * (0.08 + i * 0.09);
+  const x1 = 20 + Math.random() * 80;
+  const x2 = W - 20 - Math.random() * 80;
+  const nodes: number[] = [];
+  for (let n = 0; n < 3 + Math.floor(Math.random() * 3); n++) {
+    nodes.push(x1 + (x2 - x1) * ((n + 1) / (4 + Math.floor(Math.random() * 3))));
+  }
+  const parts = [];
+  for (let p = 0; p < 2 + Math.floor(Math.random() * 3); p++) {
+    parts.push({ pos: Math.random(), speed: 0.002 + Math.random() * 0.004 });
+  }
+  pipes.push({ y, x1, x2, nodeX: nodes, particles: parts });
+}
+
+// Vertical connectors between pipes
+interface VConn { x:number; y1:number; y2:number; }
+const vconns: VConn[] = [];
+for (let i = 0; i < pipes.length - 1; i++) {
+  if (Math.random() > 0.4) {
+    const sharedX = pipes[i].nodeX[Math.floor(Math.random() * pipes[i].nodeX.length)];
+    vconns.push({ x: sharedX, y1: pipes[i].y, y2: pipes[i+1].y });
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, W, H);
+  t += 0.01;
+
+  // Horizontal pipes
+  for (const pipe of pipes) {
+    let alpha = 0.04;
+    if (mouseX > 0 && Math.abs(mouseY - pipe.y) < 20) alpha = 0.09;
+
+    ctx.strokeStyle = `rgba(${R},${G},${B},${alpha})`;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(pipe.x1, pipe.y); ctx.lineTo(pipe.x2, pipe.y);
+    ctx.stroke();
+
+    // Nodes
+    for (const nx of pipe.nodeX) {
+      const pulse = 0.5 + 0.5 * Math.sin(t * 2 + nx * 0.01);
+      ctx.beginPath();
+      ctx.arc(nx, pipe.y, 4 + pulse * 2, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${R},${G},${B},${0.04 + pulse * 0.04})`;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(nx, pipe.y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${R},${G},${B},${0.1 + pulse * 0.08})`;
+      ctx.fill();
+    }
+
+    // Particles
+    for (const p of pipe.particles) {
+      p.pos += p.speed;
+      if (p.pos > 1) p.pos -= 1;
+      const px = pipe.x1 + (pipe.x2 - pipe.x1) * p.pos;
+
+      // Trail
+      const trailW = (pipe.x2 - pipe.x1) * 0.06;
+      const grad = ctx.createLinearGradient(px - trailW, pipe.y, px, pipe.y);
+      grad.addColorStop(0, `rgba(${R},${G},${B},0)`);
+      grad.addColorStop(1, `rgba(${R},${G},${B},0.2)`);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(px - trailW, pipe.y); ctx.lineTo(px, pipe.y);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(px, pipe.y, 2, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${R},${G},${B},0.35)`;
+      ctx.fill();
+    }
+  }
+
+  // Vertical connectors
+  for (const vc of vconns) {
+    ctx.strokeStyle = `rgba(${R},${G},${B},0.04)`;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(vc.x, vc.y1); ctx.lineTo(vc.x, vc.y2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  requestAnimationFrame(draw);
+}
+draw();
+
+</script>
