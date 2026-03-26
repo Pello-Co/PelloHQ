@@ -81,7 +81,7 @@ function draw() {
 
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.size * (1 - age * 0.3), 0, Math.PI * 2);
-      ctx.fillStyle = \`rgba(\${R},\${G},\${B},\${alpha})\`;
+      ctx.fillStyle = `rgba(${R},${G},${B},${alpha})`;
       ctx.fill();
     }
     if (allDead) bursts.splice(b, 1);
@@ -92,8 +92,8 @@ function draw() {
     ctx.beginPath();
     ctx.arc(mouseX, mouseY, 40, 0, Math.PI * 2);
     const grad = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, 40);
-    grad.addColorStop(0, \`rgba(\${R},\${G},\${B},0.04)\`);
-    grad.addColorStop(1, \`rgba(\${R},\${G},\${B},0)\`);
+    grad.addColorStop(0, `rgba(${R},${G},${B},0.04)`);
+    grad.addColorStop(1, `rgba(${R},${G},${B},0)`);
     ctx.fillStyle = grad;
     ctx.fill();
   }

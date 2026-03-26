@@ -67,7 +67,7 @@ function draw() {
     const pulse = 0.5 + 0.5 * Math.sin(t * 3 + src.x * 0.01);
     ctx.beginPath();
     ctx.arc(src.x, src.y, 4 + pulse * 3, 0, Math.PI * 2);
-    ctx.fillStyle = \`rgba(\${R},\${G},\${B},\${0.05 + pulse * 0.05})\`;
+    ctx.fillStyle = `rgba(${R},${G},${B},${0.05 + pulse * 0.05})`;
     ctx.fill();
   }
 
@@ -89,7 +89,7 @@ function draw() {
 
     ctx.beginPath();
     ctx.arc(s.x, s.y, s.size * (1 - age * 0.5), 0, Math.PI * 2);
-    ctx.fillStyle = \`rgba(\${R},\${G},\${B},\${alpha})\`;
+    ctx.fillStyle = `rgba(${R},${G},${B},${alpha})`;
     ctx.fill();
   }
 

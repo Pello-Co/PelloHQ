@@ -75,10 +75,10 @@ function draw() {
     ctx.save();
     ctx.translate(f.x, f.y);
     ctx.rotate(Math.sin(t + f.phase) * f.rot);
-    ctx.font = \`\${f.size}px -apple-system, sans-serif\`;
+    ctx.font = `${f.size}px -apple-system, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = \`rgba(\${R},\${G},\${B},\${alpha})\`;
+    ctx.fillStyle = `rgba(${R},${G},${B},${alpha})`;
     ctx.fillText(f.symbol, 0, 0);
     ctx.restore();
   }

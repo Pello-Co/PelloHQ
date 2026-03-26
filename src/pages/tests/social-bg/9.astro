@@ -62,15 +62,15 @@ function draw() {
       if (d < 60) alpha += (1 - d/60) * 0.06;
     }
 
-    ctx.strokeStyle = \`rgba(\${R},\${G},\${B},\${alpha * 2})\`;
+    ctx.strokeStyle = `rgba(${R},${G},${B},${alpha * 2})`;
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
     // Fill below
     ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
     const grad = ctx.createLinearGradient(0, wave.y - wave.amplitude, 0, wave.y + wave.amplitude * 3);
-    grad.addColorStop(0, \`rgba(\${R},\${G},\${B},\${alpha})\`);
-    grad.addColorStop(1, \`rgba(\${R},\${G},\${B},0)\`);
+    grad.addColorStop(0, `rgba(${R},${G},${B},${alpha})`);
+    grad.addColorStop(1, `rgba(${R},${G},${B},0)`);
     ctx.fillStyle = grad;
     ctx.fill();
   }

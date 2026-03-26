@@ -75,15 +75,15 @@ function draw() {
     ctx.lineTo(p.x, p.y + cr); ctx.quadraticCurveTo(p.x, p.y, p.x + cr, p.y);
     ctx.closePath();
 
-    ctx.fillStyle = \`rgba(\${R},\${G},\${B},\${alpha * 0.4})\`;
+    ctx.fillStyle = `rgba(${R},${G},${B},${alpha * 0.4})`;
     ctx.fill();
-    ctx.strokeStyle = \`rgba(\${R},\${G},\${B},\${alpha})\`;
+    ctx.strokeStyle = `rgba(${R},${G},${B},${alpha})`;
     ctx.lineWidth = 0.8;
     ctx.stroke();
 
     // Screen glow for active phones
     if (p.active) {
-      ctx.fillStyle = \`rgba(\${R},\${G},\${B},\${alpha * pulse * 0.5})\`;
+      ctx.fillStyle = `rgba(${R},${G},${B},${alpha * pulse * 0.5})`;
       ctx.fillRect(p.x + 2, p.y + 4, p.w - 4, p.h - 8);
     }
 
@@ -91,7 +91,7 @@ function draw() {
     if (p.active && pulse > 0.8) {
       ctx.beginPath();
       ctx.arc(p.x + p.w - 3, p.y + 5, 2, 0, Math.PI * 2);
-      ctx.fillStyle = \`rgba(\${R},\${G},\${B},\${alpha * 3})\`;
+      ctx.fillStyle = `rgba(${R},${G},${B},${alpha * 3})`;
       ctx.fill();
     }
   }

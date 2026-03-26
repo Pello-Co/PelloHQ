@@ -70,7 +70,7 @@ function draw() {
       const ra = alpha * (1 - ring * 0.3);
       ctx.beginPath();
       ctx.arc(rip.cx, rip.cy, rr, 0, Math.PI * 2);
-      ctx.strokeStyle = \`rgba(\${R},\${G},\${B},\${ra})\`;
+      ctx.strokeStyle = `rgba(${R},${G},${B},${ra})`;
       ctx.lineWidth = 1.5 - ring * 0.4;
       ctx.stroke();
     }
@@ -78,15 +78,15 @@ function draw() {
     // Center dot fades
     ctx.beginPath();
     ctx.arc(rip.cx, rip.cy, 2 * (1 - age), 0, Math.PI * 2);
-    ctx.fillStyle = \`rgba(\${R},\${G},\${B},\${alpha * 2})\`;
+    ctx.fillStyle = `rgba(${R},${G},${B},${alpha * 2})`;
     ctx.fill();
   }
 
   // Mouse glow
   if (mouseX > 0) {
     const grad = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, 100);
-    grad.addColorStop(0, \`rgba(\${R},\${G},\${B},0.06)\`);
-    grad.addColorStop(1, \`rgba(\${R},\${G},\${B},0)\`);
+    grad.addColorStop(0, `rgba(${R},${G},${B},0.06)`);
+    grad.addColorStop(1, `rgba(${R},${G},${B},0)`);
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
   }

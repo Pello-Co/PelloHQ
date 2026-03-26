@@ -62,7 +62,7 @@ function draw() {
       if (d < 100) {
         nodes[i].connections++; nodes[j].connections++;
         const alpha = (1 - d/100) * 0.06;
-        ctx.strokeStyle = \`rgba(\${R},\${G},\${B},\${alpha})\`;
+        ctx.strokeStyle = `rgba(${R},${G},${B},${alpha})`;
         ctx.lineWidth = 0.5;
         ctx.beginPath();
         ctx.moveTo(nodes[i].x, nodes[i].y);
@@ -75,7 +75,7 @@ function draw() {
         const sy = nodes[i].y + (nodes[j].y - nodes[i].y) * sig;
         ctx.beginPath();
         ctx.arc(sx, sy, 1, 0, Math.PI * 2);
-        ctx.fillStyle = \`rgba(\${R},\${G},\${B},\${alpha * 3})\`;
+        ctx.fillStyle = `rgba(${R},${G},${B},${alpha * 3})`;
         ctx.fill();
       }
     }
@@ -95,13 +95,13 @@ function draw() {
     // Halo
     ctx.beginPath();
     ctx.arc(n.x, n.y, n.r + 4 + influence * 4, 0, Math.PI * 2);
-    ctx.fillStyle = \`rgba(\${R},\${G},\${B},\${alpha * 0.15})\`;
+    ctx.fillStyle = `rgba(${R},${G},${B},${alpha * 0.15})`;
     ctx.fill();
 
     // Core
     ctx.beginPath();
     ctx.arc(n.x, n.y, n.r + influence * 2, 0, Math.PI * 2);
-    ctx.fillStyle = \`rgba(\${R},\${G},\${B},\${alpha})\`;
+    ctx.fillStyle = `rgba(${R},${G},${B},${alpha})`;
     ctx.fill();
   }
 
