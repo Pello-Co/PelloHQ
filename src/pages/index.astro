@@ -2519,6 +2519,196 @@ Automated.</h2>
     }
   }
 
+
+  // ── Product 5: Ads Variant Constellation ──────────────────────────────
+  interface AdsVariant { x:number; y:number; vx:number; vy:number; w:number; h:number; perf:number; phase:number; }
+  function initAdsBg(w: number, h: number) {
+    const variants: AdsVariant[] = [];
+    for (let i = 0; i < 28; i++) {
+      variants.push({
+        x: Math.random() * w, y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.12, vy: (Math.random() - 0.5) * 0.08,
+        w: 8 + Math.random() * 14, h: 6 + Math.random() * 10,
+        perf: Math.random(), phase: Math.random() * Math.PI * 2,
+      });
+    }
+    return { variants };
+  }
+  function drawAdsBg(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
+    const [r,g,b] = PV_RGB[5];
+    const st = state as { variants: AdsVariant[] };
+
+    // Slowly drift perf values
+    for (const v of st.variants) {
+      v.perf += (Math.sin(t * 0.5 + v.phase) * 0.001);
+      v.perf = Math.max(0.05, Math.min(0.95, v.perf));
+    }
+
+    // Connect nearby high-perf variants with faint lines
+    for (let i = 0; i < st.variants.length; i++) {
+      const a = st.variants[i];
+      if (a.perf < 0.4) continue;
+      for (let j = i + 1; j < st.variants.length; j++) {
+        const b2 = st.variants[j];
+        if (b2.perf < 0.4) continue;
+        const dx = a.x - b2.x, dy = a.y - b2.y;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        if (d < 120) {
+          ctx.strokeStyle = `rgba(${r},${g},${b},${(1 - d/120) * 0.06})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(a.x + a.w/2, a.y + a.h/2);
+          ctx.lineTo(b2.x + b2.w/2, b2.y + b2.h/2);
+          ctx.stroke();
+        }
+      }
+    }
+
+    for (const v of st.variants) {
+      // Movement — winners drift up, losers sink
+      v.x += v.vx;
+      v.y += v.vy + (v.perf > 0.6 ? -0.03 : 0.02);
+      if (v.x < -30) v.x += w + 60;
+      if (v.x > w + 30) v.x -= w + 60;
+      if (v.y < -30) v.y += h + 60;
+      if (v.y > h + 30) v.y -= h + 60;
+
+      const pulse = 0.7 + 0.3 * Math.sin(t * 1.5 + v.phase);
+      let alpha = (0.04 + v.perf * 0.12) * pulse;
+
+      // Mouse proximity glow
+      if (hasMouse) {
+        const dx = (v.x + v.w/2) - mx, dy = (v.y + v.h/2) - my;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        if (d < 100) alpha += (1 - d/100) * 0.08;
+      }
+
+      // Rounded rect
+      const cr = 2;
+      ctx.beginPath();
+      ctx.moveTo(v.x + cr, v.y);
+      ctx.lineTo(v.x + v.w - cr, v.y);
+      ctx.quadraticCurveTo(v.x + v.w, v.y, v.x + v.w, v.y + cr);
+      ctx.lineTo(v.x + v.w, v.y + v.h - cr);
+      ctx.quadraticCurveTo(v.x + v.w, v.y + v.h, v.x + v.w - cr, v.y + v.h);
+      ctx.lineTo(v.x + cr, v.y + v.h);
+      ctx.quadraticCurveTo(v.x, v.y + v.h, v.x, v.y + v.h - cr);
+      ctx.lineTo(v.x, v.y + cr);
+      ctx.quadraticCurveTo(v.x, v.y, v.x + cr, v.y);
+      ctx.closePath();
+
+      ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+      ctx.fill();
+      ctx.strokeStyle = `rgba(${r},${g},${b},${alpha * 1.5})`;
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+
+      // Winners get a bright top edge
+      if (v.perf > 0.7) {
+        ctx.strokeStyle = `rgba(${r},${g},${b},${alpha * 2})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(v.x + cr, v.y);
+        ctx.lineTo(v.x + v.w - cr, v.y);
+        ctx.stroke();
+      }
+    }
+  }
+
+  // ── Product 6: Flow Circuit Paths ─────────────────────────────────────
+  interface FlowPath { x1:number; y1:number; x2:number; y2:number; dir:'h'|'v'; pulses: { pos:number; speed:number; }[]; }
+  function initFlowBg(w: number, h: number) {
+    const paths: FlowPath[] = [];
+    const gridX = 40, gridY = 40;
+    // Horizontal paths
+    for (let y = gridY; y < h; y += gridY + Math.random() * 30) {
+      const x1 = Math.random() * w * 0.3;
+      const x2 = w * 0.5 + Math.random() * w * 0.5;
+      const numP = 1 + Math.floor(Math.random() * 2);
+      const pulses = [];
+      for (let p = 0; p < numP; p++) pulses.push({ pos: Math.random(), speed: 0.002 + Math.random() * 0.004 });
+      paths.push({ x1, y1: y, x2, y2: y, dir: 'h', pulses });
+    }
+    // Vertical paths
+    for (let x = gridX; x < w; x += gridX + Math.random() * 40) {
+      const y1 = Math.random() * h * 0.3;
+      const y2 = h * 0.4 + Math.random() * h * 0.6;
+      const numP = 1 + Math.floor(Math.random() * 2);
+      const pulses = [];
+      for (let p = 0; p < numP; p++) pulses.push({ pos: Math.random(), speed: 0.002 + Math.random() * 0.004 });
+      paths.push({ x1: x, y1, x2: x, y2, dir: 'v', pulses });
+    }
+    return { flowPaths: paths };
+  }
+  function drawFlowBg(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
+    const [r,g,b] = PV_RGB[6];
+    const st = state as { flowPaths: FlowPath[] };
+
+    for (const path of st.flowPaths) {
+      // Draw the base path line
+      let lineAlpha = 0.04;
+      if (hasMouse) {
+        // Brighten paths near cursor
+        if (path.dir === 'h') {
+          if (Math.abs(my - path.y1) < 30) lineAlpha = 0.08;
+        } else {
+          if (Math.abs(mx - path.x1) < 30) lineAlpha = 0.08;
+        }
+      }
+      ctx.strokeStyle = `rgba(${r},${g},${b},${lineAlpha})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(path.x1, path.y1);
+      ctx.lineTo(path.x2, path.y2);
+      ctx.stroke();
+
+      // Draw flowing pulses along the path
+      for (const pulse of path.pulses) {
+        pulse.pos += pulse.speed;
+        if (pulse.pos > 1) pulse.pos -= 1;
+
+        const px = path.x1 + (path.x2 - path.x1) * pulse.pos;
+        const py = path.y1 + (path.y2 - path.y1) * pulse.pos;
+
+        // Gradient trail
+        const trailLen = 0.12;
+        const ts = Math.max(0, pulse.pos - trailLen);
+        const tsx = path.x1 + (path.x2 - path.x1) * ts;
+        const tsy = path.y1 + (path.y2 - path.y1) * ts;
+        const grad = ctx.createLinearGradient(tsx, tsy, px, py);
+        grad.addColorStop(0, `rgba(${r},${g},${b},0)`);
+        grad.addColorStop(1, `rgba(${r},${g},${b},0.25)`);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(tsx, tsy);
+        ctx.lineTo(px, py);
+        ctx.stroke();
+
+        // Bright head dot
+        ctx.beginPath();
+        ctx.arc(px, py, 2, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${r},${g},${b},0.4)`;
+        ctx.fill();
+      }
+    }
+
+    // Intersection nodes — where H and V paths cross, draw a faint glow
+    for (const hp of st.flowPaths) {
+      if (hp.dir !== 'h') continue;
+      for (const vp of st.flowPaths) {
+        if (vp.dir !== 'v') continue;
+        if (vp.x1 >= hp.x1 && vp.x1 <= hp.x2 && hp.y1 >= vp.y1 && hp.y1 <= vp.y2) {
+          const pulse = 0.5 + 0.5 * Math.sin(t * 2 + vp.x1 * 0.01 + hp.y1 * 0.01);
+          ctx.beginPath();
+          ctx.arc(vp.x1, hp.y1, 3 + pulse * 2, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${r},${g},${b},${0.04 + pulse * 0.06})`;
+          ctx.fill();
+        }
+      }
+    }
+  }
+
   function initMatrix(w: number, h: number) {
     const colW = 7;
     const cols = Math.ceil(w / colW);
@@ -2668,6 +2858,8 @@ Automated.</h2>
       case 1: return initReach(w,h);
       case 2: return initRain(w,h);
       case 3: return initSocial(w,h);
+      case 5: return initAdsBg(w,h);
+      case 6: return initFlowBg(w,h);
       case 7: return initMatrix(w,h);
       // case 6: return initParticles(w,h); // disabled — replacing
       
@@ -2687,8 +2879,8 @@ Automated.</h2>
       case 2: drawRain(ctx,w,h,t,lx,ly,hasMouse,state); break;
       case 3: drawSocial(ctx,w,h,t,lx,ly,hasMouse,state); break;
       case 4: drawTopo(ctx,w,h,t,lx,ly,hasMouse,state); break;
-      // case 5: drawBars(ctx,w,h,t,lx,ly,hasMouse,state); break; // disabled
-      // case 6: drawParticles(ctx,w,h,t,lx,ly,hasMouse,state); break; // disabled
+      case 5: drawAdsBg(ctx,w,h,t,lx,ly,hasMouse,state); break;
+      case 6: drawFlowBg(ctx,w,h,t,lx,ly,hasMouse,state); break;
       case 7: drawMatrix(ctx,w,h,t,lx,ly,hasMouse,state); break;
     }
   }
