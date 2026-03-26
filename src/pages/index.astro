@@ -2520,98 +2520,166 @@ Automated.</h2>
   }
 
 
-  // ── Product 5: Ads Variant Constellation ──────────────────────────────
-  interface AdsVariant { x:number; y:number; vx:number; vy:number; w:number; h:number; perf:number; phase:number; }
+  // ── Product 5: Ads Targeting Radar ─────────────────────────────────────
+  interface AdsOrbit { radius: number; speed: number; dots: { angle: number; size: number; brightness: number; trail: number; }[]; }
+  interface AdsPulse { radius: number; born: number; maxR: number; }
   function initAdsBg(w: number, h: number) {
-    const variants: AdsVariant[] = [];
-    for (let i = 0; i < 28; i++) {
-      variants.push({
-        x: Math.random() * w, y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.12, vy: (Math.random() - 0.5) * 0.08,
-        w: 8 + Math.random() * 14, h: 6 + Math.random() * 10,
-        perf: Math.random(), phase: Math.random() * Math.PI * 2,
-      });
+    const cx = w * 0.5, cy = h * 0.5;
+    const maxR = Math.min(w, h) * 0.48;
+    const orbits: AdsOrbit[] = [];
+    // 5 concentric orbits at different speeds
+    for (let i = 0; i < 5; i++) {
+      const r = maxR * (0.2 + i * 0.18);
+      const numDots = 3 + Math.floor(Math.random() * 4);
+      const dots = [];
+      for (let d = 0; d < numDots; d++) {
+        dots.push({
+          angle: (Math.PI * 2 / numDots) * d + Math.random() * 0.5,
+          size: 1.5 + Math.random() * 2,
+          brightness: 0.3 + Math.random() * 0.5,
+          trail: 0.15 + Math.random() * 0.25,
+        });
+      }
+      orbits.push({ radius: r, speed: (0.08 + Math.random() * 0.12) * (i % 2 === 0 ? 1 : -1), dots });
     }
-    return { variants };
+    return { orbits, cx, cy, maxR, pulses: [] as AdsPulse[], lastPulse: 0 };
   }
   function drawAdsBg(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
     const [r,g,b] = PV_RGB[5];
-    const st = state as { variants: AdsVariant[] };
+    const st = state as { orbits: AdsOrbit[]; cx: number; cy: number; maxR: number; pulses: AdsPulse[]; lastPulse: number };
+    const now = performance.now();
 
-    // Slowly drift perf values
-    for (const v of st.variants) {
-      v.perf += (Math.sin(t * 0.5 + v.phase) * 0.001);
-      v.perf = Math.max(0.05, Math.min(0.95, v.perf));
+    // Mouse offset — shift center slightly toward cursor
+    let cx = st.cx, cy = st.cy;
+    if (hasMouse) {
+      cx += (mx - st.cx) * 0.05;
+      cy += (my - st.cy) * 0.05;
     }
 
-    // Connect nearby high-perf variants with faint lines
-    for (let i = 0; i < st.variants.length; i++) {
-      const a = st.variants[i];
-      if (a.perf < 0.4) continue;
-      for (let j = i + 1; j < st.variants.length; j++) {
-        const b2 = st.variants[j];
-        if (b2.perf < 0.4) continue;
-        const dx = a.x - b2.x, dy = a.y - b2.y;
-        const d = Math.sqrt(dx*dx + dy*dy);
-        if (d < 120) {
-          ctx.strokeStyle = `rgba(${r},${g},${b},${(1 - d/120) * 0.06})`;
-          ctx.lineWidth = 0.5;
-          ctx.beginPath();
-          ctx.moveTo(a.x + a.w/2, a.y + a.h/2);
-          ctx.lineTo(b2.x + b2.w/2, b2.y + b2.h/2);
-          ctx.stroke();
+    // Radar sweep line
+    const sweepAngle = t * 0.6;
+    const sweepGrad = ctx.createConicGradient(sweepAngle, cx, cy);
+    sweepGrad.addColorStop(0, `rgba(${r},${g},${b},0.08)`);
+    sweepGrad.addColorStop(0.08, `rgba(${r},${g},${b},0.01)`);
+    sweepGrad.addColorStop(0.1, `rgba(${r},${g},${b},0)`);
+    sweepGrad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    ctx.fillStyle = sweepGrad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, st.maxR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Orbit rings — concentric circles with subtle dashes
+    for (const orbit of st.orbits) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, orbit.radius, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(${r},${g},${b},0.05)`;
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+
+      // Dots orbiting on each ring
+      for (const dot of orbit.dots) {
+        dot.angle += orbit.speed * 0.016;
+        const dx = cx + Math.cos(dot.angle) * orbit.radius;
+        const dy = cy + Math.sin(dot.angle) * orbit.radius;
+
+        // Trail arc
+        const trailStart = dot.angle - dot.trail * Math.sign(orbit.speed);
+        const trailGrad = ctx.createConicGradient(
+          orbit.speed > 0 ? trailStart : dot.angle, cx, cy
+        );
+        if (orbit.speed > 0) {
+          trailGrad.addColorStop(0, `rgba(${r},${g},${b},0)`);
+          trailGrad.addColorStop(dot.trail / (Math.PI * 2), `rgba(${r},${g},${b},${dot.brightness * 0.3})`);
+          trailGrad.addColorStop(dot.trail / (Math.PI * 2) + 0.001, `rgba(${r},${g},${b},0)`);
+          trailGrad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+        } else {
+          trailGrad.addColorStop(0, `rgba(${r},${g},${b},${dot.brightness * 0.3})`);
+          trailGrad.addColorStop(dot.trail / (Math.PI * 2), `rgba(${r},${g},${b},0)`);
+          trailGrad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+        }
+        ctx.beginPath();
+        ctx.arc(cx, cy, orbit.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = trailGrad;
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        // The dot itself — glowing
+        const pulse = 0.7 + 0.3 * Math.sin(t * 3 + dot.angle);
+        const glow = dot.brightness * pulse;
+
+        // Outer halo
+        ctx.beginPath();
+        ctx.arc(dx, dy, dot.size + 4, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${r},${g},${b},${glow * 0.1})`;
+        ctx.fill();
+
+        // Core dot
+        ctx.beginPath();
+        ctx.arc(dx, dy, dot.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${r},${g},${b},${glow * 0.5})`;
+        ctx.fill();
+
+        // Bright center
+        ctx.beginPath();
+        ctx.arc(dx, dy, dot.size * 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${glow * 0.25})`;
+        ctx.fill();
+
+        // Mouse interaction — if cursor near a dot, draw a targeting line
+        if (hasMouse) {
+          const ddx = mx - dx, ddy = my - dy;
+          const dd = Math.sqrt(ddx*ddx + ddy*ddy);
+          if (dd < 60) {
+            const la = (1 - dd/60) * 0.15;
+            ctx.strokeStyle = `rgba(${r},${g},${b},${la})`;
+            ctx.lineWidth = 0.5;
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath();
+            ctx.moveTo(dx, dy);
+            ctx.lineTo(mx, my);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
         }
       }
     }
 
-    for (const v of st.variants) {
-      // Movement — winners drift up, losers sink
-      v.x += v.vx;
-      v.y += v.vy + (v.perf > 0.6 ? -0.03 : 0.02);
-      if (v.x < -30) v.x += w + 60;
-      if (v.x > w + 30) v.x -= w + 60;
-      if (v.y < -30) v.y += h + 60;
-      if (v.y > h + 30) v.y -= h + 60;
+    // Center glow
+    const centerPulse = 0.6 + 0.4 * Math.sin(t * 1.2);
+    const cGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, st.maxR * 0.25);
+    cGrad.addColorStop(0, `rgba(${r},${g},${b},${0.08 * centerPulse})`);
+    cGrad.addColorStop(0.5, `rgba(${r},${g},${b},${0.02 * centerPulse})`);
+    cGrad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    ctx.fillStyle = cGrad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, st.maxR * 0.25, 0, Math.PI * 2);
+    ctx.fill();
 
-      const pulse = 0.7 + 0.3 * Math.sin(t * 1.5 + v.phase);
-      let alpha = (0.04 + v.perf * 0.12) * pulse;
+    // Crosshair at center
+    ctx.strokeStyle = `rgba(${r},${g},${b},${0.06 * centerPulse})`;
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(cx - 15, cy); ctx.lineTo(cx + 15, cy);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - 15); ctx.lineTo(cx, cy + 15);
+    ctx.stroke();
 
-      // Mouse proximity glow
-      if (hasMouse) {
-        const dx = (v.x + v.w/2) - mx, dy = (v.y + v.h/2) - my;
-        const d = Math.sqrt(dx*dx + dy*dy);
-        if (d < 100) alpha += (1 - d/100) * 0.08;
-      }
-
-      // Rounded rect
-      const cr = 2;
+    // Periodic expanding pulse ring from center
+    if (now - st.lastPulse > 3000) {
+      st.pulses.push({ radius: 0, born: now, maxR: st.maxR });
+      st.lastPulse = now;
+    }
+    st.pulses = st.pulses.filter(p => now - p.born < 2500);
+    for (const p of st.pulses) {
+      const age = (now - p.born) / 2500;
+      p.radius = age * p.maxR;
+      const alpha = (1 - age) * 0.12;
       ctx.beginPath();
-      ctx.moveTo(v.x + cr, v.y);
-      ctx.lineTo(v.x + v.w - cr, v.y);
-      ctx.quadraticCurveTo(v.x + v.w, v.y, v.x + v.w, v.y + cr);
-      ctx.lineTo(v.x + v.w, v.y + v.h - cr);
-      ctx.quadraticCurveTo(v.x + v.w, v.y + v.h, v.x + v.w - cr, v.y + v.h);
-      ctx.lineTo(v.x + cr, v.y + v.h);
-      ctx.quadraticCurveTo(v.x, v.y + v.h, v.x, v.y + v.h - cr);
-      ctx.lineTo(v.x, v.y + cr);
-      ctx.quadraticCurveTo(v.x, v.y, v.x + cr, v.y);
-      ctx.closePath();
-
-      ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
-      ctx.fill();
-      ctx.strokeStyle = `rgba(${r},${g},${b},${alpha * 1.5})`;
-      ctx.lineWidth = 0.5;
+      ctx.arc(cx, cy, p.radius, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
+      ctx.lineWidth = 1.5 * (1 - age);
       ctx.stroke();
-
-      // Winners get a bright top edge
-      if (v.perf > 0.7) {
-        ctx.strokeStyle = `rgba(${r},${g},${b},${alpha * 2})`;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(v.x + cr, v.y);
-        ctx.lineTo(v.x + v.w - cr, v.y);
-        ctx.stroke();
-      }
     }
   }
 
