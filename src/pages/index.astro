@@ -2675,7 +2675,7 @@ Automated.</h2>
     return { drops, speeds, chars, colW, cols };
   }
   function drawMatrix(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
-    const [r,g,b]=PV_RGB[5];
+    const [r,g,b]=PV_RGB[7];
     const st = state as { drops: number[]; speeds: number[]; chars: string; colW: number; cols: number };
     const fontSize = 9;
     ctx.font = `${fontSize}px "SF Mono", "Fira Code", monospace`;
