@@ -1,0 +1,84 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="PelloAds BG — Hex Grid Pulse" description="PelloAds background test 3 — Hex Grid Pulse">
+  <div style="min-height:100vh;background:#060712;display:flex;flex-direction:column;align-items:center;padding:2rem;">
+    <h1 style="color:#7c3aed;font:700 1.5rem/1.3 -apple-system,sans-serif;margin-bottom:0.5rem;letter-spacing:-0.02em;">PelloAds Background</h1>
+    <p style="color:rgba(255,255,255,0.5);font:400 0.85rem/1.4 -apple-system,sans-serif;margin-bottom:1.5rem;">Design 3 — Hex Grid Pulse</p>
+    <canvas id="ads-bg-3" style="width:100%;max-width:900px;border-radius:12px;cursor:crosshair;"></canvas>
+  </div>
+</Layout>
+
+<script>
+const canvas = document.getElementById('ads-bg-3') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const dpr = window.devicePixelRatio || 1;
+
+const W = 900, H = 560;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+ctx.scale(dpr, dpr);
+
+let mouseX = -1, mouseY = -1;
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - r.left) * (W / r.width);
+  mouseY = (e.clientY - r.top) * (H / r.height);
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
+
+const R = 124, G = 58, B = 237;
+
+let t = 0;
+const hexR = 25;
+const hexH = hexR * Math.sqrt(3);
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, W, H);
+  t += 0.015;
+
+  for (let row = -1; row < H / hexH + 1; row++) {
+    for (let col = -1; col < W / (hexR * 3) + 1; col++) {
+      const cx = col * hexR * 3 + (row % 2) * hexR * 1.5;
+      const cy = row * hexH;
+
+      let alpha = 0.03;
+      // Distance-based pulse from center
+      const dx = cx - W/2, dy = cy - H/2;
+      const d = Math.sqrt(dx*dx + dy*dy);
+      const wave = Math.sin(d * 0.01 - t * 2) * 0.5 + 0.5;
+      alpha += wave * 0.06;
+
+      // Mouse proximity
+      if (mouseX > 0) {
+        const mdx = cx - mouseX, mdy = cy - mouseY;
+        const md = Math.sqrt(mdx*mdx + mdy*mdy);
+        if (md < 120) alpha += (1 - md/120) * 0.1;
+      }
+
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const angle = Math.PI / 3 * i - Math.PI / 6;
+        const px = cx + hexR * 0.9 * Math.cos(angle);
+        const py = cy + hexR * 0.9 * Math.sin(angle);
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = `rgba(${R},${G},${B},${alpha})`;
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+
+      if (wave > 0.7) {
+        ctx.fillStyle = `rgba(${R},${G},${B},${(wave - 0.7) * 0.1})`;
+        ctx.fill();
+      }
+    }
+  }
+
+  requestAnimationFrame(draw);
+}
+draw();
+
+</script>

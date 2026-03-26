@@ -1,0 +1,77 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="PelloAds BG — Aurora Waves" description="PelloAds background test 1 — Aurora Waves">
+  <div style="min-height:100vh;background:#060712;display:flex;flex-direction:column;align-items:center;padding:2rem;">
+    <h1 style="color:#7c3aed;font:700 1.5rem/1.3 -apple-system,sans-serif;margin-bottom:0.5rem;letter-spacing:-0.02em;">PelloAds Background</h1>
+    <p style="color:rgba(255,255,255,0.5);font:400 0.85rem/1.4 -apple-system,sans-serif;margin-bottom:1.5rem;">Design 1 — Aurora Waves</p>
+    <canvas id="ads-bg-1" style="width:100%;max-width:900px;border-radius:12px;cursor:crosshair;"></canvas>
+  </div>
+</Layout>
+
+<script>
+const canvas = document.getElementById('ads-bg-1') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const dpr = window.devicePixelRatio || 1;
+
+const W = 900, H = 560;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+ctx.scale(dpr, dpr);
+
+let mouseX = -1, mouseY = -1;
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - r.left) * (W / r.width);
+  mouseY = (e.clientY - r.top) * (H / r.height);
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
+
+const R = 124, G = 58, B = 237;
+
+let t = 0;
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, W, H);
+  t += 0.008;
+
+  // Multiple layered sine waves with gradient fills
+  for (let layer = 0; layer < 5; layer++) {
+    const yBase = H * (0.25 + layer * 0.12);
+    const amp = 30 + layer * 15;
+    const freq = 0.003 + layer * 0.001;
+    const speed = t * (0.8 + layer * 0.3);
+    const alpha = 0.04 + (4 - layer) * 0.015;
+
+    ctx.beginPath();
+    ctx.moveTo(0, H);
+    for (let x = 0; x <= W; x += 2) {
+      const y = yBase + Math.sin(x * freq + speed) * amp + Math.sin(x * freq * 2.3 + speed * 0.7) * amp * 0.4;
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(W, H);
+    ctx.closePath();
+
+    const grad = ctx.createLinearGradient(0, yBase - amp, 0, yBase + amp * 2);
+    grad.addColorStop(0, `rgba(${R},${G},${B},${alpha})`);
+    grad.addColorStop(0.5, `rgba(${R},${G},${B},${alpha * 0.5})`);
+    grad.addColorStop(1, `rgba(${R},${G},${B},0)`);
+    ctx.fillStyle = grad;
+    ctx.fill();
+  }
+
+  // Mouse glow
+  if (mouseX > 0) {
+    const grad = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, 150);
+    grad.addColorStop(0, `rgba(${R},${G},${B},0.08)`);
+    grad.addColorStop(1, `rgba(${R},${G},${B},0)`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  requestAnimationFrame(draw);
+}
+draw();
+
+</script>

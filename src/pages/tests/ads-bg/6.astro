@@ -1,0 +1,87 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="PelloAds BG — Converging Lines" description="PelloAds background test 6 — Converging Lines">
+  <div style="min-height:100vh;background:#060712;display:flex;flex-direction:column;align-items:center;padding:2rem;">
+    <h1 style="color:#7c3aed;font:700 1.5rem/1.3 -apple-system,sans-serif;margin-bottom:0.5rem;letter-spacing:-0.02em;">PelloAds Background</h1>
+    <p style="color:rgba(255,255,255,0.5);font:400 0.85rem/1.4 -apple-system,sans-serif;margin-bottom:1.5rem;">Design 6 — Converging Lines</p>
+    <canvas id="ads-bg-6" style="width:100%;max-width:900px;border-radius:12px;cursor:crosshair;"></canvas>
+  </div>
+</Layout>
+
+<script>
+const canvas = document.getElementById('ads-bg-6') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const dpr = window.devicePixelRatio || 1;
+
+const W = 900, H = 560;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+ctx.scale(dpr, dpr);
+
+let mouseX = -1, mouseY = -1;
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - r.left) * (W / r.width);
+  mouseY = (e.clientY - r.top) * (H / r.height);
+});
+canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
+
+const R = 124, G = 58, B = 237;
+
+let t = 0;
+const numLines = 40;
+interface CLine { angle: number; speed: number; offset: number; }
+const lines: CLine[] = [];
+for (let i = 0; i < numLines; i++) {
+  lines.push({
+    angle: (Math.PI * 2 / numLines) * i,
+    speed: 0.001 + Math.random() * 0.003,
+    offset: Math.random() * Math.PI * 2,
+  });
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#060712';
+  ctx.fillRect(0, 0, W, H);
+  t += 0.01;
+
+  const cx = mouseX > 0 ? mouseX : W / 2;
+  const cy = mouseX > 0 ? mouseY : H / 2;
+  const maxR = Math.max(W, H);
+
+  for (const line of lines) {
+    const a = line.angle + Math.sin(t + line.offset) * 0.1;
+    const ex = cx + Math.cos(a) * maxR;
+    const ey = cy + Math.sin(a) * maxR;
+
+    // Gradient from center outward
+    const grad = ctx.createLinearGradient(cx, cy, ex, ey);
+    const pulse = 0.5 + 0.5 * Math.sin(t * 2 + line.offset);
+    grad.addColorStop(0, `rgba(${R},${G},${B},${0.08 + pulse * 0.05})`);
+    grad.addColorStop(0.3, `rgba(${R},${G},${B},${0.03 + pulse * 0.02})`);
+    grad.addColorStop(1, `rgba(${R},${G},${B},0)`);
+
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(ex, ey);
+    ctx.stroke();
+  }
+
+  // Center glow
+  const cGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 60);
+  cGrad.addColorStop(0, `rgba(${R},${G},${B},0.12)`);
+  cGrad.addColorStop(1, `rgba(${R},${G},${B},0)`);
+  ctx.fillStyle = cGrad;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 60, 0, Math.PI * 2);
+  ctx.fill();
+
+  requestAnimationFrame(draw);
+}
+draw();
+
+</script>
