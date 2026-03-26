@@ -2540,15 +2540,15 @@ Automated.</h2>
       for (let col = -1; col < w / (hexR * 3) + 1; col++) {
         const cx = col * hexR * 3 + (row % 2) * hexR * 1.5;
         const cy = row * hexH;
-        let alpha = 0.03;
+        let alpha = 0.06;
         const dx = cx - w/2, dy = cy - h/2;
         const d = Math.sqrt(dx*dx + dy*dy);
         const wave = Math.sin(d * 0.01 - t * 2) * 0.5 + 0.5;
-        alpha += wave * 0.06;
+        alpha += wave * 0.12;
         if (hasMouse) {
           const mdx = cx - mx, mdy = cy - my;
           const md = Math.sqrt(mdx*mdx + mdy*mdy);
-          if (md < 120) alpha += (1 - md/120) * 0.1;
+          if (md < 150) alpha += (1 - md/150) * 0.18;
         }
         ctx.beginPath();
         for (let i = 0; i < 6; i++) {
@@ -2559,10 +2559,10 @@ Automated.</h2>
         }
         ctx.closePath();
         ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
-        ctx.lineWidth = 0.8;
+        ctx.lineWidth = 1;
         ctx.stroke();
-        if (wave > 0.7) {
-          ctx.fillStyle = `rgba(${r},${g},${b},${(wave - 0.7) * 0.1})`;
+        if (wave > 0.5) {
+          ctx.fillStyle = `rgba(${r},${g},${b},${(wave - 0.5) * 0.12})`;
           ctx.fill();
         }
       }
@@ -2906,7 +2906,7 @@ const ctx = canvas.getContext('2d')!;
 const dpr = window.devicePixelRatio || 1;
 
 // Virtual coordinate space — always draw at this size, scale to fit
-const VW = 520, VH = 320;
+const VW = 520, VH = 384;
 let scale = 1;
 let mouseX = -1, mouseY = -1;
 
