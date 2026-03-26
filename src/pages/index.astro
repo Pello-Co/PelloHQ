@@ -101,6 +101,7 @@ Zero effort.</h2>
         </div>
       </div>
       <div class="product-card soc-card" data-product="3">
+        <canvas class="soc-pulse-bg" aria-hidden="true"></canvas>
         <div class="soc-layout">
           <!-- Left: text -->
           <div class="soc-text ps-info flex flex-col" style="--product-color:#c026d3;">
@@ -931,7 +932,16 @@ Automated.</h2>
   }
 
   /* ── PelloSocial two-column layout ─────────────────────────────────────── */
-  .soc-card { overflow: hidden; }
+  .soc-card { overflow: hidden; position: relative; }
+  .soc-pulse-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .soc-card .soc-layout { position: relative; z-index: 1; }
   .soc-layout {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -2192,30 +2202,6 @@ Automated.</h2>
   }
 
   function drawSocial(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, state: Record<string,unknown>) {
-    // ── Pulse Grid Background (behind globe) ──
-    {
-      const [r3,g3,b3]=PV_RGB[3];
-      const dotSpacing = 28;
-      const dotR = 1.5;
-      for (let gx = dotSpacing/2; gx < w; gx += dotSpacing) {
-        for (let gy = dotSpacing/2; gy < h; gy += dotSpacing) {
-          const ddx = gx - w/2, ddy = gy - h/2;
-          const dd = Math.sqrt(ddx*ddx + ddy*ddy);
-          const wave = Math.sin(dd * 0.015 - t * 2) * 0.5 + 0.5;
-          let alp = 0.03 + wave * 0.08;
-          let sz = dotR + wave * 1.5;
-          if (hasMouse) {
-            const md = Math.sqrt((gx - mx)**2 + (gy - my)**2);
-            if (md < 100) { alp += (1 - md/100) * 0.12; sz += (1 - md/100) * 2; }
-          }
-          ctx.beginPath();
-          ctx.arc(gx, gy, sz, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(${r3},${g3},${b3},${alp})`;
-          ctx.fill();
-        }
-      }
-    }
-    // ── End Pulse Grid ──
     const st=state as {
       GLOBE_R:number;GLOBE_CX:number;GLOBE_CY:number;rotY:number;
       globeDots:SocGlobeDot[];socPhones:PhoneSocNode[];
@@ -2583,63 +2569,93 @@ Automated.</h2>
     }
   }
 
-  // ── Product 6: Flow Circuit Board ──────────────────────────────────────
-  interface FlowTrace { x1:number; y1:number; segments:{dx:number;dy:number}[]; totalLen:number; signal:number; speed:number; }
+  // ── Product 6: Flow Circuit Paths ─────────────────────────────────────
+  interface FlowPath { x1:number; y1:number; x2:number; y2:number; dir:'h'|'v'; pulses: { pos:number; speed:number; }[]; }
   function initFlowBg(w: number, h: number) {
-    const traces: FlowTrace[] = [];
-    for (let i = 0; i < 25; i++) {
-      const x1 = Math.random() * w, y1 = Math.random() * h;
-      const segs: {dx:number;dy:number}[] = [];
-      let totalLen = 0;
-      for (let s = 0; s < 3 + Math.floor(Math.random() * 4); s++) {
-        const horizontal = s % 2 === 0;
-        const len = 30 + Math.random() * 120;
-        const dir = Math.random() > 0.5 ? 1 : -1;
-        segs.push({ dx: horizontal ? len * dir : 0, dy: horizontal ? 0 : len * dir });
-        totalLen += len;
-      }
-      traces.push({ x1, y1, segments: segs, totalLen, signal: Math.random(), speed: 0.003 + Math.random() * 0.005 });
+    const paths: FlowPath[] = [];
+    const gridX = 40, gridY = 40;
+    // Horizontal paths
+    for (let y = gridY; y < h; y += gridY + Math.random() * 30) {
+      const x1 = Math.random() * w * 0.3;
+      const x2 = w * 0.5 + Math.random() * w * 0.5;
+      const numP = 1 + Math.floor(Math.random() * 2);
+      const pulses = [];
+      for (let p = 0; p < numP; p++) pulses.push({ pos: Math.random(), speed: 0.002 + Math.random() * 0.004 });
+      paths.push({ x1, y1: y, x2, y2: y, dir: 'h', pulses });
     }
-    return { traces };
+    // Vertical paths
+    for (let x = gridX; x < w; x += gridX + Math.random() * 40) {
+      const y1 = Math.random() * h * 0.3;
+      const y2 = h * 0.4 + Math.random() * h * 0.6;
+      const numP = 1 + Math.floor(Math.random() * 2);
+      const pulses = [];
+      for (let p = 0; p < numP; p++) pulses.push({ pos: Math.random(), speed: 0.002 + Math.random() * 0.004 });
+      paths.push({ x1: x, y1, x2: x, y2, dir: 'v', pulses });
+    }
+    return { flowPaths: paths };
   }
-  function drawFlowBg(ctx: CanvasRenderingContext2D, w: number, h: number, _t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
+  function drawFlowBg(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
     const [r,g,b] = PV_RGB[6];
-    const st = state as { traces: FlowTrace[] };
-    for (const trace of st.traces) {
-      trace.signal += trace.speed;
-      if (trace.signal > 1) trace.signal -= 1;
-      let px = trace.x1, py = trace.y1;
-      ctx.beginPath();
-      ctx.moveTo(px, py);
-      for (const seg of trace.segments) { px += seg.dx; py += seg.dy; ctx.lineTo(px, py); }
-      ctx.strokeStyle = `rgba(${r},${g},${b},0.05)`;
+    const st = state as { flowPaths: FlowPath[] };
+
+    for (const path of st.flowPaths) {
+      // Draw the base path line
+      let lineAlpha = 0.04;
+      if (hasMouse) {
+        if (path.dir === 'h') {
+          if (Math.abs(my - path.y1) < 30) lineAlpha = 0.08;
+        } else {
+          if (Math.abs(mx - path.x1) < 30) lineAlpha = 0.08;
+        }
+      }
+      ctx.strokeStyle = `rgba(${r},${g},${b},${lineAlpha})`;
       ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(path.x1, path.y1);
+      ctx.lineTo(path.x2, path.y2);
       ctx.stroke();
-      px = trace.x1; py = trace.y1;
-      for (const seg of trace.segments) {
-        px += seg.dx; py += seg.dy;
-        ctx.beginPath(); ctx.arc(px, py, 2, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${r},${g},${b},0.08)`;
+
+      // Draw flowing pulses along the path
+      for (const pulse of path.pulses) {
+        pulse.pos += pulse.speed;
+        if (pulse.pos > 1) pulse.pos -= 1;
+
+        const px = path.x1 + (path.x2 - path.x1) * pulse.pos;
+        const py = path.y1 + (path.y2 - path.y1) * pulse.pos;
+
+        // Gradient trail
+        const trailLen = 0.12;
+        const ts = Math.max(0, pulse.pos - trailLen);
+        const tsx = path.x1 + (path.x2 - path.x1) * ts;
+        const tsy = path.y1 + (path.y2 - path.y1) * ts;
+        const grad = ctx.createLinearGradient(tsx, tsy, px, py);
+        grad.addColorStop(0, `rgba(${r},${g},${b},0)`);
+        grad.addColorStop(1, `rgba(${r},${g},${b},0.25)`);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(tsx, tsy);
+        ctx.lineTo(px, py);
+        ctx.stroke();
+
+        // Bright head dot
+        ctx.beginPath();
+        ctx.arc(px, py, 2, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${r},${g},${b},0.4)`;
         ctx.fill();
       }
-      let dist = trace.signal * trace.totalLen;
-      let sx = trace.x1, sy = trace.y1;
-      for (const seg of trace.segments) {
-        const segLen = Math.sqrt(seg.dx*seg.dx + seg.dy*seg.dy);
-        if (dist <= segLen) { const frac = dist / segLen; sx += seg.dx * frac; sy += seg.dy * frac; break; }
-        dist -= segLen; sx += seg.dx; sy += seg.dy;
-      }
-      ctx.beginPath(); ctx.arc(sx, sy, 6, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${r},${g},${b},0.08)`;
-      ctx.fill();
-      ctx.beginPath(); ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${r},${g},${b},0.3)`;
-      ctx.fill();
-      if (hasMouse) {
-        const d = Math.sqrt((sx - mx)**2 + (sy - my)**2);
-        if (d < 60) {
-          ctx.beginPath(); ctx.arc(sx, sy, 8, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(${r},${g},${b},${(1-d/60)*0.12})`;
+    }
+
+    // Intersection nodes — where H and V paths cross, draw a faint glow
+    for (const hp of st.flowPaths) {
+      if (hp.dir !== 'h') continue;
+      for (const vp of st.flowPaths) {
+        if (vp.dir !== 'v') continue;
+        if (vp.x1 >= hp.x1 && vp.x1 <= hp.x2 && hp.y1 >= vp.y1 && hp.y1 <= vp.y2) {
+          const pulse = 0.5 + 0.5 * Math.sin(t * 2 + vp.x1 * 0.01 + hp.y1 * 0.01);
+          ctx.beginPath();
+          ctx.arc(vp.x1, hp.y1, 3 + pulse * 2, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${r},${g},${b},${0.04 + pulse * 0.06})`;
           ctx.fill();
         }
       }
@@ -2822,6 +2838,65 @@ Automated.</h2>
     }
   }
 
+
+  // ── PelloSocial Pulse Grid Background ─────────────────────────────────
+  (function() {
+    const canvas = document.querySelector('.soc-pulse-bg') as HTMLCanvasElement;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d')!;
+    const dpr = window.devicePixelRatio || 1;
+    let W = 0, H = 0, t = 0;
+
+    function resize() {
+      const par = canvas.parentElement!;
+      W = par.clientWidth;
+      H = par.clientHeight;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    let mouseX = -1, mouseY = -1;
+    canvas.parentElement!.addEventListener('mousemove', e => {
+      const r = canvas.getBoundingClientRect();
+      mouseX = e.clientX - r.left;
+      mouseY = e.clientY - r.top;
+    });
+    canvas.parentElement!.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
+
+    const R = 192, G = 38, B = 211;
+    const dotSpacing = 28;
+    const dotR = 1.5;
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      t += 0.02;
+      for (let x = dotSpacing / 2; x < W; x += dotSpacing) {
+        for (let y = dotSpacing / 2; y < H; y += dotSpacing) {
+          const dx = x - W / 2, dy = y - H / 2;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          const wave = Math.sin(d * 0.015 - t * 2) * 0.5 + 0.5;
+          let alpha = 0.03 + wave * 0.08;
+          let size = dotR + wave * 1.5;
+          if (mouseX > 0) {
+            const md = Math.sqrt((x - mouseX) ** 2 + (y - mouseY) ** 2);
+            if (md < 100) {
+              alpha += (1 - md / 100) * 0.12;
+              size += (1 - md / 100) * 2;
+            }
+          }
+          ctx.beginPath();
+          ctx.arc(x, y, size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${R},${G},${B},${alpha})`;
+          ctx.fill();
+        }
+      }
+      requestAnimationFrame(draw);
+    }
+    requestAnimationFrame(draw);
+  })();
 
   // ── PelloAds Dashboard Canvas ──────────────────────────────────────────
   (function() {
