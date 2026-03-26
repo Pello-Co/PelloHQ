@@ -2192,6 +2192,30 @@ Automated.</h2>
   }
 
   function drawSocial(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, state: Record<string,unknown>) {
+    // ── Pulse Grid Background (behind globe) ──
+    {
+      const [r3,g3,b3]=PV_RGB[3];
+      const dotSpacing = 28;
+      const dotR = 1.5;
+      for (let gx = dotSpacing/2; gx < w; gx += dotSpacing) {
+        for (let gy = dotSpacing/2; gy < h; gy += dotSpacing) {
+          const ddx = gx - w/2, ddy = gy - h/2;
+          const dd = Math.sqrt(ddx*ddx + ddy*ddy);
+          const wave = Math.sin(dd * 0.015 - t * 2) * 0.5 + 0.5;
+          let alp = 0.03 + wave * 0.08;
+          let sz = dotR + wave * 1.5;
+          if (hasMouse) {
+            const md = Math.sqrt((gx - mx)**2 + (gy - my)**2);
+            if (md < 100) { alp += (1 - md/100) * 0.12; sz += (1 - md/100) * 2; }
+          }
+          ctx.beginPath();
+          ctx.arc(gx, gy, sz, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${r3},${g3},${b3},${alp})`;
+          ctx.fill();
+        }
+      }
+    }
+    // ── End Pulse Grid ──
     const st=state as {
       GLOBE_R:number;GLOBE_CX:number;GLOBE_CY:number;rotY:number;
       globeDots:SocGlobeDot[];socPhones:PhoneSocNode[];
@@ -2520,257 +2544,102 @@ Automated.</h2>
   }
 
 
-  // ── Product 5: Ads Targeting Radar ─────────────────────────────────────
-  interface AdsOrbit { radius: number; speed: number; dots: { angle: number; size: number; brightness: number; trail: number; }[]; }
-  interface AdsPulse { radius: number; born: number; maxR: number; }
-  function initAdsBg(w: number, h: number) {
-    const cx = w * 0.5, cy = h * 0.5;
-    const maxR = Math.min(w, h) * 0.48;
-    const orbits: AdsOrbit[] = [];
-    // 5 concentric orbits at different speeds
-    for (let i = 0; i < 5; i++) {
-      const r = maxR * (0.2 + i * 0.18);
-      const numDots = 3 + Math.floor(Math.random() * 4);
-      const dots = [];
-      for (let d = 0; d < numDots; d++) {
-        dots.push({
-          angle: (Math.PI * 2 / numDots) * d + Math.random() * 0.5,
-          size: 1.5 + Math.random() * 2,
-          brightness: 0.3 + Math.random() * 0.5,
-          trail: 0.15 + Math.random() * 0.25,
-        });
-      }
-      orbits.push({ radius: r, speed: (0.08 + Math.random() * 0.12) * (i % 2 === 0 ? 1 : -1), dots });
-    }
-    return { orbits, cx, cy, maxR, pulses: [] as AdsPulse[], lastPulse: 0 };
-  }
-  function drawAdsBg(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
+  // ── Product 5: Ads Hex Grid Pulse ──────────────────────────────────────
+  function initAdsBg(_w: number, _h: number) { return {}; }
+  function drawAdsBg(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, _state: Record<string, unknown>) {
     const [r,g,b] = PV_RGB[5];
-    const st = state as { orbits: AdsOrbit[]; cx: number; cy: number; maxR: number; pulses: AdsPulse[]; lastPulse: number };
-    const now = performance.now();
-
-    // Mouse offset — shift center slightly toward cursor
-    let cx = st.cx, cy = st.cy;
-    if (hasMouse) {
-      cx += (mx - st.cx) * 0.05;
-      cy += (my - st.cy) * 0.05;
-    }
-
-    // Radar sweep line
-    const sweepAngle = t * 0.6;
-    const sweepGrad = ctx.createConicGradient(sweepAngle, cx, cy);
-    sweepGrad.addColorStop(0, `rgba(${r},${g},${b},0.08)`);
-    sweepGrad.addColorStop(0.08, `rgba(${r},${g},${b},0.01)`);
-    sweepGrad.addColorStop(0.1, `rgba(${r},${g},${b},0)`);
-    sweepGrad.addColorStop(1, `rgba(${r},${g},${b},0)`);
-    ctx.fillStyle = sweepGrad;
-    ctx.beginPath();
-    ctx.arc(cx, cy, st.maxR, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Orbit rings — concentric circles with subtle dashes
-    for (const orbit of st.orbits) {
-      ctx.beginPath();
-      ctx.arc(cx, cy, orbit.radius, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(${r},${g},${b},0.05)`;
-      ctx.lineWidth = 0.5;
-      ctx.stroke();
-
-      // Dots orbiting on each ring
-      for (const dot of orbit.dots) {
-        dot.angle += orbit.speed * 0.016;
-        const dx = cx + Math.cos(dot.angle) * orbit.radius;
-        const dy = cy + Math.sin(dot.angle) * orbit.radius;
-
-        // Trail arc
-        const trailStart = dot.angle - dot.trail * Math.sign(orbit.speed);
-        const trailGrad = ctx.createConicGradient(
-          orbit.speed > 0 ? trailStart : dot.angle, cx, cy
-        );
-        if (orbit.speed > 0) {
-          trailGrad.addColorStop(0, `rgba(${r},${g},${b},0)`);
-          trailGrad.addColorStop(dot.trail / (Math.PI * 2), `rgba(${r},${g},${b},${dot.brightness * 0.3})`);
-          trailGrad.addColorStop(dot.trail / (Math.PI * 2) + 0.001, `rgba(${r},${g},${b},0)`);
-          trailGrad.addColorStop(1, `rgba(${r},${g},${b},0)`);
-        } else {
-          trailGrad.addColorStop(0, `rgba(${r},${g},${b},${dot.brightness * 0.3})`);
-          trailGrad.addColorStop(dot.trail / (Math.PI * 2), `rgba(${r},${g},${b},0)`);
-          trailGrad.addColorStop(1, `rgba(${r},${g},${b},0)`);
-        }
-        ctx.beginPath();
-        ctx.arc(cx, cy, orbit.radius, 0, Math.PI * 2);
-        ctx.strokeStyle = trailGrad;
-        ctx.lineWidth = 2.5;
-        ctx.stroke();
-
-        // The dot itself — glowing
-        const pulse = 0.7 + 0.3 * Math.sin(t * 3 + dot.angle);
-        const glow = dot.brightness * pulse;
-
-        // Outer halo
-        ctx.beginPath();
-        ctx.arc(dx, dy, dot.size + 4, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${r},${g},${b},${glow * 0.1})`;
-        ctx.fill();
-
-        // Core dot
-        ctx.beginPath();
-        ctx.arc(dx, dy, dot.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${r},${g},${b},${glow * 0.5})`;
-        ctx.fill();
-
-        // Bright center
-        ctx.beginPath();
-        ctx.arc(dx, dy, dot.size * 0.4, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,255,255,${glow * 0.25})`;
-        ctx.fill();
-
-        // Mouse interaction — if cursor near a dot, draw a targeting line
+    const hexR = 25;
+    const hexH = hexR * Math.sqrt(3);
+    for (let row = -1; row < h / hexH + 1; row++) {
+      for (let col = -1; col < w / (hexR * 3) + 1; col++) {
+        const cx = col * hexR * 3 + (row % 2) * hexR * 1.5;
+        const cy = row * hexH;
+        let alpha = 0.03;
+        const dx = cx - w/2, dy = cy - h/2;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        const wave = Math.sin(d * 0.01 - t * 2) * 0.5 + 0.5;
+        alpha += wave * 0.06;
         if (hasMouse) {
-          const ddx = mx - dx, ddy = my - dy;
-          const dd = Math.sqrt(ddx*ddx + ddy*ddy);
-          if (dd < 60) {
-            const la = (1 - dd/60) * 0.15;
-            ctx.strokeStyle = `rgba(${r},${g},${b},${la})`;
-            ctx.lineWidth = 0.5;
-            ctx.setLineDash([3, 3]);
-            ctx.beginPath();
-            ctx.moveTo(dx, dy);
-            ctx.lineTo(mx, my);
-            ctx.stroke();
-            ctx.setLineDash([]);
-          }
+          const mdx = cx - mx, mdy = cy - my;
+          const md = Math.sqrt(mdx*mdx + mdy*mdy);
+          if (md < 120) alpha += (1 - md/120) * 0.1;
         }
-      }
-    }
-
-    // Center glow
-    const centerPulse = 0.6 + 0.4 * Math.sin(t * 1.2);
-    const cGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, st.maxR * 0.25);
-    cGrad.addColorStop(0, `rgba(${r},${g},${b},${0.08 * centerPulse})`);
-    cGrad.addColorStop(0.5, `rgba(${r},${g},${b},${0.02 * centerPulse})`);
-    cGrad.addColorStop(1, `rgba(${r},${g},${b},0)`);
-    ctx.fillStyle = cGrad;
-    ctx.beginPath();
-    ctx.arc(cx, cy, st.maxR * 0.25, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Crosshair at center
-    ctx.strokeStyle = `rgba(${r},${g},${b},${0.06 * centerPulse})`;
-    ctx.lineWidth = 0.5;
-    ctx.beginPath();
-    ctx.moveTo(cx - 15, cy); ctx.lineTo(cx + 15, cy);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - 15); ctx.lineTo(cx, cy + 15);
-    ctx.stroke();
-
-    // Periodic expanding pulse ring from center
-    if (now - st.lastPulse > 3000) {
-      st.pulses.push({ radius: 0, born: now, maxR: st.maxR });
-      st.lastPulse = now;
-    }
-    st.pulses = st.pulses.filter(p => now - p.born < 2500);
-    for (const p of st.pulses) {
-      const age = (now - p.born) / 2500;
-      p.radius = age * p.maxR;
-      const alpha = (1 - age) * 0.12;
-      ctx.beginPath();
-      ctx.arc(cx, cy, p.radius, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
-      ctx.lineWidth = 1.5 * (1 - age);
-      ctx.stroke();
-    }
-  }
-
-  // ── Product 6: Flow Circuit Paths ─────────────────────────────────────
-  interface FlowPath { x1:number; y1:number; x2:number; y2:number; dir:'h'|'v'; pulses: { pos:number; speed:number; }[]; }
-  function initFlowBg(w: number, h: number) {
-    const paths: FlowPath[] = [];
-    const gridX = 40, gridY = 40;
-    // Horizontal paths
-    for (let y = gridY; y < h; y += gridY + Math.random() * 30) {
-      const x1 = Math.random() * w * 0.3;
-      const x2 = w * 0.5 + Math.random() * w * 0.5;
-      const numP = 1 + Math.floor(Math.random() * 2);
-      const pulses = [];
-      for (let p = 0; p < numP; p++) pulses.push({ pos: Math.random(), speed: 0.002 + Math.random() * 0.004 });
-      paths.push({ x1, y1: y, x2, y2: y, dir: 'h', pulses });
-    }
-    // Vertical paths
-    for (let x = gridX; x < w; x += gridX + Math.random() * 40) {
-      const y1 = Math.random() * h * 0.3;
-      const y2 = h * 0.4 + Math.random() * h * 0.6;
-      const numP = 1 + Math.floor(Math.random() * 2);
-      const pulses = [];
-      for (let p = 0; p < numP; p++) pulses.push({ pos: Math.random(), speed: 0.002 + Math.random() * 0.004 });
-      paths.push({ x1: x, y1, x2: x, y2, dir: 'v', pulses });
-    }
-    return { flowPaths: paths };
-  }
-  function drawFlowBg(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
-    const [r,g,b] = PV_RGB[6];
-    const st = state as { flowPaths: FlowPath[] };
-
-    for (const path of st.flowPaths) {
-      // Draw the base path line
-      let lineAlpha = 0.04;
-      if (hasMouse) {
-        // Brighten paths near cursor
-        if (path.dir === 'h') {
-          if (Math.abs(my - path.y1) < 30) lineAlpha = 0.08;
-        } else {
-          if (Math.abs(mx - path.x1) < 30) lineAlpha = 0.08;
-        }
-      }
-      ctx.strokeStyle = `rgba(${r},${g},${b},${lineAlpha})`;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(path.x1, path.y1);
-      ctx.lineTo(path.x2, path.y2);
-      ctx.stroke();
-
-      // Draw flowing pulses along the path
-      for (const pulse of path.pulses) {
-        pulse.pos += pulse.speed;
-        if (pulse.pos > 1) pulse.pos -= 1;
-
-        const px = path.x1 + (path.x2 - path.x1) * pulse.pos;
-        const py = path.y1 + (path.y2 - path.y1) * pulse.pos;
-
-        // Gradient trail
-        const trailLen = 0.12;
-        const ts = Math.max(0, pulse.pos - trailLen);
-        const tsx = path.x1 + (path.x2 - path.x1) * ts;
-        const tsy = path.y1 + (path.y2 - path.y1) * ts;
-        const grad = ctx.createLinearGradient(tsx, tsy, px, py);
-        grad.addColorStop(0, `rgba(${r},${g},${b},0)`);
-        grad.addColorStop(1, `rgba(${r},${g},${b},0.25)`);
-        ctx.strokeStyle = grad;
-        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(tsx, tsy);
-        ctx.lineTo(px, py);
+        for (let i = 0; i < 6; i++) {
+          const angle = Math.PI / 3 * i - Math.PI / 6;
+          const px = cx + hexR * 0.9 * Math.cos(angle);
+          const py = cy + hexR * 0.9 * Math.sin(angle);
+          i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
+        ctx.lineWidth = 0.8;
         ctx.stroke();
+        if (wave > 0.7) {
+          ctx.fillStyle = `rgba(${r},${g},${b},${(wave - 0.7) * 0.1})`;
+          ctx.fill();
+        }
+      }
+    }
+  }
 
-        // Bright head dot
-        ctx.beginPath();
-        ctx.arc(px, py, 2, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${r},${g},${b},0.4)`;
+  // ── Product 6: Flow Circuit Board ──────────────────────────────────────
+  interface FlowTrace { x1:number; y1:number; segments:{dx:number;dy:number}[]; totalLen:number; signal:number; speed:number; }
+  function initFlowBg(w: number, h: number) {
+    const traces: FlowTrace[] = [];
+    for (let i = 0; i < 25; i++) {
+      const x1 = Math.random() * w, y1 = Math.random() * h;
+      const segs: {dx:number;dy:number}[] = [];
+      let totalLen = 0;
+      for (let s = 0; s < 3 + Math.floor(Math.random() * 4); s++) {
+        const horizontal = s % 2 === 0;
+        const len = 30 + Math.random() * 120;
+        const dir = Math.random() > 0.5 ? 1 : -1;
+        segs.push({ dx: horizontal ? len * dir : 0, dy: horizontal ? 0 : len * dir });
+        totalLen += len;
+      }
+      traces.push({ x1, y1, segments: segs, totalLen, signal: Math.random(), speed: 0.003 + Math.random() * 0.005 });
+    }
+    return { traces };
+  }
+  function drawFlowBg(ctx: CanvasRenderingContext2D, w: number, h: number, _t: number, mx: number, my: number, hasMouse: boolean, state: Record<string, unknown>) {
+    const [r,g,b] = PV_RGB[6];
+    const st = state as { traces: FlowTrace[] };
+    for (const trace of st.traces) {
+      trace.signal += trace.speed;
+      if (trace.signal > 1) trace.signal -= 1;
+      let px = trace.x1, py = trace.y1;
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      for (const seg of trace.segments) { px += seg.dx; py += seg.dy; ctx.lineTo(px, py); }
+      ctx.strokeStyle = `rgba(${r},${g},${b},0.05)`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      px = trace.x1; py = trace.y1;
+      for (const seg of trace.segments) {
+        px += seg.dx; py += seg.dy;
+        ctx.beginPath(); ctx.arc(px, py, 2, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${r},${g},${b},0.08)`;
         ctx.fill();
       }
-    }
-
-    // Intersection nodes — where H and V paths cross, draw a faint glow
-    for (const hp of st.flowPaths) {
-      if (hp.dir !== 'h') continue;
-      for (const vp of st.flowPaths) {
-        if (vp.dir !== 'v') continue;
-        if (vp.x1 >= hp.x1 && vp.x1 <= hp.x2 && hp.y1 >= vp.y1 && hp.y1 <= vp.y2) {
-          const pulse = 0.5 + 0.5 * Math.sin(t * 2 + vp.x1 * 0.01 + hp.y1 * 0.01);
-          ctx.beginPath();
-          ctx.arc(vp.x1, hp.y1, 3 + pulse * 2, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(${r},${g},${b},${0.04 + pulse * 0.06})`;
+      let dist = trace.signal * trace.totalLen;
+      let sx = trace.x1, sy = trace.y1;
+      for (const seg of trace.segments) {
+        const segLen = Math.sqrt(seg.dx*seg.dx + seg.dy*seg.dy);
+        if (dist <= segLen) { const frac = dist / segLen; sx += seg.dx * frac; sy += seg.dy * frac; break; }
+        dist -= segLen; sx += seg.dx; sy += seg.dy;
+      }
+      ctx.beginPath(); ctx.arc(sx, sy, 6, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${r},${g},${b},0.08)`;
+      ctx.fill();
+      ctx.beginPath(); ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${r},${g},${b},0.3)`;
+      ctx.fill();
+      if (hasMouse) {
+        const d = Math.sqrt((sx - mx)**2 + (sy - my)**2);
+        if (d < 60) {
+          ctx.beginPath(); ctx.arc(sx, sy, 8, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${r},${g},${b},${(1-d/60)*0.12})`;
           ctx.fill();
         }
       }
