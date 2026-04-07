@@ -18,7 +18,7 @@ const concepts = [
 ---
 
 <nav class="concept-nav" aria-label="Hero concept switcher">
-  <span class="concept-label">Concept {String(current).padStart(2, '0')} — {concepts[current - 1].label}</span>
+  <span class="concept-label">Concept {String(current).padStart(2, '0')} — {concepts[current - 1]?.label}</span>
   <div class="concept-dots">
     {concepts.map((c) => (
       <a

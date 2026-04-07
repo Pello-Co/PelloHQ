@@ -386,7 +386,7 @@ const statusBg: Record<string, string> = {
   document.querySelectorAll<HTMLElement>('.seo-rows-scroll').forEach((container) => {
     const rows = container.querySelectorAll<HTMLElement>('.seo-scroll-row');
     if (rows.length <= 4) return;
-    const rowHeight = rows[0].offsetHeight + 8; // height + gap
+    const rowHeight = (rows[0]?.offsetHeight ?? 0) + 8; // height + gap
     let offset = 0;
 
     setInterval(() => {
