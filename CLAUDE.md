@@ -101,12 +101,12 @@ All Pello products live on separate domains but share a single auth system (one 
 
 ## GitHub
 
-- **Repo:** https://github.com/Pello-Co/PelloHQ
-- **Account:** Pello-Co
-- **SSH host alias:** `github-pelloco` (uses `~/.ssh/id_ed25519_pelloco`)
-- **Remote:** `git@github-pelloco:Pello-Co/PelloHQ.git`
+- **Repo:** https://github.com/Sinamun/PelloHQ
+- **Account:** Sinamun (moved from Pello-Co)
+- **Remote:** `https://github.com/Sinamun/PelloHQ.git`
+- **Git author:** `Sina Yamani <syamani95@gmail.com>` (required by Vercel)
 
-When pushing from this machine, always use the `github-pelloco` SSH host alias — the default `github.com` host is wired to a different key (GlobalPeptide).
+When pushing from this machine, use HTTPS remote (set above). The old SSH alias `github-pelloco` pointed to Pello-Co — no longer needed for this repo.
 
 ## Stack
 
@@ -404,3 +404,20 @@ Each section component follows this structure:
 - Use `is:inline` on `<script type="application/ld+json">` tags
 - Use `.container` for all content width constraints
 - Keep `src/content/site.ts` as the only place copy is edited
+
+## Design Reference
+
+A curated list of design inspiration and tooling websites:
+
+- **Designspells.com** — design inspiration
+- **Shadergradient.co** — animated gradient backgrounds
+- **Pageflows.com** — UI flow references
+- **Uigoodies.com** — UI resources and components
+- **Gsap.com** — animation library (also our animation framework)
+- **Reactbits.dev** — React animation components
+- **Spline.design** — 3D design and interactive scenes
+- **Dark.design** — dark UI inspiration
+- **21st.dev** — component inspiration
+- **Motionsites.ai** — motion design inspiration
+
+Full list also maintained at: `workspace-root/design-websites.md`
